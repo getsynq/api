@@ -1,0 +1,58 @@
+concurrency:
+  cancel-in-progress: true
+  group: api-generate-docs-${{ github.head_ref || github.run_id }}
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  generate:
+    if: '!contains(github.event.commits[0].message, ''ci skip'')'
+    runs-on: ubuntu-latest
+    env: 
+      CI_COMMIT_MESSAGE: CI generated docs
+      CI_COMMIT_AUTHOR_NAME: Synqlair
+      CI_COMMIT_AUTHOR_EMAIL: ci@synq.io
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: "1.21"
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1.1.2
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        version: 3.21.0
+    - name: Install protoc generators
+      run: |
+        go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
+    - name: Configure ssh agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+        ssh-private-key: ${{ secrets.GH_ACTION_SSH_KEY }}
+    - name: Configure git
+      run: git config --global --add url."git@github.com:".insteadOf "https://github.com/"
+    - name: Generate and push
+      run: |
+        bash generate_docs.sh
+        git config --global user.name "${{ env.CI_COMMIT_AUTHOR_NAME }}"
+        git config --global user.email "${{ env.CI_COMMIT_AUTHOR_EMAIL }}"
+        git add docs
+        git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+        git push
+    timeout-minutes: 5
+
+name: generate docs
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'protos/**'
+      - 'generate_docs.sh'
+    paths-ignore:
+      - 'docs/**'
