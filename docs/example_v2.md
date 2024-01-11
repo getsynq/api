@@ -3,35 +3,35 @@
 
 ## Table of Contents
 
-- [example/v1/example_service.proto](#example_v1_example_service-proto)
-    - [AddExampleRequest](#example-v1-AddExampleRequest)
-    - [AddExampleResponse](#example-v1-AddExampleResponse)
-    - [ExampleResponse](#example-v1-ExampleResponse)
-    - [GetExampleRequest](#example-v1-GetExampleRequest)
-    - [GetExampleResponse](#example-v1-GetExampleResponse)
-    - [ListExamplesRequest](#example-v1-ListExamplesRequest)
-    - [RemoveExampleRequest](#example-v1-RemoveExampleRequest)
-    - [RemoveExampleResponse](#example-v1-RemoveExampleResponse)
-    - [UpdateExampleRequest](#example-v1-UpdateExampleRequest)
-    - [UpdateExampleResponse](#example-v1-UpdateExampleResponse)
+- [example/v2/example_service.proto](#example_v2_example_service-proto)
+    - [AddExampleRequest](#example-v2-AddExampleRequest)
+    - [AddExampleResponse](#example-v2-AddExampleResponse)
+    - [ExampleResponse](#example-v2-ExampleResponse)
+    - [GetExampleRequest](#example-v2-GetExampleRequest)
+    - [GetExampleResponse](#example-v2-GetExampleResponse)
+    - [ListExamplesRequest](#example-v2-ListExamplesRequest)
+    - [RemoveExampleRequest](#example-v2-RemoveExampleRequest)
+    - [RemoveExampleResponse](#example-v2-RemoveExampleResponse)
+    - [UpdateExampleRequest](#example-v2-UpdateExampleRequest)
+    - [UpdateExampleResponse](#example-v2-UpdateExampleResponse)
   
-    - [ExampleService](#example-v1-ExampleService)
+    - [ExampleService](#example-v2-ExampleService)
   
-- [example/v1/example.proto](#example_v1_example-proto)
-    - [Example](#example-v1-Example)
+- [example/v2/example.proto](#example_v2_example-proto)
+    - [Example](#example-v2-Example)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="example_v1_example_service-proto"></a>
+<a name="example_v2_example_service-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## example/v1/example_service.proto
+## example/v2/example_service.proto
 
 
 
-<a name="example-v1-AddExampleRequest"></a>
+<a name="example-v2-AddExampleRequest"></a>
 
 ### AddExampleRequest
 AddExampleRequest contains the parameters required to create an example.
@@ -41,13 +41,14 @@ AddExampleRequest contains the parameters required to create an example.
 | ----- | ---- | ----- | ----------- |
 | text | [string](#string) |  | The example itself. |
 | description | [string](#string) | optional | Optional description of the example. |
+| is_visible | [bool](#bool) |  | Whether the example is visible to users. |
 
 
 
 
 
 
-<a name="example-v1-AddExampleResponse"></a>
+<a name="example-v2-AddExampleResponse"></a>
 
 ### AddExampleResponse
 Response contains the created example.
@@ -55,14 +56,14 @@ Response contains the created example.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| example | [Example](#example-v1-Example) |  |  |
+| example | [Example](#example-v2-Example) |  |  |
 
 
 
 
 
 
-<a name="example-v1-ExampleResponse"></a>
+<a name="example-v2-ExampleResponse"></a>
 
 ### ExampleResponse
 
@@ -70,14 +71,14 @@ Response contains the created example.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| example | [Example](#example-v1-Example) |  |  |
+| example | [Example](#example-v2-Example) |  |  |
 
 
 
 
 
 
-<a name="example-v1-GetExampleRequest"></a>
+<a name="example-v2-GetExampleRequest"></a>
 
 ### GetExampleRequest
 GetExampleRequest gets an example by its ID.
@@ -92,7 +93,7 @@ GetExampleRequest gets an example by its ID.
 
 
 
-<a name="example-v1-GetExampleResponse"></a>
+<a name="example-v2-GetExampleResponse"></a>
 
 ### GetExampleResponse
 
@@ -100,14 +101,14 @@ GetExampleRequest gets an example by its ID.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| example | [Example](#example-v1-Example) |  |  |
+| example | [Example](#example-v2-Example) |  |  |
 
 
 
 
 
 
-<a name="example-v1-ListExamplesRequest"></a>
+<a name="example-v2-ListExamplesRequest"></a>
 
 ### ListExamplesRequest
 ListExamplesRequest streams examples from the server.
@@ -122,7 +123,7 @@ ListExamplesRequest streams examples from the server.
 
 
 
-<a name="example-v1-RemoveExampleRequest"></a>
+<a name="example-v2-RemoveExampleRequest"></a>
 
 ### RemoveExampleRequest
 RemoveExampleRequest removes an example by its ID.
@@ -137,7 +138,7 @@ RemoveExampleRequest removes an example by its ID.
 
 
 
-<a name="example-v1-RemoveExampleResponse"></a>
+<a name="example-v2-RemoveExampleResponse"></a>
 
 ### RemoveExampleResponse
 
@@ -152,7 +153,7 @@ RemoveExampleRequest removes an example by its ID.
 
 
 
-<a name="example-v1-UpdateExampleRequest"></a>
+<a name="example-v2-UpdateExampleRequest"></a>
 
 ### UpdateExampleRequest
 UpdateExampleRequest contains updateable fields inside an example.
@@ -162,13 +163,14 @@ UpdateExampleRequest contains updateable fields inside an example.
 | ----- | ---- | ----- | ----------- |
 | text | [string](#string) | optional | Optional update of the example text. |
 | description | [string](#string) | optional | Optional update of the example description. |
+| is_visible | [bool](#bool) | optional | Optional update of example visibility. |
 
 
 
 
 
 
-<a name="example-v1-UpdateExampleResponse"></a>
+<a name="example-v2-UpdateExampleResponse"></a>
 
 ### UpdateExampleResponse
 Response with updated example.
@@ -176,7 +178,7 @@ Response with updated example.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| example | [Example](#example-v1-Example) |  |  |
+| example | [Example](#example-v2-Example) |  |  |
 
 
 
@@ -189,7 +191,7 @@ Response with updated example.
  
 
 
-<a name="example-v1-ExampleService"></a>
+<a name="example-v2-ExampleService"></a>
 
 ### ExampleService
 ExamplesService is a sample service to display how documentation in protos will work.
@@ -197,24 +199,24 @@ The service implements a basic CRUD API and contains server streaming example.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| AddExample | [AddExampleRequest](#example-v1-AddExampleRequest) | [AddExampleResponse](#example-v1-AddExampleResponse) | AddExample adds the given example to the system. |
-| UpdateExample | [UpdateExampleRequest](#example-v1-UpdateExampleRequest) | [UpdateExampleResponse](#example-v1-UpdateExampleResponse) | UpdateExample updates the given example. Throws an error if the example was not found. |
-| GetExample | [GetExampleRequest](#example-v1-GetExampleRequest) | [GetExampleResponse](#example-v1-GetExampleResponse) | GetExample returns the requested example. |
-| ListExamples | [ListExamplesRequest](#example-v1-ListExamplesRequest) | [ExampleResponse](#example-v1-ExampleResponse) stream | ListExamples streams the requested examples. |
-| RemoveExample | [RemoveExampleRequest](#example-v1-RemoveExampleRequest) | [RemoveExampleResponse](#example-v1-RemoveExampleResponse) | RemoveExample removes the provided example from the system. Fails silently if the example was not found. |
+| AddExample | [AddExampleRequest](#example-v2-AddExampleRequest) | [AddExampleResponse](#example-v2-AddExampleResponse) | AddExample adds the given example to the system. |
+| UpdateExample | [UpdateExampleRequest](#example-v2-UpdateExampleRequest) | [UpdateExampleResponse](#example-v2-UpdateExampleResponse) | UpdateExample updates the given example. Throws an error if the example was not found. |
+| GetExample | [GetExampleRequest](#example-v2-GetExampleRequest) | [GetExampleResponse](#example-v2-GetExampleResponse) | GetExample returns the requested example. |
+| ListExamples | [ListExamplesRequest](#example-v2-ListExamplesRequest) | [ExampleResponse](#example-v2-ExampleResponse) stream | ListExamples streams the requested examples. |
+| RemoveExample | [RemoveExampleRequest](#example-v2-RemoveExampleRequest) | [RemoveExampleResponse](#example-v2-RemoveExampleResponse) | RemoveExample removes the provided example from the system. Fails silently if the example was not found. |
 
  
 
 
 
-<a name="example_v1_example-proto"></a>
+<a name="example_v2_example-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## example/v1/example.proto
+## example/v2/example.proto
 
 
 
-<a name="example-v1-Example"></a>
+<a name="example-v2-Example"></a>
 
 ### Example
 Example is the core model of this package.
@@ -225,6 +227,7 @@ Example is the core model of this package.
 | id | [string](#string) |  | `id` is generated by the system when a new example is created. It is required to refer to an example in any future operations (like update or remove). |
 | text | [string](#string) |  | The example itself. |
 | description | [string](#string) | optional | Optional description of the example. |
+| is_visible | [bool](#bool) |  | Whether the example is visible to users. |
 | created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Example creation time. |
 | updated_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Example last update time. |
 
