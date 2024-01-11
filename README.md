@@ -1,5 +1,7 @@
 # Synq API
 
+[![generate docs](https://github.com/getsynq/api/actions/workflows/generate_docs.yaml/badge.svg)](https://github.com/getsynq/api/actions/workflows/generate_docs.yaml)
+
 ## Protos
 
 The Synq API protos are present in the directory `./protos`. The generated docs for the same are available in `./docs`.

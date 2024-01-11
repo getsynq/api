@@ -54,3 +54,4 @@ on:
     paths:
       - 'protos/**'
       - 'generate_docs.sh'
+      - '.github/workflows/generate_docs.yaml'
