@@ -1,13 +1,13 @@
 name: generate docs
 on:
-  workflow_dispatch:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'protos/**'
       - 'generate_docs.sh'
       - '.github/workflows/generate_docs.yaml'
+  workflow_dispatch:
 
 concurrency:
   cancel-in-progress: true
