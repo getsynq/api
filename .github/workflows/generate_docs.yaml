@@ -1,3 +1,14 @@
+name: generate docs
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'protos/**'
+      - 'generate_docs.sh'
+      - '.github/workflows/generate_docs.yaml'
+
 concurrency:
   cancel-in-progress: true
   group: api-generate-docs-${{ github.head_ref || github.run_id }}
@@ -45,13 +56,3 @@ jobs:
         git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
         git push
     timeout-minutes: 5
-
-name: generate docs
-on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'protos/**'
-      - 'generate_docs.sh'
-      - '.github/workflows/generate_docs.yaml'
