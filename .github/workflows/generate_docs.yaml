@@ -33,10 +33,10 @@ jobs:
       with:
         go-version: "1.21"
     - name: Install Protoc
-      uses: arduino/setup-protoc@v1.1.2
+      uses: arduino/setup-protoc@v2
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        version: 3.21.0
+        version: "21.x"
     - name: Install protoc generators
       run: |
         go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
@@ -45,8 +45,6 @@ jobs:
       with:
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
         ssh-private-key: ${{ secrets.GH_ACTION_SSH_KEY }}
-    - name: Configure git
-      run: git config --global --add url."git@github.com:".insteadOf "https://github.com/"
     - name: Generate and push
       run: |
         bash generate_docs.sh
