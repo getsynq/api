@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package example.v1;
+package example.v2;
 
 import "google/protobuf/timestamp.proto";
 
@@ -15,6 +15,7 @@ message Example {
     /* The example itself. */
     string text = 2;
     optional string description = 3; /// Optional description of the example.
-    google.protobuf.Timestamp created_at = 4; /// Example creation time.
-    google.protobuf.Timestamp updated_at = 5; /// Example last update time.
+    bool is_visible = 4; /// Whether the example is visible to users.
+    google.protobuf.Timestamp created_at = 5; /// Example creation time.
+    google.protobuf.Timestamp updated_at = 6; /// Example last update time.
 }

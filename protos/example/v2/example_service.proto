@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package example.v1;
+package example.v2;
 
-import "example/v1/example.proto";
+import "example/v2/example.proto";
 
 
 // ExamplesService is a sample service to display how documentation in protos will work.
@@ -33,6 +33,7 @@ message AddExampleRequest {
     /* The example itself. */
     string text = 1;
     optional string description = 2; /// Optional description of the example.
+    bool is_visible = 3; /// Whether the example is visible to users. 
 }
 
 // Response contains the created example.
@@ -46,6 +47,7 @@ message AddExampleResponse {
 message UpdateExampleRequest {
     optional string text = 1; /// Optional update of the example text.
     optional string description = 2; /// Optional update of the example description.
+    optional bool is_visible = 3; /// Optional update of example visibility. 
 }
 
 // Response with updated example.
