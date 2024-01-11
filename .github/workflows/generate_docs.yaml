@@ -40,11 +40,6 @@ jobs:
     - name: Install protoc generators
       run: |
         go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
-    - name: Configure ssh agent
-      uses: webfactory/ssh-agent@v0.5.4
-      with:
-        known_hosts: ${{ secrets.KNOWN_HOSTS }}
-        ssh-private-key: ${{ secrets.GH_ACTION_SSH_KEY }}
     - name: Generate and push
       run: |
         bash generate_docs.sh
