@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package schemas.v1;
+
+import "schemas/v1/lineage.proto";
+
+option go_package = "github.com/getsynq/cloud/api/schemas/v1";
+
+service LineageService {
+  rpc GetLineage(GetLineageRequest) returns (GetLineageResponse) {}
+}
+
+message GetLineageRequest {
+  LineageDirection lineage_direction = 1;
+  oneof start_point {
+    Paths paths = 2;
+    PathColumns path_columns = 3;
+  }
+  optional int32 max_depth = 4;
+}
+
+message GetLineageResponse {
+  Lineage lineage = 1;
+}
+
+// Direction of the lineage to query.
+// Defaults to UNSPECIFIED, which includes both upstream and downstream.
+enum LineageDirection {
+  LINEAGE_DIRECTION_UNSPECIFIED = 0;
+  LINEAGE_DIRECTION_UPSTREAM = 1;
+  LINEAGE_DIRECTION_DOWNSTREAM = 2;
+}
+
+message Paths {
+  repeated string paths = 1;
+}
+
+message PathColumns {
+  string path = 1;
+  repeated string columns = 2;
+}

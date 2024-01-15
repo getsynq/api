@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package schemas.v1;
+
+import "core/v1/asset_type.proto";
+import "core/v1/platforms.proto";
+
+option go_package = "github.com/getsynq/cloud/api/schemas/v1";
+
+// Identity of an asset.
+message Identity {
+  string path = 1;
+  core.v1.AssetType asset_type = 2;
+  core.v1.Platform platform = 3;
+  string name = 4;
+  repeated string full_name = 5;
+}

@@ -1,0 +1,26 @@
+syntax = "proto3";
+package core.v1;
+
+option go_package = "github.com/getsynq/cloud/api/core/v1";
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_BIGQUERY = 10;
+  PLATFORM_LOOKER = 20;
+  PLATFORM_DBT = 30;
+  PLATFORM_DBT_CLOUD = 31;
+  PLATFORM_DBT_SELF_HOSTED = 32;
+  PLATFORM_SNOWFLAKE = 50;
+  PLATFORM_GCP = 60;
+  PLATFORM_GIT = 70;
+  PLATFORM_REDSHIFT = 80;
+  PLATFORM_DATAHUB = 90 [deprecated = true]; // That platform should not be used, all assets should have platform of the datahub platform type.
+  PLATFORM_TABLEAU = 110;
+  PLATFORM_AIRFLOW = 120;
+  PLATFORM_CLICKHOUSE = 130;
+  //reserver 140; // ANOMALY
+  //reserverd 150;// OWNERS/DATAPRODUCTS
+  PLATFORM_POSTGRES = 160;
+  PLATFORM_MYSQL = 170;
+  PLATFORM_SYNQ = 1000;
+}

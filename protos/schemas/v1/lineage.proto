@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package schemas.v1;
+
+import "schemas/v1/identity.proto";
+
+option go_package = "github.com/getsynq/cloud/api/schemas/v1";
+
+// Column in a table-like asset used in CLL mode.
+message Column {
+  string name = 1;
+  string human_name = 2;
+  string native_type = 3;
+}
+
+// Indicates data flow between nodes. Source node was used to compute value of target node or in filtration.
+message NodeDependency {
+  uint32 source_node_id = 1;
+  uint32 target_node_id = 2;
+}
+
+// Indicates data flow between columns. Source column was used to compute value of target column.
+message ColumnDependency {
+  uint32 source_node_id = 1;
+  string source_node_column = 2;
+  uint32 target_node_id = 3;
+  string target_node_column = 4;
+}
+
+// Indicates that the result of target_node_id was filtered in some way by the source column.
+message SelectionDependency {
+  uint32 source_node_id = 1;
+  string source_node_column = 2;
+  uint32 target_node_id = 3;
+}
+
+enum CllState {
+  // Unspecified state.
+  CLL_STATE_UNSPECIFIED = 0;
+  // Parsing of the asset SQL failed. No upstream dependencies can be found.
+  CLL_STATE_PARSE_FAILED = 1;
+  // Extraction of the asset SQL failed. Some unsupported SQL features may be used. Some things might be missing.
+  CLL_STATE_EXTRACTION_FAILED = 2;
+  // Not all columns or tables were found upstream, lineage is not complete.
+  CLL_STATE_RESOLUTION_FAILED = 3;
+  // No known issues present.
+  CLL_STATE_OK = 10;
+}
+
+// Node in a lineage graph representing same identity (e.g. database table).
+message LineageNode {
+  // All other assets which have the same identity as this node. Must be at least one item. First identity should be the one "closest" to the start_point. e.g. if requesting lineage of a DBT source, first node identities will be from DBT as well, similarly when viewing table it will be other tables.
+  repeated Identity identities = 2;
+  // Populated only in CLL mode.
+  repeated Column columns = 3;
+  // Used to indicate that this is the "main" node in the lineage. Multiple nodes can be marked as such.
+  bool is_start_node = 4;
+  // Indicates that the node is downstream from the start point.
+  bool is_downstream = 5;
+  // Indicates that the node is upstream from the start point.
+  bool is_upstream = 6;
+  // Indicates CLL state of the node.
+  CllState cll_state = 7;
+  // Messages related to CLL problems.
+  repeated string cll_messages = 8;
+}
+
+message Lineage {
+  // Nodes in the lineage with their identities and columns.
+  repeated LineageNode nodes = 1;
+  // All edges in the lineage between nodes.
+  repeated NodeDependency node_dependencies = 2;
+
+  // Indicates whether the lineage was filtered by column lineage.
+  bool has_column_lineage = 3;
+  // Indicates data flow between columns. Source column was used to compute value of target column.
+  repeated ColumnDependency column_dependencies = 4;
+  // Indicates that the result of target_node_id was filtered in some way by the source column.
+  repeated SelectionDependency selection_dependencies = 5;
+}
