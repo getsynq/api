@@ -24,11 +24,11 @@ message GetLineageResponse {
 }
 
 // Direction of the lineage to query.
-// Defaults to UNSPECIFIED, which includes both upstream and downstream.
 enum LineageDirection {
   LINEAGE_DIRECTION_UNSPECIFIED = 0;
   LINEAGE_DIRECTION_UPSTREAM = 1;
   LINEAGE_DIRECTION_DOWNSTREAM = 2;
+  LINEAGE_DIRECTION_UPSTREAM_DOWNSTREAM = 3;
 }
 
 message Paths {

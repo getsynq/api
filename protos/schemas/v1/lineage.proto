@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package schemas.v1;
 
-import "schemas/v1/identity.proto";
+import "core/v1/entity.proto";
 
 option go_package = "github.com/getsynq/cloud/api/schemas/v1";
 
@@ -47,12 +47,12 @@ enum CllState {
   CLL_STATE_OK = 10;
 }
 
-// Node in a lineage graph representing same identity (e.g. database table).
+// Node in a lineage graph representing an entiity (e.g. database table).
 message LineageNode {
-  // All other assets which have the same identity as this node. Must be at least one item. First identity should be the one "closest" to the start_point. e.g. if requesting lineage of a DBT source, first node identities will be from DBT as well, similarly when viewing table it will be other tables.
-  repeated Identity identities = 2;
+  // All other entities which have the same identity as this node. Must be at least one item. First entity should be the one "closest" to the start_point. e.g. if requesting lineage of a DBT source, first node entities will be from DBT as well, similarly when viewing table it will be other tables.
+  repeated core.v1.Entity entities = 1;
   // Populated only in CLL mode.
-  repeated Column columns = 3;
+  repeated Column columns = 2;
   // Used to indicate that this is the "main" node in the lineage. Multiple nodes can be marked as such.
   bool is_start_node = 4;
   // Indicates that the node is downstream from the start point.
