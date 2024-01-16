@@ -9,8 +9,8 @@ option go_package = "github.com/getsynq/cloud/api/core/v1";
 
 // Synq Entity.
 message Entity {
-  string path = 1; // Unique path for entity reference.
-  EntityType type = 2;
+  string path = 1; // Unique path for entity.
+  EntityType type = 2; // Type of entity.
   string name = 3; // Human friendly name.
   // Optional reference to entity data.
   // Refer to API documentation to check whether data would be populated.
@@ -40,4 +40,10 @@ message MonitorSegmentRef {
   string monitor_path = 1;
   string metric_id = 2;
   string segment = 3;
+}
+
+// Fields for entity lookup.
+message EntityLookup {
+  string path = 1;
+  EntityType type = 2;
 }
