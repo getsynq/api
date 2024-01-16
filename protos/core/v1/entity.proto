@@ -24,15 +24,18 @@ message Entity {
   optional EntityRef data = 4;
 }
 
+// Reference to generic assets.
 message AssetRef {
-  string path = 1;
+  string asset_path = 1;
   Platform platform = 2;
 }
 
+// Reference to monitors.
 message MonitorRef {
   string monitor_path = 1;
 }
 
+// Reference to a monitor segment.
 message MonitorSegmentRef {
   string monitor_path = 1;
   string metric_id = 2;
