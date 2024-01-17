@@ -42,10 +42,10 @@ message GetLineageStartPoint {
 }
 
 message EntitiesStartPoint {
-  repeated core.v1.EntityLookup entities = 1;
+  repeated core.v1.EntityRef entities = 1;
 }
 
 message EntityColumnsStartPoint {
-  core.v1.EntityLookup entitiy = 1;
+  core.v1.EntityRef entitiy = 1;
   repeated string column_ids = 2;
 }

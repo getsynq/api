@@ -7,43 +7,36 @@ import "core/v1/platforms.proto";
 
 option go_package = "github.com/getsynq/cloud/api/core/v1";
 
-// Synq Entity.
-message Entity {
+// Lightweight reference to an Entity
+message EntityRef {
   string path = 1; // Unique path for entity.
   EntityType type = 2; // Type of entity.
-  string name = 3; // Human friendly name.
-  // Optional reference to entity data.
-  // Refer to API documentation to check whether data would be populated.
-  message EntityRef {
-    oneof ref {
-      AssetRef asset = 1;
-      MonitorRef monitor = 2;
-      MonitorSegmentRef monitor_segment = 3;
-    }
-  }
-  optional EntityRef data = 4;
+  optional string name = 3; // Human friendly name.
 }
 
-// Reference to generic assets.
-message AssetRef {
+// Entity in Synq.
+message Entity {
+  oneof data {
+    Asset asset = 1;
+    Monitor monitor = 2;
+    MonitorSegment monitor_segment = 3;
+  }
+}
+
+// Entity: Asset.
+message Asset {
   string asset_path = 1;
   Platform platform = 2;
 }
 
-// Reference to monitors.
-message MonitorRef {
+// Entity: Monitor
+message Monitor {
   string monitor_path = 1;
 }
 
-// Reference to a monitor segment.
-message MonitorSegmentRef {
+// Entity: Monitor Segment
+message MonitorSegment {
   string monitor_path = 1;
   string metric_id = 2;
   string segment = 3;
-}
-
-// Fields for entity lookup.
-message EntityLookup {
-  string path = 1;
-  EntityType type = 2;
 }

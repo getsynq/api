@@ -48,7 +48,7 @@ message LineageNode {
   // All entities which have the same identity as this node. Must be at least one item.
   // These are sorted by closeness to the type of the start point entities.
   // e.g. if requesting lineage of a DBT source, first entity should be from DBT, similarly when viewing table it will be other tables.
-  repeated core.v1.Entity entities = 1;
+  repeated core.v1.EntityRef entities = 1;
   // Position of the node in the lineage.
   NodePosition position = 2;
   // Populated only for Column Level Lineage (CLL).
