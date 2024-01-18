@@ -42,7 +42,7 @@ jobs:
         go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
     - name: Generate and push
       run: |
-        bash generate.sh
+        bash generate_docs.sh
         git config --global user.name "${{ env.CI_COMMIT_AUTHOR_NAME }}"
         git config --global user.email "${{ env.CI_COMMIT_AUTHOR_EMAIL }}"
         git add docs
