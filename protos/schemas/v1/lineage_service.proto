@@ -4,7 +4,7 @@ package schemas.v1;
 
 import "schemas/v1/lineage.proto";
 
-option go_package = "github.com/getsynq/cloud/api/schemas/v1";
+option go_package = "github.com/getsynq/api/schemas/v1";
 
 import "core/v1/entity.proto";
 

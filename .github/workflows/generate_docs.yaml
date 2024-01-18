@@ -21,7 +21,7 @@ jobs:
     if: '!contains(github.event.commits[0].message, ''ci skip'')'
     runs-on: ubuntu-latest
     env: 
-      CI_COMMIT_MESSAGE: CI generated docs
+      CI_COMMIT_MESSAGE: Generated API Docs
       CI_COMMIT_AUTHOR_NAME: Synqlair
       CI_COMMIT_AUTHOR_EMAIL: ci@synq.io
     steps:

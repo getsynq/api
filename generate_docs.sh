@@ -15,6 +15,7 @@ set -e
 rm -rf $DOCS_DIR
 mkdir -p $DOCS_DIR
 
+
 entity_dirs=`find $PROTOS_DIR -maxdepth 1 -mindepth 1 -type d`
 for entity_dir in $entity_dirs; do
     entity=`basename $entity_dir`
@@ -22,7 +23,10 @@ for entity_dir in $entity_dirs; do
     for version_dir in $version_dirs; do
         version=`basename $version_dir`
         proto_files=`find $version_dir -name *.proto -type f`
-        protoc --proto_path=${PROTOS_DIR} --doc_out=${DOCS_DIR} --doc_opt=markdown,${entity}_${version}.md ${proto_files}
+        protoc --proto_path=${PROTOS_DIR} \
+            --doc_out=${DOCS_DIR} \
+            --doc_opt=markdown,${entity}_${version}.md \
+            ${proto_files}
     done
 done
 
