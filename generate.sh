@@ -2,6 +2,7 @@
 
 PROTOS_DIR="protos"
 DOCS_DIR="docs"
+GEN_DIR="gen"
 
 # Expected structure of protos dir for document generation.
 #
@@ -15,6 +16,10 @@ set -e
 rm -rf $DOCS_DIR
 mkdir -p $DOCS_DIR
 
+rm -rf $GEN_DIR
+mkdir -p $GEN_DIR
+
+PREFIX="github.com/getsynq/api"
 entity_dirs=`find $PROTOS_DIR -maxdepth 1 -mindepth 1 -type d`
 for entity_dir in $entity_dirs; do
     entity=`basename $entity_dir`
@@ -22,9 +27,20 @@ for entity_dir in $entity_dirs; do
     for version_dir in $version_dirs; do
         version=`basename $version_dir`
         proto_files=`find $version_dir -name *.proto -type f`
-        protoc --proto_path=${PROTOS_DIR} --doc_out=${DOCS_DIR} --doc_opt=markdown,${entity}_${version}.md ${proto_files}
+        protoc --proto_path=${PROTOS_DIR} \
+            --doc_out=${DOCS_DIR} \
+            --doc_opt=markdown,${entity}_${version}.md \
+            --go_out=${GEN_DIR} \
+            --go_opt=module=${PREFIX} \
+	        --go-grpc_out=${GEN_DIR} \
+            --go-grpc_opt=module=${PREFIX} \
+            ${proto_files}
     done
 done
+
+cd $GEN_DIR
+go mod init $PREFIX
+go mod tidy
 
 set +e
 exit 0

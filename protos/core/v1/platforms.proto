@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package core.v1;
 
-option go_package = "github.com/getsynq/cloud/api/core/v1";
+option go_package = "github.com/getsynq/api/core/v1";
 
 // Platforms supported by Synq.
 enum Platform {

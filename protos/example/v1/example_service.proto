@@ -4,6 +4,8 @@ package example.v1;
 
 import "example/v1/example.proto";
 
+option go_package = "github.com/getsynq/api/example/v1";
+
 
 // ExamplesService is a sample service to display how documentation in protos will work.
 // The service implements a basic CRUD API and contains server streaming example.

@@ -5,7 +5,7 @@ package core.v1;
 import "core/v1/entity_type.proto";
 import "core/v1/platforms.proto";
 
-option go_package = "github.com/getsynq/cloud/api/core/v1";
+option go_package = "github.com/getsynq/api/core/v1";
 
 // Lightweight reference to an Entity
 message EntityRef {
