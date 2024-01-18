@@ -17,6 +17,12 @@ import (
 	schemasv1 "github.com/getsynq/api/schemas/v1"
 )
 
+const (
+	apiUrl       = "https://api.synq.io/"
+	clientId     = os.Getenv("SYNQ_CLIENT_ID")
+	clientSecret = os.Getenv("SYNQ_CLIENT_SECRET")
+)
+
 // Bearer authentication
 type bearerAuth struct {
 	token string
@@ -48,7 +54,7 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	conn, err := grpc.Dial("localhost:8000", opts...)
+	conn, err := grpc.Dial(apiUrl, opts...)
 	if err != nil {
 		log.Fatalf("could not connect to server -> %+v", err)
 	}
@@ -82,16 +88,12 @@ func getToken() (string, error) {
 		AccessToken string `json:"access_token"`
 	}
 
-	tokenUrl := "http://localhost:8000/oauth2/token"
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
-
 	v := &url.Values{}
 	v.Set("client_id", clientID)
 	v.Set("client_secret", clientSecret)
 	v.Set("grant_type", "client_credentials")
 
-	req, err := http.NewRequest("POST", tokenUrl, strings.NewReader(v.Encode()))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%soauth2/token", apiUrl), strings.NewReader(v.Encode()))
 	if err != nil {
 		return "", err
 	}
