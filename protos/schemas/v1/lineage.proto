@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package schemas.v1;
+
+import "core/v1/entity.proto";
+
+option go_package = "github.com/getsynq/cloud/api/schemas/v1";
+
+// Lineage defines the lineage of table-like entities.
+message Lineage {
+  // Nodes in the lineage with their identities and columns.
+  repeated LineageNode nodes = 1;
+  // All edges in the lineage between nodes.
+  // This can be parsed to create a graph of all the nodes.
+  repeated NodeDependency node_dependencies = 2;
+
+  // Indicates whether the lineage was filtered for column level lineage (CLL).
+  bool is_cll = 3;
+  // Dependencies between columns. Populated only for CLL.
+  repeated ColumnDependency column_dependencies = 4;
+}
+
+// Indicates data flow between nodes.
+// Source nodes are used to compute value of target nodes.
+message NodeDependency {
+  uint32 source_node_idx = 1; // Index of source node in the lineage nodes list.
+  uint32 target_node_idx = 2; // Index of target node in the lineage nodes list.
+}
+
+// Indicates data flow between columns.
+// Source columns are used to compute value of target columns.
+message ColumnDependency {
+  uint32 source_node_idx = 1; // Index of source node in the lineage nodes list.
+  string source_node_column_id = 2;
+  uint32 target_node_idx = 3; // Index of target node in the lineage nodes list.
+  string target_node_column_id = 4;
+}
+
+enum NodePosition {
+  NODE_POSITION_UNSPECIFIED = 0;
+  NODE_POSITION_START_NODE = 1; // Node is one of the requested start point.
+  NODE_POSITION_UPSTREAM = 2; // Node is upstream of the requested start point.
+  NODE_POSITION_DOWNSTREAM = 3; // Node is downstream of the requested start point.
+}
+
+// Node in a lineage graph representing one or more entiities (e.g. database table).
+message LineageNode {
+  // All entities which have the same identity as this node. Must be at least one item.
+  // These are sorted by closeness to the type of the start point entities.
+  // e.g. if requesting lineage of a DBT source, first entity should be from DBT, similarly when viewing table it will be other tables.
+  repeated core.v1.EntityRef entities = 1;
+  // Position of the node in the lineage.
+  NodePosition position = 2;
+  // Populated only for Column Level Lineage (CLL).
+  optional CllDetails cll_details = 3;
+}
+
+message CllDetails {
+  // Column details for CLL.
+  repeated Column columns = 1;
+  // State of the CLL parse. UNSPECIFIED if CLL was not requested.
+  CllState cll_state = 2;
+  // Messages related to CLL.
+  // e.g. Description of parse errors, etc.
+  repeated string cll_messages = 3;
+}
+
+// Column in a table-like asset (used in CLL mode).
+message Column {
+  string column_id = 1; // ID string for the column. This is the parsed column name.
+  optional string name = 2;  // Original column name as fetched from the table.
+  optional string native_type = 3; // Column type as fetched from the table.
+}
+
+enum CllState {
+  // Unspecified state.
+  CLL_STATE_UNSPECIFIED = 0;
+  // Parsing of the asset SQL failed. No upstream dependencies can be found.
+  CLL_STATE_PARSE_FAILED = 1;
+  // Extraction of the asset SQL failed. Some unsupported SQL features may be used. Some details might be missing.
+  CLL_STATE_EXTRACTION_FAILED = 2;
+  // Not all columns or tables were found upstream, lineage is not complete.
+  CLL_STATE_RESOLUTION_FAILED = 3;
+  // No known issues present.
+  CLL_STATE_OK = 10;
+}
