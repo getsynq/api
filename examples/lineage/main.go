@@ -68,8 +68,8 @@ func main() {
 				Entities: &schemasv1.EntitiesStartPoint{
 					Entities: []*corev1.EntityRef{
 						{
-							Path: "asset_path1",
-							Type: corev1.EntityType_ENTITY_TYPE_UNSPECIFIED,
+							Path: "xxxxxxxxxxxxxxxxxxxxx",                   // replace with entity path
+							Type: corev1.EntityType_ENTITY_TYPE_UNSPECIFIED, // replace with entity type
 						},
 					},
 				},
