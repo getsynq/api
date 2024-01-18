@@ -5,7 +5,7 @@ on:
       - main
     paths:
       - 'protos/**'
-      - 'generate.sh'
+      - 'generate_docs.sh'
       - '.github/workflows/generate_docs.yaml'
   workflow_dispatch:
 
