@@ -4,7 +4,7 @@ package example.v1;
 
 import "example/v1/example.proto";
 
-option go_package = "github.com/getsynq/api/example/v1";
+option go_package = "github.com/getsynq/cloud/api/example/v1";
 
 
 // ExamplesService is a sample service to display how documentation in protos will work.
@@ -21,7 +21,7 @@ service ExampleService {
     rpc GetExample(GetExampleRequest) returns (GetExampleResponse) {}
 
     // ListExamples streams the requested examples.
-    rpc ListExamples(ListExamplesRequest) returns (stream ExampleResponse) {}
+    rpc ListExamples(ListExamplesRequest) returns (stream ListExamplesResponse) {}
 
     // RemoveExample removes the provided example from the system.
     // Fails silently if the example was not found.
@@ -46,8 +46,9 @@ message AddExampleResponse {
   * UpdateExampleRequest contains updateable fields inside an example.
   */
 message UpdateExampleRequest {
-    optional string text = 1; /// Optional update of the example text.
-    optional string description = 2; /// Optional update of the example description.
+    string id = 1; /// Id of the example to update
+    optional string text = 2; /// Optional update of the example text.
+    optional string description = 3; /// Optional update of the example description.
 }
 
 // Response with updated example.
@@ -70,6 +71,10 @@ message ListExamplesRequest {
 }
 
 message ExampleResponse {
+    Example example = 1;
+}
+
+message ListExamplesResponse {
     Example example = 1;
 }
 

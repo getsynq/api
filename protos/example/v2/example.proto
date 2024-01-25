@@ -4,7 +4,7 @@ package example.v2;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/getsynq/api/example/v2";
+option go_package = "github.com/getsynq/cloud/api/example/v2";
 
 
 /**
