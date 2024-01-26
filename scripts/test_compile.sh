@@ -39,12 +39,12 @@ DOCS_DIR="$GEN_DIR/_docs"
 mkdir -p $DOCS_DIR
 
 echo "Compiling protos from -> $PROTOS_DIR"
-entity_dirs=`find $PROTOS_DIR -maxdepth 1 -mindepth 1 -type d`
-for entity_dir in $entity_dirs; do
-    echo "processing $entity_dir"
-    entity=`basename $entity_dir`
-    mkdir "${DOCS_DIR}/${entity}"
-    version_dirs=`find $entity_dir -maxdepth 1 -mindepth 1 -type d`
+module_dirs=`find $PROTOS_DIR -maxdepth 1 -mindepth 1 -type d`
+for module_dir in $module_dirs; do
+    echo "processing $module_dir"
+    module=`basename $module_dir`
+    mkdir "${DOCS_DIR}/${module}"
+    version_dirs=`find $module_dir -maxdepth 1 -mindepth 1 -type d`
     for version_dir in $version_dirs; do
         version=`basename $version_dir`
         proto_files=`find $version_dir -name *.proto -type f`
@@ -52,13 +52,13 @@ for entity_dir in $entity_dirs; do
             protoc --proto_path=${PROTOS_DIR} \
                 --go_out=${GEN_DIR} \
                 --go-grpc_out=${GEN_DIR} \
-                --doc_out=${DOCS_DIR}/${entity} \
+                --doc_out=${DOCS_DIR}/${module} \
                 --doc_opt=markdown,${version}.md \
                 ${proto_files}
         fi
     done
-    if [ -z "$(ls -A ${DOCS_DIR}/${entity})" ]; then
-        rm -r "${DOCS_DIR}/${entity}"
+    if [ -z "$(ls -A ${DOCS_DIR}/${module})" ]; then
+        rm -r "${DOCS_DIR}/${module}"
     fi
 done
 
