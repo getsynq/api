@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROTOS_DIR=""
+PROTOS_DIR="."
 DOCS_DIR="./tmp"
 
 set -e
@@ -18,7 +18,7 @@ while [ : ]; do
         shift 2
         ;;
     -d | --docs)
-        GEN_DIR=$2
+        DOCS_DIR=$2
         shift 2
         ;;
     --) shift; 

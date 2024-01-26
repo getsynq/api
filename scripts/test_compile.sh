@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROTOS_DIR=""
+PROTOS_DIR="."
 GEN_DIR="./tmp"
 DIRTY=false
 
