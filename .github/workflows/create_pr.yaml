@@ -1,4 +1,4 @@
-name: create-pr
+name: Create PR from cloud-ci
 on:
   push:
     branches:
@@ -14,17 +14,31 @@ defaults:
 
 jobs:
   create-pr:
-    env: 
+    runs-on: ubuntu-latest
+    env:
       CI_COMMIT_AUTHOR_NAME: Synqlair
       CI_COMMIT_AUTHOR_EMAIL: ci@synq.io
     steps:
-    - name: Create PR
-      uses: peter-evans/create-pull-request@v4
+    - uses: actions/checkout@v2
       with:
-        author: "${{ env.CI_COMMIT_AUTHOR_NAME }} <${{ env.CI_COMMIT_AUTHOR_EMAIL }}>"
-        body: |+
-          :rocket: Publish the latest proto changes.
-        branch: cloud-ci
-        commit-message: Published by getsynq.
-        delete-branch: false
-        title: 'Publish to main'
+        fetch-depth: 0
+    - name: Check if PR exists
+      id: check
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        prs=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head 'cloud-ci' \
+            --base 'main' \
+            --json title \
+            --jq 'length')
+        if ((prs > 0)); then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Create pull request
+      if: '!steps.check.outputs.skip'
+      run: |
+        gh pr create -B main -H cloud-ci --title 'Publish protos' --body ':rocket: Publish the latest proto changes.'
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
