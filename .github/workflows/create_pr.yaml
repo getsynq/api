@@ -1,0 +1,30 @@
+name: create-pr
+on:
+  push:
+    branches:
+      - cloud-ci
+  workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: api-create-pr-${{ github.head_ref || github.run_id }}
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  create-pr:
+    env: 
+      CI_COMMIT_AUTHOR_NAME: Synqlair
+      CI_COMMIT_AUTHOR_EMAIL: ci@synq.io
+    steps:
+    - name: Create PR
+      uses: peter-evans/create-pull-request@v4
+      with:
+        author: "${{ env.CI_COMMIT_AUTHOR_NAME }} <${{ env.CI_COMMIT_AUTHOR_EMAIL }}>"
+        body: |+
+          :rocket: Publish the latest proto changes.
+        branch: cloud-ci
+        commit-message: Published by getsynq.
+        delete-branch: false
+        title: 'Publish to main'
