@@ -21,7 +21,7 @@ service ExampleService {
     rpc GetExample(GetExampleRequest) returns (GetExampleResponse) {}
 
     // ListExamples streams the requested examples.
-    rpc ListExamples(ListExamplesRequest) returns (stream ExampleResponse) {}
+    rpc ListExamples(ListExamplesRequest) returns (stream ListExamplesResponse) {}
 
     // RemoveExample removes the provided example from the system.
     // Fails silently if the example was not found.
@@ -71,9 +71,14 @@ message ListExamplesRequest {
     repeated string ids = 1;
 }
 
+message ListExamplesResponse {
+    Example example = 1;
+}
+
 message ExampleResponse {
     Example example = 1;
 }
+
 
 // RemoveExampleRequest removes an example by its ID.
 message RemoveExampleRequest {
