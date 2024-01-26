@@ -24,6 +24,7 @@ jobs:
         author: "${{ env.CI_COMMIT_AUTHOR_NAME }} <${{ env.CI_COMMIT_AUTHOR_EMAIL }}>"
         body: |+
           :rocket: Publish the latest proto changes.
+        base: main
         branch: cloud-ci
         commit-message: Published by getsynq.
         delete-branch: false
