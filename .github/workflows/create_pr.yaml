@@ -19,8 +19,10 @@ jobs:
       CI_COMMIT_AUTHOR_NAME: Synqlair
       CI_COMMIT_AUTHOR_EMAIL: ci@synq.io
     steps:
-    - name: Create PR
-      uses: peter-evans/create-pull-request@v4
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: peter-evans/create-pull-request@v4
       with:
         author: "${{ env.CI_COMMIT_AUTHOR_NAME }} <${{ env.CI_COMMIT_AUTHOR_EMAIL }}>"
         body: |+
