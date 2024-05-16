@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
-TEMPLATE = "$MY_PATH/../templates/grpc-md.tmpl"
+TEMPLATE="$MY_PATH/../templates/grpc-md.tmpl"
 
 PROTOS_DIR="."
 DOCS_DIR="./tmp"
@@ -52,7 +52,7 @@ for module_dir in $module_dirs; do
         proto_files=`find $version_dir -name *.proto -type f`
         if [[ "${proto_files}" != "" ]]; then
             protoc --proto_path=${PROTOS_DIR} $PROTOC_OPTS \
-                --doc_out=$TEMPLATE,"${version}.mdx:${DOCS_DIR}/${module}/" \
+                --doc_out="$TEMPLATE,${version}.mdx:${DOCS_DIR}/${module}/" \
                 ${proto_files}
         fi
     done

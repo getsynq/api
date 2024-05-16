@@ -28,7 +28,7 @@ for pd in "${proto_dirs[@]}"; do
     # ensure dest exists
     mkdir -p $dest
     echo "$pd -> $dest"
-    rsync -avW --include='*.proto' --no-compress "${pd}/" "${dest}/" --delete
+    rsync -avW --include='*.proto' "${pd}/" "${dest}/" --delete
 done
 
 set +e

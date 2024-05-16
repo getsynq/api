@@ -1,1446 +1,464 @@
-<!DOCTYPE html>
-
-<html>
-  <head>
-    <title>Protocol Documentation</title>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
-    <style>
-      body {
-        width: 60em;
-        margin: 1em auto;
-        color: #222;
-        font-family: "Ubuntu", sans-serif;
-        padding-bottom: 4em;
-      }
-
-      h1 {
-        font-weight: normal;
-        border-bottom: 1px solid #aaa;
-        padding-bottom: 0.5ex;
-      }
-
-      h2 {
-        border-bottom: 1px solid #aaa;
-        padding-bottom: 0.5ex;
-        margin: 1.5em 0;
-      }
-
-      h3 {
-        font-weight: normal;
-        border-bottom: 1px solid #aaa;
-        padding-bottom: 0.5ex;
-      }
-
-      a {
-        text-decoration: none;
-        color: #567e25;
-      }
-
-      table {
-        width: 100%;
-        font-size: 80%;
-        border-collapse: collapse;
-      }
-
-      thead {
-        font-weight: 700;
-        background-color: #dcdcdc;
-      }
-
-      tbody tr:nth-child(even) {
-        background-color: #fbfbfb;
-      }
-
-      td {
-        border: 1px solid #ccc;
-        padding: 0.5ex 2ex;
-      }
-
-      td p {
-        text-indent: 1em;
-        margin: 0;
-      }
-
-      td p:nth-child(1) {
-        text-indent: 0;  
-      }
-
-       
-      .field-table td:nth-child(1) {  
-        width: 10em;
-      }
-      .field-table td:nth-child(2) {  
-        width: 10em;
-      }
-      .field-table td:nth-child(3) {  
-        width: 6em;
-      }
-      .field-table td:nth-child(4) {  
-        width: auto;
-      }
-
-       
-      .extension-table td:nth-child(1) {  
-        width: 10em;
-      }
-      .extension-table td:nth-child(2) {  
-        width: 10em;
-      }
-      .extension-table td:nth-child(3) {  
-        width: 10em;
-      }
-      .extension-table td:nth-child(4) {  
-        width: 5em;
-      }
-      .extension-table td:nth-child(5) {  
-        width: auto;
-      }
-
-       
-      .enum-table td:nth-child(1) {  
-        width: 10em;
-      }
-      .enum-table td:nth-child(2) {  
-        width: 10em;
-      }
-      .enum-table td:nth-child(3) {  
-        width: auto;
-      }
-
-       
-      .scalar-value-types-table tr {
-        height: 3em;
-      }
-
-       
-      #toc-container ul {
-        list-style-type: none;
-        padding-left: 1em;
-        line-height: 180%;
-        margin: 0;
-      }
-      #toc > li > a {
-        font-weight: bold;
-      }
-
-       
-      .file-heading {
-        width: 100%;
-        display: table;
-        border-bottom: 1px solid #aaa;
-        margin: 4em 0 1.5em 0;
-      }
-      .file-heading h2 {
-        border: none;
-        display: table-cell;
-      }
-      .file-heading a {
-        text-align: right;
-        display: table-cell;
-      }
-
-       
-      .badge {
-        width: 1.6em;
-        height: 1.6em;
-        display: inline-block;
-
-        line-height: 1.6em;
-        text-align: center;
-        font-weight: bold;
-        font-size: 60%;
-
-        color: #89ba48;
-        background-color: #dff0c8;
-
-        margin: 0.5ex 1em 0.5ex -1em;
-        border: 1px solid #fbfbfb;
-        border-radius: 1ex;
-      }
-    </style>
-
-    
-    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
-  </head>
-
-  <body>
-
-    <h1 id="title">Protocol Documentation</h1>
-
-    <h2>Table of Contents</h2>
-
-    <div id="toc-container">
-      <ul id="toc">
-        
-          
-          <li>
-            <a href="#synq%2fentities%2fv1%2fentities_service.proto">synq/entities/v1/entities_service.proto</a>
-            <ul>
-              
-                <li>
-                  <a href="#synq.entities.v1.BatchGetEntitiesRequest"><span class="badge">M</span>BatchGetEntitiesRequest</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.BatchGetEntitiesResponse"><span class="badge">M</span>BatchGetEntitiesResponse</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DeleteEntityRequest"><span class="badge">M</span>DeleteEntityRequest</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DeleteEntityResponse"><span class="badge">M</span>DeleteEntityResponse</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.GetEntityRequest"><span class="badge">M</span>GetEntityRequest</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.GetEntityResponse"><span class="badge">M</span>GetEntityResponse</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.UpsertEntityRequest"><span class="badge">M</span>UpsertEntityRequest</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.UpsertEntityResponse"><span class="badge">M</span>UpsertEntityResponse</a>
-                </li>
-              
-              
-              
-              
-                <li>
-                  <a href="#synq.entities.v1.EntitiesService"><span class="badge">S</span>EntitiesService</a>
-                </li>
-              
-            </ul>
-          </li>
-        
-          
-          <li>
-            <a href="#synq%2fentities%2fv1%2fidentifiers.proto">synq/entities/v1/identifiers.proto</a>
-            <ul>
-              
-                <li>
-                  <a href="#synq.entities.v1.AirflowDagIdentifier"><span class="badge">M</span>AirflowDagIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.AirflowTaskIdentifier"><span class="badge">M</span>AirflowTaskIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.BigqueryTableIdentifier"><span class="badge">M</span>BigqueryTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.ClickhouseTableIdentifier"><span class="badge">M</span>ClickhouseTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.CustomIdentifier"><span class="badge">M</span>CustomIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DatabricksTableIdentifier"><span class="badge">M</span>DatabricksTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DataproductIdentifier"><span class="badge">M</span>DataproductIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DbtCloudNodeIdentifier"><span class="badge">M</span>DbtCloudNodeIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.DbtCoreNodeIdentifier"><span class="badge">M</span>DbtCoreNodeIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.Identifier"><span class="badge">M</span>Identifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.MysqlTableIdentifier"><span class="badge">M</span>MysqlTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.PostgresTableIdentifier"><span class="badge">M</span>PostgresTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.RedshiftTableIdentifier"><span class="badge">M</span>RedshiftTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.SnowflakeTableIdentifier"><span class="badge">M</span>SnowflakeTableIdentifier</a>
-                </li>
-              
-                <li>
-                  <a href="#synq.entities.v1.SynqPathIdentifier"><span class="badge">M</span>SynqPathIdentifier</a>
-                </li>
-              
-              
-              
-              
-            </ul>
-          </li>
-        
-          
-          <li>
-            <a href="#synq%2fentities%2fv1%2fentities.proto">synq/entities/v1/entities.proto</a>
-            <ul>
-              
-                <li>
-                  <a href="#synq.entities.v1.Entity"><span class="badge">M</span>Entity</a>
-                </li>
-              
-              
-              
-              
-            </ul>
-          </li>
-        
-        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
-      </ul>
-    </div>
-
-    
-      
-      <div class="file-heading">
-        <h2 id="synq/entities/v1/entities_service.proto">synq/entities/v1/entities_service.proto</h2><a href="#title">Top</a>
-      </div>
-      <p></p>
-
-      
-        <h3 id="synq.entities.v1.BatchGetEntitiesRequest">BatchGetEntitiesRequest</h3>
-        <p>BatchGetEntitiesRequest is the request message for the BatchGetEntities method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>ids</td>
-                  <td><a href="#synq.entities.v1.Identifier">Identifier</a></td>
-                  <td>repeated</td>
-                  <td><p>Identifiers of the entities to get. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.BatchGetEntitiesResponse">BatchGetEntitiesResponse</h3>
-        <p>BatchGetEntitiesResponse is the response message for the BatchGetEntities method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>entities</td>
-                  <td><a href="#synq.entities.v1.Entity">Entity</a></td>
-                  <td>repeated</td>
-                  <td><p>The entities that were retrieved. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DeleteEntityRequest">DeleteEntityRequest</h3>
-        <p>DeleteEntityRequest is the request message for the DeleteEntity method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#synq.entities.v1.Identifier">Identifier</a></td>
-                  <td></td>
-                  <td><p>Identifier of the entity to delete. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DeleteEntityResponse">DeleteEntityResponse</h3>
-        <p>DeleteEntityResponse is the response message for the DeleteEntity method.</p>
-
-        
-
-        
-      
-        <h3 id="synq.entities.v1.GetEntityRequest">GetEntityRequest</h3>
-        <p>GetEntityRequest is the request message for the GetEntity method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#synq.entities.v1.Identifier">Identifier</a></td>
-                  <td></td>
-                  <td><p>Identifier of the entity to get. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.GetEntityResponse">GetEntityResponse</h3>
-        <p>GetEntityResponse is the response message for the GetEntity method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>entity</td>
-                  <td><a href="#synq.entities.v1.Entity">Entity</a></td>
-                  <td></td>
-                  <td><p>The entity that was retrieved. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.UpsertEntityRequest">UpsertEntityRequest</h3>
-        <p>UpsertEntityRequest is the request message for the UpsertEntity method.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>entity</td>
-                  <td><a href="#synq.entities.v1.Entity">Entity</a></td>
-                  <td></td>
-                  <td><p>The entity to create or update. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.UpsertEntityResponse">UpsertEntityResponse</h3>
-        <p>UpsertEntityResponse is the response message for the UpsertEntity method.</p>
-
-        
-
-        
-      
-
-      
-
-      
-
-      
-        <h3 id="synq.entities.v1.EntitiesService">EntitiesService</h3>
-        <p>EntitiesService is a service for managing custom entities. Entities can represent</p><p>various data platform concepts such as services, consumers, applications or data pipelines</p><p>that are not natively available in Synq.</p><p>Entities are identified by a unique identifier and can be created, updated, read and deleted.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>GetEntity</td>
-                <td><a href="#synq.entities.v1.GetEntityRequest">GetEntityRequest</a></td>
-                <td><a href="#synq.entities.v1.GetEntityResponse">GetEntityResponse</a></td>
-                <td><p>Get specific entity by its identifier.</p></td>
-              </tr>
-            
-              <tr>
-                <td>BatchGetEntities</td>
-                <td><a href="#synq.entities.v1.BatchGetEntitiesRequest">BatchGetEntitiesRequest</a></td>
-                <td><a href="#synq.entities.v1.BatchGetEntitiesResponse">BatchGetEntitiesResponse</a></td>
-                <td><p>Get multiple entities by their identifiers.</p></td>
-              </tr>
-            
-              <tr>
-                <td>UpsertEntity</td>
-                <td><a href="#synq.entities.v1.UpsertEntityRequest">UpsertEntityRequest</a></td>
-                <td><a href="#synq.entities.v1.UpsertEntityResponse">UpsertEntityResponse</a></td>
-                <td><p>Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.</p></td>
-              </tr>
-            
-              <tr>
-                <td>DeleteEntity</td>
-                <td><a href="#synq.entities.v1.DeleteEntityRequest">DeleteEntityRequest</a></td>
-                <td><a href="#synq.entities.v1.DeleteEntityResponse">DeleteEntityResponse</a></td>
-                <td><p>Delete an entity by its identifier. If the entity does not exist, it will be a no-op.</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-
-        
-    
-      
-      <div class="file-heading">
-        <h2 id="synq/entities/v1/identifiers.proto">synq/entities/v1/identifiers.proto</h2><a href="#title">Top</a>
-      </div>
-      <p></p>
-
-      
-        <h3 id="synq.entities.v1.AirflowDagIdentifier">AirflowDagIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>integration_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Synq integration_id that identifies the Airflow instance </p></td>
-                </tr>
-              
-                <tr>
-                  <td>dag_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Airflow dag_id that identifies the DAG </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.AirflowTaskIdentifier">AirflowTaskIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>integration_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Synq integration_id that identifies the Airflow instance </p></td>
-                </tr>
-              
-                <tr>
-                  <td>dag_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Airflow dag_id that identifies the DAG </p></td>
-                </tr>
-              
-                <tr>
-                  <td>task_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Airflow task_id that identifies the task within the DAG </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.BigqueryTableIdentifier">BigqueryTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>project</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>BigQuery project </p></td>
-                </tr>
-              
-                <tr>
-                  <td>dataset</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>BigQuery dataset id </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>BigQuery table name </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.ClickhouseTableIdentifier">ClickhouseTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>host</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Clickhouse host inclusive of port </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Clickhouse database </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Clickhouse table </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.CustomIdentifier">CustomIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Id that identifies the custom entity
-The Id should be unique within the custom entity Identifier. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DatabricksTableIdentifier">DatabricksTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>workspace</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>catalog</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Databricks catalog </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Databricks schema </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Databricks table or view </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DataproductIdentifier">DataproductIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Dataproduct id that identifies the Dataproduct </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DbtCloudNodeIdentifier">DbtCloudNodeIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>project_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Your dbt Cloud project id </p></td>
-                </tr>
-              
-                <tr>
-                  <td>account_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Your dbt Cloud account id </p></td>
-                </tr>
-              
-                <tr>
-                  <td>node_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.DbtCoreNodeIdentifier">DbtCoreNodeIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>integration_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Synq integration_id that identifies the dbt Core project </p></td>
-                </tr>
-              
-                <tr>
-                  <td>node_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.Identifier">Identifier</h3>
-        <p>Identifier is a unique reference to an entity in Synq system. Entity identifiers</p><p>are designed to closely mimic identifiers used by data platforms and tools. To construct</p><p>an identifier, you need to know the kind of the entity and the ids that you would normally</p><p>use to identify it in the data platform or tool. For example, to identify a table in BigQuery,</p><p>you would need to know the project, dataset, and table names.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>dbt_core_node</td>
-                  <td><a href="#synq.entities.v1.DbtCoreNodeIdentifier">DbtCoreNodeIdentifier</a></td>
-                  <td></td>
-                  <td><p>Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project </p></td>
-                </tr>
-              
-                <tr>
-                  <td>dbt_cloud_node</td>
-                  <td><a href="#synq.entities.v1.DbtCloudNodeIdentifier">DbtCloudNodeIdentifier</a></td>
-                  <td></td>
-                  <td><p>Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project </p></td>
-                </tr>
-              
-                <tr>
-                  <td>bigquery_table</td>
-                  <td><a href="#synq.entities.v1.BigqueryTableIdentifier">BigqueryTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>BigQuery table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>snowflake_table</td>
-                  <td><a href="#synq.entities.v1.SnowflakeTableIdentifier">SnowflakeTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Snowflake table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>redshift_table</td>
-                  <td><a href="#synq.entities.v1.RedshiftTableIdentifier">RedshiftTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Redshift table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>postgres_table</td>
-                  <td><a href="#synq.entities.v1.PostgresTableIdentifier">PostgresTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Postgres table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>mysql_table</td>
-                  <td><a href="#synq.entities.v1.MysqlTableIdentifier">MysqlTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Mysql table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>clickhouse_table</td>
-                  <td><a href="#synq.entities.v1.ClickhouseTableIdentifier">ClickhouseTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Clickhouse table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>databricks_table</td>
-                  <td><a href="#synq.entities.v1.DatabricksTableIdentifier">DatabricksTableIdentifier</a></td>
-                  <td></td>
-                  <td><p>Databricks table identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>airflow_dag</td>
-                  <td><a href="#synq.entities.v1.AirflowDagIdentifier">AirflowDagIdentifier</a></td>
-                  <td></td>
-                  <td><p>Airflow DAG identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>airflow_task</td>
-                  <td><a href="#synq.entities.v1.AirflowTaskIdentifier">AirflowTaskIdentifier</a></td>
-                  <td></td>
-                  <td><p>Airflow task identifier within a given DAG </p></td>
-                </tr>
-              
-                <tr>
-                  <td>custom</td>
-                  <td><a href="#synq.entities.v1.CustomIdentifier">CustomIdentifier</a></td>
-                  <td></td>
-                  <td><p>Custom identifier to be used with all custom created entities </p></td>
-                </tr>
-              
-                <tr>
-                  <td>dataproduct</td>
-                  <td><a href="#synq.entities.v1.DataproductIdentifier">DataproductIdentifier</a></td>
-                  <td></td>
-                  <td><p>Dataproduct identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>synq_path</td>
-                  <td><a href="#synq.entities.v1.SynqPathIdentifier">SynqPathIdentifier</a></td>
-                  <td></td>
-                  <td><p>SynqPath identifier </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.MysqlTableIdentifier">MysqlTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>host</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Mysql host inclusive of port </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Mysql database </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Mysql table </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.PostgresTableIdentifier">PostgresTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>host</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Postgres host inclusive of port </p></td>
-                </tr>
-              
-                <tr>
-                  <td>database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Postgres database </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Postgres schema </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Postgres table </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.RedshiftTableIdentifier">RedshiftTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>cluster</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Redshift cluster </p></td>
-                </tr>
-              
-                <tr>
-                  <td>database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Redshift database </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Redshift schema </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Redshift table </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.SnowflakeTableIdentifier">SnowflakeTableIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>account</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Snowflake account </p></td>
-                </tr>
-              
-                <tr>
-                  <td>database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Snowflake database </p></td>
-                </tr>
-              
-                <tr>
-                  <td>schema</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Snowflake schema </p></td>
-                </tr>
-              
-                <tr>
-                  <td>table</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Snowflake table </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="synq.entities.v1.SynqPathIdentifier">SynqPathIdentifier</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>path</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Synq path that identifies the Synq entity, needs to be one of supported paths </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-
-      
-
-      
-
-      
-    
-      
-      <div class="file-heading">
-        <h2 id="synq/entities/v1/entities.proto">synq/entities/v1/entities.proto</h2><a href="#title">Top</a>
-      </div>
-      <p></p>
-
-      
-        <h3 id="synq.entities.v1.Entity">Entity</h3>
-        <p>Entity is the base type for all entities in the system. Its always attached to a given</p><p>client workspace and can be uniquely identified by its id.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>workspace</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Immutable workspace identifier that this entity belongs to. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#synq.entities.v1.Identifier">Identifier</a></td>
-                  <td></td>
-                  <td><p>Unique identifier for this entity. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>name</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Name of the entity that is displayed to the user. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>description</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Description of the entity that is displayed in relevant contexts. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>created_at</td>
-                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
-                  <td></td>
-                  <td><p>Timestamp when the entity was created. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>updated_at</td>
-                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
-                  <td></td>
-                  <td><p>Timestamp when the entity was last updated. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>deleted_at</td>
-                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
-                  <td></td>
-                  <td><p>Timestamp when the entity was deleted. If this is set, the entity is considered deleted. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>synq_path</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Return only value. Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq&#39;s UI. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>synq_catalog_url</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq&#39;s UI. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-
-      
-
-      
-
-      
-    
-
-    <h2 id="scalar-value-types">Scalar Value Types</h2>
-    <table class="scalar-value-types-table">
-      <thead>
-        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
-      </thead>
-      <tbody>
-        
-          <tr id="double">
-            <td>double</td>
-            <td></td>
-            <td>double</td>
-            <td>double</td>
-            <td>float</td>
-            <td>float64</td>
-            <td>double</td>
-            <td>float</td>
-            <td>Float</td>
-          </tr>
-        
-          <tr id="float">
-            <td>float</td>
-            <td></td>
-            <td>float</td>
-            <td>float</td>
-            <td>float</td>
-            <td>float32</td>
-            <td>float</td>
-            <td>float</td>
-            <td>Float</td>
-          </tr>
-        
-          <tr id="int32">
-            <td>int32</td>
-            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>int</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>integer</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="int64">
-            <td>int64</td>
-            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>int/long</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>integer/string</td>
-            <td>Bignum</td>
-          </tr>
-        
-          <tr id="uint32">
-            <td>uint32</td>
-            <td>Uses variable-length encoding.</td>
-            <td>uint32</td>
-            <td>int</td>
-            <td>int/long</td>
-            <td>uint32</td>
-            <td>uint</td>
-            <td>integer</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="uint64">
-            <td>uint64</td>
-            <td>Uses variable-length encoding.</td>
-            <td>uint64</td>
-            <td>long</td>
-            <td>int/long</td>
-            <td>uint64</td>
-            <td>ulong</td>
-            <td>integer/string</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="sint32">
-            <td>sint32</td>
-            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>int</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>integer</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="sint64">
-            <td>sint64</td>
-            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>int/long</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>integer/string</td>
-            <td>Bignum</td>
-          </tr>
-        
-          <tr id="fixed32">
-            <td>fixed32</td>
-            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
-            <td>uint32</td>
-            <td>int</td>
-            <td>int</td>
-            <td>uint32</td>
-            <td>uint</td>
-            <td>integer</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="fixed64">
-            <td>fixed64</td>
-            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
-            <td>uint64</td>
-            <td>long</td>
-            <td>int/long</td>
-            <td>uint64</td>
-            <td>ulong</td>
-            <td>integer/string</td>
-            <td>Bignum</td>
-          </tr>
-        
-          <tr id="sfixed32">
-            <td>sfixed32</td>
-            <td>Always four bytes.</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>int</td>
-            <td>int32</td>
-            <td>int</td>
-            <td>integer</td>
-            <td>Bignum or Fixnum (as required)</td>
-          </tr>
-        
-          <tr id="sfixed64">
-            <td>sfixed64</td>
-            <td>Always eight bytes.</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>int/long</td>
-            <td>int64</td>
-            <td>long</td>
-            <td>integer/string</td>
-            <td>Bignum</td>
-          </tr>
-        
-          <tr id="bool">
-            <td>bool</td>
-            <td></td>
-            <td>bool</td>
-            <td>boolean</td>
-            <td>boolean</td>
-            <td>bool</td>
-            <td>bool</td>
-            <td>boolean</td>
-            <td>TrueClass/FalseClass</td>
-          </tr>
-        
-          <tr id="string">
-            <td>string</td>
-            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
-            <td>string</td>
-            <td>String</td>
-            <td>str/unicode</td>
-            <td>string</td>
-            <td>string</td>
-            <td>string</td>
-            <td>String (UTF-8)</td>
-          </tr>
-        
-          <tr id="bytes">
-            <td>bytes</td>
-            <td>May contain any arbitrary sequence of bytes.</td>
-            <td>string</td>
-            <td>ByteString</td>
-            <td>str</td>
-            <td>[]byte</td>
-            <td>ByteString</td>
-            <td>string</td>
-            <td>String (ASCII-8BIT)</td>
-          </tr>
-        
-      </tbody>
-    </table>
-  </body>
-</html>
+## Services
+
+
+### EntitiesService 
+(synq.entities.v1.EntitiesService)
+
+EntitiesService is a service for managing custom entities. Entities can represent
+various data platform concepts such as services, consumers, applications or data pipelines
+that are not natively available in Synq.
+
+Entities are identified by a unique identifier and can be created, updated, read and deleted.
+
+#### GetEntity
+
+GetEntity ([GetEntityRequest](#getentityrequest)) [GetEntityResponse](#getentityresponse)
+
+Get specific entity by its identifier.
+
+#### BatchGetEntities
+
+BatchGetEntities ([BatchGetEntitiesRequest](#batchgetentitiesrequest)) [BatchGetEntitiesResponse](#batchgetentitiesresponse)
+
+Get multiple entities by their identifiers.
+
+#### UpsertEntity
+
+UpsertEntity ([UpsertEntityRequest](#upsertentityrequest)) [UpsertEntityResponse](#upsertentityresponse)
+
+Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+
+#### DeleteEntity
+
+DeleteEntity ([DeleteEntityRequest](#deleteentityrequest)) [DeleteEntityResponse](#deleteentityresponse)
+
+Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+
+ 
+ 
+
+ 
+
+ 
+ 
+
+## Messages 
+
+
+
+### BatchGetEntitiesRequest
+
+(synq.entities.v1.BatchGetEntitiesRequest)
+
+BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| ids | [repeated Identifier](#identifier) | Identifiers of the entities to get. |
+ 
+ 
+
+
+
+### BatchGetEntitiesResponse
+
+(synq.entities.v1.BatchGetEntitiesResponse)
+
+BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entities | [repeated Entity](#entity) | The entities that were retrieved. |
+ 
+ 
+
+
+
+### DeleteEntityRequest
+
+(synq.entities.v1.DeleteEntityRequest)
+
+DeleteEntityRequest is the request message for the DeleteEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to delete. |
+ 
+ 
+
+
+
+### DeleteEntityResponse
+
+(synq.entities.v1.DeleteEntityResponse)
+
+DeleteEntityResponse is the response message for the DeleteEntity method.
+
+ 
+
+
+
+### GetEntityRequest
+
+(synq.entities.v1.GetEntityRequest)
+
+GetEntityRequest is the request message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to get. |
+ 
+ 
+
+
+
+### GetEntityResponse
+
+(synq.entities.v1.GetEntityResponse)
+
+GetEntityResponse is the response message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entity | [ Entity](#entity) | The entity that was retrieved. |
+ 
+ 
+
+
+
+### UpsertEntityRequest
+
+(synq.entities.v1.UpsertEntityRequest)
+
+UpsertEntityRequest is the request message for the UpsertEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entity | [ Entity](#entity) | The entity to create or update. |
+ 
+ 
+
+
+
+### UpsertEntityResponse
+
+(synq.entities.v1.UpsertEntityResponse)
+
+UpsertEntityResponse is the response message for the UpsertEntity method.
+
+ 
+
+
+
+
+
+
+### AirflowDagIdentifier
+
+(synq.entities.v1.AirflowDagIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the Airflow instance |
+| dag_id | [ string](#string) | Airflow dag_id that identifies the DAG |
+ 
+ 
+
+
+
+### AirflowTaskIdentifier
+
+(synq.entities.v1.AirflowTaskIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the Airflow instance |
+| dag_id | [ string](#string) | Airflow dag_id that identifies the DAG |
+| task_id | [ string](#string) | Airflow task_id that identifies the task within the DAG |
+ 
+ 
+
+
+
+### BigqueryTableIdentifier
+
+(synq.entities.v1.BigqueryTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| project | [ string](#string) | BigQuery project |
+| dataset | [ string](#string) | BigQuery dataset id |
+| table | [ string](#string) | BigQuery table name |
+ 
+ 
+
+
+
+### ClickhouseTableIdentifier
+
+(synq.entities.v1.ClickhouseTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Clickhouse host inclusive of port |
+| schema | [ string](#string) | Clickhouse database |
+| table | [ string](#string) | Clickhouse table |
+ 
+ 
+
+
+
+### CustomIdentifier
+
+(synq.entities.v1.CustomIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ string](#string) | Id that identifies the custom entity The Id should be unique within the custom entity Identifier. |
+ 
+ 
+
+
+
+### DatabricksTableIdentifier
+
+(synq.entities.v1.DatabricksTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| workspace | [ string](#string) | none |
+| catalog | [ string](#string) | Databricks catalog |
+| schema | [ string](#string) | Databricks schema |
+| table | [ string](#string) | Databricks table or view |
+ 
+ 
+
+
+
+### DataproductIdentifier
+
+(synq.entities.v1.DataproductIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ string](#string) | Dataproduct id that identifies the Dataproduct |
+ 
+ 
+
+
+
+### DbtCloudNodeIdentifier
+
+(synq.entities.v1.DbtCloudNodeIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| project_id | [ string](#string) | Your dbt Cloud project id |
+| account_id | [ string](#string) | Your dbt Cloud account id |
+| node_id | [ string](#string) | Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) |
+ 
+ 
+
+
+
+### DbtCoreNodeIdentifier
+
+(synq.entities.v1.DbtCoreNodeIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the dbt Core project |
+| node_id | [ string](#string) | Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) |
+ 
+ 
+
+
+
+### Identifier
+
+(synq.entities.v1.Identifier)
+
+Identifier is a unique reference to an entity in Synq system. Entity identifiers
+are designed to closely mimic identifiers used by data platforms and tools. To construct
+an identifier, you need to know the kind of the entity and the ids that you would normally
+use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
+you would need to know the project, dataset, and table names.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dbt_core_node | [ DbtCoreNodeIdentifier](#dbtcorenodeidentifier) | Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dbt_cloud_node | [ DbtCloudNodeIdentifier](#dbtcloudnodeidentifier) | Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.bigquery_table | [ BigqueryTableIdentifier](#bigquerytableidentifier) | BigQuery table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.snowflake_table | [ SnowflakeTableIdentifier](#snowflaketableidentifier) | Snowflake table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.redshift_table | [ RedshiftTableIdentifier](#redshifttableidentifier) | Redshift table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.postgres_table | [ PostgresTableIdentifier](#postgrestableidentifier) | Postgres table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.mysql_table | [ MysqlTableIdentifier](#mysqltableidentifier) | Mysql table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.clickhouse_table | [ ClickhouseTableIdentifier](#clickhousetableidentifier) | Clickhouse table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.databricks_table | [ DatabricksTableIdentifier](#databrickstableidentifier) | Databricks table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.airflow_dag | [ AirflowDagIdentifier](#airflowdagidentifier) | Airflow DAG identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.airflow_task | [ AirflowTaskIdentifier](#airflowtaskidentifier) | Airflow task identifier within a given DAG |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.custom | [ CustomIdentifier](#customidentifier) | Custom identifier to be used with all custom created entities |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dataproduct | [ DataproductIdentifier](#dataproductidentifier) | Dataproduct identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.synq_path | [ SynqPathIdentifier](#synqpathidentifier) | SynqPath identifier |
+ 
+ 
+
+
+
+### MysqlTableIdentifier
+
+(synq.entities.v1.MysqlTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Mysql host inclusive of port |
+| schema | [ string](#string) | Mysql database |
+| table | [ string](#string) | Mysql table |
+ 
+ 
+
+
+
+### PostgresTableIdentifier
+
+(synq.entities.v1.PostgresTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Postgres host inclusive of port |
+| database | [ string](#string) | Postgres database |
+| schema | [ string](#string) | Postgres schema |
+| table | [ string](#string) | Postgres table |
+ 
+ 
+
+
+
+### RedshiftTableIdentifier
+
+(synq.entities.v1.RedshiftTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| cluster | [ string](#string) | Redshift cluster |
+| database | [ string](#string) | Redshift database |
+| schema | [ string](#string) | Redshift schema |
+| table | [ string](#string) | Redshift table |
+ 
+ 
+
+
+
+### SnowflakeTableIdentifier
+
+(synq.entities.v1.SnowflakeTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| account | [ string](#string) | Snowflake account |
+| database | [ string](#string) | Snowflake database |
+| schema | [ string](#string) | Snowflake schema |
+| table | [ string](#string) | Snowflake table |
+ 
+ 
+
+
+
+### SynqPathIdentifier
+
+(synq.entities.v1.SynqPathIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| path | [ string](#string) | Synq path that identifies the Synq entity, needs to be one of supported paths |
+ 
+ 
+
+
+
+
+
+
+### Entity
+
+(synq.entities.v1.Entity)
+
+Entity is the base type for all entities in the system. Its always attached to a given
+client workspace and can be uniquely identified by its id.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| workspace | [ string](#string) | Immutable workspace identifier that this entity belongs to. |
+| id | [ Identifier](#identifier) | Unique identifier for this entity. |
+| name | [ string](#string) | Name of the entity that is displayed to the user. |
+| description | [ string](#string) | Description of the entity that is displayed in relevant contexts. |
+| created_at | [ Timestamp](#timestamp) | Timestamp when the entity was created. |
+| updated_at | [ Timestamp](#timestamp) | Timestamp when the entity was last updated. |
+| deleted_at | [ Timestamp](#timestamp) | Timestamp when the entity was deleted. If this is set, the entity is considered deleted. |
+| synq_path | [ string](#string) | Return only value. Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI. |
+| synq_catalog_url | [ string](#string) | Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI. |
+ 
+ 
+
+
+
+
+
+
+# Enums
+
+
+
+
+
 
