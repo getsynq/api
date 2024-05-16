@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package synq.lineage.v1;
+
+import "buf/validate/validate.proto";
+import "synq/lineage/v1/relationships.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/lineage/v1";
+
+// RelationshipsService allow management of relationships between entities. Relationships can
+// be created, updated, and deleted between 2 custom entities, or between a custom entity and Synq native entity.enum
+// There is no option to create relationships between 2 Synq native entities (dbt model, BI dashboard, etc.).
+service RelationshipsService {
+  // Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
+  rpc UpsertRelationships(UpsertRelationshipsRequest) returns (UpsertRelationshipsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_EDIT
+      ]
+    };
+  }
+
+  // Delete relationships between entities. If the relationship does not exist, it will be ignored.
+  rpc DeleteRelationships(DeleteRelationshipsRequest) returns (DeleteRelationshipsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_EDIT
+      ]
+    };
+  }
+}
+
+message UpsertRelationshipsRequest {
+  repeated Relationship relationships = 1 [(buf.validate.field).required = true];
+}
+
+message UpsertRelationshipsResponse {}
+
+message DeleteRelationshipsRequest {
+  repeated Relationship relationships = 1 [(buf.validate.field).required = true];
+}
+
+message DeleteRelationshipsResponse {}

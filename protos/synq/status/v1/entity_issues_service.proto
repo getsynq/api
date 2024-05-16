@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package synq.status.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifiers.proto";
+import "synq/status/v1/entity_issues.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/status/v1";
+
+// EntityIssuesService is the service which retrieves entity issues status.
+//
+service EntityIssuesService {
+  // Get specific entity status by its identifier.
+  rpc GetIssuesStatus(GetIssuesStatusRequest) returns (GetIssuesStatusResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_STATUS_READ
+      ]
+    };
+  }
+
+  // Get multiple entity statuses by their identifiers.
+  rpc BatchGetIssuesStatus(BatchGetIssuesStatusRequest) returns (BatchGetIssuesStatusResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_STATUS_READ
+      ]
+    };
+  }
+}
+
+// GetIssuesStatusRequest is the request message for the GetEntity method.
+message GetIssuesStatusRequest {
+  // Identifier of the entity to get status for.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  // Retrieve status of upstream entities.
+  bool fetch_upstream_status = 2;
+}
+
+// GetIssuesStatusResponse is the response message for the GetEntity method.
+message GetIssuesStatusResponse {
+  message IssuesSummary {
+    // Number of issues for the entity.
+    int32 total_count = 1;
+    // Number of issues for the entity with status 'warn'.
+    int32 warn_count = 2;
+    // Number of issues for the entity with status 'error'.
+    int32 error_count = 3;
+    // Number of issues for the entity with status 'critical'.
+    int32 critical_count = 4;
+  }
+
+  // Identifier of the entity.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  // Status of the entity requested.
+  IssueStatus entity_issues_status = 2;
+  IssuesSummary entity_issues_summary = 3;
+  // Optionally, the status of all upstream entities.
+  IssueStatus upstream_issues_status = 4;
+  IssuesSummary upstream_issues_summary = 5;
+}
+
+// BatchGetIssuesStatusRequest is the request message for the BatchGetIssues method.
+message BatchGetIssuesStatusRequest {
+  repeated GetIssuesStatusRequest requests = 1 [(buf.validate.field).required = true];
+}
+
+// BatchGetIssuesStatusResponse is the response message for the BatchGetIssues method.
+message BatchGetIssuesStatusResponse {
+  repeated GetIssuesStatusResponse responses = 1 [(buf.validate.field).required = true];
+}

@@ -1,0 +1,464 @@
+## Services
+
+
+### EntitiesService 
+(synq.entities.v1.EntitiesService)
+
+EntitiesService is a service for managing custom entities. Entities can represent
+various data platform concepts such as services, consumers, applications or data pipelines
+that are not natively available in Synq.
+
+Entities are identified by a unique identifier and can be created, updated, read and deleted.
+
+#### GetEntity
+
+GetEntity ([GetEntityRequest](#getentityrequest)) [GetEntityResponse](#getentityresponse)
+
+Get specific entity by its identifier.
+
+#### BatchGetEntities
+
+BatchGetEntities ([BatchGetEntitiesRequest](#batchgetentitiesrequest)) [BatchGetEntitiesResponse](#batchgetentitiesresponse)
+
+Get multiple entities by their identifiers.
+
+#### UpsertEntity
+
+UpsertEntity ([UpsertEntityRequest](#upsertentityrequest)) [UpsertEntityResponse](#upsertentityresponse)
+
+Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+
+#### DeleteEntity
+
+DeleteEntity ([DeleteEntityRequest](#deleteentityrequest)) [DeleteEntityResponse](#deleteentityresponse)
+
+Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+
+ 
+ 
+
+ 
+
+ 
+ 
+
+## Messages 
+
+
+
+### BatchGetEntitiesRequest
+
+(synq.entities.v1.BatchGetEntitiesRequest)
+
+BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| ids | [repeated Identifier](#identifier) | Identifiers of the entities to get. |
+ 
+ 
+
+
+
+### BatchGetEntitiesResponse
+
+(synq.entities.v1.BatchGetEntitiesResponse)
+
+BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entities | [repeated Entity](#entity) | The entities that were retrieved. |
+ 
+ 
+
+
+
+### DeleteEntityRequest
+
+(synq.entities.v1.DeleteEntityRequest)
+
+DeleteEntityRequest is the request message for the DeleteEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to delete. |
+ 
+ 
+
+
+
+### DeleteEntityResponse
+
+(synq.entities.v1.DeleteEntityResponse)
+
+DeleteEntityResponse is the response message for the DeleteEntity method.
+
+ 
+
+
+
+### GetEntityRequest
+
+(synq.entities.v1.GetEntityRequest)
+
+GetEntityRequest is the request message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to get. |
+ 
+ 
+
+
+
+### GetEntityResponse
+
+(synq.entities.v1.GetEntityResponse)
+
+GetEntityResponse is the response message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entity | [ Entity](#entity) | The entity that was retrieved. |
+ 
+ 
+
+
+
+### UpsertEntityRequest
+
+(synq.entities.v1.UpsertEntityRequest)
+
+UpsertEntityRequest is the request message for the UpsertEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| entity | [ Entity](#entity) | The entity to create or update. |
+ 
+ 
+
+
+
+### UpsertEntityResponse
+
+(synq.entities.v1.UpsertEntityResponse)
+
+UpsertEntityResponse is the response message for the UpsertEntity method.
+
+ 
+
+
+
+
+
+
+### AirflowDagIdentifier
+
+(synq.entities.v1.AirflowDagIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the Airflow instance |
+| dag_id | [ string](#string) | Airflow dag_id that identifies the DAG |
+ 
+ 
+
+
+
+### AirflowTaskIdentifier
+
+(synq.entities.v1.AirflowTaskIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the Airflow instance |
+| dag_id | [ string](#string) | Airflow dag_id that identifies the DAG |
+| task_id | [ string](#string) | Airflow task_id that identifies the task within the DAG |
+ 
+ 
+
+
+
+### BigqueryTableIdentifier
+
+(synq.entities.v1.BigqueryTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| project | [ string](#string) | BigQuery project |
+| dataset | [ string](#string) | BigQuery dataset id |
+| table | [ string](#string) | BigQuery table name |
+ 
+ 
+
+
+
+### ClickhouseTableIdentifier
+
+(synq.entities.v1.ClickhouseTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Clickhouse host inclusive of port |
+| schema | [ string](#string) | Clickhouse database |
+| table | [ string](#string) | Clickhouse table |
+ 
+ 
+
+
+
+### CustomIdentifier
+
+(synq.entities.v1.CustomIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ string](#string) | Id that identifies the custom entity The Id should be unique within the custom entity Identifier. |
+ 
+ 
+
+
+
+### DatabricksTableIdentifier
+
+(synq.entities.v1.DatabricksTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| workspace | [ string](#string) | none |
+| catalog | [ string](#string) | Databricks catalog |
+| schema | [ string](#string) | Databricks schema |
+| table | [ string](#string) | Databricks table or view |
+ 
+ 
+
+
+
+### DataproductIdentifier
+
+(synq.entities.v1.DataproductIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ string](#string) | Dataproduct id that identifies the Dataproduct |
+ 
+ 
+
+
+
+### DbtCloudNodeIdentifier
+
+(synq.entities.v1.DbtCloudNodeIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| project_id | [ string](#string) | Your dbt Cloud project id |
+| account_id | [ string](#string) | Your dbt Cloud account id |
+| node_id | [ string](#string) | Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) |
+ 
+ 
+
+
+
+### DbtCoreNodeIdentifier
+
+(synq.entities.v1.DbtCoreNodeIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| integration_id | [ string](#string) | Synq integration_id that identifies the dbt Core project |
+| node_id | [ string](#string) | Dbt node_id that identifies one of dbt DAG nodes (model, test, etc) |
+ 
+ 
+
+
+
+### Identifier
+
+(synq.entities.v1.Identifier)
+
+Identifier is a unique reference to an entity in Synq system. Entity identifiers
+are designed to closely mimic identifiers used by data platforms and tools. To construct
+an identifier, you need to know the kind of the entity and the ids that you would normally
+use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
+you would need to know the project, dataset, and table names.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dbt_core_node | [ DbtCoreNodeIdentifier](#dbtcorenodeidentifier) | Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dbt_cloud_node | [ DbtCloudNodeIdentifier](#dbtcloudnodeidentifier) | Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.bigquery_table | [ BigqueryTableIdentifier](#bigquerytableidentifier) | BigQuery table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.snowflake_table | [ SnowflakeTableIdentifier](#snowflaketableidentifier) | Snowflake table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.redshift_table | [ RedshiftTableIdentifier](#redshifttableidentifier) | Redshift table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.postgres_table | [ PostgresTableIdentifier](#postgrestableidentifier) | Postgres table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.mysql_table | [ MysqlTableIdentifier](#mysqltableidentifier) | Mysql table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.clickhouse_table | [ ClickhouseTableIdentifier](#clickhousetableidentifier) | Clickhouse table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.databricks_table | [ DatabricksTableIdentifier](#databrickstableidentifier) | Databricks table identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.airflow_dag | [ AirflowDagIdentifier](#airflowdagidentifier) | Airflow DAG identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.airflow_task | [ AirflowTaskIdentifier](#airflowtaskidentifier) | Airflow task identifier within a given DAG |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.custom | [ CustomIdentifier](#customidentifier) | Custom identifier to be used with all custom created entities |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.dataproduct | [ DataproductIdentifier](#dataproductidentifier) | Dataproduct identifier |
+| [**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) id.synq_path | [ SynqPathIdentifier](#synqpathidentifier) | SynqPath identifier |
+ 
+ 
+
+
+
+### MysqlTableIdentifier
+
+(synq.entities.v1.MysqlTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Mysql host inclusive of port |
+| schema | [ string](#string) | Mysql database |
+| table | [ string](#string) | Mysql table |
+ 
+ 
+
+
+
+### PostgresTableIdentifier
+
+(synq.entities.v1.PostgresTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| host | [ string](#string) | Postgres host inclusive of port |
+| database | [ string](#string) | Postgres database |
+| schema | [ string](#string) | Postgres schema |
+| table | [ string](#string) | Postgres table |
+ 
+ 
+
+
+
+### RedshiftTableIdentifier
+
+(synq.entities.v1.RedshiftTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| cluster | [ string](#string) | Redshift cluster |
+| database | [ string](#string) | Redshift database |
+| schema | [ string](#string) | Redshift schema |
+| table | [ string](#string) | Redshift table |
+ 
+ 
+
+
+
+### SnowflakeTableIdentifier
+
+(synq.entities.v1.SnowflakeTableIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| account | [ string](#string) | Snowflake account |
+| database | [ string](#string) | Snowflake database |
+| schema | [ string](#string) | Snowflake schema |
+| table | [ string](#string) | Snowflake table |
+ 
+ 
+
+
+
+### SynqPathIdentifier
+
+(synq.entities.v1.SynqPathIdentifier)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| path | [ string](#string) | Synq path that identifies the Synq entity, needs to be one of supported paths |
+ 
+ 
+
+
+
+
+
+
+### Entity
+
+(synq.entities.v1.Entity)
+
+Entity is the base type for all entities in the system. Its always attached to a given
+client workspace and can be uniquely identified by its id.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| workspace | [ string](#string) | Immutable workspace identifier that this entity belongs to. |
+| id | [ Identifier](#identifier) | Unique identifier for this entity. |
+| name | [ string](#string) | Name of the entity that is displayed to the user. |
+| description | [ string](#string) | Description of the entity that is displayed in relevant contexts. |
+| created_at | [ Timestamp](#timestamp) | Timestamp when the entity was created. |
+| updated_at | [ Timestamp](#timestamp) | Timestamp when the entity was last updated. |
+| deleted_at | [ Timestamp](#timestamp) | Timestamp when the entity was deleted. If this is set, the entity is considered deleted. |
+| synq_path | [ string](#string) | Return only value. Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI. |
+| synq_catalog_url | [ string](#string) | Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI. |
+ 
+ 
+
+
+
+
+
+
+# Enums
+
+
+
+
+
+

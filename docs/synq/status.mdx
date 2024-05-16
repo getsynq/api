@@ -1,0 +1,258 @@
+## Services
+
+
+ 
+
+ 
+
+### EntityIncidentsService 
+(synq.status.v1.EntityIncidentsService)
+
+EntityIncidentsService is the service which retrieves entity status.
+
+#### GetIncidents
+
+GetIncidents ([GetIncidentsRequest](#getincidentsrequest)) [GetIncidentsResponse](#getincidentsresponse)
+
+Get specific entity status by its identifier.
+
+#### BatchGetIncidents
+
+BatchGetIncidents ([BatchGetIncidentsRequest](#batchgetincidentsrequest)) [BatchGetIncidentsResponse](#batchgetincidentsresponse)
+
+Get multiple entity statuses by their identifiers.
+
+ 
+ 
+
+### EntityIssuesService 
+(synq.status.v1.EntityIssuesService)
+
+EntityIssuesService is the service which retrieves entity issues status.
+
+#### GetIssuesStatus
+
+GetIssuesStatus ([GetIssuesStatusRequest](#getissuesstatusrequest)) [GetIssuesStatusResponse](#getissuesstatusresponse)
+
+Get specific entity status by its identifier.
+
+#### BatchGetIssuesStatus
+
+BatchGetIssuesStatus ([BatchGetIssuesStatusRequest](#batchgetissuesstatusrequest)) [BatchGetIssuesStatusResponse](#batchgetissuesstatusresponse)
+
+Get multiple entity statuses by their identifiers.
+
+ 
+ 
+ 
+
+## Messages 
+
+
+
+### EntityIncident
+
+(synq.status.v1.EntityIncident)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ string](#string) | Unique identifier of the incident. |
+| url | [ string](#string) | URL of the incident. |
+| name | [ string](#string) | Name of the incident give by the user. |
+| created_by | [ string](#string) | Information about author of the incident. |
+| created_at | [ Timestamp](#timestamp) | Time when the incident was created. |
+| updated_by | [ string](#string) | Information about the user who last updated the incident. |
+| updated_at | [ Timestamp](#timestamp) | Time when the incident was last updated. |
+| is_resolved | [ bool](#bool) | Indicates if all issues inside the incident are resolved. |
+ 
+ 
+
+
+
+
+
+
+
+
+
+### BatchGetIncidentsRequest
+
+(synq.status.v1.BatchGetIncidentsRequest)
+
+BatchGetIncidentsRequest is the request message for the BatchGetIssues method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| requests | [repeated GetIncidentsRequest](#getincidentsrequest) | none |
+ 
+ 
+
+
+
+### BatchGetIncidentsResponse
+
+(synq.status.v1.BatchGetIncidentsResponse)
+
+BatchGetIncidentsResponse is the response message for the BatchGetIssues method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| responses | [repeated GetIncidentsResponse](#getincidentsresponse) | none |
+ 
+ 
+
+
+
+### GetIncidentsRequest
+
+(synq.status.v1.GetIncidentsRequest)
+
+GetIncidentsRequest is the request message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to get incidents for. |
+| fetch_upstream_incidents | [ bool](#bool) | Retrieve incidents of upstream entities. |
+ 
+ 
+
+
+
+### GetIncidentsResponse
+
+(synq.status.v1.GetIncidentsResponse)
+
+GetIncidentsResponse is the response message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity. |
+| entity_open_incidents | [repeated EntityIncident](#entityincident) | Open incident associated with the entity requested. |
+| upstream_open_incidents | [repeated EntityIncident](#entityincident) | Open incidents associated with the upstream entities if requested. |
+ 
+ 
+
+
+
+
+
+
+### BatchGetIssuesStatusRequest
+
+(synq.status.v1.BatchGetIssuesStatusRequest)
+
+BatchGetIssuesStatusRequest is the request message for the BatchGetIssues method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| requests | [repeated GetIssuesStatusRequest](#getissuesstatusrequest) | none |
+ 
+ 
+
+
+
+### BatchGetIssuesStatusResponse
+
+(synq.status.v1.BatchGetIssuesStatusResponse)
+
+BatchGetIssuesStatusResponse is the response message for the BatchGetIssues method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| responses | [repeated GetIssuesStatusResponse](#getissuesstatusresponse) | none |
+ 
+ 
+
+
+
+### GetIssuesStatusRequest
+
+(synq.status.v1.GetIssuesStatusRequest)
+
+GetIssuesStatusRequest is the request message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity to get status for. |
+| fetch_upstream_status | [ bool](#bool) | Retrieve status of upstream entities. |
+ 
+ 
+
+
+
+### GetIssuesStatusResponse
+
+(synq.status.v1.GetIssuesStatusResponse)
+
+GetIssuesStatusResponse is the response message for the GetEntity method.
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| id | [ Identifier](#identifier) | Identifier of the entity. |
+| entity_issues_status | [ IssueStatus](#issuestatus) | Status of the entity requested. |
+| entity_issues_summary | [ IssuesSummary](#issuessummary) | none |
+| upstream_issues_status | [ IssueStatus](#issuestatus) | Optionally, the status of all upstream entities. |
+| upstream_issues_summary | [ IssuesSummary](#issuessummary) | none |
+ 
+ 
+
+
+
+### GetIssuesStatusResponse.IssuesSummary
+
+(synq.status.v1.GetIssuesStatusResponse.IssuesSummary)
+
+
+
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| total_count | [ int32](#int32) | Number of issues for the entity. |
+| warn_count | [ int32](#int32) | Number of issues for the entity with status 'warn'. |
+| error_count | [ int32](#int32) | Number of issues for the entity with status 'error'. |
+| critical_count | [ int32](#int32) | Number of issues for the entity with status 'critical'. |
+ 
+ 
+
+
+
+
+
+
+# Enums
+
+
+
+
+
+### IssueStatus
+
+(synq.status.v1.IssueStatus)
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ISSUE_STATUS_UNSPECIFIED | 0 | none |
+| ISSUE_STATUS_OK | 10 | none |
+| ISSUE_STATUS_WARN | 20 | none |
+| ISSUE_STATUS_ERROR | 30 | none |
+| ISSUE_STATUS_CRITICAL | 40 | none |
+
+
+
+
+
+
+
