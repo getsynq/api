@@ -1,0 +1,227 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// Identifier is a unique reference to an entity in Synq system. Entity identifiers
+// are designed to closely mimic identifiers used by data platforms and tools. To construct
+// an identifier, you need to know the kind of the entity and the ids that you would normally
+// use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
+// you would need to know the project, dataset, and table names.
+message Identifier {
+  oneof id {
+    option (buf.validate.oneof).required = true;
+    // Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project
+    DbtCoreNodeIdentifier dbt_core_node = 1;
+
+    // Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project
+    DbtCloudNodeIdentifier dbt_cloud_node = 2;
+
+    // BigQuery table identifier
+    BigqueryTableIdentifier bigquery_table = 3;
+
+    // Snowflake table identifier
+    SnowflakeTableIdentifier snowflake_table = 4;
+
+    // Redshift table identifier
+    RedshiftTableIdentifier redshift_table = 5;
+
+    // Postgres table identifier
+    PostgresTableIdentifier postgres_table = 6;
+
+    // Mysql table identifier
+    MysqlTableIdentifier mysql_table = 7;
+
+    // Clickhouse table identifier
+    ClickhouseTableIdentifier clickhouse_table = 8;
+
+    // Databricks table identifier
+    DatabricksTableIdentifier databricks_table = 14;
+
+    // Airflow DAG identifier
+    AirflowDagIdentifier airflow_dag = 9;
+
+    // Airflow task identifier within a given DAG
+    AirflowTaskIdentifier airflow_task = 10;
+
+    // Custom identifier to be used with all custom created entities
+    CustomIdentifier custom = 11;
+
+    // Dataproduct identifier
+    DataproductIdentifier dataproduct = 12;
+
+    // SynqPath identifier
+    SynqPathIdentifier synq_path = 13;
+  }
+}
+
+//
+// DBT
+//
+
+message DbtCoreNodeIdentifier {
+  // Synq integration_id that identifies the dbt Core project
+  string integration_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+
+  // Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+  string node_id = 2 [(buf.validate.field).required = true];
+}
+
+message DbtCloudNodeIdentifier {
+  // Your dbt Cloud project id
+  string project_id = 1 [(buf.validate.field).required = true];
+
+  // Your dbt Cloud account id
+  string account_id = 2;
+
+  // Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+  string node_id = 3 [(buf.validate.field).required = true];
+}
+
+//
+// DATA PLATFORMS
+//
+
+message BigqueryTableIdentifier {
+  // BigQuery project
+  string project = 1 [(buf.validate.field).required = true];
+
+  // BigQuery dataset id
+  string dataset = 2 [(buf.validate.field).required = true];
+
+  // BigQuery table name
+  string table = 3 [(buf.validate.field).required = true];
+}
+
+message SnowflakeTableIdentifier {
+  // Snowflake account
+  string account = 1 [(buf.validate.field).required = true];
+
+  // Snowflake database
+  string database = 2 [(buf.validate.field).required = true];
+
+  // Snowflake schema
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Snowflake table
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message RedshiftTableIdentifier {
+  // Redshift cluster
+  string cluster = 1 [(buf.validate.field).required = true];
+
+  // Redshift database
+  string database = 2 [(buf.validate.field).required = true];
+
+  // Redshift schema
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Redshift table
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message PostgresTableIdentifier {
+  // Postgres host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Postgres database
+  string database = 2 [(buf.validate.field).required = true];
+
+  // Postgres schema
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Postgres table
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message MysqlTableIdentifier {
+  // Mysql host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Mysql database
+  string schema = 2 [(buf.validate.field).required = true];
+
+  // Mysql table
+  string table = 3 [(buf.validate.field).required = true];
+}
+
+message ClickhouseTableIdentifier {
+  // Clickhouse host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Clickhouse database
+  string schema = 2 [(buf.validate.field).required = true];
+
+  // Clickhouse table
+  string table = 3 [(buf.validate.field).required = true];
+}
+
+message DatabricksTableIdentifier {
+  string workspace = 1 [(buf.validate.field).required = true];
+
+  // Databricks catalog
+  string catalog = 2 [(buf.validate.field).required = true];
+
+  // Databricks schema
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Databricks table or view
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message AirflowDagIdentifier {
+  // Synq integration_id that identifies the Airflow instance
+  string integration_id = 1 [(buf.validate.field).required = true];
+
+  // Airflow dag_id that identifies the DAG
+  string dag_id = 2 [(buf.validate.field).required = true];
+}
+
+message AirflowTaskIdentifier {
+  // Synq integration_id that identifies the Airflow instance
+  string integration_id = 1 [(buf.validate.field).required = true];
+
+  // Airflow dag_id that identifies the DAG
+  string dag_id = 2 [(buf.validate.field).required = true];
+
+  // Airflow task_id that identifies the task within the DAG
+  string task_id = 3 [(buf.validate.field).required = true];
+}
+
+//
+// CUSTOM
+//
+
+message CustomIdentifier {
+  // Id that identifies the custom entity
+  // The Id should be unique within the custom entity Identifier.
+  string id = 1 [(buf.validate.field).required = true];
+}
+
+//
+// DATAPRODUCT
+//
+
+message DataproductIdentifier {
+  // Dataproduct id that identifies the Dataproduct
+  string id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+}
+
+//
+// SYNQ PATH
+//
+
+message SynqPathIdentifier {
+  // Synq path that identifies the Synq entity, needs to be one of supported paths
+  string path = 1 [(buf.validate.field).required = true];
+}

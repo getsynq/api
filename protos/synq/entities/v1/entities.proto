@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifiers.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// Entity is the base type for all entities in the system. Its always attached to a given
+// client workspace and can be uniquely identified by its id.
+message Entity {
+  // Immutable workspace identifier that this entity belongs to.
+  string workspace = 1;
+
+  // Unique identifier for this entity.
+  Identifier id = 2 [(buf.validate.field).required = true];
+
+  // Name of the entity that is displayed to the user.
+  string name = 3 [(buf.validate.field).required = true];
+
+  // Description of the entity that is displayed in relevant contexts.
+  string description = 4;
+
+  // Timestamp when the entity was created.
+  google.protobuf.Timestamp created_at = 5;
+
+  // Timestamp when the entity was last updated.
+  google.protobuf.Timestamp updated_at = 6;
+
+  // Timestamp when the entity was deleted. If this is set, the entity is considered deleted.
+  google.protobuf.Timestamp deleted_at = 7;
+
+  // Return only value. Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  string synq_path = 8;
+  // Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI.
+  string synq_catalog_url = 9;
+}

@@ -1,0 +1,61 @@
+## Services
+
+{{range .Files}}
+{{range .Services -}}
+### {{.Name}} 
+({{.FullName}})
+
+{{.Description}}
+
+{{range .Methods -}}
+#### {{.Name}}
+
+{{.Name}} ([{{.RequestType}}](#{{.RequestType | lower | replace "." ""}})) [{{.ResponseType}}](#{{.ResponseType | lower | replace "." ""}})
+
+{{ .Description}}
+
+{{end}} 
+{{end}} 
+{{end}} 
+
+## Messages 
+
+{{range .Files}}
+{{range .Messages}}
+### {{.LongName}}
+
+({{.FullName}})
+
+{{.Description}}
+
+{{if .HasFields}}
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+{{range .Fields -}}
+	| {{if .IsOneof}}[**oneof**](https://developers.google.com/protocol-buffers/docs/proto3#oneof) {{.OneofDecl}}.{{end}}{{.Name}} | [{{if .IsMap}}map {{else}}{{.Label}} {{end}}{{.Type}}](#{{.Type | lower | replace "." ""}}) | {{if .Description}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}}{{else}}none{{end}} |
+{{end}} 
+{{end}} 
+
+
+{{end}}
+
+{{end}}
+
+# Enums
+{{range .Files}}
+{{range .Enums}}
+
+### {{.LongName}}
+
+({{.FullName}})
+
+{{.Description}}
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+{{range .Values -}}
+	| {{.Name}} | {{.Number}} | {{if .Description}}{{nobr .Description}}{{else}}none{{end}} |
+{{end}}
+
+{{end}}
+{{end}}

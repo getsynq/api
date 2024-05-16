@@ -1,11 +1,14 @@
 #!/bin/bash
 
+MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
+TEMPLATE = "$MY_PATH/../templates/grpc-md.tmpl"
+
 PROTOS_DIR="."
 DOCS_DIR="./tmp"
 
 set -e
 
-VALID_ARGS=$(getopt -o p:d: --long protos:,docs: -- "$@")
+VALID_ARGS=$(getopt -o p:d:I: --long protos:,docs: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -19,6 +22,10 @@ while [ : ]; do
         ;;
     -d | --docs)
         DOCS_DIR=$2
+        shift 2
+        ;;
+    -I)
+        PROTOC_OPTS="$PROTOC_OPTS --proto_path=$2"
         shift 2
         ;;
     --) shift; 
@@ -44,9 +51,8 @@ for module_dir in $module_dirs; do
         version=`basename $version_dir`
         proto_files=`find $version_dir -name *.proto -type f`
         if [[ "${proto_files}" != "" ]]; then
-            protoc --proto_path=${PROTOS_DIR} \
-                --doc_out="${DOCS_DIR}/${module}/" \
-                --doc_opt=markdown,${version}.md \
+            protoc --proto_path=${PROTOS_DIR} $PROTOC_OPTS \
+                --doc_out=$TEMPLATE,"${version}.mdx:${DOCS_DIR}/${module}/" \
                 ${proto_files}
         fi
     done
@@ -54,6 +60,8 @@ for module_dir in $module_dirs; do
         rm -r "${DOCS_DIR}/${module}"
     fi
 done
+
+rm -rf tmp
 
 set +e
 exit 0

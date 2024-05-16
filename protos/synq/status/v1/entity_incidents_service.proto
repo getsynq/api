@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package synq.status.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifiers.proto";
+import "synq/status/v1/entity_incidents.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/status/v1";
+
+// EntityIncidentsService is the service which retrieves entity status.
+//
+service EntityIncidentsService {
+  // Get specific entity status by its identifier.
+  rpc GetIncidents(GetIncidentsRequest) returns (GetIncidentsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_STATUS_READ
+      ]
+    };
+  }
+
+  // Get multiple entity statuses by their identifiers.
+  rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_STATUS_READ
+      ]
+    };
+  }
+}
+
+// GetIncidentsRequest is the request message for the GetEntity method.
+message GetIncidentsRequest {
+  // Identifier of the entity to get incidents for.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  // Retrieve incidents of upstream entities.
+  bool fetch_upstream_incidents = 2;
+}
+
+// GetIncidentsResponse is the response message for the GetEntity method.
+message GetIncidentsResponse {
+  // Identifier of the entity.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  // Open incident associated with the entity requested.
+  repeated EntityIncident entity_open_incidents = 2;
+  // Open incidents associated with the upstream entities if requested.
+  repeated EntityIncident upstream_open_incidents = 3;
+}
+
+// BatchGetIncidentsRequest is the request message for the BatchGetIssues method.
+message BatchGetIncidentsRequest {
+  repeated GetIncidentsRequest requests = 1 [(buf.validate.field).required = true];
+}
+
+// BatchGetIncidentsResponse is the response message for the BatchGetIssues method.
+message BatchGetIncidentsResponse {
+  repeated GetIncidentsResponse responses = 1 [(buf.validate.field).required = true];
+}

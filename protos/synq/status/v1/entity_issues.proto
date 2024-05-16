@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package synq.status.v1;
+
+option go_package = "github.com/getsynq/api/status/v1";
+
+enum IssueStatus {
+  ISSUE_STATUS_UNSPECIFIED = 0;
+  ISSUE_STATUS_OK = 10;
+  ISSUE_STATUS_WARN = 20;
+  ISSUE_STATUS_ERROR = 30;
+  ISSUE_STATUS_CRITICAL = 40;
+}

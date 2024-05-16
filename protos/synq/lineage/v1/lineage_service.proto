@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package synq.lineage.v1;
+
+import "synq/entities/v1/identifiers.proto";
+import "synq/lineage/v1/lineage.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/lineage/v1";
+
+// LineageService allows you to fetch:
+// * Entity level lineage from a starting point of one or more entities.
+// * Column Level lineage from a starting point of multiple columns of a single entity.
+service LineageService {
+  rpc GetLineage(GetLineageRequest) returns (GetLineageResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ
+      ]
+    };
+  }
+}
+
+message GetLineageRequest {
+  LineageDirection lineage_direction = 1;
+  GetLineageStartPoint start_point = 2;
+  optional int32 max_depth = 3;
+}
+
+message GetLineageResponse {
+  Lineage lineage = 1;
+}
+
+// Direction of the lineage to query.
+enum LineageDirection {
+  LINEAGE_DIRECTION_UNSPECIFIED = 0;
+  LINEAGE_DIRECTION_UPSTREAM = 1;
+  LINEAGE_DIRECTION_DOWNSTREAM = 2;
+  LINEAGE_DIRECTION_UPSTREAM_DOWNSTREAM = 3;
+}
+
+// Possible starting points to get lineage from.
+message GetLineageStartPoint {
+  oneof from {
+    EntitiesStartPoint entities = 1;
+    EntityColumnsStartPoint entity_columns = 2;
+  }
+}
+
+message EntitiesStartPoint {
+  repeated entities.v1.Identifier entities = 1;
+}
+
+message EntityColumnsStartPoint {
+  entities.v1.Identifier id = 1;
+  repeated string column_names = 2;
+}

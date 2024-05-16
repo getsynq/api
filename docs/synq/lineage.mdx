@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0;  
+      }
+
+       
+      .field-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(3) {  
+        width: 6em;
+      }
+      .field-table td:nth-child(4) {  
+        width: auto;
+      }
+
+       
+      .extension-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) {  
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) {  
+        width: auto;
+      }
+
+       
+      .enum-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) {  
+        width: auto;
+      }
+
+       
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+       
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+       
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+       
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        
+          
+          <li>
+            <a href="#synq%2flineage%2fv1%2frelationships.proto">synq/lineage/v1/relationships.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#synq.lineage.v1.Relationship"><span class="badge">M</span>Relationship</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#synq%2flineage%2fv1%2flineage.proto">synq/lineage/v1/lineage.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#synq.lineage.v1.CllDetails"><span class="badge">M</span>CllDetails</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.Column"><span class="badge">M</span>Column</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.ColumnDependency"><span class="badge">M</span>ColumnDependency</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.Lineage"><span class="badge">M</span>Lineage</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.LineageNode"><span class="badge">M</span>LineageNode</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.NodeDependency"><span class="badge">M</span>NodeDependency</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#synq.lineage.v1.CllState"><span class="badge">E</span>CllState</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.NodePosition"><span class="badge">E</span>NodePosition</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#synq%2flineage%2fv1%2frelationships_service.proto">synq/lineage/v1/relationships_service.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#synq.lineage.v1.DeleteRelationshipsRequest"><span class="badge">M</span>DeleteRelationshipsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.DeleteRelationshipsResponse"><span class="badge">M</span>DeleteRelationshipsResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.UpsertRelationshipsRequest"><span class="badge">M</span>UpsertRelationshipsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.UpsertRelationshipsResponse"><span class="badge">M</span>UpsertRelationshipsResponse</a>
+                </li>
+              
+              
+              
+              
+                <li>
+                  <a href="#synq.lineage.v1.RelationshipsService"><span class="badge">S</span>RelationshipsService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#synq%2flineage%2fv1%2flineage_service.proto">synq/lineage/v1/lineage_service.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#synq.lineage.v1.EntitiesStartPoint"><span class="badge">M</span>EntitiesStartPoint</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.EntityColumnsStartPoint"><span class="badge">M</span>EntityColumnsStartPoint</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.GetLineageRequest"><span class="badge">M</span>GetLineageRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.GetLineageResponse"><span class="badge">M</span>GetLineageResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#synq.lineage.v1.GetLineageStartPoint"><span class="badge">M</span>GetLineageStartPoint</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#synq.lineage.v1.LineageDirection"><span class="badge">E</span>LineageDirection</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#synq.lineage.v1.LineageService"><span class="badge">S</span>LineageService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    
+      
+      <div class="file-heading">
+        <h2 id="synq/lineage/v1/relationships.proto">synq/lineage/v1/relationships.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="synq.lineage.v1.Relationship">Relationship</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>upstream</td>
+                  <td><a href="#synq.entities.v1.Identifier">synq.entities.v1.Identifier</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>downstream</td>
+                  <td><a href="#synq.entities.v1.Identifier">synq.entities.v1.Identifier</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="synq/lineage/v1/lineage.proto">synq/lineage/v1/lineage.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="synq.lineage.v1.CllDetails">CllDetails</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>columns</td>
+                  <td><a href="#synq.lineage.v1.Column">Column</a></td>
+                  <td>repeated</td>
+                  <td><p>Column details for CLL. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>cll_state</td>
+                  <td><a href="#synq.lineage.v1.CllState">CllState</a></td>
+                  <td></td>
+                  <td><p>State of the CLL parse. UNSPECIFIED if CLL was not requested. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>cll_messages</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>Messages related to CLL.
+e.g. Description of parse errors, etc. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.Column">Column</h3>
+        <p>Column in a table-like asset (used in CLL mode).</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>column_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>ID string for the column. This is the parsed column name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td>optional</td>
+                  <td><p>Original column name as fetched from the table. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>native_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td>optional</td>
+                  <td><p>Column type as fetched from the table. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.ColumnDependency">ColumnDependency</h3>
+        <p>Indicates data flow between columns.</p><p>Source columns are used to compute value of target columns.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>source_node_idx</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>Index of source node in the lineage nodes list. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>source_node_column_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>target_node_idx</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>Index of target node in the lineage nodes list. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>target_node_column_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.Lineage">Lineage</h3>
+        <p>Lineage defines the lineage of table-like entities.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>nodes</td>
+                  <td><a href="#synq.lineage.v1.LineageNode">LineageNode</a></td>
+                  <td>repeated</td>
+                  <td><p>Nodes in the lineage with their identities and columns. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>node_dependencies</td>
+                  <td><a href="#synq.lineage.v1.NodeDependency">NodeDependency</a></td>
+                  <td>repeated</td>
+                  <td><p>All edges in the lineage between nodes.
+This can be parsed to create a graph of all the nodes. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>is_cll</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Indicates whether the lineage was filtered for column level lineage (CLL). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>column_dependencies</td>
+                  <td><a href="#synq.lineage.v1.ColumnDependency">ColumnDependency</a></td>
+                  <td>repeated</td>
+                  <td><p>Dependencies between columns. Populated only for CLL. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.LineageNode">LineageNode</h3>
+        <p>Node in a lineage graph representing one or more entities (e.g. database table).</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>ids</td>
+                  <td><a href="#synq.entities.v1.Identifier">synq.entities.v1.Identifier</a></td>
+                  <td>repeated</td>
+                  <td><p>All entities which have the same identity as this node. Must be at least one item.
+These are sorted by closeness to the type of the start point entities.
+e.g. if requesting lineage of a DBT source, first entity should be from DBT, similarly when viewing table it will be other tables. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>position</td>
+                  <td><a href="#synq.lineage.v1.NodePosition">NodePosition</a></td>
+                  <td></td>
+                  <td><p>Position of the node in the lineage. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>cll_details</td>
+                  <td><a href="#synq.lineage.v1.CllDetails">CllDetails</a></td>
+                  <td>optional</td>
+                  <td><p>Populated only for Column Level Lineage (CLL). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.NodeDependency">NodeDependency</h3>
+        <p>Indicates data flow between nodes.</p><p>Source nodes are used to compute value of target nodes.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>source_node_idx</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>Index of source node in the lineage nodes list. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>target_node_idx</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>Index of target node in the lineage nodes list. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="synq.lineage.v1.CllState">CllState</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CLL_STATE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Unspecified state.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CLL_STATE_PARSE_FAILED</td>
+                <td>1</td>
+                <td><p>Parsing of the asset SQL failed. No upstream dependencies can be found.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CLL_STATE_EXTRACTION_FAILED</td>
+                <td>2</td>
+                <td><p>Extraction of the asset SQL failed. Some unsupported SQL features may be used. Some details might be missing.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CLL_STATE_RESOLUTION_FAILED</td>
+                <td>3</td>
+                <td><p>Not all columns or tables were found upstream, lineage is not complete.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CLL_STATE_OK</td>
+                <td>10</td>
+                <td><p>No known issues present.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="synq.lineage.v1.NodePosition">NodePosition</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>NODE_POSITION_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>NODE_POSITION_START_NODE</td>
+                <td>1</td>
+                <td><p>Node is one of the requested start point.</p></td>
+              </tr>
+            
+              <tr>
+                <td>NODE_POSITION_UPSTREAM</td>
+                <td>2</td>
+                <td><p>Node is upstream of the requested start point.</p></td>
+              </tr>
+            
+              <tr>
+                <td>NODE_POSITION_DOWNSTREAM</td>
+                <td>3</td>
+                <td><p>Node is downstream of the requested start point.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="synq/lineage/v1/relationships_service.proto">synq/lineage/v1/relationships_service.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="synq.lineage.v1.DeleteRelationshipsRequest">DeleteRelationshipsRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>relationships</td>
+                  <td><a href="#synq.lineage.v1.Relationship">Relationship</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.DeleteRelationshipsResponse">DeleteRelationshipsResponse</h3>
+        <p></p>
+
+        
+
+        
+      
+        <h3 id="synq.lineage.v1.UpsertRelationshipsRequest">UpsertRelationshipsRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>relationships</td>
+                  <td><a href="#synq.lineage.v1.Relationship">Relationship</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.UpsertRelationshipsResponse">UpsertRelationshipsResponse</h3>
+        <p></p>
+
+        
+
+        
+      
+
+      
+
+      
+
+      
+        <h3 id="synq.lineage.v1.RelationshipsService">RelationshipsService</h3>
+        <p>RelationshipsService allow management of relationships between entities. Relationships can</p><p>be created, updated, and deleted between 2 custom entities, or between a custom entity and Synq native entity.enum</p><p>There is no option to create relationships between 2 Synq native entities (dbt model, BI dashboard, etc.).</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>UpsertRelationships</td>
+                <td><a href="#synq.lineage.v1.UpsertRelationshipsRequest">UpsertRelationshipsRequest</a></td>
+                <td><a href="#synq.lineage.v1.UpsertRelationshipsResponse">UpsertRelationshipsResponse</a></td>
+                <td><p>Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.</p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteRelationships</td>
+                <td><a href="#synq.lineage.v1.DeleteRelationshipsRequest">DeleteRelationshipsRequest</a></td>
+                <td><a href="#synq.lineage.v1.DeleteRelationshipsResponse">DeleteRelationshipsResponse</a></td>
+                <td><p>Delete relationships between entities. If the relationship does not exist, it will be ignored.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="synq/lineage/v1/lineage_service.proto">synq/lineage/v1/lineage_service.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="synq.lineage.v1.EntitiesStartPoint">EntitiesStartPoint</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>entities</td>
+                  <td><a href="#synq.entities.v1.Identifier">synq.entities.v1.Identifier</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.EntityColumnsStartPoint">EntityColumnsStartPoint</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#synq.entities.v1.Identifier">synq.entities.v1.Identifier</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>column_names</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.GetLineageRequest">GetLineageRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>lineage_direction</td>
+                  <td><a href="#synq.lineage.v1.LineageDirection">LineageDirection</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>start_point</td>
+                  <td><a href="#synq.lineage.v1.GetLineageStartPoint">GetLineageStartPoint</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>max_depth</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td>optional</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.GetLineageResponse">GetLineageResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>lineage</td>
+                  <td><a href="#synq.lineage.v1.Lineage">Lineage</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="synq.lineage.v1.GetLineageStartPoint">GetLineageStartPoint</h3>
+        <p>Possible starting points to get lineage from.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>entities</td>
+                  <td><a href="#synq.lineage.v1.EntitiesStartPoint">EntitiesStartPoint</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>entity_columns</td>
+                  <td><a href="#synq.lineage.v1.EntityColumnsStartPoint">EntityColumnsStartPoint</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="synq.lineage.v1.LineageDirection">LineageDirection</h3>
+        <p>Direction of the lineage to query.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>LINEAGE_DIRECTION_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>LINEAGE_DIRECTION_UPSTREAM</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>LINEAGE_DIRECTION_DOWNSTREAM</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>LINEAGE_DIRECTION_UPSTREAM_DOWNSTREAM</td>
+                <td>3</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="synq.lineage.v1.LineageService">LineageService</h3>
+        <p>LineageService allows you to fetch:</p><p>* Entity level lineage from a starting point of one or more entities.</p><p>* Column Level lineage from a starting point of multiple columns of a single entity.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>GetLineage</td>
+                <td><a href="#synq.lineage.v1.GetLineageRequest">GetLineageRequest</a></td>
+                <td><a href="#synq.lineage.v1.GetLineageResponse">GetLineageResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        
+          <tr id="double">
+            <td>double</td>
+            <td></td>
+            <td>double</td>
+            <td>double</td>
+            <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="float">
+            <td>float</td>
+            <td></td>
+            <td>float</td>
+            <td>float</td>
+            <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="int32">
+            <td>int32</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="int64">
+            <td>int64</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="uint32">
+            <td>uint32</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="uint64">
+            <td>uint64</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint32">
+            <td>sint32</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint64">
+            <td>sint64</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="fixed32">
+            <td>fixed32</td>
+            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="fixed64">
+            <td>fixed64</td>
+            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="sfixed32">
+            <td>sfixed32</td>
+            <td>Always four bytes.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sfixed64">
+            <td>sfixed64</td>
+            <td>Always eight bytes.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="bool">
+            <td>bool</td>
+            <td></td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
+          </tr>
+        
+          <tr id="string">
+            <td>string</td>
+            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+            <td>string</td>
+            <td>String</td>
+            <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
+          </tr>
+        
+          <tr id="bytes">
+            <td>bytes</td>
+            <td>May contain any arbitrary sequence of bytes.</td>
+            <td>string</td>
+            <td>ByteString</td>
+            <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </body>
+</html>
+

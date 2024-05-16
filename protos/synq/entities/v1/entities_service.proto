@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/entities.proto";
+import "synq/entities/v1/identifiers.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// EntitiesService is a service for managing custom entities. Entities can represent
+// various data platform concepts such as services, consumers, applications or data pipelines
+// that are not natively available in Synq.
+//
+// Entities are identified by a unique identifier and can be created, updated, read and deleted.
+//
+service EntitiesService {
+  // Get specific entity by its identifier.
+  rpc GetEntity(GetEntityRequest) returns (GetEntityResponse) {
+    option (synq.v1.scope_authorization) = {
+       scopes: [
+         SCOPE_ENTITY_READ
+       ]
+    };
+  }
+
+  // Get multiple entities by their identifiers.
+  rpc BatchGetEntities(BatchGetEntitiesRequest) returns (BatchGetEntitiesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ
+      ]
+    };
+  }
+
+  // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+  rpc UpsertEntity(UpsertEntityRequest) returns (UpsertEntityResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_EDIT
+      ]
+    };
+  }
+
+  // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+  rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_EDIT
+      ]
+    };
+  }
+}
+
+// GetEntityRequest is the request message for the GetEntity method.
+message GetEntityRequest {
+  // Identifier of the entity to get.
+  Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// GetEntityResponse is the response message for the GetEntity method.
+message GetEntityResponse {
+  // The entity that was retrieved.
+  Entity entity = 1;
+}
+
+// BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
+message BatchGetEntitiesRequest {
+  // Identifiers of the entities to get.
+  repeated Identifier ids = 1 [(buf.validate.field).required = true];
+}
+
+// BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
+message BatchGetEntitiesResponse {
+  // The entities that were retrieved.
+  repeated Entity entities = 1;
+}
+
+// UpsertEntityRequest is the request message for the UpsertEntity method.
+message UpsertEntityRequest {
+  // The entity to create or update.
+  entities.v1.Entity entity = 1 [(buf.validate.field).required = true];
+}
+
+// UpsertEntityResponse is the response message for the UpsertEntity method.
+message UpsertEntityResponse {}
+
+// DeleteEntityRequest is the request message for the DeleteEntity method.
+message DeleteEntityRequest {
+  // Identifier of the entity to delete.
+  Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteEntityResponse is the response message for the DeleteEntity method.
+message DeleteEntityResponse {}

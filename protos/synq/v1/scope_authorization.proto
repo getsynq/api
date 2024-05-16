@@ -1,0 +1,27 @@
+syntax = "proto3";
+package synq.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/getsynq/api/v1";
+
+extend google.protobuf.MethodOptions {
+  ScopeAuthorization scope_authorization = 50010;
+}
+
+enum Scope {
+  SCOPE_UNSPECIFIED = 0;
+
+  SCOPE_ENTITY_READ = 1;
+  SCOPE_ENTITY_EDIT = 2;
+
+  SCOPE_LINEAGE_READ = 10;
+  SCOPE_LINEAGE_EDIT = 11;
+
+  SCOPE_STATUS_READ = 20;
+}
+
+
+message ScopeAuthorization {
+  repeated Scope scopes = 1;
+}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package synq.status.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/status/v1";
+
+message EntityIncident {
+  // Unique identifier of the incident.
+  string id = 1;
+
+  // URL of the incident.
+  string url = 2;
+
+  // Name of the incident give by the user.
+  string name = 3;
+
+  // Information about author of the incident.
+  string created_by = 4;
+  // Time when the incident was created.
+  google.protobuf.Timestamp created_at = 5;
+
+  // Information about the user who last updated the incident.
+  string updated_by = 6;
+  // Time when the incident was last updated.
+  google.protobuf.Timestamp updated_at = 7;
+
+  // Indicates if all issues inside the incident are resolved.
+  bool is_resolved = 8;
+}

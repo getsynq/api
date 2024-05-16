@@ -6,13 +6,22 @@ DIRTY=false
 
 set -e
 
-VALID_ARGS=$(getopt -o dp:g: --long dirty,protos:,gen: -- "$@")
+PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"
+
+# Parse the options
+VALID_ARGS=$(getopt -o dp:g:I: --long dirty,protos:,gen: -- "$@")
 if [[ $? -ne 0 ]]; then
-    exit 1;
+    exit 1
 fi
 
+# Evaluate the parsed options
 eval set -- "$VALID_ARGS"
-while [ : ]; do
+
+PROTOC_OPTS=""
+
+echo $@
+
+while true; do
   case "$1" in
     -d | --dirty)
         DIRTY=true
@@ -22,6 +31,10 @@ while [ : ]; do
         PROTOS_DIR=$2
         shift 2
         ;;
+    -I)
+        PROTOC_OPTS="$PROTOC_OPTS --proto_path=$2"
+        shift 2
+        ;;
     -g | --gen)
         GEN_DIR=$2
         shift 2
@@ -29,6 +42,10 @@ while [ : ]; do
     --) shift; 
         break 
         ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
   esac
 done
 
@@ -49,7 +66,7 @@ for module_dir in $module_dirs; do
         version=`basename $version_dir`
         proto_files=`find $version_dir -name *.proto -type f`
         if [[ "${proto_files}" != "" ]]; then
-            protoc --proto_path=${PROTOS_DIR} \
+            protoc --proto_path=${PROTOS_DIR} $PROTOC_OPTS \
                 --go_out=${GEN_DIR} \
                 --go-grpc_out=${GEN_DIR} \
                 --doc_out=${DOCS_DIR}/${module} \
