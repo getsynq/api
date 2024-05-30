@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package synq.lineage.v1;
+package synq.entities.lineage.v1;
 
 import "synq/entities/v1/identifiers.proto";
 
-option go_package = "github.com/getsynq/api/lineage/v1";
+option go_package = "github.com/getsynq/api/entities/lineage/v1";
 
 // Lineage defines the lineage of table-like entities.
 message Lineage {

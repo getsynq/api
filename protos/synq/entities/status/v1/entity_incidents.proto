@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package synq.status.v1;
+package synq.entities.status.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/getsynq/api/status/v1";
+option go_package = "github.com/getsynq/api/entities/status/v1";
 
 message EntityIncident {
   // Unique identifier of the incident.

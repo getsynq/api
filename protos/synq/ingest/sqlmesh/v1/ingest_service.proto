@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package synq.ingest.sqlmesh.v1;
+
+
+option go_package = "github.com/getsynq/api/ingest/status/v1";

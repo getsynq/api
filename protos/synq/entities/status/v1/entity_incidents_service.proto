@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package synq.status.v1;
+package synq.entities.status.v1;
 
 import "buf/validate/validate.proto";
 import "synq/entities/v1/identifiers.proto";
-import "synq/status/v1/entity_incidents.proto";
+import "synq/entities/status/v1/entity_incidents.proto";
 import "synq/v1/scope_authorization.proto";
 
-option go_package = "github.com/getsynq/api/status/v1";
+option go_package = "github.com/getsynq/api/entities/status/v1";
 
 // EntityIncidentsService is the service which retrieves entity status.
 //

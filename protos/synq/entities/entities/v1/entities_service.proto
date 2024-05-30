@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package synq.entities.entities.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/entities.proto";
+import "synq/entities/v1/identifiers.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/entities/v1";
+
+// EntitiesService is a service for retriving any entity.
+//
+service EntitiesService {
+  // Get specific entity by its identifier.
+  rpc GetEntity(GetEntityRequest) returns (GetEntityResponse) {
+    option (synq.v1.scope_authorization) = {
+       scopes: [
+         SCOPE_ENTITY_READ
+       ]
+    };
+  }
+
+  // Get multiple entities by their identifiers.
+  rpc BatchGetEntities(BatchGetEntitiesRequest) returns (BatchGetEntitiesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ
+      ]
+    };
+  }
+}
+
+// GetEntityRequest is the request message for the GetEntity method.
+message GetEntityRequest {
+  // Identifier of the entity to get.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// GetEntityResponse is the response message for the GetEntity method.
+message GetEntityResponse {
+  // The entity that was retrieved.
+  synq.entities.v1.Entity entity = 1;
+}
+
+// BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
+message BatchGetEntitiesRequest {
+  // Identifiers of the entities to get.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field).required = true];
+}
+
+// BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
+message BatchGetEntitiesResponse {
+  // The entities that were retrieved.
+  repeated synq.entities.v1.Entity entities = 1;
+}
