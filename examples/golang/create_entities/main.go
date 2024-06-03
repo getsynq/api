@@ -1,10 +1,9 @@
 package main
 
 import (
-	entitiesservicev1 "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/v1/entitiesv1grpc"
-	lineageservicev1 "buf.build/gen/go/getsynq/api/grpc/go/synq/lineage/v1/lineagev1grpc"
+	entititescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	entititescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	lineagev1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/lineage/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -45,13 +44,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	entitiesapi := entitiesservicev1.NewEntitiesServiceClient(conn)
-	relationshipsapi := lineageservicev1.NewRelationshipsServiceClient(conn)
+	entitiesapi := entititescustomv1grpc.NewEntitiesServiceClient(conn)
+	relationshipsapi := entititescustomv1grpc.NewRelationshipsServiceClient(conn)
 
 	// Begin: Create Entities
 
 	// Create datadog monitor for kernel-accounts entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entitiesv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -71,7 +70,7 @@ func main() {
 	}
 
 	// Create datadog monitor for kernel-auth entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entitiesv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -91,7 +90,7 @@ func main() {
 	}
 
 	// Create kernel-accounts service entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entitiesv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -111,7 +110,7 @@ func main() {
 	}
 
 	// Create kernel-auth service entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entitiesv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -134,8 +133,8 @@ func main() {
 	// Service kernel-accounts is downstream of its datadog's monitor
 	// Service kernel-auth is downstream of its datadog's monitor
 	// Both services are upstream of clickhouse table `users`
-	_, err = relationshipsapi.UpsertRelationships(ctx, &lineagev1.UpsertRelationshipsRequest{
-		Relationships: []*lineagev1.Relationship{
+	_, err = relationshipsapi.UpsertRelationships(ctx, &entititescustomv1.UpsertRelationshipsRequest{
+		Relationships: []*entititescustomv1.Relationship{
 			{
 				Upstream: &entitiesv1.Identifier{
 					Id: &entitiesv1.Identifier_Custom{

@@ -19,8 +19,11 @@ enum Scope {
   SCOPE_LINEAGE_EDIT = 11;
 
   SCOPE_STATUS_READ = 20;
-}
 
+  SCOPE_INGEST_DBT = 30;
+  SCOPE_INGEST_SQLMESH = 31;
+  reserved 32 to 49;
+}
 
 message ScopeAuthorization {
   repeated Scope scopes = 1;

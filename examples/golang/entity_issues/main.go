@@ -1,9 +1,9 @@
 package main
 
 import (
-	statusservicev1 "buf.build/gen/go/getsynq/api/grpc/go/synq/status/v1/statusv1grpc"
+	entitiesstatusv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/status/v1/statusv1grpc"
+	entitiesstatusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/status/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	statusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/status/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -43,10 +43,10 @@ func main() {
 	}
 	defer conn.Close()
 
-	statusServiceClient := statusservicev1.NewEntityIssuesServiceClient(conn)
+	statusServiceClient := entitiesstatusv1grpc.NewEntityIssuesServiceClient(conn)
 
-	issuesStatusResponse, err := statusServiceClient.BatchGetIssuesStatus(ctx, &statusv1.BatchGetIssuesStatusRequest{
-		Requests: []*statusv1.GetIssuesStatusRequest{
+	issuesStatusResponse, err := statusServiceClient.BatchGetIssuesStatus(ctx, &entitiesstatusv1.BatchGetIssuesStatusRequest{
+		Requests: []*entitiesstatusv1.GetIssuesStatusRequest{
 			{
 				Id: &entitiesv1.Identifier{
 					Id: &entitiesv1.Identifier_Dataproduct{

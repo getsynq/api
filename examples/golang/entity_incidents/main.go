@@ -1,9 +1,9 @@
 package main
 
 import (
-	statusservicev1 "buf.build/gen/go/getsynq/api/grpc/go/synq/status/v1/statusv1grpc"
+	entitiesstatusv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/status/v1/statusv1grpc"
+	entitiesstatusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/status/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	statusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/status/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -16,12 +16,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.io"
+	host := "developer.synq.dev"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	clientID := "F43y9TAnrSHrfBRLsAuYjEdF9qvXuTom"
-	clientSecret := "dXlDaElSN3ZXS3N4UXFTNWpHY1pmZ0VoblptdUhWeEY="
+	clientID := "foo"
+	clientSecret := "bar"
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
 	config := &clientcredentials.Config{
@@ -43,9 +43,9 @@ func main() {
 	}
 	defer conn.Close()
 
-	statusServiceClient := statusservicev1.NewEntityIncidentsServiceClient(conn)
+	statusServiceClient := entitiesstatusv1grpc.NewEntityIncidentsServiceClient(conn)
 
-	requests := []*statusv1.GetIncidentsRequest{
+	requests := []*entitiesstatusv1.GetIncidentsRequest{
 		{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Dataproduct{
@@ -99,7 +99,7 @@ func main() {
 		},
 	}
 
-	issuesStatusResponse, err := statusServiceClient.BatchGetIncidents(ctx, &statusv1.BatchGetIncidentsRequest{
+	issuesStatusResponse, err := statusServiceClient.BatchGetIncidents(ctx, &entitiesstatusv1.BatchGetIncidentsRequest{
 		Requests: requests,
 	})
 	if err != nil {

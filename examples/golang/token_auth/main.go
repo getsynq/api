@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	statusservicev1 "buf.build/gen/go/getsynq/api/grpc/go/synq/status/v1/statusv1grpc"
+	entitiesstatusv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/status/v1/statusv1grpc"
+	entitiesstatusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/status/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	statusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/status/v1"
 	"github.com/getsynq/api/examples/go/token_auth/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -20,7 +20,7 @@ func main() {
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	longLivedToken := "long-lived-token"
+	longLivedToken := "st-long-lived-token"
 
 	oauthTokenSource, err := auth.LongLivedTokenSource(longLivedToken, host)
 	if err != nil {
@@ -39,10 +39,10 @@ func main() {
 	}
 	defer conn.Close()
 
-	statusServiceClient := statusservicev1.NewEntityIssuesServiceClient(conn)
+	statusServiceClient := entitiesstatusv1grpc.NewEntityIssuesServiceClient(conn)
 
-	issuesStatus, err := statusServiceClient.BatchGetIssuesStatus(ctx, &statusv1.BatchGetIssuesStatusRequest{
-		Requests: []*statusv1.GetIssuesStatusRequest{
+	issuesStatus, err := statusServiceClient.BatchGetIssuesStatus(ctx, &entitiesstatusv1.BatchGetIssuesStatusRequest{
+		Requests: []*entitiesstatusv1.GetIssuesStatusRequest{
 			{
 				Id: &entitiesv1.Identifier{
 					Id: &entitiesv1.Identifier_Dataproduct{
