@@ -1,4 +1,4 @@
-module github.com/getsynq/api/examples/golang/token_auth
+module github.com/getsynq/api/examples/golang/ingest
 
 go 1.21.6
 

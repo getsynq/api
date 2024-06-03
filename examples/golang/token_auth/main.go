@@ -8,7 +8,7 @@ import (
 	entitiesstatusv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/status/v1/statusv1grpc"
 	entitiesstatusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/status/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	"github.com/getsynq/api/examples/go/token_auth/auth"
+	"github.com/getsynq/api/examples/golang/token_auth/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
