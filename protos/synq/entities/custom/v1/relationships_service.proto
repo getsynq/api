@@ -3,8 +3,8 @@ syntax = "proto3";
 package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
-import "synq/v1/scope_authorization.proto";
 import "synq/entities/v1/identifiers.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
@@ -15,18 +15,14 @@ service RelationshipsService {
   // Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
   rpc UpsertRelationships(UpsertRelationshipsRequest) returns (UpsertRelationshipsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_LINEAGE_EDIT
-      ]
+      scopes: [SCOPE_LINEAGE_EDIT]
     };
   }
 
   // Delete relationships between entities. If the relationship does not exist, it will be ignored.
   rpc DeleteRelationships(DeleteRelationshipsRequest) returns (DeleteRelationshipsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_LINEAGE_EDIT
-      ]
+      scopes: [SCOPE_LINEAGE_EDIT]
     };
   }
 }

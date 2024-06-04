@@ -3,8 +3,8 @@ syntax = "proto3";
 package synq.entities.status.v1;
 
 import "buf/validate/validate.proto";
-import "synq/entities/v1/identifiers.proto";
 import "synq/entities/status/v1/entity_issues.proto";
+import "synq/entities/v1/identifiers.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/status/v1";
@@ -15,18 +15,14 @@ service EntityIssuesService {
   // Get specific entity status by its identifier.
   rpc GetIssuesStatus(GetIssuesStatusRequest) returns (GetIssuesStatusResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_STATUS_READ
-      ]
+      scopes: [SCOPE_STATUS_READ]
     };
   }
 
   // Get multiple entity statuses by their identifiers.
   rpc BatchGetIssuesStatus(BatchGetIssuesStatusRequest) returns (BatchGetIssuesStatusResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_STATUS_READ
-      ]
+      scopes: [SCOPE_STATUS_READ]
     };
   }
 }

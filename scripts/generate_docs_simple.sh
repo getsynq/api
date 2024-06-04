@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
-TEMPLATE="$MY_PATH/../templates/grpc-md.tmpl"
+TEMPLATE=$(realpath "$MY_PATH/../templates/grpc-md.tmpl")
 
 PROTOS_DIR="."
 DOCS_DIR="./tmp"
@@ -43,8 +43,10 @@ echo "Generating docs..."
 proto_files=$(find "${PROTOS_DIR}" -type f -name "*.proto")
 
 protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS}\
-    --doc_out=${TEMPLATE},${DOCS_DIR}/${module}/api.mdx:. \
+    --doc_out=. --doc_opt=${TEMPLATE},api.mdx:. \
     ${proto_files}
+
+mv api.mdx "${DOCS_DIR}/api.mdx"
 
 set +e
 exit 0

@@ -19,18 +19,14 @@ service EntitiesService {
   // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
   rpc UpsertEntity(UpsertEntityRequest) returns (UpsertEntityResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_ENTITY_EDIT
-      ]
+      scopes: [SCOPE_ENTITY_EDIT]
     };
   }
 
   // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
   rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_ENTITY_EDIT
-      ]
+      scopes: [SCOPE_ENTITY_EDIT]
     };
   }
 }

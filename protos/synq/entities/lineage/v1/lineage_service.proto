@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package synq.entities.lineage.v1;
 
-import "synq/entities/v1/identifiers.proto";
 import "synq/entities/lineage/v1/lineage.proto";
+import "synq/entities/v1/identifiers.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/lineage/v1";
@@ -14,9 +14,7 @@ option go_package = "github.com/getsynq/api/entities/lineage/v1";
 service LineageService {
   rpc GetLineage(GetLineageRequest) returns (GetLineageResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_LINEAGE_READ
-      ]
+      scopes: [SCOPE_LINEAGE_READ]
     };
   }
 }
