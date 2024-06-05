@@ -15,11 +15,11 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.io"
+	host := "developer.synq.dev"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	longLivedToken := "st-QJ3Qr98NHsU6aRdXIxF63jU9RUM6Wewa"
+	longLivedToken := "st-long-lived-token"
 
 	oauthTokenSource, err := auth.LongLivedTokenSource(longLivedToken, host)
 	if err != nil {
