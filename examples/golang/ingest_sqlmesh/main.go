@@ -1,13 +1,12 @@
 package main
 
 import (
+	ingestsqlmeshv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/ingest/sqlmesh/v1/sqlmeshv1grpc"
+	ingestsqlmeshv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/ingest/sqlmesh/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
-
-	ingestdbtv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/ingest/dbt/v1/dbtv1grpc"
-	ingestdbtv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/ingest/dbt/v1"
-	"github.com/getsynq/api/examples/golang/ingest_dbt/auth"
+	"github.com/getsynq/api/examples/golang/ingest_sqlmesh/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -38,13 +37,9 @@ func main() {
 	}
 	defer conn.Close()
 
-	dbtServiceClient := ingestdbtv1grpc.NewDbtServiceClient(conn)
+	dbtServiceClient := ingestsqlmeshv1grpc.NewSqlMeshServiceClient(conn)
 
-	res, err := dbtServiceClient.IngestInvocation(ctx, &ingestdbtv1.IngestInvocationRequest{
-		Args:     []string{"run"},
-		ExitCode: 1,
-		StdErr:   []byte("Command not found"),
-	})
+	res, err := dbtServiceClient.IngestMetadata(ctx, &ingestsqlmeshv1.IngestMetadataRequest{})
 	if err != nil {
 		panic(err)
 	}

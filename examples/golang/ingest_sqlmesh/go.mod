@@ -1,4 +1,4 @@
-module github.com/getsynq/api/examples/golang/ingest_dbt
+module github.com/getsynq/api/examples/golang/ingest_sqlmesh
 
 go 1.21.6
 

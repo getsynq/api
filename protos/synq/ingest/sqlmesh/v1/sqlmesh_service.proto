@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package synq.ingest.sqlmesh.v1;
 
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/sqlmesh/v1";
@@ -23,6 +25,14 @@ message IngestMetadataRequest {
   string uploader_version = 7;
   // Build time of the uploader tool
   string uploader_build_time = 8;
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 9 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1717707428}
+    },
+    required: true
+  }];
 }
 message IngestMetadataResponse {}
 
@@ -41,6 +51,22 @@ message IngestExecutionRequest {
   string uploader_version = 7;
   // Build time of the uploader tool
   string uploader_build_time = 8;
+  // Time at which the execution started
+  google.protobuf.Timestamp started_at = 9 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1717707428}
+    },
+    required: true
+  }];
+  // Time at which the execution finished
+  google.protobuf.Timestamp finished_at = 10 [(buf.validate.field).timestamp.lt_now = true];
+
+  option (buf.validate.message).cel = {
+    id: "ingest_execution_request.finished_at",
+    message: "Finished at must be greater than or equal to started at.",
+    expression: "this.finished_at >= this.started_at"
+  };
 }
 
 message IngestExecutionResponse {}
