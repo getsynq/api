@@ -19,6 +19,8 @@ message IngestMetadataRequest {
   map<string, bytes> model_lineage = 4;
   // Data from /api/files
   bytes files = 5;
+  // Data from /api/file/{file_path}
+  map<string, bytes> file_content = 10;
   // Data from /api/environments
   bytes environments = 6;
   // Version of the uploader tool
