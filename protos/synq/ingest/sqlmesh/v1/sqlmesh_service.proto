@@ -8,6 +8,12 @@ import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/sqlmesh/v1";
 
+message GitContext {
+  string clone_url = 1;
+  string branch = 2;
+  string commit_sha = 3;
+}
+
 message IngestMetadataRequest {
   // Data from /api/meta
   bytes api_meta = 1;
@@ -35,6 +41,8 @@ message IngestMetadataRequest {
     },
     required: true
   }];
+  // Git context of the project
+  GitContext git_context = 11;
 }
 message IngestMetadataResponse {}
 
@@ -63,6 +71,8 @@ message IngestExecutionRequest {
   }];
   // Time at which the execution finished
   google.protobuf.Timestamp finished_at = 10 [(buf.validate.field).timestamp.lt_now = true];
+  // Git context of the project
+  GitContext git_context = 11;
 
   option (buf.validate.message).cel = {
     id: "ingest_execution_request.finished_at",
