@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package synq.datachecks.sqltests.v1;
+
+import "synq/datachecks/sqltests/v1/sql_tests.proto";
+import "synq/entities/v1/annotations.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
+
+// SqlTestsService is a service for managing SqlTests.
+service SqlTestsService {
+  // Upsert SqlTests based on a unique ID.
+  rpc BatchUpsertSqlTests(BatchUpsertSqlTestsRequest) returns (BatchUpsertSqlTestsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
+    };
+  }
+
+  // List SqlTests for given annotations.
+  rpc ListSqlTests(ListSqlTestsRequest) returns (ListSqlTestsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_READ]
+    };
+  }
+
+  // Get SqlTests by their IDs.
+  rpc BatchGetSqlTests(BatchGetSqlTestsRequest) returns (BatchGetSqlTestsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_READ]
+    };
+  }
+
+  // Delete SqlTests by their IDs.
+  rpc BatchDeleteSqlTests(BatchDeleteSqlTestsRequest) returns (BatchDeleteSqlTestsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
+    };
+  }
+}
+
+message BatchUpsertSqlTestsRequest {
+  // List of SqlTests to upsert.
+  // The upsert is performed based on the unique path provided for each SqlTest.
+  repeated SqlTest sql_tests = 1;
+}
+
+message BatchUpsertSqlTestsResponse {
+  // IDs for which SqlTests were created without error.
+  repeated string created_ids = 1;
+  // IDs for which SqlTests were updated without error.
+  repeated string updated_ids = 2;
+
+  // Details of errors encountered during the upsert operation.
+  message UpsertError {
+    string id = 1;
+    string reason = 2;
+  }
+  // Errors raised while upsert. This list will be empty if there were no errors.
+  repeated UpsertError errors = 3;
+}
+
+message ListSqlTestsRequest {
+  // Optional annotations to fetch SqlTests for.
+  repeated entities.v1.Annotation annotations = 1;
+}
+
+message ListSqlTestsResponse {
+  repeated SqlTest sql_tests = 1;
+}
+
+message BatchGetSqlTestsRequest {
+  // IDs of the SqlTests to fetch.
+  repeated string ids = 1;
+}
+
+message BatchGetSqlTestsResponse {
+  map<string, SqlTest> sql_tests = 1;
+}
+
+message BatchDeleteSqlTestsRequest {
+  // IDs of the SqlTests to delete.
+  repeated string ids = 1;
+}
+
+message BatchDeleteSqlTestsResponse {}

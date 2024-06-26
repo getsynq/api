@@ -23,6 +23,9 @@ enum Scope {
   SCOPE_INGEST_DBT = 30;
   SCOPE_INGEST_SQLMESH = 31;
   reserved 32 to 49;
+
+  SCOPE_DATACHECKS_SQLTESTS_READ = 50;
+  SCOPE_DATACHECKS_SQLTESTS_EDIT = 51;
 }
 
 message ScopeAuthorization {

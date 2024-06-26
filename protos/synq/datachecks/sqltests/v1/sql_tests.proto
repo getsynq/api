@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package synq.datachecks.sqltests.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/annotations.proto";
+import "synq/platforms/v1/data_platforms.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
+
+// The SqlTest is a SQL test that is executed on a synq entity.
+message SqlTest {
+  // Identifier for the data platform which the SqlTest would be executed on.
+  platforms.v1.DataPlatformIdentifier platform = 1 [(buf.validate.field).required = true];
+
+  // Unique resource identifier for the SqlTest. This is externally maintained and can
+  // be used to fetch/update/delete this test.
+  string id = 2 [(buf.validate.field).required = true];
+
+  // Human friendly name.
+  string name = 3 [(buf.validate.field).required = true];
+
+  // A valid SQL expression which is the test.
+  string sql_expression = 4 [(buf.validate.field).required = true];
+
+  // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html) for the execution schedule of the SqlTest.
+  string recurrence_rule = 5;
+
+  // Annotations for the given SqlTest.These help filter the SqlTests for later
+  // operations like listing by API, selection in UI, analytics, etc.
+  repeated entities.v1.Annotation annotations = 6;
+
+  // Boolean flag to to toggle saving of failure runs.
+  bool save_failures = 7;
+}

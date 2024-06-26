@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package synq.platforms.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/platforms/v1";
+
+// DataPlatformIdentifier is a unique reference to a data platform integrated with Synq.
+message DataPlatformIdentifier {
+  oneof id {
+    option (buf.validate.oneof).required = true;
+    UnknownDataPlatform unknown = 1;
+    BigqueryIdentifier bigquery = 2;
+    ClickhouseIdentifier clickhouse = 3;
+    SnowflakeIdentifier snowflake = 4;
+    RedshiftIdentifier redshift = 5;
+    PostgresIdentifier postgres = 6;
+    MysqlIdentifier mysql = 7;
+    DatabricksIdentifier databricks = 8;
+  }
+}
+
+message UnknownDataPlatform {}
+
+message BigqueryIdentifier {
+  // BigQuery project
+  string project = 1 [(buf.validate.field).required = true];
+}
+
+message ClickhouseIdentifier {
+  // Clickhouse host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Clickhouse database
+  string schema = 2 [(buf.validate.field).required = true];
+}
+
+message SnowflakeIdentifier {
+  // Snowflake account
+  string account = 1 [(buf.validate.field).required = true];
+
+  // Snowflake database
+  string database = 2 [(buf.validate.field).required = true];
+}
+
+message RedshiftIdentifier {
+  // Redshift cluster
+  string cluster = 1 [(buf.validate.field).required = true];
+
+  // Redshift database
+  string database = 2 [(buf.validate.field).required = true];
+}
+
+message PostgresIdentifier {
+  // Postgres host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Postgres database
+  string database = 2 [(buf.validate.field).required = true];
+}
+
+message MysqlIdentifier {
+  // Mysql host inclusive of port
+  string host = 1 [(buf.validate.field).required = true];
+}
+
+message DatabricksIdentifier {
+  // URl of the databricks workspace
+  string workspace = 1 [(buf.validate.field).required = true];
+}
