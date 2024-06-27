@@ -58,7 +58,7 @@ func main() {
 					Platform: &platformsv1.DataPlatformIdentifier{
 						Id: &platformsv1.DataPlatformIdentifier_Clickhouse{
 							Clickhouse: &platformsv1.ClickhouseIdentifier{
-								Host:   "q920vu7fv8.eu-west-1.aws.clickhouse.cloud",
+								Host:   "xyz.clickhouse.cloud",
 								Schema: "prod",
 							},
 						},
@@ -83,7 +83,7 @@ func main() {
 					Platform: &platformsv1.DataPlatformIdentifier{
 						Id: &platformsv1.DataPlatformIdentifier_Postgres{
 							Postgres: &platformsv1.PostgresIdentifier{
-								Host:     "34.79.228.42",
+								Host:     "12.34.123.45",
 								Database: "kernel-alertsv2",
 							},
 						},
@@ -130,7 +130,7 @@ func main() {
 					Platform: &platformsv1.DataPlatformIdentifier{
 						Id: &platformsv1.DataPlatformIdentifier_Clickhouse{
 							Clickhouse: &platformsv1.ClickhouseIdentifier{
-								Host:   "q920vu7fv8.eu-west-1.aws.clickhouse.cloud",
+								Host:   "xyz.clickhouse.cloud",
 								Schema: "prod",
 							},
 						},

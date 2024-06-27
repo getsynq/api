@@ -9,6 +9,7 @@ extend google.protobuf.MethodOptions {
   ScopeAuthorization scope_authorization = 50010;
 }
 
+// This has to match auth/v1/scope.proto
 enum Scope {
   SCOPE_UNSPECIFIED = 0;
 
@@ -19,6 +20,8 @@ enum Scope {
   SCOPE_LINEAGE_EDIT = 11;
 
   SCOPE_STATUS_READ = 20;
+  
+  SCOPE_EXECUTION_EDIT = 60;
 
   SCOPE_INGEST_DBT = 30;
   SCOPE_INGEST_SQLMESH = 31;
