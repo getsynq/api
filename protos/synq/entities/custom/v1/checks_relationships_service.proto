@@ -37,4 +37,5 @@ message DeleteCheckRelationshipsResponse {}
 message CheckRelationship {
   synq.entities.v1.Identifier check = 1 [(buf.validate.field).required = true];
   synq.entities.v1.Identifier checked = 2 [(buf.validate.field).required = true];
+  repeated string checked_columns = 3;
 }
