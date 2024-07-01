@@ -12,9 +12,14 @@ To use the API, you need to do the following.
 
 You can find language specific examples [here](https://github.com/getsynq/api/tree/main/examples).
 
-## Generating client code
+## Client Code
 
-You can generate the code from the protos available at our [github repository](https://github.com/getsynq/api).
+The simplest way to use Synq API is to use the SDKs from our [`buf` repository](https://buf.build/getsynq/api/sdks). Use select the language of your choice and follow the instructions to add the Synq API to your project.
+
+
+### Generating client code
+
+If you prefer to, the client code can be generated from the protos available at our [github repository](https://github.com/getsynq/api).
 
 ```bash
 $ git clone git@github.com:getsynq/api.git <synq_api_codebase>
@@ -64,9 +69,11 @@ The generated code is added to the `./gen` folder. You can change the location t
 
 ## Fetching Access Token
 
-You need a valid access token to communicate with the Synq servers. You can generate an access token with limited validity using your client credentials (`CLIENT_ID` and `CLIENT_SECRET`). Reach out to us in order to generate your client credentials.
+You need a valid access token to communicate with the Synq servers. To generate the access token, you need client credentials.
 
-You can fetch the token source by making the following `POST` call to our OAuth2 server.
+You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from the [Synq application](https://app.synq.io/settings/api). The credentials are scoped so make sure to select the one best suited to execute the RPCs that you wish to.
+
+You can now fetch the token source by making the following `POST` call to our OAuth2 server.
 
 ```bash
 curl -d "client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&grant_type=client_credentials" -X POST http://api.synq.io/oauth2/token
@@ -83,115 +90,8 @@ The response will have the following structure.
 }
 ```
 
-The `<access_token>` thus fetched is a valid JWT token.
+The `<access_token>` thus fetched is a valid JWT token which should be passed on to the calls made to Synq API.
 
-The following example show how to achieve this in golang.
+## Examples
 
-```go
-func getToken() (string, error) {
-	type oauth2Token struct {
-		AccessToken string `json:"access_token"`
-	}
-
-	tokenUrl := "http://api.synq.io/oauth2/token"
-
-	v := &url.Values{}
-	v.Set("client_id", "xxxxxx") // replace with your CLIENT_ID
-	v.Set("client_secret", "0000000000000000") // replace with your CLIENT_SECRET
-	v.Set("grant_type", "client_credentials")
-
-	req, err := http.NewRequest("POST", tokenUrl, strings.NewReader(v.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	token := &oauth2Token{}
-	if err := json.NewDecoder(res.Body).Decode(token); err != nil {
-		return "", err
-	}
-	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("error fetching token. status code %d", res.StatusCode)
-	}
-
-	return token.AccessToken, nil
-}
-```
-
-## Making API calls
-
-The access token fetched above needs to be passed to the calls made to Synq API. The server expects the token set as an [Authorization Bearer](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization) header.
-
-The following example illustrates how to do this in golang.
-
-```go
-
-type bearerAuth struct {
-	token string
-}
-
-// Convert user credentials to request metadata.
-func (b bearerAuth) GetRequestMetadata(ctx context.Context, in ...string) (map[string]string, error) {
-	return map[string]string{
-		"authorization": "Bearer " + b.token,
-	}, nil
-}
-
-// Specify whether channel security is required to pass these credentials.
-func (b bearerAuth) RequireTransportSecurity() bool {
-	return false
-}
-
-func main() {
-    token, err := getToken() // Check section above on fetching the token
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(token)
-	opts := []grpc.DialOption{
-		grpc.WithPerRPCCredentials(bearerAuth{
-			token: token,
-		}),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	conn, err := grpc.Dial("https://api.synq.io", opts...)
-	if err != nil {
-		panic(err)
-	}
-
-    ...
-}
-```
-
-You can now use the connection to initialize clients and make calls to the API.
-
-```go
-func main {
-    ...
-
-    client := schemasv1.NewLineageServiceClient(conn)
-    resp, err := client.GetLineage(context.Background(), &schemasv1.GetLineageRequest{
-		StartPoint: &schemasv1.GetLineageStartPoint{
-			From: &schemasv1.GetLineageStartPoint_Entities{
-				Entities: &schemasv1.EntitiesStartPoint{
-					Entities: []*corev1.EntityRef{
-						{
-							Path: "xxxxxxxxxxxxxxxxxxxxx", // replace with entity path
-							Type: corev1.EntityType_ENTITY_TYPE_UNSPECIFIED, // replace with entity type
-						},
-					},
-				},
-			},
-		},
-	})
-}
-
-```
+The language specific examples to use Synq APIs can be found [here](https://docs.synq.io/api-reference/examples).
