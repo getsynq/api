@@ -1,4 +1,9 @@
-# Synq API
+---
+title: 'Getting Started'
+description: 'Getting started with developer API at Synq'
+---
+
+# Overview
 
 The Synq API is available for developers to manage certain functionalities using custom workflows. Synq exposes its API as [gRPC](https://grpc.io/) services. This means that the API are as easy to use as calling functions from your code.
 
@@ -12,12 +17,12 @@ To use the API, you need to do the following.
 
 You can find language specific examples [here](https://github.com/getsynq/api/tree/main/examples).
 
-## Client Code
+# Client Code
 
 The simplest way to use Synq API is to use the SDKs from our [`buf` repository](https://buf.build/getsynq/api/sdks). Use select the language of your choice and follow the instructions to add the Synq API to your project.
 
 
-### Generating client code
+## Generating client code
 
 If you prefer to, the client code can be generated from the protos available at our [github repository](https://github.com/getsynq/api).
 
@@ -29,7 +34,7 @@ $ git clone git@github.com:getsynq/api.git <synq_api_codebase>
 
 Following are some language references.
 
-### Go
+## Go
 
 You will need the following plugins to generate golang code from the protos.
 
@@ -48,7 +53,7 @@ $ protoc --proto_path=./protos --go_out=./gen2 --go-grpc_out=./gen protos/**/*.p
 
 The generated code is added to the `./gen` folder. You can change the location or find more options [here](https://protobuf.dev/reference/go/go-generated/) on how to use the `protoc` generator to suit your project's needs.
 
-### Python
+## Python
 
 You will need the following tools to generate python code from the protos.
 
@@ -67,7 +72,7 @@ $ python3 -m grpc_tools.protoc -Iprotos --python_out=./gen --pyi_out=./gen --grp
 
 The generated code is added to the `./gen` folder. You can change the location to suit your project's needs.
 
-## Fetching Access Token
+# Fetching Access Token
 
 You need a valid access token to communicate with the Synq servers. To generate the access token, you need client credentials.
 
@@ -92,6 +97,6 @@ The response will have the following structure.
 
 The `<access_token>` thus fetched is a valid JWT token which should be passed on to the calls made to Synq API.
 
-## Examples
+# Examples
 
 The language specific examples to use Synq APIs can be found [here](https://docs.synq.io/api-reference/examples).

@@ -43,7 +43,7 @@ echo "Generating docs..."
 proto_files=$(find "${PROTOS_DIR}" -type f -name "*.proto")
 
 protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS}\
-    --doc_out=. --doc_opt="${TEMPLATE},${DOCS_DIR}/api.mdx:." \
+    --doc_out="${TEMPLATE},api.mdx:${DOCS_DIR}" \
     ${proto_files}
 
 set +e
