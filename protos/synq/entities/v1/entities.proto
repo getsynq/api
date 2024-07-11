@@ -5,6 +5,7 @@ package synq.entities.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identifiers.proto";
+import "synq/entities/v1/annotations.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -36,4 +37,6 @@ message Entity {
   string synq_path = 8;
   // Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI.
   string synq_catalog_url = 9;
+
+  repeated entities.v1.Annotation annotations = 10;
 }

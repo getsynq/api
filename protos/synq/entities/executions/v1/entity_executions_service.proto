@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
 import "synq/entities/v1/identifiers.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/entities/v1/annotations.proto";
 
 option go_package = "github.com/getsynq/api/entities/executions/v1";
 
@@ -30,6 +31,15 @@ message Execution {
     google.protobuf.Timestamp created_at = 4;
     google.protobuf.Timestamp started_at = 5;
     google.protobuf.Timestamp finished_at = 6;
+
+    repeated entities.v1.Annotation annotations = 7;
+    repeated ExecutionExtra extras = 8;
+}
+
+message ExecutionExtra {
+  oneof extra {
+    string executed_sql = 1;
+  }
 }
 
 enum ExecutionStatus {

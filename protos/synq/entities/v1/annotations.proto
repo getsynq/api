@@ -8,8 +8,6 @@ option go_package = "github.com/getsynq/api/entities/v1";
 
 // Annotations can be used to annotate any entity with a key:value pair.
 // These annotations can be used for filtering and searching entities.
-// The annotation message is not used by itself but is injected within other entities,
-// for eg. sql tests
 message Annotation {
   // String key for the annotation.
   string name = 1 [(buf.validate.field).required = true];

@@ -29,6 +29,13 @@ service EntitiesService {
       scopes: [SCOPE_ENTITY_EDIT]
     };
   }
+
+  // List all entities.
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
 }
 
 // UpsertEntityRequest is the request message for the UpsertEntity method.
@@ -48,3 +55,10 @@ message DeleteEntityRequest {
 
 // DeleteEntityResponse is the response message for the DeleteEntity method.
 message DeleteEntityResponse {}
+
+message ListEntitiesRequest {
+}
+
+message ListEntitiesResponse {
+  repeated synq.entities.v1.Entity entities = 1;
+}
