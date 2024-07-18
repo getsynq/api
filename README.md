@@ -1,6 +1,6 @@
 ---
-title: 'Getting Started'
-description: 'Getting started with developer API at Synq'
+title: "Getting Started"
+description: "Getting started with developer API at Synq"
 ---
 
 # Overview
@@ -21,7 +21,6 @@ You can find language specific examples [here](https://github.com/getsynq/api/tr
 
 The simplest way to use Synq API is to use the SDKs from our [`buf` repository](https://buf.build/getsynq/api/sdks). Use select the language of your choice and follow the instructions to add the Synq API to your project.
 
-
 ## Generating client code
 
 If you prefer to, the client code can be generated from the protos available at our [github repository](https://github.com/getsynq/api).
@@ -31,6 +30,8 @@ $ git clone git@github.com:getsynq/api.git <synq_api_codebase>
 ```
 
 [gRPC](https://grpc.io/) supports a wide choice of languages and you can find the necessary guides on how to get started in a language of your choice [here](https://grpc.io/docs/languages/). You don't need to understand it all to get started with Synq API. You just need to find the right tools to build the client code in your language of choice.
+
+Additionally, you will need to install [protovalidate](https://github.com/bufbuild/protovalidate) in the language of your choice.
 
 Following are some language references.
 
