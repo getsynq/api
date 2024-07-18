@@ -52,6 +52,9 @@ for folder in $EXAMPLES_FOLDER/*/; do
     if [[ "${lang}" == "golang" ]]; then
         extension="go"
         codelang="go"
+    elif [[ "${lang}" == "python" ]]; then
+        extension="py"
+        codelang="python"
     else
         continue
     fi
