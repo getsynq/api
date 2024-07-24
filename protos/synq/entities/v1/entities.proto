@@ -4,8 +4,8 @@ package synq.entities.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/entities/v1/identifiers.proto";
 import "synq/entities/v1/annotations.proto";
+import "synq/entities/v1/identifiers.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -19,10 +19,21 @@ message Entity {
   Identifier id = 2 [(buf.validate.field).required = true];
 
   // Name of the entity that is displayed to the user.
-  string name = 3 [(buf.validate.field).required = true];
+  string name = 3 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 100
+    }
+  }];
 
-  // Description of the entity that is displayed in relevant contexts.
-  string description = 4;
+  // Description of the entity that is displayed in relevant contexts. Can contain Markdown.
+  string description = 4 [(buf.validate.field) = {
+    string: {
+      min_len: 0,
+      max_len: 10000
+    }
+  }];
 
   // Timestamp when the entity was created.
   google.protobuf.Timestamp created_at = 5;
@@ -38,5 +49,12 @@ message Entity {
   // Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI.
   string synq_catalog_url = 9;
 
-  repeated entities.v1.Annotation annotations = 10;
+  // Annotations attached to the entity. Annotations are key-value pairs that can be used to store metadata about the entity.
+  repeated entities.v1.Annotation annotations = 10 [(buf.validate.field) = {
+    repeated: {
+      min_items: 0,
+      max_items: 20,
+      items: {required: true}
+    }
+  }];
 }

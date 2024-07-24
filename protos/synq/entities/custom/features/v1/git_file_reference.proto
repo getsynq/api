@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package synq.entities.custom.features.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/features/v1";
+
+// GitFileReference represents a reference to a file in a git repository.
+message GitFileReference {
+  // URL of the git repository. Preferably SSH clone URL.
+  string repository_url = 1 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 255,
+    }
+  }];
+
+  // Name of the branch in the git repository.
+  string branch_name = 2 [(buf.validate.field) = {
+    required: true,
+    string: {max_bytes: 244}
+  }];
+
+  // Path to the file in the git repository.
+  string file_path = 3 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 255,
+    }
+  }];
+}

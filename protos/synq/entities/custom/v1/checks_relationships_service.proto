@@ -14,7 +14,7 @@ service ChecksRelationshipsService {
       scopes: [SCOPE_ENTITY_EDIT]
     };
   }
- 
+
   rpc DeleteCheckRelationships(DeleteCheckRelationshipsRequest) returns (DeleteCheckRelationshipsResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]

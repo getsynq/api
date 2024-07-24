@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package synq.entities.custom.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/custom/features/v1/code.proto";
+import "synq/entities/custom/features/v1/git_file_reference.proto";
+import "synq/entities/custom/features/v1/sql_definition.proto";
+import "synq/entities/v1/identifiers.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/v1";
+
+message Feature {
+  // Immutable workspace identifier that this entity belongs to.
+  string workspace = 1;
+  // The identifier of the entity to create or update feature for.
+  synq.entities.v1.Identifier entity_id = 2 [(buf.validate.field).required = true];
+  // Identifier of the feature. Can be any string, e.g. "sql" for SQL feature. Use same identifier to update the feature.
+  // Do not use random identifier as it will create a new feature on every update.
+  string feature_id = 3 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 255,
+    }
+  }];
+  // Oneof feature.
+  oneof feature {
+    option (buf.validate.oneof).required = true;
+    synq.entities.custom.features.v1.SqlDefinition sql_definition = 10;
+    synq.entities.custom.features.v1.GitFileReference git_file_reference = 11;
+    synq.entities.custom.features.v1.Code code = 12;
+  }
+
+  // Timestamp when the entity was created.
+  google.protobuf.Timestamp created_at = 5;
+
+  // Timestamp when the entity was last updated.
+  google.protobuf.Timestamp updated_at = 6;
+
+  // Timestamp when the entity was deleted. If this is set, the entity is considered deleted.
+  google.protobuf.Timestamp deleted_at = 7;
+}
+
+service FeaturesService {
+  // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+  rpc UpsertEntityFeature(UpsertEntityFeatureRequest) returns (UpsertEntityFeatureResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_EDIT]
+    };
+  }
+
+  // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+  rpc DeleteEntityFeature(DeleteEntityFeatureRequest) returns (DeleteEntityFeatureResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_EDIT]
+    };
+  }
+
+  // List all entities.
+  rpc ListEntityFeatures(ListEntityFeaturesRequest) returns (ListEntityFeaturesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
+}
+
+message UpsertEntityFeatureRequest {
+  // The feature to create or update.
+  Feature feature = 1 [(buf.validate.field).required = true];
+}
+
+message UpsertEntityFeatureResponse {}
+
+message DeleteEntityFeatureRequest {
+  // Identifier of the entity to delete feature from.
+  synq.entities.v1.Identifier entity_id = 1 [(buf.validate.field).required = true];
+  // Identifier of the feature to delete.
+  string feature_id = 2 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 255,
+    }
+  }];
+}
+
+message DeleteEntityFeatureResponse {}
+
+message ListEntityFeaturesRequest {
+  // Identifier of the entity to get features for.
+  synq.entities.v1.Identifier entity_id = 1 [(buf.validate.field).required = true];
+}
+
+message ListEntityFeaturesResponse {
+  // List of features for the entity.
+  repeated Feature features = 1;
+}

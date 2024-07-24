@@ -10,8 +10,25 @@ option go_package = "github.com/getsynq/api/entities/v1";
 // These annotations can be used for filtering and searching entities.
 message Annotation {
   // String key for the annotation.
-  string name = 1 [(buf.validate.field).required = true];
+  string name = 1 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 100
+    }
+  }];
 
   // Optional list of values that the annotation can carry.
-  repeated string values = 2;
+  repeated string values = 2 [(buf.validate.field) = {
+    repeated: {
+      min_items: 0,
+      max_items: 10,
+      items: {
+        string: {
+          min_len: 1,
+          max_len: 100
+        }
+      }
+    }
+  }];
 }

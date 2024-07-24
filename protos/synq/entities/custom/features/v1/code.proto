@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package synq.entities.custom.features.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/features/v1";
+
+enum CodeType {
+  CODE_TYPE_UNSPECIFIED = 0;
+  CODE_TYPE_SQL = 1;
+  CODE_TYPE_PYTHON = 2;
+}
+
+// Code feature represents a code snippet associated with the entity.
+// If support for code parsing and dependency extraction is needed use [SqlDefinition](sql_definition.proto).
+message Code {
+  // Might be e.g. name of the file or a function.
+  string name = 1 [(buf.validate.field) = {
+    required: false,
+    string: {max_len: 50}
+  }];
+
+  // Type of the code.
+  CodeType code_type = 2 [(buf.validate.field) = {required: true}];
+
+  // Content of the code. Displayed in the UI.
+  string content = 3 [(buf.validate.field) = {
+    string: {max_len: 100000}
+  }];
+}

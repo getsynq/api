@@ -56,8 +56,7 @@ message DeleteEntityRequest {
 // DeleteEntityResponse is the response message for the DeleteEntity method.
 message DeleteEntityResponse {}
 
-message ListEntitiesRequest {
-}
+message ListEntitiesRequest {}
 
 message ListEntitiesResponse {
   repeated synq.entities.v1.Entity entities = 1;

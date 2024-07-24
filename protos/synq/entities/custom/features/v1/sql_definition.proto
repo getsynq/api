@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package synq.entities.custom.features.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/features/v1";
+
+enum SqlDialect {
+  SQL_DIALECT_UNSPECIFIED = 0;
+  SQL_DIALECT_BIGQUERY = 1;
+  SQL_DIALECT_CLICKHOUSE = 2;
+  SQL_DIALECT_DATABRICKS = 3;
+  SQL_DIALECT_MYSQL = 4;
+  SQL_DIALECT_POSTGRESQL = 5;
+  SQL_DIALECT_REDSHIFT = 6;
+  SQL_DIALECT_SNOWFLAKE = 7;
+}
+
+// SqlDefinition is a feature that allows to define lineage via SQL for a custom entity.
+// Used to generate dependencies and other metadata. If parsed successfully,
+// it will provide a code and column level lineage. Can be used to define simplified transformation
+// of data which component performs using e.g. `INSERT INTO foo SELECT * FROM bar`.
+message SqlDefinition {
+  //Time when the sql was defined, will default to `now` if not set.
+  google.protobuf.Timestamp state_at = 1;
+
+  // SQL dialect used in the SQL.
+  SqlDialect dialect = 2;
+
+  // Final form of the SQL as executed in the database/data warehouse. Must be a valid SQL in the selected dialect.
+  string sql = 3 [(buf.validate.field) = {
+    string: {
+      min_len: 0,
+      max_len: 1000000,
+    }
+  }];
+}

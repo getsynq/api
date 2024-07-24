@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package synq.entities.executions.v1;
 
-import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/annotations.proto";
 import "synq/entities/v1/identifiers.proto";
 import "synq/v1/scope_authorization.proto";
-import "synq/entities/v1/annotations.proto";
 
 option go_package = "github.com/getsynq/api/entities/executions/v1";
 
@@ -19,21 +19,21 @@ service EntityExecutionsService {
 }
 
 message UpsertExecutionRequest {
-    Execution execution = 1 [(buf.validate.field).required = true];
+  Execution execution = 1 [(buf.validate.field).required = true];
 }
 
 message UpsertExecutionResponse {}
 
 message Execution {
-    synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
-    ExecutionStatus status = 2 [(buf.validate.field).required = true];
-    string message = 3;
-    google.protobuf.Timestamp created_at = 4;
-    google.protobuf.Timestamp started_at = 5;
-    google.protobuf.Timestamp finished_at = 6;
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  ExecutionStatus status = 2 [(buf.validate.field).required = true];
+  string message = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp finished_at = 6;
 
-    repeated entities.v1.Annotation annotations = 7;
-    repeated ExecutionExtra extras = 8;
+  repeated entities.v1.Annotation annotations = 7;
+  repeated ExecutionExtra extras = 8;
 }
 
 message ExecutionExtra {
@@ -43,10 +43,9 @@ message ExecutionExtra {
 }
 
 enum ExecutionStatus {
-    EXECUTION_STATUS_UNSPECIFIED = 0;
-    EXECUTION_STATUS_OK = 1;
-    EXECUTION_STATUS_WARN = 2;
-    EXECUTION_STATUS_ERROR = 3;
-    EXECUTION_STATUS_CRITICAL = 4;
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+  EXECUTION_STATUS_OK = 1;
+  EXECUTION_STATUS_WARN = 2;
+  EXECUTION_STATUS_ERROR = 3;
+  EXECUTION_STATUS_CRITICAL = 4;
 }
-  

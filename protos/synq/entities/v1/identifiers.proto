@@ -164,6 +164,7 @@ message ClickhouseTableIdentifier {
 }
 
 message DatabricksTableIdentifier {
+  // URL of Databricks workspace
   string workspace = 1 [(buf.validate.field).required = true];
 
   // Databricks catalog
@@ -211,10 +212,10 @@ message CustomIdentifier {
 
 message DataproductIdentifier {
   // Dataproduct id that identifies the Dataproduct
-  string id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.uuid = true
-  ];
+  string id = 1 [(buf.validate.field) = {
+    required: true,
+    string: {uuid: true}
+  }];
 }
 
 //
