@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/custom/features/v1/code.proto";
 import "synq/entities/custom/features/v1/git_file_reference.proto";
+import "synq/entities/custom/features/v1/schema.proto";
 import "synq/entities/custom/features/v1/sql_definition.proto";
 import "synq/entities/v1/identifiers.proto";
 import "synq/v1/scope_authorization.proto";
@@ -26,12 +27,17 @@ message Feature {
       max_len: 255,
     }
   }];
-  // Oneof feature.
+  // Feature to define for the entity. Depending on the feature type, only one feature can be defined per entity.
   oneof feature {
     option (buf.validate.oneof).required = true;
+    // Only one feature per entity.
     synq.entities.custom.features.v1.SqlDefinition sql_definition = 10;
+    // Multiple features per entity.
     synq.entities.custom.features.v1.GitFileReference git_file_reference = 11;
+    // Multiple features per entity.
     synq.entities.custom.features.v1.Code code = 12;
+    // Only one feature per entity.
+    synq.entities.custom.features.v1.Schema schema = 13;
   }
 
   // Timestamp when the entity was created.

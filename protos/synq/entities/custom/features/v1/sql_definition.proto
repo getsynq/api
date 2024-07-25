@@ -27,7 +27,9 @@ message SqlDefinition {
   google.protobuf.Timestamp state_at = 1;
 
   // SQL dialect used in the SQL.
-  SqlDialect dialect = 2;
+  SqlDialect dialect = 2 [(buf.validate.field) = {
+    enum: {defined_only: true}
+  }];
 
   // Final form of the SQL as executed in the database/data warehouse. Must be a valid SQL in the selected dialect.
   string sql = 3 [(buf.validate.field) = {
