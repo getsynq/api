@@ -1,13 +1,12 @@
 package main
 
 import (
-	"context"
-	"crypto/tls"
-	"fmt"
-
 	entitiesstatusv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/status/v1/statusv1grpc"
 	entitiesstatusv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/status/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
+	"context"
+	"crypto/tls"
+	"fmt"
 	"github.com/getsynq/api/examples/golang/token_auth/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -16,7 +15,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.dev"
+	host := "developer.synq.io"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 

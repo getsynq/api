@@ -1,8 +1,8 @@
 package main
 
 import (
-	entititescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
-	entititescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
+	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"context"
 	"crypto/tls"
@@ -17,7 +17,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.dev"
+	host := "developer.synq.io"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
@@ -44,13 +44,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	entitiesapi := entititescustomv1grpc.NewEntitiesServiceClient(conn)
-	relationshipsapi := entititescustomv1grpc.NewRelationshipsServiceClient(conn)
+	entitiesapi := entitiescustomv1grpc.NewEntitiesServiceClient(conn)
+	relationshipsapi := entitiescustomv1grpc.NewRelationshipsServiceClient(conn)
 
 	// Begin: Create Entities
 
 	// Create datadog monitor for kernel-accounts entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entitiescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -59,6 +59,7 @@ func main() {
 					},
 				},
 			},
+			TypeId:      11,
 			Name:        "kernel-accounts API error rate is too high",
 			Description: "Monitoring API errors for service kernel-accounts",
 			CreatedAt:   timestamppb.Now(),
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	// Create datadog monitor for kernel-auth entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entitiescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -79,6 +80,7 @@ func main() {
 					},
 				},
 			},
+			TypeId:      11,
 			Name:        "kernel-auth API error rate is too high",
 			Description: "Monitoring API errors for service kernel-auth",
 			CreatedAt:   timestamppb.Now(),
@@ -90,7 +92,7 @@ func main() {
 	}
 
 	// Create kernel-accounts service entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entitiescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -99,6 +101,7 @@ func main() {
 					},
 				},
 			},
+			TypeId:      10,
 			Name:        "Kernel accounts service",
 			Description: "Service responsible for storing users",
 			CreatedAt:   timestamppb.Now(),
@@ -110,7 +113,7 @@ func main() {
 	}
 
 	// Create kernel-auth service entity
-	_, err = entitiesapi.UpsertEntity(ctx, &entititescustomv1.UpsertEntityRequest{
+	_, err = entitiesapi.UpsertEntity(ctx, &entitiescustomv1.UpsertEntityRequest{
 		Entity: &entitiesv1.Entity{
 			Id: &entitiesv1.Identifier{
 				Id: &entitiesv1.Identifier_Custom{
@@ -119,6 +122,7 @@ func main() {
 					},
 				},
 			},
+			TypeId:      10,
 			Name:        "Kernel auth service",
 			Description: "Service responsible for user authentication",
 			CreatedAt:   timestamppb.Now(),
@@ -133,8 +137,8 @@ func main() {
 	// Service kernel-accounts is downstream of its datadog's monitor
 	// Service kernel-auth is downstream of its datadog's monitor
 	// Both services are upstream of clickhouse table `users`
-	_, err = relationshipsapi.UpsertRelationships(ctx, &entititescustomv1.UpsertRelationshipsRequest{
-		Relationships: []*entititescustomv1.Relationship{
+	_, err = relationshipsapi.UpsertRelationships(ctx, &entitiescustomv1.UpsertRelationshipsRequest{
+		Relationships: []*entitiescustomv1.Relationship{
 			{
 				Upstream: &entitiesv1.Identifier{
 					Id: &entitiesv1.Identifier_Custom{

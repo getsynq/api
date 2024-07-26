@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// Custom entity type that is used to categorize custom entities.
+message Type {
+  // Immutable workspace identifier that this custom entity type belongs to.
+  string workspace = 1;
+
+  int32 type_id = 2 [(buf.validate.field) = {
+    required: true,
+    int32: {
+      gte: 1,
+      lte: 1000
+    }
+  }];
+
+  // Name of the custom entity type that is displayed to the user.
+  string name = 3 [(buf.validate.field) = {
+    required: true,
+    string: {
+      min_len: 1,
+      max_len: 20
+    }
+  }];
+
+  // SVG icon of the custom entity type that is displayed to the user.
+  bytes svg_icon = 4 [(buf.validate.field) = {
+    required: true,
+    bytes: {
+      min_len: 1,
+      max_len: 1048576
+    }
+  }];
+
+  // SYNQ identifier used for CDN purposes, read-only.
+  string svg_icon_id = 5;
+
+  // Timestamp when the custom entity type was created.
+  google.protobuf.Timestamp created_at = 6;
+
+  // Timestamp when the custom entity type was last updated.
+  google.protobuf.Timestamp updated_at = 7;
+
+  // Timestamp when the custom entity type was deleted. If this is set, the custom entity type is considered deleted.
+  google.protobuf.Timestamp deleted_at = 8;
+}

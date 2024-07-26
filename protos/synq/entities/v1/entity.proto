@@ -4,8 +4,8 @@ package synq.entities.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/entities/v1/annotations.proto";
-import "synq/entities/v1/identifiers.proto";
+import "synq/entities/v1/annotation.proto";
+import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -17,6 +17,14 @@ message Entity {
 
   // Unique identifier for this entity.
   Identifier id = 2 [(buf.validate.field).required = true];
+
+  // Id of custom type or default type when 0
+  int32 type_id = 11 [(buf.validate.field) = {
+    int32: {
+      gte: 0,
+      lte: 1000
+    }
+  }];
 
   // Name of the entity that is displayed to the user.
   string name = 3 [(buf.validate.field) = {

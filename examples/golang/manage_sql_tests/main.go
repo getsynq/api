@@ -1,25 +1,23 @@
 package main
 
 import (
+	datacheckssqltestsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/datachecks/sqltests/v1/sqltestsv1grpc"
+	datacheckssqltestsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/datachecks/sqltests/v1"
+	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
+	platformsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/platforms/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
-
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
-
-	sqltestsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/datachecks/sqltests/v1/sqltestsv1grpc"
-	sqltestsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/datachecks/sqltests/v1"
-	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	platformsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/platforms/v1"
 )
 
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.dev"
+	host := "developer.synq.io"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
@@ -48,12 +46,12 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	sqltestapi := sqltestsv1grpc.NewSqlTestsServiceClient(conn)
+	sqltestapi := datacheckssqltestsv1grpc.NewSqlTestsServiceClient(conn)
 
 	// Create sql tests.
 	{
-		upsertRes, err := sqltestapi.BatchUpsertSqlTests(ctx, &sqltestsv1.BatchUpsertSqlTestsRequest{
-			SqlTests: []*sqltestsv1.SqlTest{
+		upsertRes, err := sqltestapi.BatchUpsertSqlTests(ctx, &datacheckssqltestsv1.BatchUpsertSqlTestsRequest{
+			SqlTests: []*datacheckssqltestsv1.SqlTest{
 				{
 					Platform: &platformsv1.DataPlatformIdentifier{
 						Id: &platformsv1.DataPlatformIdentifier_Clickhouse{
@@ -124,8 +122,8 @@ func main() {
 
 	// Update sql tests by IDs.
 	{
-		upsertRes, err := sqltestapi.BatchUpsertSqlTests(ctx, &sqltestsv1.BatchUpsertSqlTestsRequest{
-			SqlTests: []*sqltestsv1.SqlTest{
+		upsertRes, err := sqltestapi.BatchUpsertSqlTests(ctx, &datacheckssqltestsv1.BatchUpsertSqlTestsRequest{
+			SqlTests: []*datacheckssqltestsv1.SqlTest{
 				{
 					Platform: &platformsv1.DataPlatformIdentifier{
 						Id: &platformsv1.DataPlatformIdentifier_Clickhouse{
@@ -171,7 +169,7 @@ func main() {
 
 	// List sql tests by annotations.
 	{
-		listResp, err := sqltestapi.ListSqlTests(ctx, &sqltestsv1.ListSqlTestsRequest{
+		listResp, err := sqltestapi.ListSqlTests(ctx, &datacheckssqltestsv1.ListSqlTestsRequest{
 			Annotations: []*entitiesv1.Annotation{
 				{Name: "env", Values: []string{"prod"}},
 			},
@@ -181,7 +179,7 @@ func main() {
 			panic(err)
 		}
 
-		mappedTests := make(map[string]*sqltestsv1.SqlTest)
+		mappedTests := make(map[string]*datacheckssqltestsv1.SqlTest)
 		for _, test := range listResp.SqlTests {
 			mappedTests[test.Id] = test
 		}
@@ -203,7 +201,7 @@ func main() {
 
 	// Delete sql tests by IDs.
 	{
-		_, err := sqltestapi.BatchDeleteSqlTests(ctx, &sqltestsv1.BatchDeleteSqlTestsRequest{
+		_, err := sqltestapi.BatchDeleteSqlTests(ctx, &datacheckssqltestsv1.BatchDeleteSqlTestsRequest{
 			Ids: []string{"/postgres/prod/alerts/mutes/created-at-not-null", "/clickhouse/prod/check-created-at-not-null"},
 		})
 

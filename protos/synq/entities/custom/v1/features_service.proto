@@ -8,7 +8,7 @@ import "synq/entities/custom/features/v1/code.proto";
 import "synq/entities/custom/features/v1/git_file_reference.proto";
 import "synq/entities/custom/features/v1/schema.proto";
 import "synq/entities/custom/features/v1/sql_definition.proto";
-import "synq/entities/v1/identifiers.proto";
+import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";

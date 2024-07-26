@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package synq.entities.custom.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/type.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/v1";
+
+// TypesService is a service for managing custom entity types.
+service TypesService {
+  // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+  rpc UpsertType(UpsertTypeRequest) returns (UpsertTypeResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_TYPE_EDIT]
+    };
+  }
+
+  // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+  rpc DeleteType(DeleteTypeRequest) returns (DeleteTypeResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_TYPE_EDIT]
+    };
+  }
+
+  // List all entities.
+  rpc ListTypes(ListTypesRequest) returns (ListTypesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_ENTITY_TYPE_READ
+      ]
+    };
+  }
+}
+
+message UpsertTypeRequest {
+  // Entity to create or update.
+  synq.entities.v1.Type type = 1 [(buf.validate.field).required = true];
+}
+message UpsertTypeResponse {}
+
+message DeleteTypeRequest {
+  // Identifier of the custom entity type to delete.
+  int32 type_id = 2 [(buf.validate.field) = {
+    required: true,
+    int32: {
+      gte: 1,
+      lte: 1000
+    }
+  }];
+}
+message DeleteTypeResponse {}
+
+message ListTypesRequest {}
+message ListTypesResponse {
+  // List of entities.
+  repeated synq.entities.v1.Type types = 1;
+}

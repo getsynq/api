@@ -3,7 +3,7 @@ syntax = "proto3";
 package synq.datachecks.sqltests.v1;
 
 import "buf/validate/validate.proto";
-import "synq/entities/v1/annotations.proto";
+import "synq/entities/v1/annotation.proto";
 import "synq/platforms/v1/data_platforms.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";

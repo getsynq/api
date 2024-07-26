@@ -14,7 +14,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.dev"
+	host := "developer.synq.io"
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
