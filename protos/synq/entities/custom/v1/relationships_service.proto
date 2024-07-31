@@ -25,6 +25,13 @@ service RelationshipsService {
       scopes: [SCOPE_LINEAGE_EDIT]
     };
   }
+
+  // Delete relationships between entities. If the relationship does not exist, it will be ignored.
+  rpc ListRelationships(ListRelationshipsRequest) returns (ListRelationshipsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_READ]
+    };
+  }
 }
 
 message UpsertRelationshipsRequest {
@@ -42,4 +49,13 @@ message DeleteRelationshipsResponse {}
 message Relationship {
   synq.entities.v1.Identifier upstream = 1 [(buf.validate.field).required = true];
   synq.entities.v1.Identifier downstream = 2 [(buf.validate.field).required = true];
+}
+
+message ListRelationshipsRequest {
+  // Return relationships for the given entity_id. Either upstream or downstream.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field).required = true];
+}
+
+message ListRelationshipsResponse {
+  repeated Relationship relationships = 1;
 }

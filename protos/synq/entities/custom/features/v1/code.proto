@@ -10,6 +10,7 @@ enum CodeType {
   CODE_TYPE_UNSPECIFIED = 0;
   CODE_TYPE_SQL = 1;
   CODE_TYPE_PYTHON = 2;
+  CODE_TYPE_JSON = 3;
 }
 
 // Code feature represents a code snippet associated with the entity.
@@ -22,7 +23,7 @@ message Code {
   }];
 
   // Type of the code.
-  CodeType code_type = 2 [(buf.validate.field) = {required: true}];
+  CodeType code_type = 2;
 
   // Content of the code. Displayed in the UI.
   string content = 3 [(buf.validate.field) = {
