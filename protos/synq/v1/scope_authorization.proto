@@ -29,9 +29,13 @@ enum Scope {
   SCOPE_DATACHECKS_SQLTESTS_EDIT = 51;
 
   SCOPE_EXECUTION_EDIT = 60;
+  SCOPE_EXECUTION_LOG_EDIT = 61;
 
   SCOPE_ENTITY_TYPE_READ = 70;
   SCOPE_ENTITY_TYPE_EDIT = 71;
+
+  // Allows calling hooks REST endpoint
+  SCOPE_HOOK = 80;
 }
 
 message ScopeAuthorization {

@@ -11,9 +11,20 @@ import "synq/v1/scope_authorization.proto";
 option go_package = "github.com/getsynq/api/entities/executions/v1";
 
 service EntityExecutionsService {
+  // Execution affects status of the custom entity
   rpc UpsertExecution(UpsertExecutionRequest) returns (UpsertExecutionResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXECUTION_EDIT]
+    };
+  }
+
+  // LogEntry is a log message for the custom entity
+  rpc UpsertLogEntry(UpsertLogEntryRequest) returns (UpsertLogEntryResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_EXECUTION_EDIT,
+        SCOPE_EXECUTION_LOG_EDIT
+      ]
     };
   }
 }
@@ -28,7 +39,13 @@ message Execution {
   synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
   ExecutionStatus status = 2 [(buf.validate.field).required = true];
   string message = 3;
-  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp created_at = 4 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1717707428}
+    },
+    required: true
+  }];
   google.protobuf.Timestamp started_at = 5;
   google.protobuf.Timestamp finished_at = 6;
 
@@ -48,4 +65,26 @@ enum ExecutionStatus {
   EXECUTION_STATUS_WARN = 2;
   EXECUTION_STATUS_ERROR = 3;
   EXECUTION_STATUS_CRITICAL = 4;
+}
+
+message UpsertLogEntryRequest {
+  LogEntry log_entry = 1 [(buf.validate.field).required = true];
+}
+
+message UpsertLogEntryResponse {}
+
+message LogEntry {
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+  string message = 2;
+  google.protobuf.Timestamp created_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1717707428}
+    },
+    required: true
+  }];
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp finished_at = 5;
+
+  repeated entities.v1.Annotation annotations = 6;
 }
