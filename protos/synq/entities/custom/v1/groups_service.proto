@@ -10,31 +10,55 @@ import "synq/entities/v1/identifier.proto";
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
 
+// Group is a collection of entities that are identified by their entity ids.
 message Group {
+  // Identifier of the group.
   string group_id = 1 [(buf.validate.field).required = true];
+
+  // Identifiers of entities that belong to the group.
   repeated synq.entities.v1.Identifier entity_ids = 2 [(buf.validate.field).required = true];
+
+  // Timestamp when the group was created.
   google.protobuf.Timestamp created_at = 3;
+
+  // Timestamp when the group was last updated.
   google.protobuf.Timestamp updated_at = 4;
 }
 
+// GroupsService helps with management of life-cycle of Entities. A group is a identifyable collection
+// of entities such as a specific test suite to manage custom tests, infrastructure project to manage
+// custom infrastructure resources, etc. 
+
+// Importantly, group is stateful concept that tracks what entities
+// belong to at at any given time and facilitates removal of entities that no longer appear in the group.
+// This helps development of clients that don't have to keep track of previous state. The client
+// at any point in time can send the current state of the group and the server will cleanup
+// any entities that were in the group before but are not anymore.
 service GroupsService {
+
+  // ListEntityGroups lists all groups.
   rpc ListEntityGroups(ListEntityGroupsRequest) returns (ListEntityGroupsResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_READ]
     };
   }
 
+  // UpsertEntitiesGroup updates current definition of group to the server. As part of the upsert operation
+  // the difference of entity ids is calculated between past staate and current state and assets that are
+  // no longer part of the group are removed.
   rpc UpsertEntitiesGroup(UpsertEntitiesGroupRequest) returns (UpsertEntitiesGroupResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
   }
 
+  // DeleteEntitiesGroup deletes a group by its identifier. If the group does not exist, it will be a no-op.
   rpc DeleteEntitiesGroup(DeleteEntitiesGroupRequest) returns (DeleteEntitiesGroupResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
   }
+
 }
 
 message ListEntityGroupsRequest {}
