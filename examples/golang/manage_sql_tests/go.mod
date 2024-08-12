@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/go/sql_tests
 
-go 1.21.6
+go 1.22
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.4.0-20240626145232-ca580549697c.1

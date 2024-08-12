@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/go/3_create_features
 
-go 1.21.6
+go 1.22
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.4.0-20240725104643-52110f6fa118.2

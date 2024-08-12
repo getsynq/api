@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/golang/token_auth
 
-go 1.21.6
+go 1.22
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.3.0-20240603120535-eeda6bbccb21.3

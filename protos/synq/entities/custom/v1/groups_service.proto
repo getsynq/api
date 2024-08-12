@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package synq.entities.custom.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/v1/scope_authorization.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/v1";
+
+
+message Group {
+  string group_id = 1 [(buf.validate.field).required = true];
+  repeated synq.entities.v1.Identifier entity_ids = 2 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+service GroupsService {
+  rpc ListEntityGroups(ListEntityGroupsRequest) returns (ListEntityGroupsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
+
+  rpc UpsertEntitiesGroup(UpsertEntitiesGroupRequest) returns (UpsertEntitiesGroupResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_EDIT]
+    };
+  }
+
+  rpc DeleteEntitiesGroup(DeleteEntitiesGroupRequest) returns (DeleteEntitiesGroupResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_EDIT]
+    };
+  }
+}
+
+message ListEntityGroupsRequest {}
+
+message ListEntityGroupsResponse {
+  repeated Group entities_groups = 1;
+}
+
+message UpsertEntitiesGroupRequest {
+  Group group = 1 [(buf.validate.field).required = true];  
+  bool dry_run = 3;
+}
+
+message UpsertEntitiesGroupResponse {
+  repeated synq.entities.v1.Identifier deleted_ids = 1;
+}
+
+message DeleteEntitiesGroupRequest {
+  string group_id = 1 [(buf.validate.field).required = true];
+}
+
+message DeleteEntitiesGroupResponse {}

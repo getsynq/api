@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/go/2_create_entities
 
-go 1.21.6
+go 1.22
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.4.0-20240726080219-7f3194e9a112.2
