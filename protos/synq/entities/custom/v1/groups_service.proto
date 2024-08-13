@@ -9,31 +9,22 @@ import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
+// GroupsService helps with management of life-cycle of Entities, more specifically their deletion. 
+// A Group is a identifyable collection of entities such as a specific test suite to manage custom 
+// tests, infrastructure project to manage custom infrastructure resources, etc.
 
-// Group is a collection of entities that are identified by their entity ids.
-message Group {
-  // Identifier of the group.
-  string group_id = 1 [(buf.validate.field).required = true];
-
-  // Identifiers of entities that belong to the group.
-  repeated synq.entities.v1.Identifier entity_ids = 2 [(buf.validate.field).required = true];
-
-  // Timestamp when the group was created.
-  google.protobuf.Timestamp created_at = 3;
-
-  // Timestamp when the group was last updated.
-  google.protobuf.Timestamp updated_at = 4;
-}
-
-// GroupsService helps with management of life-cycle of Entities. A group is a identifyable collection
-// of entities such as a specific test suite to manage custom tests, infrastructure project to manage
-// custom infrastructure resources, etc. 
-
-// Importantly, group is stateful concept that tracks what entities
-// belong to at at any given time and facilitates removal of entities that no longer appear in the group.
-// This helps development of clients that don't have to keep track of previous state. The client
-// at any point in time can send the current state of the group and the server will cleanup
-// any entities that were in the group before but are not anymore.
+// It eliminates the need to keep state on client side to remember which assets were already created
+// and which should be deleted. The server will keep track of the current state of the group and client
+// can always send the intended new state. The server will calculate the diff and entities that are
+// no longer present in the group will be removed.
+//
+// Example:
+// 1. group has entities A, B, C at time t1
+// 2. client sends group with entities B, C, D at time t2
+// 3. server will remove entity A from the system and update the current state of the group to B, C, D
+//
+// The service is designed to be idempotent and can be called multiple times with the same state without
+// causing any side effects.
 service GroupsService {
 
   // ListEntityGroups lists all groups.
@@ -44,7 +35,7 @@ service GroupsService {
   }
 
   // UpsertEntitiesGroup updates current definition of group to the server. As part of the upsert operation
-  // the difference of entity ids is calculated between past staate and current state and assets that are
+  // the difference of entity ids is calculated between past state and the current state and entities that are
   // no longer part of the group are removed.
   rpc UpsertEntitiesGroup(UpsertEntitiesGroupRequest) returns (UpsertEntitiesGroupResponse) {
     option (synq.v1.scope_authorization) = {
@@ -81,3 +72,18 @@ message DeleteEntitiesGroupRequest {
 }
 
 message DeleteEntitiesGroupResponse {}
+
+// Group is a collection of entities.
+message Group {
+  // Identifier of the group.
+  string group_id = 1 [(buf.validate.field).required = true];
+
+  // Identifiers of entities that belong to the group.
+  repeated synq.entities.v1.Identifier entity_ids = 2 [(buf.validate.field).required = true];
+
+  // Timestamp when the group was created.
+  google.protobuf.Timestamp created_at = 3;
+
+  // Timestamp when the group was last updated.
+  google.protobuf.Timestamp updated_at = 4;
+}
