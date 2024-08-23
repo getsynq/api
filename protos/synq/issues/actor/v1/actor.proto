@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package synq.issues.actor.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/issues/actor/v1";
+
+message Actor {
+  string name = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+    required: true;
+  }];
+  oneof user {
+    SlackUser slack = 2;
+    EmailUser email = 3;
+    PagerdutyUser pagerduty = 4;
+  }
+}
+
+message SlackUser {
+  string user_id = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+    required: true;
+  }];
+}
+
+message EmailUser {
+  string user_email = 1 [(buf.validate.field) = {
+    string: {
+      min_len: 1;
+      email: true;
+    }
+    required: true;
+  }];
+}
+
+message PagerdutyUser {
+  string user_id = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+    required: true;
+  }];
+}

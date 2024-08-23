@@ -6,7 +6,13 @@ DOCS_DIR="./tmp"
 
 set -e
 
-VALID_ARGS=$(getopt -o f:d: --long folder:,docs: -- "$@")
+GETOPT=$(which getopt)
+if [[ -x "/opt/homebrew/opt/gnu-getopt/bin/getopt" ]]
+then
+    GETOPT="/opt/homebrew/opt/gnu-getopt/bin/getopt"
+fi
+
+VALID_ARGS=$(${GETOPT} -o f:d: --long folder:,docs: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi

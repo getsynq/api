@@ -1,0 +1,362 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Event",
+    "definitions": {
+        "Event": {
+            "properties": {
+                "workspace": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "event_time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "ping": {
+                    "$ref": "#/definitions/synq.webhooks.v1.Ping",
+                    "additionalProperties": true
+                },
+                "issue_created": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IssueCreated",
+                    "additionalProperties": true
+                },
+                "issue_updated": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IssueUpdated",
+                    "additionalProperties": true
+                },
+                "issue_closed": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IssueClosed",
+                    "additionalProperties": true
+                },
+                "callbacks": {
+                    "items": {
+                        "$ref": "#/definitions/synq.webhooks.v1.Callback"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "ping"
+                    ]
+                },
+                {
+                    "required": [
+                        "issue_created"
+                    ]
+                },
+                {
+                    "required": [
+                        "issue_updated"
+                    ]
+                },
+                {
+                    "required": [
+                        "issue_closed"
+                    ]
+                }
+            ],
+            "title": "Event"
+        },
+        "synq.issues.actor.v1.Actor": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "slack": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.SlackUser",
+                    "additionalProperties": true
+                },
+                "email": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.EmailUser",
+                    "additionalProperties": true
+                },
+                "pagerduty": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.PagerdutyUser",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "slack"
+                    ]
+                },
+                {
+                    "required": [
+                        "email"
+                    ]
+                },
+                {
+                    "required": [
+                        "pagerduty"
+                    ]
+                }
+            ],
+            "title": "Actor"
+        },
+        "synq.issues.actor.v1.EmailUser": {
+            "properties": {
+                "user_email": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Email User"
+        },
+        "synq.issues.actor.v1.PagerdutyUser": {
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Pagerduty User"
+        },
+        "synq.issues.actor.v1.SlackUser": {
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Slack User"
+        },
+        "synq.issues.commands.v1.IssuesCommand": {
+            "properties": {
+                "workspace": {
+                    "type": "string"
+                },
+                "mark_investigating": {
+                    "$ref": "#/definitions/synq.issues.issues.v1.MarkInvestigatingRequest",
+                    "additionalProperties": true
+                },
+                "mark_fixed": {
+                    "$ref": "#/definitions/synq.issues.issues.v1.MarkFixedRequest",
+                    "additionalProperties": true
+                },
+                "mark_expected": {
+                    "$ref": "#/definitions/synq.issues.issues.v1.MarkExpectedRequest",
+                    "additionalProperties": true
+                },
+                "mark_no_action_needed": {
+                    "$ref": "#/definitions/synq.issues.issues.v1.MarkNoActionNeededRequest",
+                    "additionalProperties": true
+                },
+                "post_comment": {
+                    "$ref": "#/definitions/synq.issues.issues.v1.PostCommentRequest",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "mark_investigating"
+                    ]
+                },
+                {
+                    "required": [
+                        "mark_fixed"
+                    ]
+                },
+                {
+                    "required": [
+                        "mark_expected"
+                    ]
+                },
+                {
+                    "required": [
+                        "mark_no_action_needed"
+                    ]
+                },
+                {
+                    "required": [
+                        "post_comment"
+                    ]
+                }
+            ],
+            "title": "Issues Command",
+            "description": "Not to be used directly. Use the IssuesService instead when calling via API."
+        },
+        "synq.issues.issues.v1.MarkExpectedRequest": {
+            "properties": {
+                "issue_id": {
+                    "type": "string",
+                    "description": "ID of the issue to mark as expected."
+                },
+                "actor": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.Actor",
+                    "additionalProperties": true,
+                    "description": "Actor marking the issue as expected."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Mark Expected Request"
+        },
+        "synq.issues.issues.v1.MarkFixedRequest": {
+            "properties": {
+                "issue_id": {
+                    "type": "string",
+                    "description": "ID of the issue to mark as fixed."
+                },
+                "actor": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.Actor",
+                    "additionalProperties": true,
+                    "description": "Actor marking the issue as fixed."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Mark Fixed Request"
+        },
+        "synq.issues.issues.v1.MarkInvestigatingRequest": {
+            "properties": {
+                "issue_id": {
+                    "type": "string",
+                    "description": "ID of the issue to mark as investigating."
+                },
+                "actor": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.Actor",
+                    "additionalProperties": true,
+                    "description": "Actor marking the issue as investigating."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Mark Investigating Request"
+        },
+        "synq.issues.issues.v1.MarkNoActionNeededRequest": {
+            "properties": {
+                "issue_id": {
+                    "type": "string",
+                    "description": "ID of the issue to mark as no action needed."
+                },
+                "actor": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.Actor",
+                    "additionalProperties": true,
+                    "description": "Actor marking the issue as no action needed."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Mark No Action Needed Request"
+        },
+        "synq.issues.issues.v1.PostCommentRequest": {
+            "properties": {
+                "issue_id": {
+                    "type": "string",
+                    "description": "ID of the issue to post a comment on."
+                },
+                "actor": {
+                    "$ref": "#/definitions/synq.issues.actor.v1.Actor",
+                    "additionalProperties": true,
+                    "description": "Actor posting the comment."
+                },
+                "comment": {
+                    "type": "string",
+                    "description": "Comment to post."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Post Comment Request"
+        },
+        "synq.webhooks.v1.Callback": {
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "action_name": {
+                    "type": "string"
+                },
+                "issues_command": {
+                    "$ref": "#/definitions/synq.issues.commands.v1.IssuesCommand",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "issues_command"
+                    ]
+                }
+            ],
+            "title": "Callback"
+        },
+        "synq.webhooks.v1.Issue": {
+            "properties": {
+                "issue_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Issue"
+        },
+        "synq.webhooks.v1.IssueClosed": {
+            "properties": {
+                "issue": {
+                    "$ref": "#/definitions/synq.webhooks.v1.Issue",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Issue Closed"
+        },
+        "synq.webhooks.v1.IssueCreated": {
+            "properties": {
+                "issue": {
+                    "$ref": "#/definitions/synq.webhooks.v1.Issue",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Issue Created"
+        },
+        "synq.webhooks.v1.IssueUpdated": {
+            "properties": {
+                "issue": {
+                    "$ref": "#/definitions/synq.webhooks.v1.Issue",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Issue Updated"
+        },
+        "synq.webhooks.v1.Ping": {
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ping",
+            "description": "Test event sent during a webhook setup."
+        }
+    }
+}

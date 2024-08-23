@@ -6,10 +6,14 @@ DIRTY=false
 
 set -e
 
-PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"
+GETOPT=$(which getopt)
+if [[ -x "/opt/homebrew/opt/gnu-getopt/bin/getopt" ]]
+then
+    GETOPT="/opt/homebrew/opt/gnu-getopt/bin/getopt"
+fi
 
 # Parse the options
-VALID_ARGS=$(getopt -o dp:g:I: --long dirty,protos:,gen: -- "$@")
+VALID_ARGS=$(${GETOPT} -o dp:g:I: --long dirty,protos:,gen: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1
 fi
@@ -19,7 +23,7 @@ eval set -- "$VALID_ARGS"
 
 PROTOC_OPTS=""
 
-echo $@
+echo "$@"
 
 while true; do
   case "$1" in

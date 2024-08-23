@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package synq.webhooks.v1;
+
+import "synq/issues/commands/v1/issues_command.proto";
+
+option go_package = "github.com/getsynq/api/webhooks/v1";
+
+message Callback {
+  string url = 1;
+  string action_name = 2;
+  oneof action {
+    synq.issues.commands.v1.IssuesCommand issues_command = 10;
+  }
+}

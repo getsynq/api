@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package synq.issues.commands.v1;
+
+import "buf/validate/validate.proto";
+import "synq/issues/issues/v1/issues_service.proto";
+
+option go_package = "github.com/getsynq/api/issues/commands/v1";
+
+// Not to be used directly. Use the IssuesService instead when calling via API.
+message IssuesCommand {
+  string workspace = 1 [(buf.validate.field) = {required: true}];
+  oneof action {
+    synq.issues.issues.v1.MarkInvestigatingRequest mark_investigating = 10;
+    synq.issues.issues.v1.MarkFixedRequest mark_fixed = 11;
+    synq.issues.issues.v1.MarkExpectedRequest mark_expected = 12;
+    synq.issues.issues.v1.MarkNoActionNeededRequest mark_no_action_needed = 13;
+    synq.issues.issues.v1.PostCommentRequest post_comment = 14;
+  }
+}

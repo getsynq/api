@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package synq.webhooks.v1;
+
+import "google/protobuf/timestamp.proto";
+import "synq/webhooks/v1/callback.proto";
+
+option go_package = "github.com/getsynq/api/webhooks/v1";
+
+message Event {
+  string workspace = 1;
+  string event_id = 2;
+  google.protobuf.Timestamp event_time = 3;
+
+  oneof data {
+    Ping ping = 10;
+    IssueCreated issue_created = 11;
+    IssueUpdated issue_updated = 12;
+    IssueClosed issue_closed = 13;
+  }
+
+  repeated Callback callbacks = 40;
+}
+
+// Test event sent during a webhook setup.
+message Ping {
+  string message = 1;
+}
+
+message Issue {
+  string issue_id = 1;
+  string group_id = 2;
+  string message = 3;
+}
+
+message IssueCreated {
+  Issue issue = 1;
+}
+
+message IssueUpdated {
+  Issue issue = 1;
+}
+
+message IssueClosed {
+  Issue issue = 1;
+}

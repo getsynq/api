@@ -3,8 +3,8 @@
 MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
 TEMPLATE=$(realpath "$MY_PATH/../templates/grpc-md.tmpl")
 
-PROTOS_DIR="${MY_PATH}/../../"
-DOCS_DIR="./tmp"
+PROTOS_DIR="${MY_PATH}/../.."
+DOCS_DIR="${MY_PATH}/.."
 
 set -e
 
@@ -19,7 +19,7 @@ if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
-PROTOC_OPTS=""
+PROTOC_OPTS="--proto_path=${PROTOS_DIR}/../proto_shared"
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -43,14 +43,9 @@ done
 
 set -e
 
-echo "Generating docs..."
 
-# Find all .proto files in subdirectories
-proto_files=$(find "${PROTOS_DIR}" -type f -name "*.proto")
-
-protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS}\
-    --doc_out="${TEMPLATE},api.mdx:${DOCS_DIR}" \
-    ${proto_files}
-
+echo "Generating public webhook docs..."
+protoc  --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS} --jsonschema_opt=enforce_oneof '--jsonschema_opt=messages=[Event]' --jsonschema_opt=enums_as_strings_only --jsonschema_out=${DOCS_DIR} ${PROTOS_DIR}/synq/webhooks/v1/event.proto
+mv ${DOCS_DIR}/Event.json ${DOCS_DIR}/webhook.schema.json
 set +e
 exit 0

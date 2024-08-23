@@ -4,13 +4,13 @@ package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/v1/scope_authorization.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
-// GroupsService helps with management of life-cycle of Entities, more specifically their deletion. 
-// A Group is a identifyable collection of entities such as a specific test suite to manage custom 
+// GroupsService helps with management of life-cycle of Entities, more specifically their deletion.
+// A Group is a identifyable collection of entities such as a specific test suite to manage custom
 // tests, infrastructure project to manage custom infrastructure resources, etc.
 
 // It eliminates the need to keep state on client side to remember which assets were already created
@@ -26,7 +26,6 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 // The service is designed to be idempotent and can be called multiple times with the same state without
 // causing any side effects.
 service GroupsService {
-
   // ListEntityGroups lists all groups.
   rpc ListEntityGroups(ListEntityGroupsRequest) returns (ListEntityGroupsResponse) {
     option (synq.v1.scope_authorization) = {
@@ -49,7 +48,6 @@ service GroupsService {
       scopes: [SCOPE_ENTITY_EDIT]
     };
   }
-
 }
 
 message ListEntityGroupsRequest {}
@@ -59,7 +57,7 @@ message ListEntityGroupsResponse {
 }
 
 message UpsertEntitiesGroupRequest {
-  Group group = 1 [(buf.validate.field).required = true];  
+  Group group = 1 [(buf.validate.field).required = true];
   bool dry_run = 3;
 }
 

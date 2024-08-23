@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package synq.issues.issues.v1;
+
+import "buf/validate/validate.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/issues/issues/v1";
+
+// IssuesService is a service for managing Issues.
+service IssuesService {
+  // Mark issue as being investigated.
+  rpc MarkInvestigating(MarkInvestigatingRequest) returns (MarkInvestigatingResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as fixed.
+  rpc MarkFixed(MarkFixedRequest) returns (MarkFixedResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as expected.
+  rpc MarkExpected(MarkExpectedRequest) returns (MarkExpectedResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as no action needed.
+  rpc MarkNoActionNeeded(MarkNoActionNeededRequest) returns (MarkNoActionNeededResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Post a comment on an issue.
+  rpc PostComment(PostCommentRequest) returns (PostCommentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+}
+
+message MarkInvestigatingRequest {
+  // ID of the issue to mark as investigating.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+
+  // Actor marking the issue as investigating.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message MarkInvestigatingResponse {}
+
+message MarkFixedRequest {
+  // ID of the issue to mark as fixed.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+
+  // Actor marking the issue as fixed.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message MarkFixedResponse {}
+
+message MarkExpectedRequest {
+  // ID of the issue to mark as expected.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+
+  // Actor marking the issue as expected.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message MarkExpectedResponse {}
+
+message MarkNoActionNeededRequest {
+  // ID of the issue to mark as no action needed.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+
+  // Actor marking the issue as no action needed.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message MarkNoActionNeededResponse {}
+
+message PostCommentRequest {
+  // ID of the issue to post a comment on.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+
+  // Actor posting the comment.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Comment to post.
+  string comment = 3 [(buf.validate.field) = {required: true}];
+}
+
+message PostCommentResponse {
+  string comment_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true;
+  }];
+}
