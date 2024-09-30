@@ -37,7 +37,7 @@ message IngestMetadataRequest {
   google.protobuf.Timestamp state_at = 9 [(buf.validate.field) = {
     timestamp: {
       lt_now: true,
-      gt: {seconds: 1717707428}
+      gt: {seconds: 1640995200}
     },
     required: true
   }];
@@ -65,7 +65,7 @@ message IngestExecutionRequest {
   google.protobuf.Timestamp started_at = 9 [(buf.validate.field) = {
     timestamp: {
       lt_now: true,
-      gt: {seconds: 1717707428}
+      gt: {seconds: 1640995200}
     },
     required: true
   }];

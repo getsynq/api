@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.webhooks.v1;
 
 import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
 import "synq/webhooks/v1/callback.proto";
 
 option go_package = "github.com/getsynq/api/webhooks/v1";
@@ -12,11 +13,21 @@ message Event {
   string event_id = 2;
   google.protobuf.Timestamp event_time = 3;
 
+  enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    EVENT_TYPE_PING = 10;
+    EVENT_TYPE_ISSUE_CREATED = 11;
+    EVENT_TYPE_ISSUE_UPDATED = 12;
+    EVENT_TYPE_ISSUE_STATUS_UPDATED = 13;
+    EVENT_TYPE_ISSUE_CLOSED = 14;
+  }
+  EventType event_type = 4;
   oneof data {
     Ping ping = 10;
     IssueCreated issue_created = 11;
     IssueUpdated issue_updated = 12;
-    IssueClosed issue_closed = 13;
+    IssueStatusUpdated issue_status_updated = 13;
+    IssueClosed issue_closed = 14;
   }
 
   repeated Callback callbacks = 40;
@@ -27,20 +38,62 @@ message Ping {
   string message = 1;
 }
 
-message Issue {
-  string issue_id = 1;
-  string group_id = 2;
-  string message = 3;
-}
-
 message IssueCreated {
-  Issue issue = 1;
+  IssueSummary issue = 1;
 }
 
 message IssueUpdated {
-  Issue issue = 1;
+  IssueSummary issue = 1;
+}
+
+message IssueStatusUpdated {
+  IssueSummary issue = 1;
 }
 
 message IssueClosed {
-  Issue issue = 1;
+  IssueSummary issue = 1;
+}
+
+message IssueSummary {
+  message IssueEntity {
+    string name = 1;
+    string type_name = 2;
+    synq.entities.v1.Identifier identifier = 3;
+    optional string folder = 4;
+    string entity_url = 5;
+  }
+  enum IssueStatus {
+    ISSUE_STATUS_UNSPECIFIED = 0;
+    ISSUE_STATUS_INVESTIGATING = 1;
+    ISSUE_STATUS_EXPECTED = 2;
+    ISSUE_STATUS_FIXED = 3;
+    ISSUE_STATUS_NO_ACTION_NEEDED = 4;
+    reserved 5;
+  }
+
+  string issue_id = 1;
+  string issue_group_id = 2;
+  string issue_url = 3;
+  // Summary of the issue, what happened and where.
+  string title = 4;
+  // Detailed description of the issue. In the Markdown format.
+  string description = 5;
+  // Detailed description of the issue. In the HTML format.
+  string description_html = 14;
+
+  // Entity which triggered the issue.
+  IssueEntity trigger_entity = 6;
+  // Entities directly affected by the issue, not considering downstream ones.
+  repeated IssueEntity directly_affected_entities = 7;
+
+  // Time when the issue was triggered.
+  google.protobuf.Timestamp started_at = 8;
+  // Time when the issue was closed.
+  optional google.protobuf.Timestamp ended_at = 9;
+
+  string trigger_run_id = 10;
+  string trigger_name = 11;
+  string trigger_message = 12;
+
+  IssueStatus status = 13;
 }

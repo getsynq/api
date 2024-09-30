@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.issues.issues.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -55,6 +56,18 @@ message MarkInvestigatingRequest {
 
   // Actor marking the issue as investigating.
   synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as investigating. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1640995200}
+    },
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
 }
 
 message MarkInvestigatingResponse {}
@@ -68,6 +81,18 @@ message MarkFixedRequest {
 
   // Actor marking the issue as fixed.
   synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as fixed. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1640995200}
+    },
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
 }
 
 message MarkFixedResponse {}
@@ -81,6 +106,18 @@ message MarkExpectedRequest {
 
   // Actor marking the issue as expected.
   synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as expected. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1640995200}
+    },
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
 }
 
 message MarkExpectedResponse {}
@@ -94,6 +131,18 @@ message MarkNoActionNeededRequest {
 
   // Actor marking the issue as no action needed.
   synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as no action needed. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1640995200}
+    },
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
 }
 
 message MarkNoActionNeededResponse {}
@@ -110,6 +159,15 @@ message PostCommentRequest {
 
   // Comment to post.
   string comment = 3 [(buf.validate.field) = {required: true}];
+
+  // Time at which the comment was posted. Defaults to the current time.
+  google.protobuf.Timestamp time = 4 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true,
+      gt: {seconds: 1640995200}
+    },
+    required: true
+  }];
 }
 
 message PostCommentResponse {

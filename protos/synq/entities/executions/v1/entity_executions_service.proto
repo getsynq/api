@@ -42,7 +42,7 @@ message Execution {
   google.protobuf.Timestamp created_at = 4 [(buf.validate.field) = {
     timestamp: {
       lt_now: true,
-      gt: {seconds: 1717707428}
+      gt: {seconds: 1640995200}
     },
     required: true
   }];
@@ -79,7 +79,7 @@ message LogEntry {
   google.protobuf.Timestamp created_at = 3 [(buf.validate.field) = {
     timestamp: {
       lt_now: true,
-      gt: {seconds: 1717707428}
+      gt: {seconds: 1640995200}
     },
     required: true
   }];
