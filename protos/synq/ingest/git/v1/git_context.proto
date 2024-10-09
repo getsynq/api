@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package synq.ingest.git.v1;
+
+option go_package = "github.com/getsynq/api/ingest/git/v1";
+
+message GitContext {
+  string clone_url = 1;
+  string branch = 2;
+  string commit_sha = 3;
+}

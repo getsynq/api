@@ -13,27 +13,27 @@ message Type {
   string workspace = 1;
 
   int32 type_id = 2 [(buf.validate.field) = {
-    required: true,
+    required: true
     int32: {
-      gte: 1,
+      gte: 1
       lte: 1000
     }
   }];
 
   // Name of the custom entity type that is displayed to the user.
   string name = 3 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
+      min_len: 1
       max_len: 20
     }
   }];
 
   // SVG icon of the custom entity type that is displayed to the user.
   bytes svg_icon = 4 [(buf.validate.field) = {
-    required: true,
+    required: true
     bytes: {
-      min_len: 1,
+      min_len: 1
       max_len: 1048576
     }
   }];

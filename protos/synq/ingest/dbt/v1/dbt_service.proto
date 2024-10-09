@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.ingest.dbt.v1;
 
+import "synq/ingest/git/v1/git_context.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dbt/v1";
@@ -34,6 +35,8 @@ message IngestInvocationRequest {
   string uploader_version = 7;
   // Build time of the uploader tool
   string uploader_build_time = 8;
+  // Git context of the project
+  synq.ingest.git.v1.GitContext git_context = 11;
 }
 
 message IngestInvocationResponse {}

@@ -21,16 +21,16 @@ message Entity {
   // Id of custom type or default type when 0
   int32 type_id = 11 [(buf.validate.field) = {
     int32: {
-      gte: 0,
+      gte: 0
       lte: 1000
     }
   }];
 
   // Name of the entity that is displayed to the user.
   string name = 3 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
+      min_len: 1
       max_len: 100
     }
   }];
@@ -38,7 +38,7 @@ message Entity {
   // Description of the entity that is displayed in relevant contexts. Can contain Markdown.
   string description = 4 [(buf.validate.field) = {
     string: {
-      min_len: 0,
+      min_len: 0
       max_len: 10000
     }
   }];
@@ -60,8 +60,8 @@ message Entity {
   // Annotations attached to the entity. Annotations are key-value pairs that can be used to store metadata about the entity.
   repeated entities.v1.Annotation annotations = 10 [(buf.validate.field) = {
     repeated: {
-      min_items: 0,
-      max_items: 20,
+      min_items: 0
+      max_items: 20
       items: {required: true}
     }
   }];

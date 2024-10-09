@@ -4,6 +4,7 @@ package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/custom/features/v1/checks.proto";
 import "synq/entities/custom/features/v1/code.proto";
 import "synq/entities/custom/features/v1/git_file_reference.proto";
 import "synq/entities/custom/features/v1/schema.proto";
@@ -21,11 +22,7 @@ message Feature {
   // Identifier of the feature. Can be any string, e.g. "sql" for SQL feature. Use same identifier to update the feature.
   // Do not use random identifier as it will create a new feature on every update.
   string feature_id = 3 [(buf.validate.field) = {
-    required: true,
-    string: {
-      min_len: 1,
-      max_len: 255,
-    }
+    string: {max_len: 255}
   }];
   // Feature to define for the entity. Depending on the feature type, only one feature can be defined per entity.
   oneof feature {
@@ -38,6 +35,8 @@ message Feature {
     synq.entities.custom.features.v1.Code code = 12;
     // Only one feature per entity.
     synq.entities.custom.features.v1.Schema schema = 13;
+    // Only one feature per entity.
+    synq.entities.custom.features.v1.CheckCategory check_category = 14;
   }
 
   // Timestamp when the entity was created.
@@ -85,10 +84,10 @@ message DeleteEntityFeatureRequest {
   synq.entities.v1.Identifier entity_id = 1 [(buf.validate.field).required = true];
   // Identifier of the feature to delete.
   string feature_id = 2 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
-      max_len: 255,
+      min_len: 1
+      max_len: 255
     }
   }];
 }

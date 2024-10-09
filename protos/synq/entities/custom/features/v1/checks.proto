@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package synq.entities.custom.features.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/features/v1";
+
+// Checks feature indicates that the entity is testing in some way different entity.
+// To define the kind of the check use the `kind` field. The `package` field is optional.
+// It is used to categorize the entities which check other entities.
+message CheckCategory {
+  // Grouping of check kinds. e.g. "gcs", "sql", "queue"
+  string package = 1 [(buf.validate.field) = {
+    required: false
+    string: {max_len: 50}
+  }];
+  // Kind of the check. e.g "not_null", "unique", "foreign_key", "row_count".
+  string kind = 2 [(buf.validate.field) = {
+    required: true
+    string: {max_len: 50}
+  }];
+}

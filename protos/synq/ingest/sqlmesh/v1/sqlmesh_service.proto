@@ -4,15 +4,10 @@ package synq.ingest.sqlmesh.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/ingest/git/v1/git_context.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/sqlmesh/v1";
-
-message GitContext {
-  string clone_url = 1;
-  string branch = 2;
-  string commit_sha = 3;
-}
 
 message IngestMetadataRequest {
   // Data from /api/meta
@@ -36,13 +31,13 @@ message IngestMetadataRequest {
   // Time at which state was collected
   google.protobuf.Timestamp state_at = 9 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
   // Git context of the project
-  GitContext git_context = 11;
+  synq.ingest.git.v1.GitContext git_context = 11;
 }
 message IngestMetadataResponse {}
 
@@ -64,19 +59,19 @@ message IngestExecutionRequest {
   // Time at which the execution started
   google.protobuf.Timestamp started_at = 9 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
   // Time at which the execution finished
   google.protobuf.Timestamp finished_at = 10 [(buf.validate.field).timestamp.lt_now = true];
   // Git context of the project
-  GitContext git_context = 11;
+  synq.ingest.git.v1.GitContext git_context = 11;
 
   option (buf.validate.message).cel = {
-    id: "ingest_execution_request.finished_at",
-    message: "Finished at must be greater than or equal to started at.",
+    id: "ingest_execution_request.finished_at"
+    message: "Finished at must be greater than or equal to started at."
     expression: "this.finished_at >= this.started_at"
   };
 }

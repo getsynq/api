@@ -51,7 +51,7 @@ message MarkInvestigatingRequest {
   // ID of the issue to mark as investigating.
   string issue_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 
   // Actor marking the issue as investigating.
@@ -60,9 +60,9 @@ message MarkInvestigatingRequest {
   // Time at which the issue was marked as investigating. Defaults to the current time.
   google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
 
@@ -76,7 +76,7 @@ message MarkFixedRequest {
   // ID of the issue to mark as fixed.
   string issue_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 
   // Actor marking the issue as fixed.
@@ -85,9 +85,9 @@ message MarkFixedRequest {
   // Time at which the issue was marked as fixed. Defaults to the current time.
   google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
 
@@ -101,7 +101,7 @@ message MarkExpectedRequest {
   // ID of the issue to mark as expected.
   string issue_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 
   // Actor marking the issue as expected.
@@ -110,9 +110,9 @@ message MarkExpectedRequest {
   // Time at which the issue was marked as expected. Defaults to the current time.
   google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
 
@@ -126,7 +126,7 @@ message MarkNoActionNeededRequest {
   // ID of the issue to mark as no action needed.
   string issue_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 
   // Actor marking the issue as no action needed.
@@ -135,9 +135,9 @@ message MarkNoActionNeededRequest {
   // Time at which the issue was marked as no action needed. Defaults to the current time.
   google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
 
@@ -151,7 +151,7 @@ message PostCommentRequest {
   // ID of the issue to post a comment on.
   string issue_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 
   // Actor posting the comment.
@@ -163,9 +163,9 @@ message PostCommentRequest {
   // Time at which the comment was posted. Defaults to the current time.
   google.protobuf.Timestamp time = 4 [(buf.validate.field) = {
     timestamp: {
-      lt_now: true,
+      lt_now: true
       gt: {seconds: 1640995200}
-    },
+    }
     required: true
   }];
 }
@@ -173,6 +173,6 @@ message PostCommentRequest {
 message PostCommentResponse {
   string comment_id = 1 [(buf.validate.field) = {
     string: {uuid: true}
-    required: true;
+    required: true
   }];
 }

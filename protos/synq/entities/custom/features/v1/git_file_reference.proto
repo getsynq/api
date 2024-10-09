@@ -10,25 +10,25 @@ option go_package = "github.com/getsynq/api/entities/custom/features/v1";
 message GitFileReference {
   // URL of the git repository. Preferably SSH clone URL.
   string repository_url = 1 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
-      max_len: 255,
+      min_len: 1
+      max_len: 255
     }
   }];
 
   // Name of the branch in the git repository.
   string branch_name = 2 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {max_bytes: 244}
   }];
 
   // Path to the file in the git repository.
   string file_path = 3 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
-      max_len: 255,
+      min_len: 1
+      max_len: 255
     }
   }];
 }

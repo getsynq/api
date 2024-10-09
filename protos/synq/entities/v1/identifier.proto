@@ -213,7 +213,7 @@ message CustomIdentifier {
 message DataproductIdentifier {
   // Dataproduct id that identifies the Dataproduct
   string id = 1 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {uuid: true}
   }];
 }

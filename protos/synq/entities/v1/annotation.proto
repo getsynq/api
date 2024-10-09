@@ -11,9 +11,9 @@ option go_package = "github.com/getsynq/api/entities/v1";
 message Annotation {
   // String key for the annotation.
   string name = 1 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {
-      min_len: 1,
+      min_len: 1
       max_len: 100
     }
   }];
@@ -21,11 +21,11 @@ message Annotation {
   // Optional list of values that the annotation can carry.
   repeated string values = 2 [(buf.validate.field) = {
     repeated: {
-      min_items: 0,
-      max_items: 10,
+      min_items: 0
+      max_items: 10
       items: {
         string: {
-          min_len: 1,
+          min_len: 1
           max_len: 100
         }
       }

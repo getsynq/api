@@ -34,8 +34,8 @@ message SqlDefinition {
   // Final form of the SQL as executed in the database/data warehouse. Must be a valid SQL in the selected dialect.
   string sql = 3 [(buf.validate.field) = {
     string: {
-      min_len: 0,
-      max_len: 1000000,
+      min_len: 0
+      max_len: 1000000
     }
   }];
 }

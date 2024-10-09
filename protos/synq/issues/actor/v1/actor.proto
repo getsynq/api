@@ -9,7 +9,7 @@ option go_package = "github.com/getsynq/api/issues/actor/v1";
 message Actor {
   string name = 1 [(buf.validate.field) = {
     string: {min_len: 1}
-    required: true;
+    required: true
   }];
   oneof user {
     SlackUser slack = 2;
@@ -21,23 +21,23 @@ message Actor {
 message SlackUser {
   string user_id = 1 [(buf.validate.field) = {
     string: {min_len: 1}
-    required: true;
+    required: true
   }];
 }
 
 message EmailUser {
   string user_email = 1 [(buf.validate.field) = {
     string: {
-      min_len: 1;
-      email: true;
+      min_len: 1
+      email: true
     }
-    required: true;
+    required: true
   }];
 }
 
 message PagerdutyUser {
   string user_id = 1 [(buf.validate.field) = {
     string: {min_len: 1}
-    required: true;
+    required: true
   }];
 }

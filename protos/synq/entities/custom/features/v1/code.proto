@@ -18,7 +18,7 @@ enum CodeType {
 message Code {
   // Might be e.g. name of the file or a function.
   string name = 1 [(buf.validate.field) = {
-    required: false,
+    required: false
     string: {max_len: 50}
   }];
 

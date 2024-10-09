@@ -44,9 +44,9 @@ message UpsertTypeResponse {}
 message DeleteTypeRequest {
   // Identifier of the custom entity type to delete.
   int32 type_id = 2 [(buf.validate.field) = {
-    required: true,
+    required: true
     int32: {
-      gte: 1,
+      gte: 1
       lte: 1000
     }
   }];
