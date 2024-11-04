@@ -20,4 +20,9 @@ message CheckCategory {
     required: true
     string: {max_len: 50}
   }];
+  // Explicit name of the Check category. If it is not defined categorisation rules are applied based on package + kind.
+  optional string category = 3 [(buf.validate.field) = {
+    required: false
+    string: {max_len: 50}
+  }];
 }
