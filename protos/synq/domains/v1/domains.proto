@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package synq.domains.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/domains/v1/domain_definition.proto";
+
+option go_package = "github.com/getsynq/api/domains/v1";
+
+message Domain {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string name = 2 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 100
+    }
+  }];
+  string description = 3 [(buf.validate.field) = {
+    string: {
+      min_len: 0
+      max_len: 10000
+    }
+  }];
+  google.protobuf.Timestamp created_at = 5;
+  optional google.protobuf.Timestamp deleted_at = 6;
+  DomainDefinition definition = 7;
+  optional string parent_id = 8 [(buf.validate.field).string.uuid = true];
+}

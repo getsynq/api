@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package synq.domains.v1;
+
+import "synq/entities/v1/identifier.proto";
+import "synq/queries/v1/query_operand.proto";
+import "synq/queries/v1/query_parts.proto";
+
+option go_package = "github.com/getsynq/api/domains/v1";
+
+message DomainDefinition {
+  repeated Part parts = 1;
+
+  message Part {
+    string id = 1; // part identifier
+    oneof part {
+      synq.entities.v1.Identifier identifier = 11;
+      synq.entities.v1.DataproductIdentifier dataproduct = 12;
+      AssetSelectionQuery query = 13;
+    }
+  }
+}
+
+message AssetSelectionQuery {
+  repeated QueryPart parts = 1;
+  synq.queries.v1.QueryOperand operand = 2;
+
+  message QueryPart {
+    oneof part {
+      synq.queries.v1.IdentifierList identifier_list = 1;
+      synq.queries.v1.WithNameSearch with_name_search = 2;
+      synq.queries.v1.WithType with_type = 3;
+      synq.queries.v1.WithAnnotation with_annotation = 4;
+      synq.queries.v1.InDataPlatform in_data_platform = 5;
+      synq.queries.v1.InFolder in_folder = 6;
+
+      AssetSelectionQuery query = 100;
+      synq.queries.v1.Unsupported unsupported = 101;
+    }
+  }
+}

@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package synq.domains.v1;
+
+import "buf/validate/validate.proto";
+import "synq/domains/v1/domain_definition.proto";
+import "synq/domains/v1/domains.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/domains/v1";
+
+// DomainsService can be used to manage domains.
+service DomainsService {
+  // Create or update a domain.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+  }
+
+  // Get multiple domains by their identifiers.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_READ]
+    };
+  }
+
+  // Get a domain with its sub-domains
+  rpc FetchDomainWithSubDomains(FetchDomainWithSubDomainsRequest) returns (FetchDomainWithSubDomainsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_READ]
+    };
+  }
+
+  // List all the domains in the current workspace.
+  rpc List(ListRequest) returns (ListResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_READ]
+    };
+  }
+
+  // Delete a domain by its identifier.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+  }
+
+  // Set the definition for an existing domain.
+  rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+  }
+
+  // Add definition part to the definition of an existing domain.
+  rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+  }
+
+  // Remove definition part from the definition of an existing domain.
+  rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+  }
+}
+
+message UpsertRequest {
+  string id = 1;
+  string name = 2 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 100
+    }
+  }];
+  string description = 3 [(buf.validate.field) = {
+    string: {
+      min_len: 0
+      max_len: 10000
+    }
+  }];
+  optional string parent_id = 4 [(buf.validate.field).string.uuid = true];
+}
+
+message UpsertResponse {}
+
+message BatchGetRequest {
+  repeated string domain_ids = 1;
+}
+
+message BatchGetResponse {
+  map<string, synq.domains.v1.Domain> domains = 1;
+}
+
+message ListRequest {
+  optional string parent_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message ListResponse {
+  repeated synq.domains.v1.Domain domains = 1;
+}
+
+message DeleteRequest {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message DeleteResponse {}
+
+message FetchDomainWithSubDomainsRequest {
+  string domain_id = 1;
+}
+
+message FetchDomainWithSubDomainsResponse {
+  map<string, synq.domains.v1.Domain> domains = 1;
+}
+
+message SetDefinitionRequest {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
+  synq.domains.v1.DomainDefinition definition = 2;
+}
+
+message SetDefinitionResponse {}
+
+message AddDefinitionPartRequest {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
+  synq.domains.v1.DomainDefinition.Part part = 2;
+}
+
+message AddDefinitionPartResponse {}
+
+message RemoveDefinitionPartRequest {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
+  string part_id = 2;
+}
+
+message RemoveDefinitionPartResponse {}

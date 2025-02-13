@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package synq.domains.members.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/domains/members/v1";
+
+message DomainMembership {
+  string user_id = 1;
+  string domain_id = 2 [(buf.validate.field).string.uuid = true];
+  bool is_default = 3;
+}

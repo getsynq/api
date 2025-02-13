@@ -22,7 +22,7 @@ message Annotation {
   repeated string values = 2 [(buf.validate.field) = {
     repeated: {
       min_items: 0
-      max_items: 10
+      max_items: 20
       items: {
         string: {
           min_len: 1

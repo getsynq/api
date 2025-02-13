@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package synq.dataproducts.v1;
+
+import "google/protobuf/timestamp.proto";
+import "synq/dataproducts/v1/dataproduct_definition.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/dataproducts/v1";
+
+message Dataproduct {
+  synq.entities.v1.DataproductIdentifier identifier = 1;
+  DataproductDefinition definition = 2;
+  string title = 3;
+  string description = 4;
+  string folder = 5;
+
+  enum Priority {
+    PRIORITY_UNSPECIFIED = 0;
+    PRIORITY_P3 = 3;
+    PRIORITY_P2 = 4;
+    PRIORITY_P1 = 5;
+  }
+  Priority priority = 6;
+
+  google.protobuf.Timestamp created_at = 7;
+  optional google.protobuf.Timestamp deleted_at = 8;
+}

@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package synq.domains.members.v1;
+
+import "buf/validate/validate.proto";
+import "synq/domains/members/v1/domain_membership.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/domains/members/v1";
+
+// DomainMembersService can be used to manage domain memberships.
+service DomainMembersService {
+  // Add domain members.
+  rpc AddDomainMembers(AddDomainMembersRequest) returns (AddDomainMembersResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_ASSIGN]
+    };
+  }
+
+  // Remove domain members.
+  rpc RemoveDomainMembers(RemoveDomainMembersRequest) returns (RemoveDomainMembersResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_ASSIGN]
+    };
+  }
+
+  // List domain members.
+  rpc ListDomainMembers(ListDomainMembersRequest) returns (ListDomainMembersResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_READ]
+    };
+  }
+
+  // List domains for the given user.
+  rpc ListUserDomains(ListUserDomainsRequest) returns (ListUserDomainsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_READ]
+    };
+  }
+
+  // Set default domain for user.
+  rpc SetDefaultUserDomain(SetDefaultUserDomainRequest) returns (SetDefaultUserDomainResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_READ]
+    };
+  }
+}
+
+message AddDomainMembersRequest {
+  string domain_id = 1 [(buf.validate.field).required = true];
+  repeated string user_ids = 2;
+}
+
+message AddDomainMembersResponse {}
+
+message RemoveDomainMembersRequest {
+  string domain_id = 1 [(buf.validate.field).required = true];
+  repeated string user_ids = 2;
+}
+
+message RemoveDomainMembersResponse {}
+
+message ListDomainMembersRequest {
+  string domain_id = 1;
+}
+
+message ListDomainMembersResponse {
+  repeated DomainMembership memberships = 1;
+}
+
+message ListUserDomainsRequest {
+  string user_id = 1;
+}
+
+message ListUserDomainsResponse {
+  repeated DomainMembership memberships = 1;
+}
+
+message SetDefaultUserDomainRequest {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).required = true];
+}
+
+message SetDefaultUserDomainResponse {}

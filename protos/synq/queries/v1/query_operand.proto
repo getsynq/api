@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package synq.queries.v1;
+
+option go_package = "github.com/getsynq/api/queries/v1";
+
+enum QueryOperand {
+  QUERY_OPERAND_UNSPECIFIED = 0; // default to AND behaviour
+  QUERY_OPERAND_AND = 1;
+  QUERY_OPERAND_OR = 2;
+  QUERY_OPERAND_EXCEPT = 3;
+  QUERY_OPERAND_UPSTREAM = 4;
+  QUERY_OPERAND_DOWNSTREAM = 5;
+}

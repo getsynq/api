@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package synq.ingest.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/ingest/dwh/v1/dwh.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/ingest/dwh/v1";
+
+message IngestObjectInformationRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  repeated ObjectInformation objects = 4;
+}
+message IngestObjectInformationResponse {}
+
+message IngestSqlDefinitionsRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  repeated SqlDefinition sql_definitions = 4;
+}
+message IngestSqlDefinitionsResponse {}
+
+message IngestSchemasRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  repeated Schema schemas = 4;
+}
+message IngestSchemasResponse {}
+
+message IngestObjectMetricsRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  repeated ObjectMetrics metrics = 4;
+}
+message IngestObjectMetricsResponse {}
+
+service DwhService {
+  rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+
+  rpc IngestSqlDefinitions(IngestSqlDefinitionsRequest) returns (IngestSqlDefinitionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+
+  rpc IngestSchemas(IngestSchemasRequest) returns (IngestSchemasResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+
+  rpc IngestObjectMetrics(IngestObjectMetricsRequest) returns (IngestObjectMetricsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+}

@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package synq.agent.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/dwh/v1";
+
+service DwhAgentService {
+  // buf:lint:ignore RPC_NO_CLIENT_STREAMING
+  rpc Connect(stream ConnectRequest) returns (stream ConnectResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+}
+
+message ConnectRequest {
+  oneof message {
+    Hello hello = 1;
+    Log log = 2;
+  }
+}
+
+message ConnectResponse {
+  repeated AgentTask tasks = 1;
+}
+
+message Hello {
+  string name = 1;
+  string build_version = 2;
+  string build_time = 3;
+  message AvailableConnection {
+    // Identifier which will receive commands
+    string connection_id = 1;
+    // User provided connection name
+    string name = 2;
+    // Indicates that agent has that connection disabled
+    bool disabled = 3;
+    // Type of the DWH, e.g. bigquery, duckdb, clickhouse
+    string type = 4;
+    // This will be hostname in most cases
+    string instance = 5;
+    // Enabled databases to query if connection supports multiple databases, can be empty.
+    repeated string databases = 6;
+  }
+  repeated AvailableConnection available_connections = 4;
+}
+
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_INFO = 1;
+  LOG_LEVEL_WARN = 2;
+  LOG_LEVEL_ERROR = 3;
+}
+
+message Log {
+  google.protobuf.Timestamp time = 1;
+  string message = 2;
+  LogLevel level = 3;
+}
+
+message AgentTask {
+  string connection_id = 1;
+  string task_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  oneof command {
+    FetchFullCatalogCommand fetch_full_catalog = 3;
+    FetchFullMetricsCommand fetch_full_metrics = 4;
+  }
+}
+
+message FetchFullCatalogCommand {}
+message FetchFullMetricsCommand {}

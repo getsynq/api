@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package synq.dataproducts.v1;
+
+import "synq/dataproducts/v1/dataproduct.proto";
+import "synq/dataproducts/v1/dataproduct_definition.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/dataproducts/v1";
+
+// DataproductsService can be used to manage data products.
+service DataproductsService {
+  // Create or update a dataproduct.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+  }
+
+  // Get multiple dataproducts by their identifiers.
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_READ]
+    };
+  }
+
+  // List all the dataproducts in the current scope.
+  rpc List(ListRequest) returns (ListResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_READ]
+    };
+  }
+
+  // Delete a dataproduct by its identifier.
+  // Soft deletes by default. Optionally purge the dataproduct to release the identifier.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+  }
+
+  // Set the definition for an existing dataproduct.
+  rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+  }
+
+  // Add definition part to the definition of an existing dataproduct.
+  rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+  }
+
+  // Remove definition part from the definition of an existing dataproduct.
+  rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+  }
+}
+
+message UpsertRequest {
+  optional synq.entities.v1.DataproductIdentifier identifier = 1;
+  string title = 2;
+  string description = 3;
+  string folder = 4;
+  synq.dataproducts.v1.Dataproduct.Priority priority = 5;
+}
+
+message UpsertResponse {
+  synq.entities.v1.DataproductIdentifier identifier = 1; // identifier of the updated or created dataproduct
+}
+
+message GetRequest {
+  repeated synq.entities.v1.DataproductIdentifier identifiers = 1;
+}
+
+message GetResponse {
+  repeated synq.dataproducts.v1.Dataproduct products = 1;
+}
+
+message ListRequest {
+  bool include_deleted = 1;
+}
+
+message ListResponse {
+  repeated synq.dataproducts.v1.Dataproduct products = 1;
+}
+
+message DeleteRequest {
+  synq.entities.v1.DataproductIdentifier identifier = 1;
+}
+
+message DeleteResponse {}
+
+message SetDefinitionRequest {
+  synq.entities.v1.DataproductIdentifier product_identifier = 1;
+  synq.dataproducts.v1.DataproductDefinition definition = 2;
+}
+
+message SetDefinitionResponse {}
+
+message AddDefinitionPartRequest {
+  synq.entities.v1.DataproductIdentifier product_identifier = 1;
+  synq.dataproducts.v1.DataproductDefinition.Part part = 2;
+}
+
+message AddDefinitionPartResponse {}
+
+message RemoveDefinitionPartRequest {
+  synq.entities.v1.DataproductIdentifier product_identifier = 1;
+  string part_id = 2;
+}
+
+message RemoveDefinitionPartResponse {}

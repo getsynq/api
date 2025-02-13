@@ -27,5 +27,5 @@ message EntityIncident {
   google.protobuf.Timestamp updated_at = 7;
 
   // Indicates if all issues inside the incident are resolved.
-  bool is_resolved = 8;
+  bool is_resolved = 8 [deprecated = true];
 }

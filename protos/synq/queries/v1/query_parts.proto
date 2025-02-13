@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package synq.queries.v1;
+
+import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/platforms/v1/data_platforms.proto";
+
+option go_package = "github.com/getsynq/api/queries/v1";
+
+// Resolves to entities matching any of the given identifiers.
+message IdentifierList {
+  repeated synq.entities.v1.Identifier identifiers = 1;
+}
+
+// Resolves to all entities matching the given name search.
+message WithNameSearch {
+  string search_query = 1;
+}
+
+// Resolves to all the entities that have the provided type.
+message WithType {
+  message Type {
+    oneof entity_type {
+      // Default SYNQ types
+      synq.entities.v1.EntityType default = 1;
+      // Custom types as defined through synq.entities.custom.v1.TypesService
+      int32 custom = 2;
+    }
+  }
+  Type type = 1;
+}
+
+// Resolves to all entities that contain the annotation with the provided accepted value.
+// In case of no given accepted value, all entities that carry the given annotation are returned.
+message WithAnnotation {
+  string name = 1;
+  optional string accepted_value = 2;
+}
+
+// Resolves to all the assets that belong to the given data product.
+message InDataproduct {
+  synq.entities.v1.DataproductIdentifier identifier = 1;
+}
+
+// Resolves to all entities that belong to the given data platform.
+message InDataPlatform {
+  synq.platforms.v1.DataPlatformIdentifier identifier = 1;
+}
+
+// Resolves to all entities belonging to the given folder structure.
+message InFolder {
+  repeated string path = 1;
+}
+
+// Collects all the parts of the query that are currently unsupported in translation.
+// These represent an internal structure that are not yet completely available on the API.
+message Unsupported {
+  string query_json = 1;
+}
