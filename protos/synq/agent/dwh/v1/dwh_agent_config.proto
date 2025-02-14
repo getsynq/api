@@ -6,13 +6,116 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/agent/dwh/v1";
 
+// Config represents the main configuration for the DWH agent
+message Config {
+  // Agent contains metadata about this agent instance
+  message Agent {
+    // Name of the agent instance
+    string name = 1;
+    // Tags to categorize and organize the agent
+    repeated string tags = 2;
+
+    enum LogLevel {
+      //Defaults to info
+      LOG_LEVEL_UNSPECIFIED = 0;
+      LOG_LEVEL_TRACE = 1;
+      LOG_LEVEL_DEBUG = 2;
+      LOG_LEVEL_INFO = 3;
+      LOG_LEVEL_WARN = 4;
+      LOG_LEVEL_ERROR = 5;
+    }
+    LogLevel log_level = 3;
+    optional bool log_json = 4;
+    optional bool log_report_caller = 5;
+  }
+
+  // SYNQ contains authentication and connection details for the SYNQ platform
+  message SYNQ {
+    // Client ID for OAuth authentication
+    string client_id = 1 [(buf.validate.field) = {
+      required: true
+      string: {}
+    }];
+
+    // Client secret for OAuth authentication
+    string client_secret = 2 [(buf.validate.field) = {
+      required: true
+      string: {}
+    }];
+
+    // SYNQ API agent endpoint (host:port)
+    string endpoint = 3 [(buf.validate.field) = {
+      required: true
+      string: {host_and_port: true}
+    }];
+    // SYNQ API ingest endpoint (host:port)
+    string ingest_endpoint = 4 [(buf.validate.field) = {
+      required: true
+      string: {host_and_port: true}
+    }];
+
+    // OAuth authentication URL
+    string oauth_url = 5 [(buf.validate.field) = {
+      required: true
+      string: {uri: true}
+    }];
+  }
+
+  // Connection represents a database connection configuration
+  message Connection {
+    // Name of the connection
+    string name = 1 [(buf.validate.field) = {required: true}];
+
+    bool disabled = 2;
+
+    // How many queries to DWH can be executed in parallel, defaults to 2
+    int32 parallelism = 3 [(buf.validate.field) = {
+      int32: {
+        gte: 1
+        lte: 8
+      }
+    }];
+
+    // Type of database connection
+    oneof config {
+      option (buf.validate.oneof).required = true;
+      BigQueryConf bigquery = 50;
+      ClickhouseConf clickhouse = 51;
+      DatabricksConf databricks = 52;
+      MySQLConf mysql = 53;
+      PostgresConf postgres = 54;
+      RedshiftConf redshift = 55;
+      SnowflakeConf snowflake = 56;
+    }
+  }
+
+  // Agent configuration
+  Agent agent = 1;
+
+  // SYNQ platform configuration
+  SYNQ synq = 2;
+
+  // Map of connection configurations
+  map<string, Connection> connections = 3 [(buf.validate.field) = {
+    required: true
+    map: {
+      keys: {
+        string: {pattern: '^[a-zA-Z][a-zA-Z0-9-_]*$'}
+      }
+      values: {required: true}
+      min_pairs: 1
+    }
+  }];
+}
+
+
 // BigQuery specific configuration
 message BigQueryConf {
   // GCP project ID
   string project_id = 1 [(buf.validate.field) = {required: true}];
   // Service account key JSON
   string service_account_key = 2 [(buf.validate.field) = {}];
-  // Service account key JSON
+  // Location of service account key file
   string service_account_key_file = 3 [(buf.validate.field) = {}];
   // Region for BigQuery resources
   string region = 4 [(buf.validate.field) = {required: true}];
@@ -146,113 +249,11 @@ message SnowflakeConf {
   string username = 4 [(buf.validate.field) = {}];
   // Password for authentication
   string password = 5 [(buf.validate.field) = {}];
-  // Content of Private ey
+  // Content of Private key used for Snowflake authentication
   string private_key = 6 [(buf.validate.field) = {}];
 
   // Database to connect to
   repeated string databases = 7;
   // Use GET_DDL to determine queries used for table/view creation
   bool use_get_ddl = 8;
-}
-
-// Config represents the main configuration for the DWH agent
-message Config {
-  // Agent contains metadata about this agent instance
-  message Agent {
-    // Name of the agent instance
-    string name = 1;
-    // Tags to categorize and organize the agent
-    repeated string tags = 2;
-
-    enum LogLevel {
-      //Defaults to info
-      LOG_LEVEL_UNSPECIFIED = 0;
-      LOG_LEVEL_TRACE = 1;
-      LOG_LEVEL_DEBUG = 2;
-      LOG_LEVEL_INFO = 3;
-      LOG_LEVEL_WARN = 4;
-      LOG_LEVEL_ERROR = 5;
-    }
-    LogLevel log_level = 3;
-    optional bool log_json = 4;
-    optional bool log_report_caller = 5;
-  }
-
-  // SYNQ contains authentication and connection details for the SYNQ platform
-  message SYNQ {
-    // Client ID for OAuth authentication
-    string client_id = 1 [(buf.validate.field) = {
-      required: true
-      string: {}
-    }];
-
-    // Client secret for OAuth authentication
-    string client_secret = 2 [(buf.validate.field) = {
-      required: true
-      string: {}
-    }];
-
-    // SYNQ API agent endpoint (host:port)
-    string endpoint = 3 [(buf.validate.field) = {
-      required: true
-      string: {host_and_port: true}
-    }];
-    // SYNQ API ingest endpoint (host:port)
-    string ingest_endpoint = 4 [(buf.validate.field) = {
-      required: true
-      string: {host_and_port: true}
-    }];
-
-    // OAuth authentication URL
-    string oauth_url = 5 [(buf.validate.field) = {
-      required: true
-      string: {uri: true}
-    }];
-  }
-
-  // Connection represents a database connection configuration
-  message Connection {
-    // Name of the connection
-    string name = 1 [(buf.validate.field) = {required: true}];
-
-    bool disabled = 2;
-
-    // How many queries to DWH can be executed in parallel, defaults to 2
-    int32 parallelism = 3 [(buf.validate.field) = {
-      int32: {
-        gte: 1
-        lte: 8
-      }
-    }];
-
-    // Type of database connection
-    oneof config {
-      option (buf.validate.oneof).required = true;
-      BigQueryConf bigquery = 50;
-      ClickhouseConf clickhouse = 51;
-      DatabricksConf databricks = 52;
-      MySQLConf mysql = 53;
-      PostgresConf postgres = 54;
-      RedshiftConf redshift = 55;
-      SnowflakeConf snowflake = 56;
-    }
-  }
-
-  // Agent configuration
-  Agent agent = 1;
-
-  // SYNQ platform configuration
-  SYNQ synq = 2;
-
-  // Map of connection configurations
-  map<string, Connection> connections = 3 [(buf.validate.field) = {
-    required: true
-    map: {
-      keys: {
-        string: {pattern: '^[a-zA-Z][a-zA-Z0-9-_]*$'}
-      }
-      values: {required: true}
-      min_pairs: 1
-    }
-  }];
 }

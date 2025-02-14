@@ -5,6 +5,7 @@ package synq.datachecks.sqltests.v1;
 import "buf/validate/validate.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/platforms/v1/data_platforms.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 
@@ -32,4 +33,11 @@ message SqlTest {
 
   // Boolean flag to to toggle saving of failure runs.
   bool save_failures = 7;
+}
+
+message SqlTestAudit {
+  string execution_id = 1;
+  int32 rows_count = 2;
+  string result = 3;
+  google.protobuf.Timestamp created_at = 4;
 }

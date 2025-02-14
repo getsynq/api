@@ -37,6 +37,19 @@ service SqlTestsService {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
   }
+
+  // Get SqlTest audit from a given execution ID in jwt token.
+  rpc GetSqlTestAudit(GetSqlTestAuditRequest) returns (GetSqlTestAuditResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ]
+    };
+  }
+}
+
+message GetSqlTestAuditRequest {}
+
+message GetSqlTestAuditResponse {
+  SqlTestAudit audit = 1;
 }
 
 message BatchUpsertSqlTestsRequest {
