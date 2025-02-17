@@ -38,6 +38,14 @@ message IngestMetadataRequest {
   }];
   // Git context of the project
   synq.ingest.git.v1.GitContext git_context = 11;
+
+  message Error {
+    optional string path = 1;
+    optional int64 code = 2;
+    string message = 3;
+  }
+  // Optional errors indicating why some data wasn't loaded
+  repeated Error errors = 12;
 }
 message IngestMetadataResponse {}
 
