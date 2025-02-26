@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/ingest/dwh/v1/dwh.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/agent/dwh/v1/dwh_agent_task.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
 
@@ -89,6 +90,19 @@ message IngestObjectMetricsRequest {
 }
 message IngestObjectMetricsResponse {}
 
+message IngestTaskResultsRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string task_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  agent.dwh.v1.AgentTaskData task_data = 3 [(buf.validate.field) = {
+    required: true
+  }];
+}
+message IngestTaskResultsResponse{}
+
+
 service DwhService {
   rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
     option (synq.v1.scope_authorization) = {
@@ -109,6 +123,12 @@ service DwhService {
   }
 
   rpc IngestObjectMetrics(IngestObjectMetricsRequest) returns (IngestObjectMetricsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+  }
+
+  rpc IngestTaskResults(IngestTaskResultsRequest) returns (IngestTaskResultsResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };

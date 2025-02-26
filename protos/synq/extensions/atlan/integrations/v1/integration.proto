@@ -1,0 +1,19 @@
+syntax = "proto3";
+package synq.extensions.atlan.integrations.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/extensions/atlan/integrations/v1";
+
+message Integration {
+  string workspace = 1;
+  string webhook_url = 2;
+  optional string webhook_signing_key = 3;
+  string atlan_tenant_url = 4;
+  string atlan_api_token = 5;
+  bool is_valid = 6; // Whether the integration is valid or not. Set to the result of the `Validate` rpc call.
+  bool is_active = 7; // Whether the integration is active or not. Only valid integrations can be activated.
+  google.protobuf.Timestamp created_at = 8;
+  optional google.protobuf.Timestamp deleted_at = 9;
+  string id = 10; // ID for the integration. Unique for a workspace.
+}

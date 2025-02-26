@@ -1,0 +1,27 @@
+syntax = "proto3";
+package synq.extensions.atlan.workflows.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+  STATUS_FAILED = 2;
+}
+
+message CommandResult {
+  string command = 1;
+  Status status = 2;
+  repeated string logs = 3;
+  optional string error = 4;
+}
+
+message WorkflowRun {
+  string workspace = 1;
+  repeated CommandResult results = 2;
+  Status status = 3;
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp ended_at = 5;
+}

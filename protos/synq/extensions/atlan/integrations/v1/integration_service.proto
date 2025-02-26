@@ -1,0 +1,85 @@
+syntax = "proto3";
+package synq.extensions.atlan.integrations.v1;
+
+import "synq/extensions/atlan/integrations/v1/integration.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/extensions/atlan/integrations/v1";
+
+service AtlanIntegrationService {
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc Remove(RemoveRequest) returns (RemoveResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  // Validate the integration. This checks if the provided API URL and token are valid.
+  // This is required for activation of an integration.
+  rpc Validate(ValidateRequest) returns (ValidateResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  // Activate or deactivate the integration.
+  rpc Activate(ActivateRequest) returns (ActivateResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  // Set the signing key for an atlan webhook.
+  // This enables incremental update for the integration.
+  rpc SetWebhookSigningKey(SetWebhookSigningKeyRequest) returns (SetWebhookSigningKeyResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+}
+
+message UpsertRequest {
+  string atlan_tenant_url = 1;
+  string atlan_api_token = 2;
+}
+
+message UpsertResponse {
+  Integration integration = 1;
+}
+
+message GetRequest {}
+
+message GetResponse {
+  Integration integration = 1;
+}
+
+message RemoveRequest {}
+
+message RemoveResponse {}
+
+message ValidateRequest {}
+
+message ValidateResponse {}
+
+message ActivateRequest {
+  bool activate = 1;
+}
+
+message ActivateResponse {}
+
+message SetWebhookSigningKeyRequest {
+  string webhook_signing_key = 1;
+}
+
+message SetWebhookSigningKeyResponse {}

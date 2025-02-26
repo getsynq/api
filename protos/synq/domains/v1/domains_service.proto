@@ -84,6 +84,7 @@ message UpsertRequest {
     }
   }];
   optional string parent_id = 4 [(buf.validate.field).string.uuid = true];
+  synq.domains.v1.Domain.Source source = 5;
 }
 
 message UpsertResponse {}

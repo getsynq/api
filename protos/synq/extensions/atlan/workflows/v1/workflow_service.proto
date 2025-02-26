@@ -1,0 +1,96 @@
+syntax = "proto3";
+package synq.extensions.atlan.workflows.v1;
+
+import "synq/extensions/atlan/workflows/v1/mappings.proto";
+import "synq/extensions/atlan/workflows/v1/workflow_run.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
+
+service AtlanWorkflowService {
+  rpc SetConnectionMappings(SetConnectionMappingsRequest) returns (SetConnectionMappingsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc RemoveConnectionMappings(RemoveConnectionMappingsRequest) returns (RemoveConnectionMappingsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc GetConnectionMappings(GetConnectionMappingsRequest) returns (GetConnectionMappingsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc GetProductMappings(GetProductMappingsRequest) returns (GetProductMappingsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc GetDomainMappings(GetDomainMappingsRequest) returns (GetDomainMappingsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  // Run a synchronization job for the integration.
+  rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+
+  rpc FetchRuns(FetchRunsRequest) returns (FetchRunsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+  }
+}
+
+message SetConnectionMappingsRequest {
+  repeated ConnectionMapping mappings = 1;
+}
+
+message SetConnectionMappingsResponse {}
+
+message RemoveConnectionMappingsRequest {
+  repeated string atlan_connection_qualified_names = 1;
+}
+
+message RemoveConnectionMappingsResponse {}
+
+message GetConnectionMappingsRequest {}
+
+message GetConnectionMappingsResponse {
+  repeated ConnectionMapping mappings = 1;
+}
+
+message GetProductMappingsRequest {}
+
+message GetProductMappingsResponse {
+  repeated ProductMapping mappings = 1;
+}
+
+message GetDomainMappingsRequest {}
+
+message GetDomainMappingsResponse {
+  repeated DomainMapping mappings = 1;
+}
+
+message SynchronizeRequest {}
+
+message SynchronizeResponse {
+  WorkflowRun workflow_run = 1;
+  bool has_errors = 2;
+}
+
+message FetchRunsRequest {}
+
+message FetchRunsResponse {
+  repeated WorkflowRun workflow_runs = 1;
+}

@@ -1,0 +1,23 @@
+syntax = "proto3";
+package synq.extensions.atlan.workflows.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/platforms/v1/data_platforms.proto";
+
+option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
+
+message ConnectionMapping {
+  string atlan_connection_qualified_name = 1;
+  platforms.v1.DataPlatformIdentifier synq_data_platform_identifier = 2;
+}
+
+message DomainMapping {
+  string atlan_domain_qualified_name = 1;
+  string synq_domain_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message ProductMapping {
+  string atlan_dataproduct_qualified_name = 1;
+  entities.v1.DataproductIdentifier synq_dataproduct_identifier = 2;
+}

@@ -68,6 +68,7 @@ message UpsertRequest {
   string description = 3;
   string folder = 4;
   synq.dataproducts.v1.Dataproduct.Priority priority = 5;
+  synq.dataproducts.v1.Dataproduct.Source source = 6;
 }
 
 message UpsertResponse {

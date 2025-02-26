@@ -72,7 +72,7 @@ message Config {
     int32 parallelism = 3 [(buf.validate.field) = {
       int32: {
         gte: 1
-        lte: 8
+        lte: 256
       }
     }];
 

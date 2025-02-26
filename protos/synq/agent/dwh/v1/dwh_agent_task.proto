@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package synq.agent.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/agent/dwh/v1";
+
+message AgentTask {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string task_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  oneof command {
+    option (buf.validate.oneof).required = true;
+    FetchFullCatalogCommand fetch_full_catalog = 3;
+    FetchFullMetricsCommand fetch_full_metrics = 4;
+    FetchNumericCommand fetch_numeric = 5;
+    FetchTimeCommand fetch_time = 6;
+    FetchSegmentsCommand fetch_segments = 7;
+  }
+}
+
+//
+message AgentTaskData {
+  oneof data {
+    FetchSegmentsResult fetch_segments_result = 10;
+    FetchNumericResult fetch_numeric_result = 11;
+    FetchTimeResult fetch_time_result = 12;
+  }
+}
+
+message FetchFullCatalogCommand {}
+message FetchFullMetricsCommand {}
+
+message FetchNumericCommand {
+  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+}
+
+message FetchNumericResult {
+  message NumericRow {
+    optional string segment = 1;
+    optional google.protobuf.Timestamp from = 2;
+    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
+    double value = 4 [(buf.validate.field) = {
+      double: {finite: true}
+    }];
+  }
+  repeated NumericRow rows = 1;
+}
+
+message FetchTimeCommand {
+  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+}
+
+message FetchTimeResult {
+  message TimeRow {
+    optional string segment = 1;
+    optional google.protobuf.Timestamp from = 2;
+    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
+    google.protobuf.Timestamp value = 4 [(buf.validate.field) = {required: true}];
+  }
+  repeated TimeRow rows = 1;
+}
+
+message FetchSegmentsCommand {
+  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+}
+
+message FetchSegmentsResult {
+  message SegmentRow {
+    string segment = 1;
+    optional int64 count = 2;
+  }
+  repeated SegmentRow rows = 1;
+}
+
+message SqlQuery {
+  string sql = 1 [(buf.validate.field) = {required: true}];
+  optional int64 limit_results = 2;
+}

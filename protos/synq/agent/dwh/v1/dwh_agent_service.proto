@@ -4,6 +4,7 @@ package synq.agent.dwh.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/agent/dwh/v1/dwh_agent_task.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/dwh/v1";
@@ -19,13 +20,15 @@ service DwhAgentService {
 
 message ConnectRequest {
   oneof message {
+    option (buf.validate.oneof).required = true;
     Hello hello = 1;
     Log log = 2;
+    AgentTaskResponse task_response = 3;
   }
 }
 
 message ConnectResponse {
-  repeated AgentTask tasks = 1;
+  repeated agent.dwh.v1.AgentTask tasks = 1;
 }
 
 message Hello {
@@ -62,18 +65,12 @@ message Log {
   LogLevel level = 3;
 }
 
-message AgentTask {
-  string connection_id = 1;
+message AgentTaskResponse {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
   string task_id = 2 [(buf.validate.field) = {
     required: true
     string: {uuid: true}
   }];
-
-  oneof command {
-    FetchFullCatalogCommand fetch_full_catalog = 3;
-    FetchFullMetricsCommand fetch_full_metrics = 4;
-  }
+  optional string error = 3;
+  optional agent.dwh.v1.AgentTaskData task_data = 4;
 }
-
-message FetchFullCatalogCommand {}
-message FetchFullMetricsCommand {}

@@ -27,4 +27,11 @@ message Domain {
   optional google.protobuf.Timestamp deleted_at = 6;
   DomainDefinition definition = 7;
   optional string parent_id = 8 [(buf.validate.field).string.uuid = true];
+
+  enum Source {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SOURCE_SYNQ = 0;
+    SOURCE_ATLAN = 1;
+  }
+  Source source = 9; // Source for creation and management of domain.
 }

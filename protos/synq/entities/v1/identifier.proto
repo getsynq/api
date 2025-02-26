@@ -38,9 +38,6 @@ message Identifier {
     // Clickhouse table identifier
     ClickhouseTableIdentifier clickhouse_table = 8;
 
-    // Databricks table identifier
-    DatabricksTableIdentifier databricks_table = 14;
-
     // Airflow DAG identifier
     AirflowDagIdentifier airflow_dag = 9;
 
@@ -55,6 +52,12 @@ message Identifier {
 
     // SynqPath identifier
     SynqPathIdentifier synq_path = 13;
+
+    // Databricks table identifier
+    DatabricksTableIdentifier databricks_table = 14;
+
+    // SqlMesh Model identifier
+    SqlMeshModelIdentifier sql_mesh_model = 15;
   }
 }
 
@@ -82,6 +85,19 @@ message DbtCloudNodeIdentifier {
 
   // Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
   string node_id = 3 [(buf.validate.field).required = true];
+}
+
+// SqlMesh
+
+message SqlMeshModelIdentifier {
+  // Synq integration_id that identifies the dbt Core project
+  string integration_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+
+  // SqlMesh model fully qualified name
+  string fqn = 2 [(buf.validate.field).required = true];
 }
 
 //

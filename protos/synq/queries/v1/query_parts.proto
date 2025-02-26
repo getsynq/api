@@ -4,6 +4,7 @@ package synq.queries.v1;
 
 import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/platforms/v1/data_platform_types.proto";
 import "synq/platforms/v1/data_platforms.proto";
 
 option go_package = "github.com/getsynq/api/queries/v1";
@@ -28,7 +29,9 @@ message WithType {
       int32 custom = 2;
     }
   }
-  Type type = 1;
+  Type type = 1 [deprecated = true];
+
+  repeated Type types = 2;
 }
 
 // Resolves to all entities that contain the annotation with the provided accepted value.
@@ -46,6 +49,10 @@ message InDataproduct {
 // Resolves to all entities that belong to the given data platform.
 message InDataPlatform {
   synq.platforms.v1.DataPlatformIdentifier identifier = 1;
+}
+
+message WithDataPlatformType {
+  repeated synq.platforms.v1.DataPlatformType types = 1;
 }
 
 // Resolves to all entities belonging to the given folder structure.
