@@ -21,6 +21,7 @@ message AgentTask {
     FetchNumericCommand fetch_numeric = 5;
     FetchTimeCommand fetch_time = 6;
     FetchSegmentsCommand fetch_segments = 7;
+    FetchVolumeCommand fetch_volume = 8;
   }
 }
 
@@ -30,11 +31,26 @@ message AgentTaskData {
     FetchSegmentsResult fetch_segments_result = 10;
     FetchNumericResult fetch_numeric_result = 11;
     FetchTimeResult fetch_time_result = 12;
+    FetchVolumeResult fetch_volume_result = 13;
   }
 }
 
 message FetchFullCatalogCommand {}
 message FetchFullMetricsCommand {}
+
+message FetchVolumeCommand {
+  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+}
+
+message FetchVolumeResult {
+  message VolumeRow {
+    optional string segment = 1;
+    optional google.protobuf.Timestamp from = 2;
+    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
+    int64 value = 4;
+  }
+  repeated VolumeRow rows = 1;
+}
 
 message FetchNumericCommand {
   SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
@@ -45,9 +61,7 @@ message FetchNumericResult {
     optional string segment = 1;
     optional google.protobuf.Timestamp from = 2;
     google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
-    double value = 4 [(buf.validate.field) = {
-      double: {finite: true}
-    }];
+    double value = 4;
   }
   repeated NumericRow rows = 1;
 }

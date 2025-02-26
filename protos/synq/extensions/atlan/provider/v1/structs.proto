@@ -1,0 +1,21 @@
+syntax = "proto3";
+package synq.extensions.atlan.provider.v1;
+
+option go_package = "github.com/getsynq/api/extensions/atlan/provider/v1";
+
+message AtlanDataDomain {
+  string name = 1;
+  string qualified_name = 2;
+  optional AtlanDataDomain parent = 3;
+}
+
+message AtlanDataProduct {
+  string name = 1;
+  string qualified_name = 2;
+  optional AtlanDataDomain domain = 3;
+}
+
+message AtlanConnection {
+  string name = 1;
+  string qualified_name = 2;
+}
