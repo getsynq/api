@@ -1,6 +1,7 @@
 syntax = "proto3";
 package synq.extensions.atlan.workflows.v1;
 
+import "buf/validate/validate.proto";
 import "synq/extensions/atlan/workflows/v1/mappings.proto";
 import "synq/extensions/atlan/workflows/v1/workflow_run.proto";
 import "synq/v1/scope_authorization.proto";
@@ -89,7 +90,15 @@ message SynchronizeResponse {
   bool has_errors = 2;
 }
 
-message FetchRunsRequest {}
+message FetchRunsRequest {
+  int32 from = 1;
+  int32 limit = 2 [(buf.validate.field) = {
+    int32: {
+      gt: 0
+      lte: 100
+    }
+  }];
+}
 
 message FetchRunsResponse {
   repeated WorkflowRun workflow_runs = 1;

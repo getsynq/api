@@ -14,82 +14,55 @@ message AgentTask {
     string: {uuid: true}
   }];
 
+  // When this task should execute, if none is specified it will use time of execution
+  google.protobuf.Timestamp scheduled_at = 10;
+  // After what time this task should stop executing (even in case of errors, retries will be ignored after this time)
+  optional google.protobuf.Timestamp deadline_at = 11;
+  // When the task was created
+  google.protobuf.Timestamp created_at = 12;
+
   oneof command {
     option (buf.validate.oneof).required = true;
     FetchFullCatalogCommand fetch_full_catalog = 3;
     FetchFullMetricsCommand fetch_full_metrics = 4;
-    FetchNumericCommand fetch_numeric = 5;
-    FetchTimeCommand fetch_time = 6;
     FetchSegmentsCommand fetch_segments = 7;
-    FetchVolumeCommand fetch_volume = 8;
+    FetchMetricsCommand fetch_metrics = 9;
   }
 }
 
-//
 message AgentTaskData {
   oneof data {
+    option (buf.validate.oneof) = {required: true};
     FetchSegmentsResult fetch_segments_result = 10;
-    FetchNumericResult fetch_numeric_result = 11;
-    FetchTimeResult fetch_time_result = 12;
-    FetchVolumeResult fetch_volume_result = 13;
+    FetchMetricsResult fetch_metrics_result = 11;
   }
 }
 
 message FetchFullCatalogCommand {}
+
 message FetchFullMetricsCommand {}
-
-message FetchVolumeCommand {
-  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
-}
-
-message FetchVolumeResult {
-  message VolumeRow {
-    optional string segment = 1;
-    optional google.protobuf.Timestamp from = 2;
-    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
-    int64 value = 4;
-  }
-  repeated VolumeRow rows = 1;
-}
-
-message FetchNumericCommand {
-  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
-}
-
-message FetchNumericResult {
-  message NumericRow {
-    optional string segment = 1;
-    optional google.protobuf.Timestamp from = 2;
-    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
-    double value = 4;
-  }
-  repeated NumericRow rows = 1;
-}
-
-message FetchTimeCommand {
-  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
-}
-
-message FetchTimeResult {
-  message TimeRow {
-    optional string segment = 1;
-    optional google.protobuf.Timestamp from = 2;
-    google.protobuf.Timestamp at = 3 [(buf.validate.field) = {required: true}];
-    google.protobuf.Timestamp value = 4 [(buf.validate.field) = {required: true}];
-  }
-  repeated TimeRow rows = 1;
-}
 
 message FetchSegmentsCommand {
   SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
 }
-
 message FetchSegmentsResult {
   message SegmentRow {
     string segment = 1;
     optional int64 count = 2;
   }
   repeated SegmentRow rows = 1;
+}
+
+message FetchMetricsCommand {
+  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+  // Application specific context around metrics retrieval
+  optional string command_context = 1000;
+}
+message FetchMetricsResult {
+  message MetricsRow {}
+  repeated MetricsRow rows = 1;
+  // Matches command_context of FetchMetricsCommand
+  optional string command_context = 1000;
 }
 
 message SqlQuery {
