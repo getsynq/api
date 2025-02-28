@@ -96,7 +96,15 @@ message IngestTaskResultsRequest {
     required: true
     string: {uuid: true}
   }];
-  agent.dwh.v1.AgentTaskData task_data = 3 [(buf.validate.field) = {required: true}];
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+  agent.dwh.v1.AgentTaskData task_data = 4 [(buf.validate.field) = {required: true}];
 }
 message IngestTaskResultsResponse {}
 

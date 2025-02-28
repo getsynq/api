@@ -7,6 +7,7 @@ import "synq/v1/scope_authorization.proto";
 option go_package = "github.com/getsynq/api/extensions/atlan/integrations/v1";
 
 service AtlanIntegrationService {
+  // Upserts an integration and validates it by checking if the provided API URL and token are valid.
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
@@ -25,24 +26,8 @@ service AtlanIntegrationService {
     };
   }
 
-  // Validate the integration. This checks if the provided API URL and token are valid.
-  // This is required for activation of an integration.
-  rpc Validate(ValidateRequest) returns (ValidateResponse) {
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_EXTENSIONS_MANAGE]
-    };
-  }
-
   // Activate or deactivate the integration.
   rpc Activate(ActivateRequest) returns (ActivateResponse) {
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_EXTENSIONS_MANAGE]
-    };
-  }
-
-  // Set the signing key for an atlan webhook.
-  // This enables incremental update for the integration.
-  rpc SetWebhookSigningKey(SetWebhookSigningKeyRequest) returns (SetWebhookSigningKeyResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
@@ -68,18 +53,8 @@ message RemoveRequest {}
 
 message RemoveResponse {}
 
-message ValidateRequest {}
-
-message ValidateResponse {}
-
 message ActivateRequest {
   bool activate = 1;
 }
 
 message ActivateResponse {}
-
-message SetWebhookSigningKeyRequest {
-  string webhook_signing_key = 1;
-}
-
-message SetWebhookSigningKeyResponse {}

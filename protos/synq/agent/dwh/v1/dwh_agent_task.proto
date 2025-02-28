@@ -54,13 +54,31 @@ message FetchSegmentsResult {
 }
 
 message FetchMetricsCommand {
-  SqlQuery sql_query = 1 [(buf.validate.field) = {required: true}];
+  repeated SqlQuery sql_queries = 1 [(buf.validate.field) = {required: true}];
   // Application specific context around metrics retrieval
   optional string command_context = 1000;
 }
 message FetchMetricsResult {
-  message MetricsRow {}
-  repeated MetricsRow rows = 1;
+  message QueryRows {
+    repeated MetricsRow rows = 1;
+    optional string query_id = 2;
+  }
+  message MetricsRow {
+    optional string segment = 1;
+    repeated ColumnValue column_values = 2;
+  }
+
+  message ColumnValue {
+    string name = 1;
+    bool is_null = 2;
+    oneof value { // can be none of specified to indicate that the value was ignored
+      double double_value = 3;
+      int64 int_value = 4;
+      google.protobuf.Timestamp time_value = 5;
+    }
+  }
+
+  repeated QueryRows query_rows = 1;
   // Matches command_context of FetchMetricsCommand
   optional string command_context = 1000;
 }
@@ -68,4 +86,5 @@ message FetchMetricsResult {
 message SqlQuery {
   string sql = 1 [(buf.validate.field) = {required: true}];
   optional int64 limit_results = 2;
+  optional string query_id = 3;
 }
