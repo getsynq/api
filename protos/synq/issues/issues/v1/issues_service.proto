@@ -6,11 +6,26 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/issues/issues/v1/issues.proto";
+import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/issues/issues/v1";
 
+
 // IssuesService is a service for managing Issues.
 service IssuesService {
+  rpc BatchGetIssues(BatchGetIssuesRequest) returns (BatchGetIssuesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_READ]
+    };
+  }
+
+  rpc ListIssues(ListIssuesRequest) returns (ListIssuesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_READ]
+    };
+  }
+
   // Mark issue as being investigated.
   rpc MarkInvestigating(MarkInvestigatingRequest) returns (MarkInvestigatingResponse) {
     option (synq.v1.scope_authorization) = {
@@ -45,6 +60,58 @@ service IssuesService {
       scopes: [SCOPE_ISSUES_EDIT]
     };
   }
+}
+
+message BatchGetIssuesRequest {
+  // IDs of the issues to get.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+message BatchGetIssuesResponse {
+  // Issues.
+  map<string, synq.issues.issues.v1.Issue> issues = 1;
+}
+
+message ListIssuesRequest {
+  // Filter by time range.
+  google.protobuf.Timestamp from = 1 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Filter by time range.
+  google.protobuf.Timestamp to = 2 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  Limit limit = 3;
+
+  // Filter by entities.
+  repeated synq.entities.v1.Identifier entities = 4;
+}
+
+message Limit {
+  int32 max = 1;
+
+  string after_id = 2;
+}
+
+message ListIssuesResponse {
+  // Issues.
+  repeated synq.issues.issues.v1.Issue issues = 1;
 }
 
 message MarkInvestigatingRequest {

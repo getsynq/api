@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package synq.issues.issues.v1;
+
+option go_package = "github.com/getsynq/api/issues/issues/v1";
+
+import "synq/entities/v1/identifier.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "google/protobuf/timestamp.proto";
+
+message Issue {
+  // ID of the issue.
+  string id = 1;
+
+  // Name of the issue.
+  string name = 2;
+
+  // Message of the issue.
+  string message = 3;
+  
+  // Severity of the issue.
+  Severity severity = 4;
+
+  // Entity that triggered this issue.
+  synq.entities.v1.Identifier trigger_entity = 5;
+
+  // Entities affected by this issue.
+  repeated synq.entities.v1.Identifier affected_entities = 6;
+
+  // State of the issue.
+  State state = 7;
+
+  // Started at timestamp.
+  google.protobuf.Timestamp started_at = 8;
+
+  // Updated at timestamp.
+  google.protobuf.Timestamp updated_at = 9;
+
+  // Ended at timestamp.
+  google.protobuf.Timestamp ended_at = 10;
+
+  // Latest status of the issue.
+  Status latest_status = 11;
+
+  // Actor that last updated the status of the issue.
+  synq.issues.actor.v1.Actor latest_status_actor = 12;
+}
+
+// Life-cycle status of the issue.
+enum State {
+    STATE_UNSPECIFIED = 0;
+    STATE_OPEN = 1;
+    STATE_CLOSED = 2;
+}
+
+// Progress status of the issue.
+enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_INVESTIGATING = 1;
+    STATUS_EXPECTED = 2;
+    STATUS_FIXED = 3;
+    STATUS_NO_ACTION_NEEDED = 4;
+}
+
+enum Severity {
+    SEVERITY_UNSPECIFIED = 0;
+    SEVERITY_INFO = 1;
+    SEVERITY_WARN = 2;
+    SEVERITY_ERROR = 3;
+    SEVERITY_FATAL = 4;
+}
