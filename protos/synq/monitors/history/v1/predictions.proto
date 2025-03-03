@@ -1,0 +1,39 @@
+syntax = "proto3";
+package synq.monitors.history.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/getsynq/api/monitors/history/v1";
+
+message Prediction {
+  // Field
+  string f = 1;
+
+  // Segment
+  string s = 2;
+
+  // Metric
+  string m = 3;
+
+  // Value
+  double v = 4;
+
+  // Upper bound
+  google.protobuf.DoubleValue vu = 5;
+
+  // Lower bound
+  google.protobuf.DoubleValue vl = 6;
+
+  // Pattern
+  string p = 7;
+
+  // Expected value
+  double e = 8;
+
+  // Standard deviation
+  double st = 9;
+
+  // Timestamp
+  google.protobuf.Timestamp t = 10;
+}
