@@ -22,7 +22,10 @@ message Issue {
   Severity severity = 4;
 
   // Entity that triggered this issue.
-  synq.entities.v1.Identifier trigger_entity = 5;
+  synq.entities.v1.Identifier trigger_entity = 5 [deprecated = true];
+
+  // Trigger of the issue.
+  Trigger trigger = 13;
 
   // Entities affected by this issue.
   repeated synq.entities.v1.Identifier affected_entities = 6;
@@ -44,6 +47,20 @@ message Issue {
 
   // Actor that last updated the status of the issue.
   synq.issues.actor.v1.Actor latest_status_actor = 12;
+}
+
+message Trigger {
+    oneof trigger {
+        synq.entities.v1.Identifier entity = 1;
+        Monitor monitor = 2;
+    }
+}
+
+message Monitor {
+    synq.entities.v1.Identifier monitor = 1;
+    string segment = 2;
+    string metric_id = 3;
+    int32 metric_version = 4;
 }
 
 // Life-cycle status of the issue.
