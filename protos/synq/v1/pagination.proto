@@ -1,0 +1,12 @@
+
+syntax = "proto3";
+package synq.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/getsynq/api/v1";
+
+message Pagination {
+  optional string cursor = 1;
+  optional int32 page_size = 2;
+}

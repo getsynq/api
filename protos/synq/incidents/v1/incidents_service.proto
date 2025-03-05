@@ -1,0 +1,402 @@
+syntax = "proto3";
+
+package synq.incidents.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/scope_authorization.proto";
+import "synq/incidents/v1/incidents.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/pagination.proto";
+
+option go_package = "github.com/getsynq/api/incidents/v1";
+
+// IncidentsService is a service for managing Incidents.
+service IncidentsService {
+  rpc CreateIncident(CreateIncidentRequest) returns (CreateIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc RenameIncident(RenameIncidentRequest) returns (RenameIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  // Cancel an incident
+  rpc CancelIncident(CancelIncidentRequest) returns (CancelIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  // Close an incident
+  rpc CloseIncident(CloseIncidentRequest) returns (CloseIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc MergeIncidents(MergeIncidentsRequest) returns (MergeIncidentsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc SplitIncident(SplitIncidentRequest) returns (SplitIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc AddIssuesToIncident(AddIssuesToIncidentRequest) returns (AddIssuesToIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc RemoveIssuesFromIncident(RemoveIssuesFromIncidentRequest) returns (RemoveIssuesFromIncidentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
+
+  rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_READ]
+    };
+  }
+
+  rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_READ]
+    };
+  }
+}
+
+//
+// CREATE
+//
+
+message CreateIncidentRequest {
+  // IDs of issues to add to the incident
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+  }];
+
+  // Name of the incident
+  string name = 2 [(buf.validate.field) = {required: true}];
+
+  // Actor creating the incident
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident was created. Defaults to the current time.
+  google.protobuf.Timestamp at = 4 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Optional group IDs associated with the incident
+  repeated string group_ids = 5;
+}
+
+message CreateIncidentResponse {
+  synq.incidents.v1.Incident incident = 1;
+}
+
+//
+// UPDATE
+//
+
+message RenameIncidentRequest {
+  // ID of the incident to rename
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor renaming the incident
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident was renamed. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // New name for the incident
+  string name = 4 [(buf.validate.field) = {required: true}];
+}
+
+message RenameIncidentResponse {}
+
+message CancelIncidentRequest {
+  // ID of the incident to cancel
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor cancelling the incident
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident was cancelled. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+}
+
+message CancelIncidentResponse {}
+
+message CloseIncidentRequest {
+  // ID of the incident to close
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor closing the incident
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident was closed. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+}
+
+message CloseIncidentResponse {}
+
+message MergeIncidentsRequest {
+  // ID of the primary incident to merge into
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor performing the merge
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incidents were merged. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // IDs of other incidents to merge into the primary incident
+  repeated string other_incident_ids = 4 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+    required: true
+  }];
+}
+
+message MergeIncidentsResponse {}
+
+message SplitIncidentRequest {
+  // ID of the incident to split
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor performing the split
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident was split. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // IDs of issues to move to the new incident
+  repeated string split_issue_ids = 4 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+    required: true
+  }];
+
+  // Name for the new incident
+  string split_incident_name = 5 [(buf.validate.field) = {required: true}];
+}
+
+message SplitIncidentResponse {
+  synq.incidents.v1.Incident incident = 1;
+  synq.incidents.v1.Incident split_incident = 2;
+}
+
+message AddIssuesToIncidentRequest {
+  // ID of the incident to add issues to
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor adding the issues
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issues were added. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // IDs of issues to add to the incident
+  repeated string issue_ids = 4 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+    required: true
+  }];
+}
+
+message AddIssuesToIncidentResponse {}
+
+message RemoveIssuesFromIncidentRequest {
+  // ID of the incident to remove issues from
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor removing the issues
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issues were removed. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // IDs of issues to remove from the incident
+  repeated string issue_ids = 4 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+    required: true
+  }];
+}
+
+message RemoveIssuesFromIncidentResponse {}
+
+//
+// FETCH
+//
+
+message ListIncidentsRequest {
+  enum Field {
+    FIELD_UNSPECIFIED = 0;
+    FIELD_CREATED_AT = 1;
+    FIELD_UPDATED_AT = 2;
+  }
+
+  message Time {
+    Field field = 1;
+    google.protobuf.Timestamp from = 2 [(buf.validate.field) = {
+      timestamp: {
+        lt_now: true
+        gt: {seconds: 1640995200}
+      }
+    }];
+    google.protobuf.Timestamp to = 3 [(buf.validate.field) = {
+      timestamp: {
+        lt_now: true
+        gt: {seconds: 1640995200}
+      }
+    }];
+  }
+
+  message Sort {
+    Field sort_by = 1;
+    enum Order {
+      ORDER_UNSPECIFIED = 0;
+      ORDER_ASC = 1;
+      ORDER_DESC = 2;
+    }
+    Order order = 2;
+  }
+  
+  // Time range filter
+  optional Time time = 1;
+
+  // Sort options
+  optional Sort sort = 2;
+
+  // Pagination
+  optional synq.v1.Pagination pagination = 3;
+
+  // Filter by states
+  repeated synq.incidents.v1.Incident.State states = 4;
+
+  // Filter by affected entities
+  repeated synq.entities.v1.Identifier affected_entities = 5;
+}
+
+message ListIncidentsResponse {
+  repeated synq.incidents.v1.Incident incidents = 1;
+}
+
+message BatchGetIncidentsRequest {
+  // IDs of the incidents to get
+  repeated string incident_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      },
+      min_items: 1
+    }
+    required: true
+  }];
+}
+
+message BatchGetIncidentsResponse {
+  // Incidents keyed by their IDs
+  map<string, synq.incidents.v1.Incident> incidents = 1;
+}

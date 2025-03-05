@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package synq.incidents.v1;
+
+option go_package = "github.com/getsynq/api/incidents/v1";
+
+import "synq/issues/actor/v1/actor.proto";
+import "google/protobuf/timestamp.proto";
+
+message Incident {
+  // ID of the incident.
+  string id = 1;
+    
+  // Index of the incident (for human-readable references).
+  int32 index = 2;
+  
+  // Name of the incident.
+  string name = 3;
+  
+  // IDs of issues associated with this incident.
+  repeated string issue_ids = 4;
+  
+  // Actor who created the incident.
+  synq.issues.actor.v1.Actor created_by = 5;
+  
+  // Time at which the incident was created.
+  google.protobuf.Timestamp created_at = 6;
+  
+  // Actor who last updated the incident.
+  synq.issues.actor.v1.Actor updated_by = 7;
+  
+  // Time at which the incident was last updated.
+  google.protobuf.Timestamp updated_at = 8;
+
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    STATE_OPEN = 1;
+    STATE_CLOSED = 2;
+    STATE_CANCELLED = 3;
+  }
+
+  // State of the incident.
+  State state = 9;
+}

@@ -101,3 +101,12 @@ The `<access_token>` thus fetched is a valid JWT token which should be passed on
 # Examples
 
 The language specific examples to use Synq APIs can be found [here](https://docs.synq.io/api-reference/examples).
+
+# Troubleshooting
+
+* If you experience a considerable slowness in connecting to the gRPC services, please flush your DNS cache. This is specially relevant if you are behind a VPN.
+
+  ```
+  dscacheutil -flushcache
+  killall -HUP mDNSResponder
+  ```
