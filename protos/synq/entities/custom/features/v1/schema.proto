@@ -4,76 +4,9 @@ package synq.entities.custom.features.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/schema.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/features/v1";
-
-message SchemaColumnField {
-  // Human readable name of the column as present in dbt or data warehouse.
-  string name = 1 [(buf.validate.field) = {
-    required: true
-    string: {
-      min_len: 1
-      max_len: 255
-    }
-  }];
-  // Native data type of the column as present in data warehouse.
-  string native_type = 2 [(buf.validate.field) = {
-    string: {max_len: 255}
-  }];
-  // Description of the column
-  string description = 3 [(buf.validate.field) = {
-    string: {max_len: 1000}
-  }];
-  // Ordinal position of the column in the struct, starting from 1
-  int32 ordinal_position = 4 [(buf.validate.field) = {
-    int32: {
-      gte: 0
-      lte: 1001
-    }
-  }];
-  // Indicates that the field type could be used as a struct/json in a data warehouse
-  bool is_struct = 5;
-  // Indicates that the field is a repeated field in a data warehouse (e.g. array)
-  bool is_repeated = 6;
-  // Fields inside of the struct/record like field
-  repeated SchemaColumnField fields = 7 [(buf.validate.field) = {
-    repeated: {max_items: 100}
-  }];
-}
-
-message SchemaColumn {
-  // Human readable name of the column as present in dbt or data warehouse.
-  string name = 1 [(buf.validate.field) = {
-    required: true
-    string: {
-      min_len: 1
-      max_len: 255
-    }
-  }];
-  // Native data type of the column as present in data warehouse.
-  string native_type = 2 [(buf.validate.field) = {
-    string: {max_len: 255}
-  }];
-  // Description of the column
-  string description = 3 [(buf.validate.field) = {
-    string: {max_len: 1000}
-  }];
-  // Ordinal position of the column in the table, starting from 1
-  int32 ordinal_position = 4 [(buf.validate.field) = {
-    int32: {
-      gte: 0
-      lte: 1001
-    }
-  }];
-  // Indicates that the column type could be used as a struct/json in a data warehouse
-  bool is_struct = 5;
-  // Indicates that the column is a repeated field in a data warehouse (e.g. array)
-  bool is_repeated = 6;
-  // Fields inside of the struct/record like column
-  repeated SchemaColumnField fields = 7 [(buf.validate.field) = {
-    repeated: {max_items: 100}
-  }];
-}
 
 // Schema represents a schema of a table like entity
 message Schema {
@@ -82,7 +15,7 @@ message Schema {
   // Columns of the schema
   // Columns are ordered by ordinal_position, it has to be defined for all or none of the columns,
   // when not defined, ordinal positions are attached according to the order of columns in the list.
-  repeated SchemaColumn columns = 2 [(buf.validate.field) = {
+  repeated synq.entities.v1.SchemaColumn columns = 2 [(buf.validate.field) = {
     repeated: {max_items: 1000}
   }];
 }

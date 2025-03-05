@@ -1,17 +1,17 @@
-module github.com/getsynq/api/examples/go/2_create_entities
+module github.com/getsynq/api/examples/golang/2_create_entities
 
 go 1.23
 
 require (
-	buf.build/gen/go/getsynq/api/grpc/go v1.4.0-20240726080219-7f3194e9a112.2
-	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.34.2-20240726080219-7f3194e9a112.2
+	buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250305225835-d77218a1ffd5.2
+	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.1-20250305225835-d77218a1ffd5.1
 	golang.org/x/oauth2 v0.21.0
 	google.golang.org/grpc v1.65.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.36.1
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240717164558-a6c49f84cc0f.2 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.1-20240508200655-46a4cf4ba109.1 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect

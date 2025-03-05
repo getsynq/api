@@ -132,7 +132,7 @@ func main() {
 			FeatureId: "schema",
 			Feature: &entitiescustomv1.Feature_Schema{
 				Schema: &entitiescustomfeaturesv1.Schema{
-					Columns: []*entitiescustomfeaturesv1.SchemaColumn{
+					Columns: []*entitiesv1.SchemaColumn{
 						{
 							Name:        "id",
 							NativeType:  "TEXT",

@@ -1,9 +1,9 @@
-module github.com/getsynq/api/examples/go/atlan_integration
+module github.com/getsynq/api/examples/golang/atlan_integration
 
 go 1.23
 
 require (
-	buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250226182039-7c6937cd040e.2
+	buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250305225835-d77218a1ffd5.2
 	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250227124157-d80d7a73ec5d.1
 	golang.org/x/oauth2 v0.20.0
 	google.golang.org/grpc v1.64.1

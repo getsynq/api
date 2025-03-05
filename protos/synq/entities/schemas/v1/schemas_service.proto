@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package synq.entities.schemas.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+import "synq/entities/v1/schema.proto";
+
+option go_package = "github.com/getsynq/api/entities/schemas/v1";
+
+// EntitiesService is a service for retriving any entity.
+//
+service SchemasService {
+  // Get schema of the entity its identifier.
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
+}
+
+// GetEntityRequest is the request message for the GetEntity method.
+message GetSchemaRequest {
+  // Identifier of the entity to get.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// GetEntityResponse is the response message for the GetEntity method.
+message GetSchemaResponse {
+  // Schema of the entity, might be empty
+  optional synq.entities.v1.Schema schema = 1;
+}

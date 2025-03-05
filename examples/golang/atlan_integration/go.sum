@@ -1,7 +1,7 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20240508200655-46a4cf4ba109.1 h1:JCBiWHmLr8K2RZAtIauMEkekfCU5M2xn9LRfmsZ20mw=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20240508200655-46a4cf4ba109.1/go.mod h1:eOqrCVUfhh7SLo00urDe/XhJHljj0dWMZirS0aX7cmc=
-buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250226182039-7c6937cd040e.2 h1:Ya4623NnCtzxftAGTQgOKoA8eAL+G5q+LV3WoAmGxBs=
-buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250226182039-7c6937cd040e.2/go.mod h1:zSvpaz4/R48ABByH5nMfLoBQSXKRhuMqfKtnYyJe0oY=
+buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250305225835-d77218a1ffd5.2 h1:gSJWYesaWDbPzbVnZ+CrsUw97Yq2QeH6JepMWUUnXxY=
+buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250305225835-d77218a1ffd5.2/go.mod h1:AJjyP/Zky/IPefBsdG3YHAGs3sRYgac6R/WV5jDQ0Ak=
 buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250227124157-d80d7a73ec5d.1 h1:xe4pK/qfxStRkGroCIZzDvBG3MsKzud9qRxKuMVobC8=
 buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250227124157-d80d7a73ec5d.1/go.mod h1:RuDGlxYZp9LzG+ufLgspsKt6phwoAiL+oQE73zSS+Vw=
 cloud.google.com/go/compute/metadata v0.3.0 h1:Tz+eQXMEqDIKRsmY3cHTL6FVaynIjX2QxYC4trgAKZc=
