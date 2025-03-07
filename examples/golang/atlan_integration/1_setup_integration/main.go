@@ -1,18 +1,17 @@
 package main
 
 import (
+	extensionsatlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
+	extensionsatlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"os"
-
-	atlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
-	atlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
+	"os"
 )
 
 func main() {
@@ -47,13 +46,13 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	integrationsApi := atlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
+	integrationsApi := extensionsatlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
 
 	// Upsert tenant info and validate.
 	{
 		tenantUrl := os.Getenv("ATLAN_TENANT_URL")
 		tenantApiToken := os.Getenv("ATLAN_API_TOKEN")
-		resp, err := integrationsApi.Upsert(ctx, &atlanintegrationsv1.UpsertRequest{
+		resp, err := integrationsApi.Upsert(ctx, &extensionsatlanintegrationsv1.UpsertRequest{
 			AtlanTenantUrl: tenantUrl,
 			AtlanApiToken:  tenantApiToken,
 		})
@@ -67,7 +66,7 @@ func main() {
 
 	// Fetch integration.
 	{
-		resp, err := integrationsApi.Get(ctx, &atlanintegrationsv1.GetRequest{})
+		resp, err := integrationsApi.Get(ctx, &extensionsatlanintegrationsv1.GetRequest{})
 		if err != nil {
 			panic(err)
 		}

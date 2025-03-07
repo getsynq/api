@@ -1,17 +1,16 @@
 package main
 
 import (
+	extensionsatlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
+	extensionsatlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
-
-	atlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
-	atlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
+	"os"
 )
 
 func main() {
@@ -46,12 +45,12 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	integrationsApi := atlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
+	integrationsApi := extensionsatlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
 
 	// Deactivate integraton.
 	// This stops the scheduled synchronization.
 	{
-		_, err := integrationsApi.Activate(ctx, &atlanintegrationsv1.ActivateRequest{
+		_, err := integrationsApi.Activate(ctx, &extensionsatlanintegrationsv1.ActivateRequest{
 			Activate: false,
 		})
 		if err != nil {
@@ -62,7 +61,7 @@ func main() {
 
 	// Optionally delete integration.
 	{
-		_, err := integrationsApi.Remove(ctx, &atlanintegrationsv1.RemoveRequest{})
+		_, err := integrationsApi.Remove(ctx, &extensionsatlanintegrationsv1.RemoveRequest{})
 		if err != nil {
 			panic(err)
 		}

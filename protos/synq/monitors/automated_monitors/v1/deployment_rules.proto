@@ -1,0 +1,131 @@
+syntax = "proto3";
+package synq.monitors.automated_monitors.v1;
+
+import "synq/queries/v1/query_operand.proto";
+import "synq/queries/v1/query_parts.proto";
+
+option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
+
+message EntitySelectionQuery {
+  repeated QueryPart parts = 1;
+  synq.queries.v1.QueryOperand operand = 2;
+
+  message QueryPart {
+    oneof part {
+      synq.queries.v1.IdentifierList identifier_list = 1;
+      synq.queries.v1.WithNameSearch with_name_search = 2;
+      synq.queries.v1.WithType with_type = 3;
+      synq.queries.v1.WithAnnotation with_annotation = 4;
+      // synq.queries.v1.InDataPlatform in_data_platform = 5;
+      synq.queries.v1.InFolder in_folder = 6;
+
+      EntitySelectionQuery query = 100;
+      synq.queries.v1.Unsupported unsupported = 101;
+    }
+  }
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_WARNING = 1;
+  SEVERITY_ERROR = 2;
+}
+
+message AutomatedMonitorSettings {
+  Severity severity = 1;
+  int32 sensitivity = 2;
+  repeated string metric_ids = 3;
+}
+
+message MonitorSettingsChange {
+  string monitored_asset_path = 1;
+  AutomatedMonitorSettings original_settings = 2;
+  AutomatedMonitorSettings new_settings = 3;
+}
+
+message MonitorsDeploymentOverview {
+  repeated string monitors_to_create_for = 1;
+  repeated string monitors_to_delete_for = 2;
+  repeated string active_monitors_for = 3;
+  repeated MonitorSettingsChange monitor_settings_changes = 4;
+}
+
+message QueryConfig {
+  EntitySelectionQuery query = 1;
+  Severity severity = 2;
+  int32 sensitivity = 3;
+  repeated string metric_ids = 4;
+}
+
+message ExclusiveQueryConfig {
+  EntitySelectionQuery query = 1;
+}
+
+message StaticConfig {
+  string path = 1;
+  Severity severity = 2;
+  int32 sensitivity = 3;
+  repeated string metric_ids = 4;
+}
+
+message ExclusiveStaticConfig {
+  string path = 1;
+}
+
+message ProductConfig {
+  string product_id = 1;
+  Severity severity = 2;
+  int32 sensitivity = 3;
+  repeated string metric_ids = 4;
+  ProductConfigUpstreamStrategy upstream = 5;
+  ProductConfigSelfStrategy self = 6;
+}
+
+message ProductConfigUpstreamStrategy {
+  oneof strategy {
+    ProductConfigUpstreamStrategyAll all = 1;
+    ProductConfigUpstreamStrategySources sources = 2;
+  }
+}
+
+message ProductConfigUpstreamStrategyAll {}
+message ProductConfigUpstreamStrategySources {}
+
+message ProductConfigSelfStrategy {
+  oneof strategy {
+    ProductConfigSelfStrategyAll all = 1;
+    ProductConfigSelfStrategySelection selection = 2;
+  }
+}
+
+message ProductConfigSelfStrategyAll {}
+message ProductConfigSelfStrategySelection {
+  EntitySelectionQuery query = 1;
+}
+
+message MonitorsDeploymentRule {
+  string id = 1;
+  string title = 2;
+
+  oneof config {
+    QueryConfig query_config = 3;
+    ExclusiveQueryConfig exclusive_query_config = 4;
+    StaticConfig static_config = 5;
+    ExclusiveStaticConfig exclusive_static_config = 6;
+    ProductConfig product_config = 7;
+  }
+}
+
+message MonitorsDeploymentRuleView {
+  string id = 1;
+  string title = 2;
+  int32 monitor_count = 3;
+
+  oneof config {
+    QueryConfig query_config = 4;
+    ExclusiveQueryConfig exclusive_query_config = 5;
+    StaticConfig static_config = 6;
+    ExclusiveStaticConfig exclusive_static_config = 7;
+    ProductConfig product_config = 8;
+  }
+}

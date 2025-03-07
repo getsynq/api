@@ -1,21 +1,20 @@
 package main
 
 import (
+	extensionsatlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
+	extensionsatlanworkflowsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/workflows/v1/workflowsv1grpc"
+	extensionsatlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
+	extensionsatlanworkflowsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/workflows/v1"
+	platformsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/platforms/v1"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"os"
-
-	atlanintegrationsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/integrations/v1/integrationsv1grpc"
-	atlanworkflowsv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/workflows/v1/workflowsv1grpc"
-	atlanintegrationsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/integrations/v1"
-	atlanworkflowsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/workflows/v1"
-	platformsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/platforms/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
+	"os"
 )
 
 func main() {
@@ -50,16 +49,16 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	integrationsApi := atlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
-	workflowsApi := atlanworkflowsv1grpc.NewAtlanWorkflowServiceClient(conn)
+	integrationsApi := extensionsatlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
+	workflowsApi := extensionsatlanworkflowsv1grpc.NewAtlanWorkflowServiceClient(conn)
 
 	// Requires valid integration created in 1_setup_integration.
 
 	// Map Atlan connections to SYNQ integrations.
 	// Use 2_fetch_atlan_resources to find visible connections.
 	{
-		_, err := workflowsApi.SetConnectionMappings(ctx, &atlanworkflowsv1.SetConnectionMappingsRequest{
-			Mappings: []*atlanworkflowsv1.ConnectionMapping{
+		_, err := workflowsApi.SetConnectionMappings(ctx, &extensionsatlanworkflowsv1.SetConnectionMappingsRequest{
+			Mappings: []*extensionsatlanworkflowsv1.ConnectionMapping{
 				{
 					AtlanConnectionQualifiedName: "default/dbt/1",
 					SynqDataPlatformIdentifier: &platformsv1.DataPlatformIdentifier{
@@ -82,7 +81,7 @@ func main() {
 	// Activate integration once you are ready to synchronize.
 	// This runs a synchronization every 5 minutes.
 	{
-		_, err := integrationsApi.Activate(ctx, &atlanintegrationsv1.ActivateRequest{
+		_, err := integrationsApi.Activate(ctx, &extensionsatlanintegrationsv1.ActivateRequest{
 			Activate: true,
 		})
 		if err != nil {
@@ -93,7 +92,7 @@ func main() {
 	// You can also manually synchronize with atlan.
 	// This creates the dataproducts and associated domains visible from Atlan into SYNQ
 	{
-		resp, err := workflowsApi.Synchronize(ctx, &atlanworkflowsv1.SynchronizeRequest{})
+		resp, err := workflowsApi.Synchronize(ctx, &extensionsatlanworkflowsv1.SynchronizeRequest{})
 		if err != nil {
 			panic(err)
 		}
@@ -106,7 +105,7 @@ func main() {
 
 	// Fetch mapped products and domains.
 	{
-		resp, err := workflowsApi.GetDomainMappings(ctx, &atlanworkflowsv1.GetDomainMappingsRequest{})
+		resp, err := workflowsApi.GetDomainMappings(ctx, &extensionsatlanworkflowsv1.GetDomainMappingsRequest{})
 		if err != nil {
 			panic(err)
 		}
@@ -114,7 +113,7 @@ func main() {
 		fmt.Printf("Mapped domains -> %s\n\n", string(b))
 	}
 	{
-		resp, err := workflowsApi.GetProductMappings(ctx, &atlanworkflowsv1.GetProductMappingsRequest{})
+		resp, err := workflowsApi.GetProductMappings(ctx, &extensionsatlanworkflowsv1.GetProductMappingsRequest{})
 		if err != nil {
 			panic(err)
 		}
@@ -124,7 +123,7 @@ func main() {
 
 	// Fetch synchronization runs history.
 	{
-		resp, err := workflowsApi.FetchRuns(ctx, &atlanworkflowsv1.FetchRunsRequest{
+		resp, err := workflowsApi.FetchRuns(ctx, &extensionsatlanworkflowsv1.FetchRunsRequest{
 			From:  0,
 			Limit: 10,
 		})

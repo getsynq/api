@@ -1,17 +1,16 @@
 package main
 
 import (
+	extensionsatlanproviderv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/provider/v1/providerv1grpc"
+	extensionsatlanproviderv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/provider/v1"
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
-
-	atlanproviderv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/extensions/atlan/provider/v1/providerv1grpc"
-	atlanproviderv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/extensions/atlan/provider/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
+	"os"
 )
 
 func main() {
@@ -46,13 +45,13 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	atlanProviderApi := atlanproviderv1grpc.NewAtlanProviderServiceClient(conn)
+	atlanProviderApi := extensionsatlanproviderv1grpc.NewAtlanProviderServiceClient(conn)
 
 	// Requires valid integration created in 1_setup_integration.
 
 	// Fetch visible connections, products and domains.
 	{
-		resp, err := atlanProviderApi.GetAtlanConnections(ctx, &atlanproviderv1.GetAtlanConnectionsRequest{})
+		resp, err := atlanProviderApi.GetAtlanConnections(ctx, &extensionsatlanproviderv1.GetAtlanConnectionsRequest{})
 		if err != nil {
 			panic(err)
 		}
@@ -63,7 +62,7 @@ func main() {
 	}
 
 	{
-		resp, err := atlanProviderApi.GetAtlanDataProducts(ctx, &atlanproviderv1.GetAtlanDataProductsRequest{})
+		resp, err := atlanProviderApi.GetAtlanDataProducts(ctx, &extensionsatlanproviderv1.GetAtlanDataProductsRequest{})
 		if err != nil {
 			panic(err)
 		}
@@ -74,7 +73,7 @@ func main() {
 	}
 
 	{
-		resp, err := atlanProviderApi.GetAtlanDomains(ctx, &atlanproviderv1.GetAtlanDomainsRequest{})
+		resp, err := atlanProviderApi.GetAtlanDomains(ctx, &extensionsatlanproviderv1.GetAtlanDomainsRequest{})
 		if err != nil {
 			panic(err)
 		}

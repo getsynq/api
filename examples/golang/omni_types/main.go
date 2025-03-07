@@ -1,22 +1,21 @@
 package main
 
 import (
+	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
+	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-
-	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
-	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
-	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"io"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -67,7 +66,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Created Omni Dashboard entity type...\n")
+		fmt.Println("Created Omni Dashboard entity type...")
 	}
 
 	// Fetch documents from Omni

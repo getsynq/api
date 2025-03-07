@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package synq.monitors.automated_monitors.v1;
+
+import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
+
+message GetDeployOverviewRequest {
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rule = 1;
+}
+
+message GetDeployOverviewResponse {
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentOverview overview = 1;
+}
+
+message GetDeployDeleteOverviewRequest {
+  string id = 1;
+}
+
+message GetDeployDeleteOverviewResponse {
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentOverview overview = 1;
+}
+
+message DeleteDeploymentRuleRequest {
+  string id = 1;
+}
+
+message DeleteDeploymentRuleResponse {}
+
+message ListDeploymentRulesRequest {}
+
+message ListDeploymentRulesResponse {
+  repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView deployment_rules = 1;
+}
+
+message ListDeploymentRulesForAssetRequest {
+  string asset_path = 1;
+}
+
+message ListDeploymentRulesForAssetResponse {
+  repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView deployment_rules = 1;
+}
+
+message UpsertDeploymentRuleRequest {
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rule = 1;
+}
+
+message UpsertDeploymentRuleResponse {}
+
+message DeployDeploymentRuleRequest {
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rule = 1;
+}
+
+message DeployDeploymentRuleResponse {}
+
+message BatchUpdateDeploymentRuleTitleRequest {
+  repeated UpdateDeploymentRuleTitleRequest deployment_rules = 1;
+}
+
+message BatchUpdateDeploymentRuleTitleResponse {}
+
+message UpdateDeploymentRuleTitleRequest {
+  string id = 1;
+  string title = 2;
+}
+
+message BatchGetDeploymentRulesRequest {
+  repeated string ids = 1;
+}
+
+message BatchGetDeploymentRulesResponse {
+  map<string, synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView> deployment_rules = 1;
+}
+
+service DeploymentRulesService {
+  rpc GetDeployOverview(GetDeployOverviewRequest) returns (GetDeployOverviewResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc GetDeployDeleteOverview(GetDeployDeleteOverviewRequest) returns (GetDeployDeleteOverviewResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc DeleteDeploymentRule(DeleteDeploymentRuleRequest) returns (DeleteDeploymentRuleResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc ListDeploymentRules(ListDeploymentRulesRequest) returns (ListDeploymentRulesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc ListDeploymentRulesForAsset(ListDeploymentRulesForAssetRequest) returns (ListDeploymentRulesForAssetResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc BatchGetDeploymentRules(BatchGetDeploymentRulesRequest) returns (BatchGetDeploymentRulesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc UpsertDeploymentRule(UpsertDeploymentRuleRequest) returns (UpsertDeploymentRuleResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc BatchUpdateDeploymentRuleTitle(BatchUpdateDeploymentRuleTitleRequest) returns (BatchUpdateDeploymentRuleTitleResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+
+  rpc DeployDeploymentRule(DeployDeploymentRuleRequest) returns (DeployDeploymentRuleResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+  }
+}
