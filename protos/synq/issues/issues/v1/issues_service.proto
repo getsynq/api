@@ -4,13 +4,12 @@ package synq.issues.issues.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/issues/actor/v1/actor.proto";
-import "synq/v1/scope_authorization.proto";
-import "synq/issues/issues/v1/issues.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/issues/issues/v1/issues.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/issues/issues/v1";
-
 
 // IssuesService is a service for managing Issues.
 service IssuesService {

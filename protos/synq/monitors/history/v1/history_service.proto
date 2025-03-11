@@ -1,9 +1,9 @@
 syntax = "proto3";
 package synq.monitors.history.v1;
 
+import "google/protobuf/timestamp.proto";
 import "synq/monitors/history/v1/predictions.proto";
 import "synq/v1/scope_authorization.proto";
-import "google/protobuf/timestamp.proto";
 // import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/monitors/history/v1";
@@ -11,9 +11,7 @@ option go_package = "github.com/getsynq/api/monitors/history/v1";
 service HistoryService {
   rpc History(HistoryRequest) returns (HistoryResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_MONITORS_READ
-      ]
+      scopes: [SCOPE_MONITORS_READ]
     };
   }
 }

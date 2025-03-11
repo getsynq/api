@@ -4,11 +4,11 @@ package synq.incidents.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/issues/actor/v1/actor.proto";
-import "synq/v1/scope_authorization.proto";
-import "synq/incidents/v1/incidents.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/incidents/v1/incidents.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/incidents/v1";
 
@@ -87,7 +87,7 @@ message CreateIncidentRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
   }];
@@ -212,7 +212,7 @@ message MergeIncidentsRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
     required: true
@@ -245,7 +245,7 @@ message SplitIncidentRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
     required: true
@@ -284,7 +284,7 @@ message AddIssuesToIncidentRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
     required: true
@@ -317,7 +317,7 @@ message RemoveIssuesFromIncidentRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
     required: true
@@ -362,7 +362,7 @@ message ListIncidentsRequest {
     }
     Order order = 2;
   }
-  
+
   // Time range filter
   optional Time time = 1;
 
@@ -389,7 +389,7 @@ message BatchGetIncidentsRequest {
     repeated: {
       items: {
         string: {uuid: true}
-      },
+      }
       min_items: 1
     }
     required: true

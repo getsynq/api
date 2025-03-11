@@ -66,6 +66,12 @@ service DomainsService {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
   }
+
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USAGE_GET]
+    };
+  }
 }
 
 message UpsertRequest {
@@ -139,3 +145,10 @@ message RemoveDefinitionPartRequest {
 }
 
 message RemoveDefinitionPartResponse {}
+
+message GetUsageRequest {}
+
+message GetUsageResponse {
+  int32 num_domains = 1;
+  int32 num_sub_domains = 2;
+}

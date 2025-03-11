@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package synq.issues.issues.v1;
 
-option go_package = "github.com/getsynq/api/issues/issues/v1";
-
+import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/issues/actor/v1/actor.proto";
-import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/issues/issues/v1";
 
 message Issue {
   // ID of the issue.
@@ -17,15 +17,17 @@ message Issue {
 
   // Message of the issue.
   string message = 3;
-  
+
   // Severity of the issue.
   Severity severity = 4;
 
   // Entity that triggered this issue.
-  synq.entities.v1.Identifier trigger_entity = 5 [deprecated = true];
+  synq.entities.v1.Identifier trigger_entity = 5;
 
   // Trigger of the issue.
-  Trigger trigger = 13;
+  oneof trigger_details {
+    MonitorTriggerDetails monitor = 13;
+  }
 
   // Entities affected by this issue.
   repeated synq.entities.v1.Identifier affected_entities = 6;
@@ -49,40 +51,32 @@ message Issue {
   synq.issues.actor.v1.Actor latest_status_actor = 12;
 }
 
-message Trigger {
-    oneof trigger {
-        synq.entities.v1.Identifier entity = 1;
-        Monitor monitor = 2;
-    }
-}
-
-message Monitor {
-    synq.entities.v1.Identifier monitor = 1;
-    string segment = 2;
-    string metric_id = 3;
-    int32 metric_version = 4;
+message MonitorTriggerDetails {
+  synq.entities.v1.MonitorIdentifier monitor = 1;
+  string metric_id = 3;
+  int32 metric_version = 4;
 }
 
 // Life-cycle status of the issue.
 enum State {
-    STATE_UNSPECIFIED = 0;
-    STATE_OPEN = 1;
-    STATE_CLOSED = 2;
+  STATE_UNSPECIFIED = 0;
+  STATE_OPEN = 1;
+  STATE_CLOSED = 2;
 }
 
 // Progress status of the issue.
 enum Status {
-    STATUS_UNSPECIFIED = 0;
-    STATUS_INVESTIGATING = 1;
-    STATUS_EXPECTED = 2;
-    STATUS_FIXED = 3;
-    STATUS_NO_ACTION_NEEDED = 4;
+  STATUS_UNSPECIFIED = 0;
+  STATUS_INVESTIGATING = 1;
+  STATUS_EXPECTED = 2;
+  STATUS_FIXED = 3;
+  STATUS_NO_ACTION_NEEDED = 4;
 }
 
 enum Severity {
-    SEVERITY_UNSPECIFIED = 0;
-    SEVERITY_INFO = 1;
-    SEVERITY_WARN = 2;
-    SEVERITY_ERROR = 3;
-    SEVERITY_FATAL = 4;
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_INFO = 1;
+  SEVERITY_WARN = 2;
+  SEVERITY_ERROR = 3;
+  SEVERITY_FATAL = 4;
 }

@@ -4,8 +4,8 @@ package synq.entities.schemas.v1;
 
 import "buf/validate/validate.proto";
 import "synq/entities/v1/identifier.proto";
-import "synq/v1/scope_authorization.proto";
 import "synq/entities/v1/schema.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/schemas/v1";
 
