@@ -1,0 +1,72 @@
+syntax = "proto3";
+package synq.monitors.info.v1;
+
+import "google/protobuf/duration.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/monitors/info/v1";
+
+message MonitorInfo {
+  synq.entities.v1.MonitorIdentifier id = 1;
+
+  string name = 2;
+
+  // Information how this monitor segments the data
+  optional Segmentation segmentation = 3;
+  // Information how this monitor partitions the data
+  optional Partitioning partitioning = 4;
+  // Optional conditions which are applied to the monitor metrics retrieval
+  repeated Condition conditions = 5;
+  // Metrics which this monitor monitors
+  repeated Metric metrics = 6;
+}
+
+message Metric {
+  string metric_id = 1;
+  oneof metric_type {
+    MonitorFreshness freshness = 2;
+    MonitorVolume volume = 3;
+    MonitorValue value = 4;
+  }
+}
+
+message MonitorFreshness {
+  oneof freshness_source {
+    string expression = 1;
+    MetadataSource table_metadata = 2;
+  }
+}
+
+message MonitorValue {
+  string expression = 1;
+}
+
+message MonitorVolume {
+  oneof volume_source {
+    string expression = 1;
+    CountRows count_rows = 2;
+    MetadataSource table_metadata = 3;
+  }
+}
+
+message Segmentation {
+  string column = 1;
+}
+
+message Partitioning {
+  string column = 1;
+  google.protobuf.Duration period = 2;
+}
+
+message CountRows {}
+message MetadataSource {}
+message ColumnSource {
+  string column = 1;
+}
+message ExpressionSource {
+  string expression = 1;
+}
+
+message Condition {
+  string expression = 1;
+}
