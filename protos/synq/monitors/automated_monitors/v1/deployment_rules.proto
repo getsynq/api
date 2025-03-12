@@ -3,6 +3,7 @@ package synq.monitors.automated_monitors.v1;
 
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
+import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
 
@@ -31,10 +32,24 @@ enum Severity {
   SEVERITY_ERROR = 2;
 }
 
+enum MetricId {
+  METRIC_ID_UNSPECIFIED = 0;
+  METRIC_ID_ROW_COUNT = 1;
+  METRIC_ID_DELAY = 2;
+  METRIC_ID_VOLUME_CHANGE_DELAY = 3;
+}
+
+enum Sensitivity {
+  SENSITIVITY_UNSPECIFIED = 0;
+  SENSITIVITY_PRECISE = 1;
+  SENSITIVITY_BALANCED = 2;
+  SENSITIVITY_RELAXED = 3;
+}
+
 message AutomatedMonitorSettings {
   Severity severity = 1;
-  int32 sensitivity = 2;
-  repeated string metric_ids = 3;
+  Sensitivity sensitivity = 2;
+  repeated MetricId metric_ids = 3;
 }
 
 message MonitorSettingsChange {
@@ -52,9 +67,15 @@ message MonitorsDeploymentOverview {
 
 message QueryConfig {
   EntitySelectionQuery query = 1;
-  Severity severity = 2;
-  int32 sensitivity = 3;
-  repeated string metric_ids = 4;
+  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  repeated MetricId metric_ids = 4 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.enum = {
+      not_in: [0]
+    }
+  ];
 }
 
 message ExclusiveQueryConfig {
@@ -63,9 +84,15 @@ message ExclusiveQueryConfig {
 
 message StaticConfig {
   string path = 1;
-  Severity severity = 2;
-  int32 sensitivity = 3;
-  repeated string metric_ids = 4;
+  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  repeated MetricId metric_ids = 4 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.enum = {
+      not_in: [0]
+    }
+  ];
 }
 
 message ExclusiveStaticConfig {
@@ -74,9 +101,15 @@ message ExclusiveStaticConfig {
 
 message ProductConfig {
   string product_id = 1;
-  Severity severity = 2;
-  int32 sensitivity = 3;
-  repeated string metric_ids = 4;
+  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  repeated MetricId metric_ids = 4 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.enum = {
+      not_in: [0]
+    }
+  ];
   ProductConfigUpstreamStrategy upstream = 5;
   ProductConfigSelfStrategy self = 6;
 }
@@ -104,8 +137,13 @@ message ProductConfigSelfStrategySelection {
 }
 
 message MonitorsDeploymentRule {
-  string id = 1;
-  string title = 2;
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string title = 2 [(buf.validate.field) = {
+    string: {
+      min_len: 1
+      max_len: 100
+    }
+  }];
 
   oneof config {
     QueryConfig query_config = 3;
