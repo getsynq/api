@@ -3,14 +3,15 @@ package synq.monitors.info.v1;
 
 import "google/protobuf/duration.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/entities/v1/sql_dialect.proto";
 
 option go_package = "github.com/getsynq/api/monitors/info/v1";
 
 message MonitorInfo {
+  // Identifier of the monitor
   synq.entities.v1.MonitorIdentifier id = 1;
-
+  // Name of the monitor
   string name = 2;
-
   // Information how this monitor segments the data
   optional Segmentation segmentation = 3;
   // Information how this monitor partitions the data
@@ -19,6 +20,34 @@ message MonitorInfo {
   repeated Condition conditions = 5;
   // Metrics which this monitor monitors
   repeated Metric metrics = 6;
+  // Entity which is monitored
+  optional Monitored monitored = 7;
+}
+
+message Monitored {
+  // Identifier of the monitored entity.
+  synq.entities.v1.Identifier id = 1;
+  // Name of the monitored entity
+  string name = 2;
+  // Description of the monitored entity
+  optional string description = 3;
+  // Id of the integration which provided information about monitored entity.
+  optional string integration_id = 4;
+  // Coordinates to the physical table/view which is monitored (when applicable)
+  optional DatabaseFqn object_fqn = 5;
+  // SQL dialect used for monitoring
+  synq.entities.v1.SqlDialect sql_dialect = 6;
+}
+
+message DatabaseFqn {
+  // Usually it is the hostname of the server
+  optional string instance = 1;
+  // Database name for databases with multi-db support
+  optional string database_name = 2;
+  // One level
+  string schema_name = 3;
+  // Name of the table or view
+  string object_name = 4;
 }
 
 message Metric {
