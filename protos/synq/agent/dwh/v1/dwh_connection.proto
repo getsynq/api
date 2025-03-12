@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package synq.agent.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "synq/agent/dwh/v1/dwh_conf.proto";
+
+option go_package = "github.com/getsynq/api/agent/dwh/v1";
+
+// Connection represents a database connection configuration
+message Connection {
+  // Name of the connection
+  string name = 1 [(buf.validate.field) = {required: true}];
+
+  bool disabled = 2;
+
+  // How many queries to DWH can be executed in parallel, defaults to 2
+  int32 parallelism = 3 [(buf.validate.field) = {
+    int32: {
+      gte: 1
+      lte: 256
+    }
+  }];
+
+  // Type of database connection
+  oneof config {
+    option (buf.validate.oneof).required = true;
+    synq.agent.dwh.v1.BigQueryConf bigquery = 50;
+    synq.agent.dwh.v1.ClickhouseConf clickhouse = 51;
+    synq.agent.dwh.v1.DatabricksConf databricks = 52;
+    synq.agent.dwh.v1.MySQLConf mysql = 53;
+    synq.agent.dwh.v1.PostgresConf postgres = 54;
+    synq.agent.dwh.v1.RedshiftConf redshift = 55;
+    synq.agent.dwh.v1.SnowflakeConf snowflake = 56;
+  }
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+import "synq/agent/dwh/v1/dwh_connection.proto";
+import "synq/agent/v1/synq.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+// Config represents the main configuration for the SRE agent
+message Config {
+  // SYNQ platform configuration
+  synq.agent.v1.SYNQ synq = 2;
+
+  // Map of connection configurations
+  map<string, synq.agent.dwh.v1.Connection> connections = 3 [(buf.validate.field) = {
+    map: {
+      keys: {
+        string: {pattern: '^[a-zA-Z][a-zA-Z0-9-_]*$'}
+      }
+      values: {required: true}
+    }
+  }];
+}

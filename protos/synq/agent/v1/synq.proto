@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package synq.agent.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/v1";
+
+// SYNQ contains authentication and connection details for the SYNQ platform
+message SYNQ {
+  // Client ID for OAuth authentication
+  string client_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {}
+  }];
+
+  // Client secret for OAuth authentication
+  string client_secret = 2 [(buf.validate.field) = {
+    required: true
+    string: {}
+  }];
+
+  // SYNQ API agent endpoint (host:port)
+  string endpoint = 3 [(buf.validate.field) = {
+    required: true
+    string: {host_and_port: true}
+  }];
+  // SYNQ API ingest endpoint (host:port)
+  string ingest_endpoint = 4 [(buf.validate.field) = {
+    required: true
+    string: {host_and_port: true}
+  }];
+
+  // OAuth authentication URL
+  string oauth_url = 5 [(buf.validate.field) = {
+    required: true
+    string: {uri: true}
+  }];
+}
