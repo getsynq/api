@@ -1,21 +1,23 @@
 package main
 
 import (
-	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
-	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
-	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+
+	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
+	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
-	"net/http"
-	"os"
 )
 
 func main() {
@@ -27,8 +29,8 @@ func main() {
 
 	clientID := os.Getenv("SYNQ_CLIENT_ID")
 	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clickhouseHost := os.Getenv("CLICKHOUSE_HOST")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
-	clickhouseHost := "prod"
 
 	config := &clientcredentials.Config{
 		ClientID:     clientID,
@@ -124,7 +126,7 @@ func main() {
 
 		fmt.Printf("Omni Dashboard Connection Dialect - %s\n", exportResp.Document.Connection.Dialect)
 		if exportResp.Document.Connection.Dialect != "clickhouse" {
-			fmt.Printf("Skipping dashboard on non-clickhouse connection - %s\n", record.Identifier)
+			fmt.Printf("Skipping dashboard - %s\n", record.Identifier)
 			continue
 		}
 
@@ -150,13 +152,22 @@ func main() {
 
 		relationships := []*entitiescustomv1.Relationship{}
 		for _, member := range exportResp.Dashboard.QueryPresentationCollection.QueryPresentationCollectionMemberships {
+			database := exportResp.Document.Connection.Database
+			table := member.QueryPresentation.Query.QueryJson.Table
+			if database == "default" {
+				tokens := strings.Split(table, "__")
+				if len(tokens) == 2 {
+					database = tokens[0]
+					table = tokens[1]
+				}
+			}
 			relationships = append(relationships, &entitiescustomv1.Relationship{
 				Upstream: &entitiesv1.Identifier{
 					Id: &entitiesv1.Identifier_ClickhouseTable{
 						ClickhouseTable: &entitiesv1.ClickhouseTableIdentifier{
 							Host:   clickhouseHost,
-							Schema: exportResp.Document.Connection.Database,
-							Table:  member.QueryPresentation.Query.QueryJson.Table,
+							Schema: database,
+							Table:  table,
 						},
 					},
 				},

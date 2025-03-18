@@ -1,9 +1,9 @@
 syntax = "proto3";
 package synq.monitors.automated_monitors.v1;
 
+import "buf/validate/validate.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
-import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
 
@@ -67,8 +67,12 @@ message MonitorsDeploymentOverview {
 
 message QueryConfig {
   EntitySelectionQuery query = 1;
-  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
-  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  Severity severity = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
   repeated MetricId metric_ids = 4 [
     (buf.validate.field).repeated.min_items = 1,
     (buf.validate.field).repeated.unique = true,
@@ -84,8 +88,12 @@ message ExclusiveQueryConfig {
 
 message StaticConfig {
   string path = 1;
-  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
-  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  Severity severity = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
   repeated MetricId metric_ids = 4 [
     (buf.validate.field).repeated.min_items = 1,
     (buf.validate.field).repeated.unique = true,
@@ -101,8 +109,12 @@ message ExclusiveStaticConfig {
 
 message ProductConfig {
   string product_id = 1;
-  Severity severity = 2 [(buf.validate.field).enum = { not_in: [0]}];
-  Sensitivity sensitivity = 3 [(buf.validate.field).enum = { not_in: [0]}];
+  Severity severity = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+  Sensitivity sensitivity = 3 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
   repeated MetricId metric_ids = 4 [
     (buf.validate.field).repeated.min_items = 1,
     (buf.validate.field).repeated.unique = true,

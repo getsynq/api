@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// EntityChange represents a change detected in an entity within the system.
+// It tracks modifications to entities like Git commits, SQL definitions, and database schemas.
+message EntityChange {
+  // Unique identifier for the entity that was changed.
+  Identifier entity_id = 1 [(buf.validate.field) = {required: true}];
+
+  // Internal identifier of the change event.
+  string change_id = 2 [(buf.validate.field) = {required: true}];
+
+  // Timestamp when the change was detected by SYNQ.
+  google.protobuf.Timestamp change_detected_at = 3 [(buf.validate.field) = {required: true}];
+
+  oneof change_type {
+    option (buf.validate.oneof).required = true;
+    GitCommitChange git_commit = 10;
+    SqlDefinitionChange sql_definition = 11;
+    SchemaChange schema = 12;
+  }
+}
+
+// GitCommitChange represents a change detected in a Git repository.
+message GitCommitChange {
+  // Signature contains information about the Git user who made the changes.
+  message Signature {
+    // Name of the Git user.
+    string name = 1;
+    // Email address of the Git user.
+    string email = 2;
+    // Timestamp when the signature was created.
+    google.protobuf.Timestamp created_at = 3;
+  }
+
+  // ChangeStats contains statistics about changes made to a single file.
+  message ChangeStats {
+    // Number of lines added to the file.
+    int32 additions = 1;
+    // Number of lines removed from the file.
+    int32 deletions = 2;
+  }
+
+  // Hash of the Git commit.
+  string hash = 1;
+
+  // Author information of the Git commit.
+  Signature author = 2;
+  // Committer information of the Git commit.
+  Signature committer = 3;
+
+  // Commit message describing the changes.
+  string message = 4;
+
+  // Statistics about changes made to each modified file.
+  map<string, ChangeStats> file_change_stats = 5;
+
+  // Name of the branch associated with the commit, if any.
+  optional string branch_name = 6;
+
+  // URL of the Git repository where the commit was made.
+  string clone_url = 7;
+}
+
+// SqlDefinitionChange represents a change detected in a SQL definition.
+message SqlDefinitionChange {
+  // Previous version of the SQL definition.
+  string previous_sql = 1;
+  // Timestamp when the previous SQL state was valid.
+  google.protobuf.Timestamp previous_sql_state_at = 2;
+  // Current version of the SQL definition.
+  string current_sql = 3;
+  // Timestamp when the current SQL state became valid.
+  google.protobuf.Timestamp current_sql_state_at = 4;
+  // Diff showing the changes between previous and current SQL.
+  string sql_diff = 5;
+}
+
+// SchemaChange represents a change detected in a database schema.
+message SchemaChange {
+  // List of changes made to individual columns in the schema.
+  repeated SchemaColumnChange column_changes = 1;
+}
+
+// SchemaColumnChange represents a specific change to a column in the schema.
+message SchemaColumnChange {
+  // ColumnRemovalChangeType represents the removal of a column from the schema.
+  message ColumnRemovalChangeType {
+    // Identifier of the removed column.
+    string column_id = 1;
+    // Native data type of the removed column.
+    string native_type = 2;
+    // Original position of the column in the schema.
+    int32 ordinal_position = 3;
+  }
+
+  // ColumnNativeTypeChangeType represents a change in a column's data type.
+  message ColumnNativeTypeChangeType {
+    // Identifier of the modified column.
+    string column_id = 1;
+    // Previous data type of the column.
+    string previous_native_type = 2;
+    // New data type of the column.
+    string current_native_type = 3;
+  }
+
+  // ColumnAdditionChangeType represents the addition of a new column to the schema.
+  message ColumnAdditionChangeType {
+    // Identifier of the new column.
+    string column_id = 1;
+    // Data type of the new column.
+    string native_type = 2;
+    // Position where the column was added in the schema.
+    int32 ordinal_position = 3;
+  }
+
+  oneof column_change {
+    ColumnAdditionChangeType column_addition = 1;
+    ColumnNativeTypeChangeType column_native_type = 2;
+    ColumnRemovalChangeType column_removal = 3;
+  }
+}

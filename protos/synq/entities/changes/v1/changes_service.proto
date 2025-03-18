@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package synq.entities.changes.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/entity_change.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/changes/v1";
+
+// ChangesService provides functionality to track and retrieve changes made to entities in the system.
+// It supports various types of changes including git commits, schema changes, and SQL definition changes.
+// The service is designed to help track the history and evolution of entities over time.
+service ChangesService {
+  // List retrieves the history of changes for a specific entity identified by its path.
+  // Changes are returned in chronological order (newest first) and include details about the type of change,
+  // when it occurred, and who made it.
+  //
+  // The service supports multiple types of changes:
+  // - Git commits: Changes made through version control
+  // - Schema changes: Modifications to database schemas
+  // - SQL definition changes: Updates to SQL queries and definitions
+  //
+  // This endpoint requires the SCOPE_ENTITY_READ permission to access.
+  rpc List(ListRequest) returns (ListResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
+}
+
+// ListRequest contains the parameters needed to retrieve changes for a specific entity.
+message ListRequest {
+  // Identifier of the entity to get changes for.
+  // This can be a path identifier that uniquely identifies the entity in the system.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// ListResponse contains the list of changes made to the requested entity.
+message ListResponse {
+  // List of recent changes to the state of entity. Changes are returned from newest to oldest.
+  // Each change includes:
+  // - The type of change (git commit, schema change, SQL definition change)
+  // - When the change occurred
+  // - Details specific to the type of change
+  // - Metadata about who made the change
+  repeated synq.entities.v1.EntityChange changes = 1;
+}
