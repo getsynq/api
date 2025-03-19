@@ -61,7 +61,7 @@ message RemoveDomainMembersRequest {
 message RemoveDomainMembersResponse {}
 
 message ListDomainMembersRequest {
-  string domain_id = 1;
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message ListDomainMembersResponse {
@@ -69,7 +69,7 @@ message ListDomainMembersResponse {
 }
 
 message ListUserDomainsRequest {
-  string user_id = 1;
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message ListUserDomainsResponse {
