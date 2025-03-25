@@ -56,8 +56,11 @@ message Identifier {
     // Databricks table identifier
     DatabricksTableIdentifier databricks_table = 14;
 
-    // SqlMesh Model identifier
+    // SQLMesh Model identifier
     SqlMeshModelIdentifier sql_mesh_model = 15;
+
+    // SQLMesh Audit identifier
+    SqlMeshAuditIdentifier sql_mesh_audit = 17;
 
     // Monitor identifier
     MonitorIdentifier monitor = 16;
@@ -90,7 +93,7 @@ message DbtCloudNodeIdentifier {
   string node_id = 3 [(buf.validate.field).required = true];
 }
 
-// SqlMesh
+// SQLMesh
 
 message SqlMeshModelIdentifier {
   // SYNQ integration_id that identifies the dbt Core project
@@ -99,8 +102,22 @@ message SqlMeshModelIdentifier {
     (buf.validate.field).string.uuid = true
   ];
 
-  // SqlMesh model fully qualified name
+  // SQLMesh model fully qualified name
   string fqn = 2 [(buf.validate.field).required = true];
+}
+
+message SqlMeshAuditIdentifier {
+  // SYNQ integration_id that identifies the dbt Core project
+  string integration_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+
+  // SQLMesh model fully qualified name
+  string fqn = 2 [(buf.validate.field).required = true];
+
+  // Identifier of the audit
+  string audit_id = 3 [(buf.validate.field).required = true];
 }
 
 //
