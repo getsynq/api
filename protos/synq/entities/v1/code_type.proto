@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// CodeType enum represents different types of code that can be processed in the Synq platform
+enum CodeType {
+  // Default unspecified value
+  CODE_TYPE_UNSPECIFIED = 0;
+  // SQL code (e.g., SELECT, INSERT, UPDATE statements)
+  CODE_TYPE_SQL = 1;
+  // Python code (e.g., scripts, functions, classes)
+  CODE_TYPE_PYTHON = 2;
+  // JSON data or configuration files
+  CODE_TYPE_JSON = 3;
+  // YAML configuration or data files
+  CODE_TYPE_YAML = 4;
+  // dbt (data build tool) models and configurations
+  CODE_TYPE_DBT = 5;
+  // SQLMesh models and configurations. In most cases this will be similiar to SQL code.
+  CODE_TYPE_SQLMESH = 6;
+  // LookML (Looker Modeling Language) files
+  CODE_TYPE_LOOKML = 7;
+}

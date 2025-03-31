@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package synq.entities.checks.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v1";
+
+message CheckEntity {
+  // Identifier of the check
+  synq.entities.v1.Identifier check_id = 1;
+
+  // The name of the check
+  string name = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // The package of the check, e.g. "dbt", "sqlmesh", "dbt-utils"
+  optional string package = 3;
+  // General kind of the test, e.g. "not_null", "unique", "foreign_key"
+  string kind = 11;
+  // Whether the check is platform native
+  bool is_platform_native = 4;
+
+  // Explicit name of the category to use for this check
+  optional string category = 5;
+}

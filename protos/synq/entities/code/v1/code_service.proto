@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package synq.entities.code.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/code.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/code/v1";
+
+// CodeService is a service for retrieving code associated with entities in the system.
+// It provides functionality to access and manage code artifacts such as SQL queries,
+// Python scripts, dbt models, and other code configurations that are part of SYNQ entities.
+service CodeService {
+  // ListCode retrieves all code artifacts associated with a specific entity.
+  // This includes SQL queries, Python scripts, dbt models, and other code configurations
+  // that define or are part of the entity's functionality.
+  rpc ListCode(ListCodeRequest) returns (ListCodeResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_READ]
+    };
+  }
+}
+
+// ListCodeRequest is the request message for the ListCode method.
+message ListCodeRequest {
+  // Identifier of the entity to retrieve code for.
+  // This can be any entity type that contains code artifacts.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+// ListCodeResponse is the response message for the ListCode method.
+message ListCodeResponse {
+  // List of code artifacts associated with the requested entity.
+  // Each code artifact includes its content, type, and metadata about when it was captured.
+  repeated synq.entities.v1.Code codes = 1;
+}

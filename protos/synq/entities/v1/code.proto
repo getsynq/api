@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/code_type.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/entities/v1/sql_dialect.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// Code represents a piece of code or configuration that can be processed by SYNQ.
+// This message is used to store and manage various types of code artifacts, such as SQL queries,
+// Python scripts, dbt models, and other code configurations. Each code piece is associated with
+// a specific entity that defines or owns it, and includes metadata about its type and state.
+message Code {
+  // Identifier of the entity that defines or owns this code piece. This could be a dbt model,
+  // SQLMesh model, or any other entity type that contains code.
+  synq.entities.v1.Identifier definer_identifier = 1 [(buf.validate.field) = {required: true}];
+
+  // Timestamp indicating when this specific version of the code was captured or last modified.
+  // This helps track the evolution of code over time.
+  google.protobuf.Timestamp state_at = 2 [(buf.validate.field) = {required: true}];
+
+  // Type of code being stored, which determines how SYNQ will process and analyze it.
+  // This can be SQL, Python, dbt, SQLMesh, or other supported code types.
+  synq.entities.v1.CodeType code_type = 3;
+
+  // SQL dialect used in the code, if the code_type is SQL. This helps SYNQ understand
+  // the specific SQL syntax and features being used.
+  optional synq.entities.v1.SqlDialect sql_dialect = 4;
+
+  // The actual content of the code. This can be SQL queries, Python scripts,
+  // dbt models, or any other supported code format.
+  string content = 5 [(buf.validate.field) = {
+    string: {
+      min_len: 0
+      max_len: 1000000
+    }
+  }];
+
+  // Optional human-readable name for the code piece that can be used for display purposes. Might also indicate name of the file.
+  optional string code_name = 6;
+}
