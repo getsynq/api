@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/sre/v1/conclusion.proto";
 import "synq/agent/sre/v1/evidence.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
 
@@ -14,11 +15,19 @@ option go_package = "github.com/getsynq/api/agent/sre/v1";
 service TriageService {
   // Concludes the triage investigation for one or more issues by providing a structured conclusion
   // and supporting evidence. This method is used by the LLM agent to finalize its investigation.
-  rpc Conclude(ConcludeRequest) returns (ConcludeResponse);
+  rpc Conclude(ConcludeRequest) returns (ConcludeResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
 
   // Records evidence collected during the triage investigation. This method allows the LLM agent
   // to incrementally add evidence as it discovers information during the investigation process.
-  rpc RecordEvidence(RecordEvidenceRequest) returns (RecordEvidenceResponse);
+  rpc RecordEvidence(RecordEvidenceRequest) returns (RecordEvidenceResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
 }
 
 // Request to conclude the triage investigation for one or more issues.
