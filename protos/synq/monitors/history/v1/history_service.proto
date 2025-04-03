@@ -11,7 +11,10 @@ option go_package = "github.com/getsynq/api/monitors/history/v1";
 service HistoryService {
   rpc History(HistoryRequest) returns (HistoryResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_READ]
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

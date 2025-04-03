@@ -15,14 +15,20 @@ service EntityIssuesService {
   // Get specific entity status by its identifier.
   rpc GetIssuesStatus(GetIssuesStatusRequest) returns (GetIssuesStatusResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_STATUS_READ]
+      scopes: [
+        SCOPE_STATUS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   // Get multiple entity statuses by their identifiers.
   rpc BatchGetIssuesStatus(BatchGetIssuesStatusRequest) returns (BatchGetIssuesStatusResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_STATUS_READ]
+      scopes: [
+        SCOPE_STATUS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

@@ -14,7 +14,10 @@ option go_package = "github.com/getsynq/api/entities/lineage/v1";
 service LineageService {
   rpc GetLineage(GetLineageRequest) returns (GetLineageResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_LINEAGE_READ]
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

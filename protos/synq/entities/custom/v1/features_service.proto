@@ -67,7 +67,10 @@ service FeaturesService {
   // List all entities.
   rpc ListEntityFeatures(ListEntityFeaturesRequest) returns (ListEntityFeaturesResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

@@ -18,7 +18,10 @@ service CodeService {
   // that define or are part of the entity's functionality.
   rpc ListCode(ListCodeRequest) returns (ListCodeResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

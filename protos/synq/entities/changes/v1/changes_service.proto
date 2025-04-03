@@ -26,7 +26,10 @@ service ChangesService {
   // This endpoint requires the SCOPE_ENTITY_READ permission to access.
   rpc List(ListRequest) returns (ListResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

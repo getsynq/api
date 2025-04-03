@@ -10,7 +10,10 @@ option go_package = "github.com/getsynq/api/monitors/info/v1";
 service MonitorInfoService {
   rpc MonitorInfo(MonitorInfoRequest) returns (MonitorInfoResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_READ]
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

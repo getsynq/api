@@ -15,13 +15,19 @@ option go_package = "github.com/getsynq/api/issues/issues/v1";
 service IssuesService {
   rpc BatchGetIssues(BatchGetIssuesRequest) returns (BatchGetIssuesResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ISSUES_READ]
+      scopes: [
+        SCOPE_ISSUES_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   rpc ListIssues(ListIssuesRequest) returns (ListIssuesResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ISSUES_READ]
+      scopes: [
+        SCOPE_ISSUES_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 

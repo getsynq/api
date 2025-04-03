@@ -15,14 +15,20 @@ service EntitiesService {
   // Get specific entity by its identifier.
   rpc GetEntity(GetEntityRequest) returns (GetEntityResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   // Get multiple entities by their identifiers.
   rpc BatchGetEntities(BatchGetEntitiesRequest) returns (BatchGetEntitiesResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

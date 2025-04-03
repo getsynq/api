@@ -29,7 +29,10 @@ service RelationshipsService {
   // Delete relationships between entities. If the relationship does not exist, it will be ignored.
   rpc ListRelationships(ListRelationshipsRequest) returns (ListRelationshipsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_LINEAGE_READ]
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

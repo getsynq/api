@@ -66,13 +66,19 @@ service IncidentsService {
 
   rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INCIDENTS_READ]
+      scopes: [
+        SCOPE_INCIDENTS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INCIDENTS_READ]
+      scopes: [
+        SCOPE_INCIDENTS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

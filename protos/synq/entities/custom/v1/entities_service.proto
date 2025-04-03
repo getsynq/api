@@ -33,7 +33,10 @@ service EntitiesService {
   // List all entities.
   rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_READ]
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

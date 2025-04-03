@@ -20,14 +20,20 @@ service SqlTestsService {
   // List SqlTests for given annotations.
   rpc ListSqlTests(ListSqlTestsRequest) returns (ListSqlTestsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATACHECKS_SQLTESTS_READ]
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   // Get SqlTests by their IDs.
   rpc BatchGetSqlTests(BatchGetSqlTestsRequest) returns (BatchGetSqlTestsResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATACHECKS_SQLTESTS_READ]
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
@@ -41,7 +47,10 @@ service SqlTestsService {
   // Get SqlTest audit from a given execution ID in jwt token.
   rpc GetSqlTestAudit(GetSqlTestAuditRequest) returns (GetSqlTestAuditResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ]
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 }

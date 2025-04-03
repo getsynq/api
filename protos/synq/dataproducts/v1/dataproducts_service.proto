@@ -21,14 +21,20 @@ service DataproductsService {
   // Get multiple dataproducts by their identifiers.
   rpc Get(GetRequest) returns (GetResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATAPRODUCT_READ]
+      scopes: [
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
   // List all the dataproducts in the current scope.
   rpc List(ListRequest) returns (ListResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATAPRODUCT_READ]
+      scopes: [
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT
+      ]
     };
   }
 
