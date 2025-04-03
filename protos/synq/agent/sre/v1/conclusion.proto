@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+// SetExpectedConclusion indicates that the issue is expected behavior and no action is needed.
+// This conclusion should be supported by evidence showing this is normal operation.
+message SetExpectedConclusion {}
+
+// SetNoActionNeededConclusion indicates that the issue will resolve itself without intervention.
+// This conclusion should be supported by evidence showing the issue is temporary or self-healing.
+message SetNoActionNeededConclusion {}
+
+// SetFixedConclusion indicates that the issue has already been resolved and can be closed.
+// This conclusion should be supported by evidence showing the fix has been applied and verified.
+message SetFixedConclusion {}
+
+// DeclareIncidentConclusion indicates that the issue requires immediate attention as an incident.
+// This conclusion should be supported by evidence showing significant impact or risk.
+message DeclareIncidentConclusion {
+  // Suggested title for the incident that will be created.
+  // Should be clear and concise to quickly communicate the situation.
+  string title = 1;
+
+  // Detailed description of the incident situation, including:
+  // - What is happening
+  // - Potential impact
+  // - Affected systems or services
+  // - Any immediate actions needed
+  string description = 2;
+}
+
+// AddToIncidentConclusion indicates that the issue should be added to an existing incident.
+// This conclusion should be supported by evidence showing the connection to the existing incident.
+message AddToIncidentConclusion {
+  // ID of the existing incident that this issue should be added to.
+  string incident_id = 1 [(buf.validate.field) = {required: true}];
+}
+
+// RequestForHumanReviewConclusion indicates that the issue needs human review.
+// This conclusion should be used when:
+// - The agent has collected some evidence but cannot make a definitive conclusion
+// - The issue requires human judgment or expertise
+// - The impact is unclear or needs human assessment
+message RequestForHumanReviewConclusion {}
+
+// UnexplainedConclusion indicates that the agent was unable to collect sufficient evidence
+// to understand or explain the issue. This conclusion requires high-priority human review
+// as it may indicate a serious or complex problem that needs immediate attention.
+message UnexplainedConclusion {}
+
+// IssueConclusion represents the final determination made by the LLM agent about an issue.
+// Each conclusion type must be supported by appropriate evidence collected during investigation.
+message IssueConclusion {
+  // The specific type of conclusion reached during the investigation.
+  // Each type has different implications and requirements for evidence.
+  oneof conclusion {
+    // Conclusion that the issue is expected behavior.
+    synq.agent.sre.v1.SetExpectedConclusion set_expected = 100;
+    // Conclusion that no action is needed as the issue will resolve itself.
+    synq.agent.sre.v1.SetNoActionNeededConclusion set_no_action_needed = 101;
+    // Conclusion that the issue has been fixed and can be closed.
+    synq.agent.sre.v1.SetFixedConclusion set_fixed = 102;
+    // Conclusion that the issue requires incident declaration.
+    synq.agent.sre.v1.DeclareIncidentConclusion declare_incident = 103;
+    // Conclusion that the issue should be added to an existing incident.
+    synq.agent.sre.v1.AddToIncidentConclusion add_to_incident = 104;
+    // Conclusion that human review is needed for further investigation.
+    synq.agent.sre.v1.RequestForHumanReviewConclusion request_for_human_review = 105;
+    // Conclusion that the issue cannot be explained and needs urgent human attention.
+    synq.agent.sre.v1.UnexplainedConclusion unexplained = 106;
+  }
+}

@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+// EvidenceItem represents a single piece of evidence collected during the triage investigation.
+// Each evidence item must have a title and one of the specific evidence types.
+message EvidenceItem {
+  // Brief, descriptive title summarizing the type of evidence collected.
+  // This helps in quickly understanding the nature of the evidence.
+  string title = 1 [(buf.validate.field) = {required: true}];
+
+  // The specific type of evidence collected during the investigation.
+  // Each type provides different insights into the issue being investigated.
+  oneof evidence {
+    // Historical evidence showing similar past issues that may help understand the current situation.
+    synq.agent.sre.v1.HistoryEvidence issue_history = 100;
+    // Evidence pointing to the likely root cause of the issue.
+    synq.agent.sre.v1.RootCauseEvidence root_cause = 101;
+    // Evidence showing related issues that may be connected to the current investigation.
+    synq.agent.sre.v1.RelatedIssueEvidence related_issue = 102;
+    // Evidence of recent changes that may have contributed to the issue.
+    synq.agent.sre.v1.ChangeEvidence change = 103;
+    // Evidence containing detailed analysis of the issue.
+    // This should only be used as a last resort when no other more specialized evidence types
+    // (history, root cause, related issues, or changes) could be collected.
+    synq.agent.sre.v1.AnalysisEvidence analysis = 104;
+  }
+}
+
+// HistoryEvidence represents historical context from similar past issues.
+// This helps in understanding if the current issue is recurring or has known patterns.
+message HistoryEvidence {
+  // List of issue IDs that are similar to the currently triaged issue.
+  // These historical issues can provide insights into resolution patterns.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        required: true
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+// RootCauseEvidence identifies the likely root cause of the issue being investigated.
+// This helps in understanding the fundamental reason behind the problem.
+message RootCauseEvidence {
+  // ID of the issue that is believed to be the root cause of the current issue.
+  string issue_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// ChangeEvidence documents recent changes that may have contributed to the issue.
+// This helps in understanding if the issue is related to recent modifications.
+message ChangeEvidence {
+  // List of entities (e.g., services, configurations) that have recently changed
+  // and may be related to the current issue.
+  repeated synq.entities.v1.Identifier entities = 1;
+  // Detailed description of the changes that were detected and their potential
+  // impact on the current issue.
+  string change_description = 2;
+}
+
+// RelatedIssueEvidence identifies other issues that may be connected to the current investigation.
+// This helps in understanding broader context and potential dependencies.
+message RelatedIssueEvidence {
+  // List of issue IDs that are related to the current investigation.
+  // These issues may be symptoms of the same underlying problem or have dependencies.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        required: true
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+// AnalysisEvidence contains detailed analysis of the issue based on collected data.
+// This should only be used as a last resort when no other more specialized evidence types
+// (history, root cause, related issues, or changes) could be collected.
+// It provides a comprehensive understanding of the problem and its implications.
+message AnalysisEvidence {
+  // Detailed analysis of the issue, including observations, patterns, and potential implications.
+  // This should provide clear reasoning for the conclusions drawn.
+  string analysis = 1 [(buf.validate.field) = {required: true}];
+}
