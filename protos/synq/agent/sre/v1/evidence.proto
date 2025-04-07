@@ -67,6 +67,8 @@ message ChangeEvidence {
   // Detailed description of the changes that were detected and their potential
   // impact on the current issue.
   string change_description = 2;
+  // When available identifiers of specific change IDs
+  repeated string change_ids = 3;
 }
 
 // RelatedIssueEvidence identifies other issues that may be connected to the current investigation.
