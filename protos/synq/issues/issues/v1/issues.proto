@@ -55,6 +55,7 @@ message MonitorTriggerDetails {
   synq.entities.v1.MonitorIdentifier monitor = 1;
   string metric_id = 3;
   int32 metric_version = 4;
+  optional string segment_value = 5;
 }
 
 // Life-cycle status of the issue.
