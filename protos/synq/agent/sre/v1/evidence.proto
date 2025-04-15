@@ -10,6 +10,18 @@ option go_package = "github.com/getsynq/api/agent/sre/v1";
 // EvidenceItem represents a single piece of evidence collected during the triage investigation.
 // Each evidence item must have a title and one of the specific evidence types.
 message EvidenceItem {
+  // List of issue IDs that should be annotated with the provided evidence.
+  // Each ID must be a valid UUID.
+  repeated string issue_ids = 2 [(buf.validate.field) = {
+    required: true
+    repeated: {
+      items: {
+        required: true
+        string: {uuid: true}
+      }
+    }
+  }];
+
   // Brief, descriptive title summarizing the type of evidence collected.
   // This helps in quickly understanding the nature of the evidence.
   string title = 1 [(buf.validate.field) = {required: true}];
@@ -95,4 +107,7 @@ message AnalysisEvidence {
   // Detailed analysis of the issue, including observations, patterns, and potential implications.
   // This should provide clear reasoning for the conclusions drawn.
   string analysis = 1 [(buf.validate.field) = {required: true}];
+
+  // SQL queries which were executed to investigate the issue and collect the evidence.
+  repeated string sql_queries = 2;
 }

@@ -3,7 +3,6 @@ syntax = "proto3";
 package synq.agent.sre.v1;
 
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 import "synq/agent/sre/v1/conclusion.proto";
 import "synq/agent/sre/v1/evidence.proto";
 import "synq/v1/scope_authorization.proto";
@@ -28,6 +27,12 @@ service TriageService {
       scopes: [SCOPE_SRE_AGENT]
     };
   }
+
+  rpc BatchLatestConclusions(BatchLatestConclusionsRequest) returns (BatchLatestConclusionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
 }
 
 // Request to conclude the triage investigation for one or more issues.
@@ -35,30 +40,15 @@ message ConcludeRequest {
   // Unique identifier of the triaging session, used to group related operations.
   string session_id = 1 [(buf.validate.field) = {required: true}];
 
-  // List of issue IDs that should be concluded with the specified conclusion.
-  repeated string issue_id = 2 [(buf.validate.field) = {
-    required: true
+  // IssueConclusion represents the final determination made by the LLM agent about an issue.
+  // Each conclusion type must be supported by appropriate evidence collected during investigation.
+  synq.agent.sre.v1.IssueConclusion conclusion = 6 [(buf.validate.field) = {required: true}];
+  // Collection of evidence items supporting the conclusion. Evidences previously recorded should not be added here.
+  repeated synq.agent.sre.v1.EvidenceItem evidence = 7 [(buf.validate.field) = {
     repeated: {
       items: {required: true}
     }
   }];
-
-  // Brief, single-line description summarizing the triage conclusion.
-  string title = 3 [(buf.validate.field) = {required: true}];
-
-  // Detailed markdown-formatted description explaining the conclusion and the reasoning
-  // based on all collected evidence.
-  string summary = 4;
-
-  // Timestamp when the conclusion was made. If not specified, defaults to the current time.
-  google.protobuf.Timestamp concluded_at = 5;
-
-  // The specific conclusion type and details for the triaged issues.
-  synq.agent.sre.v1.IssueConclusion conclusion = 6 [(buf.validate.field) = {required: true}];
-
-  // Collection of evidence items supporting the conclusion. Some evidence may have been
-  // previously recorded using RecordEvidence.
-  repeated synq.agent.sre.v1.EvidenceItem evidence = 7;
 }
 
 // Response for the Conclude operation. Empty as the operation is fire-and-forget.
@@ -68,18 +58,6 @@ message ConcludeResponse {}
 message RecordEvidenceRequest {
   // Unique identifier of the triaging session, used to group related operations.
   string session_id = 1 [(buf.validate.field) = {required: true}];
-
-  // List of issue IDs that should be annotated with the provided evidence.
-  // Each ID must be a valid UUID.
-  repeated string issue_id = 2 [(buf.validate.field) = {
-    required: true
-    repeated: {
-      items: {
-        required: true
-        string: {uuid: true}
-      }
-    }
-  }];
 
   // Collection of structured evidence items collected during the investigation.
   // Must contain at least one evidence item.
@@ -93,3 +71,12 @@ message RecordEvidenceRequest {
 
 // Response for the RecordEvidence operation. Empty as the operation is fire-and-forget.
 message RecordEvidenceResponse {}
+
+message BatchLatestConclusionsRequest {
+  // List of issue IDs for which latest conclusion should be returned.
+  repeated string issue_ids = 1;
+}
+
+message BatchLatestConclusionsResponse {
+  repeated IssueConclusionWithEvidence conclusions = 1;
+}

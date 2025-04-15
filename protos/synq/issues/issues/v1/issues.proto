@@ -15,8 +15,14 @@ message Issue {
   // Name of the issue.
   string name = 2;
 
-  // Message of the issue.
+  // Original message of the issue.
   string message = 3;
+
+  // Current message on the issue.
+  string current_message = 14;
+
+  // Last error message on the issue.
+  string last_error_message = 15;
 
   // Severity of the issue.
   Severity severity = 4;

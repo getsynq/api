@@ -3,6 +3,8 @@ syntax = "proto3";
 package synq.agent.sre.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/sre/v1/evidence.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
 
@@ -55,6 +57,27 @@ message UnexplainedConclusion {}
 // IssueConclusion represents the final determination made by the LLM agent about an issue.
 // Each conclusion type must be supported by appropriate evidence collected during investigation.
 message IssueConclusion {
+  // List of issue IDs that should be concluded with the specified conclusion.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    required: true
+    repeated: {
+      items: {
+        required: true
+        string: {uuid: true}
+      }
+    }
+  }];
+
+  // Brief, single-line description summarizing the triage conclusion. Max 5 words.
+  string title = 2 [(buf.validate.field) = {required: true}];
+
+  // Detailed markdown-formatted description explaining the conclusion and the reasoning
+  // based on all collected evidence.
+  string summary = 3;
+
+  // Timestamp when the conclusion was made.
+  google.protobuf.Timestamp concluded_at = 4;
+
   // The specific type of conclusion reached during the investigation.
   // Each type has different implications and requirements for evidence.
   oneof conclusion {
@@ -73,4 +96,15 @@ message IssueConclusion {
     // Conclusion that the issue cannot be explained and needs urgent human attention.
     synq.agent.sre.v1.UnexplainedConclusion unexplained = 106;
   }
+}
+
+message IssueConclusionWithEvidence {
+  // IssueConclusion represents the final determination made by the LLM agent about an issue.
+  synq.agent.sre.v1.IssueConclusion conclusion = 1 [(buf.validate.field) = {required: true}];
+  // Collection of structured evidence items collected during the investigation.
+  repeated synq.agent.sre.v1.EvidenceItem evidence = 2 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }
