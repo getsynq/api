@@ -101,6 +101,8 @@ message IssueConclusion {
 message IssueConclusionWithEvidence {
   // IssueConclusion represents the final determination made by the LLM agent about an issue.
   synq.agent.sre.v1.IssueConclusion conclusion = 1 [(buf.validate.field) = {required: true}];
+  // List of issues for which original conclusion was created.
+  repeated string original_issue_ids = 11;
   // Collection of structured evidence items collected during the investigation.
   repeated synq.agent.sre.v1.EvidenceItem evidence = 2 [(buf.validate.field) = {
     repeated: {

@@ -270,7 +270,6 @@ message MonitorIdentifier {
   optional string integration_id = 100 [
     deprecated = true,
     (buf.validate.field) = {
-      required: true
       string: {uuid: true}
     }
   ];
