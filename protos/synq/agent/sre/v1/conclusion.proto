@@ -5,6 +5,7 @@ package synq.agent.sre.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/sre/v1/evidence.proto";
+import "synq/agent/sre/v1/feedback.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
 
@@ -109,4 +110,7 @@ message IssueConclusionWithEvidence {
       items: {required: true}
     }
   }];
+
+  // Optional feedback given by the user on the SRE generated conclusion.
+  optional synq.agent.sre.v1.ConclusionFeedback user_feedback = 3;
 }

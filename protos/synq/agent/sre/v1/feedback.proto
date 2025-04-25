@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+message ConclusionFeedback {
+  string user = 1;
+  google.protobuf.Timestamp feedback_at = 2;
+  oneof feedback {
+    AcceptFeedback accept = 10;
+    DismissFeedback dismiss = 11;
+    ReTriageFeedback retriage = 12;
+  }
+}
+
+message AcceptFeedback {}
+
+message DismissFeedback {
+  optional string comment = 1;
+}
+
+message ReTriageFeedback {
+  string instruction = 2;
+}
