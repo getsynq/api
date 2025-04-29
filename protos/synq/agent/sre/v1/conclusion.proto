@@ -79,6 +79,9 @@ message IssueConclusion {
   // Timestamp when the conclusion was made.
   google.protobuf.Timestamp concluded_at = 4;
 
+  // Indicates that this is final conclusion and SRE agent won't change it unless new evidence is provided to change it.
+  bool is_final_conclusion = 5;
+
   // The specific type of conclusion reached during the investigation.
   // Each type has different implications and requirements for evidence.
   oneof conclusion {

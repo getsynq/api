@@ -49,8 +49,6 @@ message ConcludeRequest {
       items: {required: true}
     }
   }];
-
-  bool final_conclusion = 8;
 }
 
 // Response for the Conclude operation. Empty as the operation is fire-and-forget.
