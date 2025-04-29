@@ -20,6 +20,9 @@ message DataPlatformIdentifier {
     DatabricksIdentifier databricks = 8;
     DbtCloudIdentifier dbt_cloud = 9;
     SqlMeshIdentifier sql_mesh = 10;
+
+    // SYNQ integration ID maps to the created integration on the SYNQ platform.
+    string synq_integration_id = 101;
   }
 }
 
