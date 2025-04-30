@@ -5,6 +5,7 @@ package synq.agent.sre.v1;
 import "buf/validate/validate.proto";
 import "synq/agent/sre/v1/conclusion.proto";
 import "synq/agent/sre/v1/evidence.proto";
+import "synq/agent/sre/v1/triage_state.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
@@ -29,6 +30,12 @@ service TriageService {
   }
 
   rpc BatchLatestConclusions(BatchLatestConclusionsRequest) returns (BatchLatestConclusionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
+
+  rpc BatchTriageState(BatchTriageStateRequest) returns (BatchTriageStateResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -79,4 +86,13 @@ message BatchLatestConclusionsRequest {
 
 message BatchLatestConclusionsResponse {
   repeated IssueConclusionWithEvidence conclusions = 1;
+}
+
+message BatchTriageStateRequest {
+  // List of issue IDs for which latest conclusion should be returned.
+  repeated string issue_ids = 1;
+}
+
+message BatchTriageStateResponse {
+  map<string, IssueTriageState> states = 1;
 }
