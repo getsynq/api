@@ -58,6 +58,9 @@ message UnexplainedConclusion {}
 // IssueConclusion represents the final determination made by the LLM agent about an issue.
 // Each conclusion type must be supported by appropriate evidence collected during investigation.
 message IssueConclusion {
+  // Unique identifier of the conclusion.
+  string conclusion_id = 6 [(buf.validate.field) = {string: {uuid: true}}];
+
   // List of issue IDs that should be concluded with the specified conclusion.
   repeated string issue_ids = 1 [(buf.validate.field) = {
     required: true
