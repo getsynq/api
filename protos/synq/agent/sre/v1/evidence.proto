@@ -11,7 +11,9 @@ option go_package = "github.com/getsynq/api/agent/sre/v1";
 // Each evidence item must have a title and one of the specific evidence types.
 message EvidenceItem {
   // Unique identifier of the evidence item.
-  string evidence_id = 3 [(buf.validate.field) = {string: {uuid: true}}];
+  string evidence_id = 3 [(buf.validate.field) = {
+    string: {uuid: true}
+  }];
 
   // List of issue IDs that should be annotated with the provided evidence.
   // Each ID must be a valid UUID.

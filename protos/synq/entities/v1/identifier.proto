@@ -267,12 +267,7 @@ message MonitorIdentifier {
   optional string segment = 3;
 
   // SYNQ integration_id of the monitored identifier
-  optional string integration_id = 100 [
-    deprecated = true,
-    (buf.validate.field) = {
-      string: {uuid: true}
-    }
-  ];
+  optional string integration_id = 100 [deprecated = true];
 }
 
 //
