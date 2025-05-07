@@ -13,12 +13,14 @@ enum IssueTriageStatus {
   ISSUE_TRIAGE_STATUS_SCHEDULED = 1;
   // SRE agent is actively investigating the issue, collecting evidence and analyzing the situation
   ISSUE_TRIAGE_STATUS_IN_PROGRESS = 2;
-  // SRE agent has completed initial investigation and evidence collection, but has not yet reached a final conclusion
+  // SRE agent has generated conclusion for the issue
   ISSUE_TRIAGE_STATUS_TRIAGED = 3;
-  // SRE agent has reached a conclusion that the issue is valid and requires action
+  // User accepted the issue conclusion SRE agent has determined
   ISSUE_TRIAGE_STATUS_ACCEPTED = 4;
-  // SRE agent has determined the issue is not actionable or requires no further attention
+  // User Discarded the issue conclusion SRE agent has determined
   ISSUE_TRIAGE_STATUS_IGNORED = 5;
+  // Issue was closed by the system
+  ISSUE_TRIAGE_STATUS_CLOSED = 6;
 }
 
 // IssueTriageState represents the current state of an issue in the SRE agent's investigation workflow.

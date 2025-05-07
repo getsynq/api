@@ -55,6 +55,16 @@ message Issue {
 
   // Actor that last updated the status of the issue.
   synq.issues.actor.v1.Actor latest_status_actor = 12;
+
+  // List of comments posted on the issue.
+  repeated IssueComment comments = 16;
+}
+
+message IssueComment {
+  string id = 1;
+  string message = 2;
+  google.protobuf.Timestamp created_at = 3;
+  synq.issues.actor.v1.Actor actor = 4;
 }
 
 message MonitorTriggerDetails {

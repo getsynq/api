@@ -8,11 +8,21 @@ import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
+enum EntityChangeType {
+  ENTITY_CHANGE_TYPE_UNSPECIFIED = 0;
+  ENTITY_CHANGE_TYPE_GIT_COMMIT = 1;
+  ENTITY_CHANGE_TYPE_SQL_DEFINITION_CHANGE = 2;
+  ENTITY_CHANGE_TYPE_SCHEMA_CHANGE = 3;
+}
+
 // EntityChange represents a change detected in an entity within the system.
 // It tracks modifications to entities like Git commits, SQL definitions, and database schemas.
 message EntityChange {
-  // Unique identifier for the entity that was changed.
+  // Identifier of the entity on which the change was detected when available.
   Identifier entity_id = 1 [(buf.validate.field) = {required: true}];
+
+  // Identifiers of entities affected by this change.
+  repeated Identifier affected_entities = 4;
 
   // Internal identifier of the change event.
   string change_id = 2 [(buf.validate.field) = {required: true}];
