@@ -56,6 +56,9 @@ message Identifier {
     // Databricks table identifier
     DatabricksTableIdentifier databricks_table = 14;
 
+    // Trino table identifier
+    TrinoTableIdentifier trino_table = 18;
+
     // SQLMesh Model identifier
     SqlMeshModelIdentifier sql_mesh_model = 15;
 
@@ -210,6 +213,21 @@ message DatabricksTableIdentifier {
   string schema = 3 [(buf.validate.field).required = true];
 
   // Databricks table or view
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+
+message TrinoTableIdentifier {
+  // Hostname of the Trino instance
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Trino catalog
+  string catalog = 2 [(buf.validate.field).required = true];
+
+  // Trino schema
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Trino table or view
   string table = 4 [(buf.validate.field).required = true];
 }
 
