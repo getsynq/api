@@ -216,7 +216,6 @@ message DatabricksTableIdentifier {
   string table = 4 [(buf.validate.field).required = true];
 }
 
-
 message TrinoTableIdentifier {
   // Hostname of the Trino instance
   string host = 1 [(buf.validate.field).required = true];
