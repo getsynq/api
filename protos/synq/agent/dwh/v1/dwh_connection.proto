@@ -32,5 +32,6 @@ message Connection {
     synq.agent.dwh.v1.PostgresConf postgres = 54;
     synq.agent.dwh.v1.RedshiftConf redshift = 55;
     synq.agent.dwh.v1.SnowflakeConf snowflake = 56;
+    synq.agent.dwh.v1.TrinoConf trino = 57;
   }
 }

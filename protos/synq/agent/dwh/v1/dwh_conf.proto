@@ -154,3 +154,32 @@ message SnowflakeConf {
   // Use GET_DDL to determine queries used for table/view creation
   bool use_get_ddl = 8;
 }
+
+// Trino specific configuration
+message TrinoConf {
+  // Snowflake account identifier
+  string host = 1 [(buf.validate.field) = {
+    string: {hostname: true}
+  }];
+  // Optional port to use, otherwise it will use the default port 8080
+  optional int32 port = 2;
+  // Use non-SSL connection to Trino. This should only be enabled if the Trino cluster does not support SSL
+  // or if the connection is secured through other means (e.g., a VPN). Defaults to false (SSL enabled).
+  optional bool use_plaintext = 3;
+  // Username for authentication
+  string username = 5 [(buf.validate.field) = {}];
+  // Password for authentication
+  string password = 6 [(buf.validate.field) = {}];
+
+  // To which catalogs to connect
+  repeated string catalogs = 4 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+
+  // Use SHOW CREATE VIEW to get views DDLs
+  bool no_show_create_view = 7;
+  // Use SHOW CREATE TABLE to get tables DDLs
+  bool no_show_create_table = 8;
+}
