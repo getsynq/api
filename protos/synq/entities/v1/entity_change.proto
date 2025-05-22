@@ -21,8 +21,14 @@ message EntityChange {
   // Identifier of the entity on which the change was detected when available.
   Identifier entity_id = 1 [(buf.validate.field) = {required: true}];
 
-  // Identifiers of entities affected by this change.
+  // SYNQ path representing entity on which the change was detected when available,
+  optional string entity_synq_path = 5;
+
+  // Identifiers of entities directly affected by this change.
   repeated Identifier affected_entities = 4;
+
+  // SYNQ paths of entities directly affected by this change.
+  repeated string affected_entities_synq_paths = 6;
 
   // Internal identifier of the change event.
   string change_id = 2 [(buf.validate.field) = {required: true}];
