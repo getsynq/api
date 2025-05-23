@@ -78,6 +78,13 @@ message GitCommitChange {
   // Statistics about changes made to each modified file.
   map<string, ChangeStats> file_change_stats = 5;
 
+  // All changed file paths in the Commit
+  repeated string changed_file_paths = 8;
+
+  // File paths which are related with the entities for which changes are requested.
+  // When no paths are present it is impossible to determine most relevant file changes.
+  repeated string related_changed_file_paths = 9;
+
   // Name of the branch associated with the commit, if any.
   optional string branch_name = 6;
 

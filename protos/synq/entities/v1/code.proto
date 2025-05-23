@@ -19,6 +19,9 @@ message Code {
   // SQLMesh model, or any other entity type that contains code.
   synq.entities.v1.Identifier definer_identifier = 1 [(buf.validate.field) = {required: true}];
 
+  // Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  string definer_synq_path = 7;
+
   // Timestamp indicating when this specific version of the code was captured or last modified.
   // This helps track the evolution of code over time.
   google.protobuf.Timestamp state_at = 2 [(buf.validate.field) = {required: true}];
@@ -42,4 +45,7 @@ message Code {
 
   // Optional human-readable name for the code piece that can be used for display purposes. Might also indicate name of the file.
   optional string code_name = 6;
+
+  // Optional path in e.g. git or project directory which is source of the code
+  optional string file_path = 8;
 }
