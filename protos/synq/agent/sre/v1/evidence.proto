@@ -81,6 +81,12 @@ message ChangeEvidence {
   // List of entities (e.g., services, configurations) that have recently changed
   // and may be related to the current issue.
   repeated synq.entities.v1.Identifier entities = 1;
+
+  // Read-only list of paths matching entities. This is a unique path that can be used to access the entity in the Synq's UI.
+  repeated string entities_synq_paths = 4 [(buf.validate.field) = {
+    repeated: {max_items: 0}
+  }];
+
   // Detailed description of the changes that were detected and their potential
   // impact on the current issue.
   string change_description = 2;
