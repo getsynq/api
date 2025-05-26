@@ -43,9 +43,15 @@ message EvidenceItem {
     // Evidence of recent changes that may have contributed to the issue.
     synq.agent.sre.v1.ChangeEvidence change = 103;
     // Evidence containing detailed analysis of the issue.
-    // This should only be used as a last resort when no other more specialized evidence types
-    // (history, root cause, related issues, or changes) could be collected.
-    synq.agent.sre.v1.AnalysisEvidence analysis = 104;
+    // DEPRECATED: This type will be gradually retired in favor of more specific evidence types
+    // like DataQueryEvidenceV2 and OtherEvidence. Please use those types for new evidence.
+    synq.agent.sre.v1.AnalysisEvidence analysis = 104 [deprecated = true];
+    // Evidence containing code changes and commit information.
+    synq.agent.sre.v1.CommitEvidence commit = 106;
+    // Evidence containing SQL queries and data analysis results with query IDs.
+    synq.agent.sre.v1.DataQueryEvidenceV2 data_query_v2 = 107;
+    // Evidence containing general analysis that doesn't fit into other specialized types.
+    synq.agent.sre.v1.OtherEvidence other = 108;
   }
 }
 
@@ -121,4 +127,70 @@ message AnalysisEvidence {
 
   // SQL queries which were executed to investigate the issue and collect the evidence.
   repeated string sql_queries = 2;
+}
+
+// CommitEvidence documents code changes that may have contributed to the issue.
+// This helps in understanding if the issue is related to recent code modifications.
+message CommitEvidence {
+  // ID of the change that introduced the code modifications.
+  string change_id = 1 [(buf.validate.field) = {required: true}];
+
+  // List of relevant code changes in the commit.
+  repeated CodeChange relevant_code_changes = 2 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        required: true
+      }
+    }
+  }];
+}
+
+// CodeChange represents a specific change in a file within a commit.
+message CodeChange {
+  // Path to the file that was changed.
+  string file_path = 1 [(buf.validate.field) = {required: true}];
+
+  // Starting line number of the change (inclusive).
+  int32 start_line = 2;
+
+  // Ending line number of the change (inclusive).
+  int32 end_line = 3;
+
+  // Description of what was changed in this section.
+  string change_description = 4;
+}
+
+// DataQueryEvidenceV2 contains SQL queries and their analysis results with query IDs.
+// This helps in understanding the issue through data analysis with query tracking.
+message DataQueryEvidenceV2 {
+  // List of data query evidence items, each containing a query ID and its analysis.
+  repeated DataQueryEvidenceItem items = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        required: true
+      }
+    }
+  }];
+}
+
+// DataQueryEvidenceItem represents a single SQL query and its analysis.
+message DataQueryEvidenceItem {
+  // Unique identifier for the query. This ID can be used to retrieve the actual SQL query
+  // from the session store.
+  string query_id = 1 [(buf.validate.field) = {required: true}];
+
+  // Analysis specific to this query's results and their implications.
+  // This is the analysis of the results from executing the query identified by query_id.
+  string data_analysis = 2 [(buf.validate.field) = {required: true}];
+}
+
+// OtherEvidence contains general analysis that doesn't fit into other specialized evidence types.
+// This should be used when the analysis doesn't involve SQL queries, code changes, or other
+// specialized evidence types.
+message OtherEvidence {
+  // Detailed analysis of the issue, including observations, patterns, and potential implications.
+  // This should provide clear reasoning for the conclusions drawn.
+  string analysis = 1 [(buf.validate.field) = {required: true}];
 }

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package synq.git.commits.v1;
+
+import "buf/validate/validate.proto";
+import "synq/git/commits/v1/commit_diff.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/git/commits/v1";
+
+service CommitsService {
+  rpc GetDiffByChangeId(GetDiffByChangeIdRequest) returns (GetDiffByChangeIdResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc GetDiffByCommit(GetDiffByCommitRequest) returns (GetDiffByCommitResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+}
+
+message GetDiffByChangeIdRequest {
+  string change_id = 1 [(buf.validate.field) = {required: true}];
+  repeated string limit_to_files = 2 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message GetDiffByChangeIdResponse {
+  optional synq.git.commits.v1.CommitDiff commit_diff = 1;
+}
+
+message GetDiffByCommitRequest {
+  string commit_sha = 1 [(buf.validate.field) = {
+    required: true
+    string: {len: 40}
+  }];
+  repeated string limit_to_files = 2 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message GetDiffByCommitResponse {
+  optional synq.git.commits.v1.CommitDiff commit_diff = 1;
+}

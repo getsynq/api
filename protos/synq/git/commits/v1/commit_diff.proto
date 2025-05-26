@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package synq.git.commits.v1;
+
+option go_package = "github.com/getsynq/api/git/commits/v1";
+
+message FileDiff {
+  string file_path = 1;
+  string diff = 2;
+}
+
+message CommitDiff {
+  string commit_sha = 2;
+  repeated synq.git.commits.v1.FileDiff file_diffs = 3;
+}
