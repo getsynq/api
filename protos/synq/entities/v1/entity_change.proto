@@ -75,6 +75,9 @@ message GitCommitChange {
   // Commit message describing the changes.
   string message = 4;
 
+  // First non-empty line of the message
+  string short_message = 10;
+
   // Statistics about changes made to each modified file.
   map<string, ChangeStats> file_change_stats = 5;
 
@@ -82,7 +85,8 @@ message GitCommitChange {
   repeated string changed_file_paths = 8;
 
   // File paths which are related with the entities for which changes are requested.
-  // When no paths are present it is impossible to determine most relevant file changes.
+  // When no paths are present it means that is impossible to determine most relevant file changes.
+  // This field will be empty when retrieving change by id.
   repeated string related_changed_file_paths = 9;
 
   // Name of the branch associated with the commit, if any.
@@ -90,6 +94,9 @@ message GitCommitChange {
 
   // URL of the Git repository where the commit was made.
   string clone_url = 7;
+
+  // URL to e.g. Github which opens the Commit
+  optional string web_commit_url = 11;
 }
 
 // SqlDefinitionChange represents a change detected in a SQL definition.

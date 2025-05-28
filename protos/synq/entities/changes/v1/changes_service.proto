@@ -13,18 +13,28 @@ option go_package = "github.com/getsynq/api/entities/changes/v1";
 // ChangesService provides functionality to track and retrieve changes made to entities in the system.
 // It supports various types of changes including git commits, schema changes, and SQL definition changes.
 // The service is designed to help track the history and evolution of entities over time.
+//
+// The service supports multiple types of changes:
+// - Git commits: Changes made through version control
+// - Schema changes: Modifications to database schemas
+// - SQL definition changes: Updates to SQL queries and definitions
 service ChangesService {
   // List retrieves the history of changes for a specific entity identified by its path.
   // Changes are returned in chronological order (newest first) and include details about the type of change,
   // when it occurred, and who made it.
-  //
-  // The service supports multiple types of changes:
-  // - Git commits: Changes made through version control
-  // - Schema changes: Modifications to database schemas
-  // - SQL definition changes: Updates to SQL queries and definitions
-  //
-  // This endpoint requires the SCOPE_ENTITY_READ permission to access.
   rpc List(ListRequest) returns (ListResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  // BatchChange retrieves multiple entity changes by their IDs in a single request.
+  // This is an optimized endpoint for fetching specific changes when you already know their IDs,
+  // rather than listing changes for an entity.
+  rpc BatchChange(BatchChangeRequest) returns (BatchChangeResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
@@ -67,4 +77,17 @@ message ListResponse {
   // - Details specific to the type of change
   // - Metadata about who made the change
   repeated synq.entities.v1.EntityChange changes = 1;
+}
+
+// BatchChangeRequest contains the parameters needed to retrieve multiple changes by their IDs.
+message BatchChangeRequest {
+  // List of change IDs to retrieve. Each ID uniquely identifies a specific change in the system.
+  repeated string change_ids = 1;
+}
+
+// BatchChangeResponse contains the requested changes mapped by their IDs.
+message BatchChangeResponse {
+  // Map of change ID to EntityChange. Only includes changes that were found and accessible.
+  // Missing changes are omitted from the response.
+  map<string, synq.entities.v1.EntityChange> changes = 1;
 }

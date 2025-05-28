@@ -12,7 +12,7 @@ service CommitsService {
   rpc GetDiffByChangeId(GetDiffByChangeIdRequest) returns (GetDiffByChangeIdResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [
-        SCOPE_ENTITY_READ,
+        SCOPE_CODE_READ,
         SCOPE_SRE_AGENT
       ]
     };

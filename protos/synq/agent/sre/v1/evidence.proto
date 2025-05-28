@@ -139,9 +139,7 @@ message CommitEvidence {
   repeated CodeChange relevant_code_changes = 2 [(buf.validate.field) = {
     repeated: {
       min_items: 1
-      items: {
-        required: true
-      }
+      items: {required: true}
     }
   }];
 }
@@ -168,9 +166,7 @@ message DataQueryEvidenceV2 {
   repeated DataQueryEvidenceItem items = 1 [(buf.validate.field) = {
     repeated: {
       min_items: 1
-      items: {
-        required: true
-      }
+      items: {required: true}
     }
   }];
 }
