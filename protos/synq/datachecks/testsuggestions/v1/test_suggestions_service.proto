@@ -4,12 +4,27 @@ package synq.datachecks.testsuggestions.v1;
 
 import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
 
 service TestSuggestionsService {
-  rpc BatchCreateTestSuggestions(BatchCreateTestSuggestionsRequest) returns (BatchCreateTestSuggestionsResponse) {}
-  rpc BatchGetTestSuggestions(BatchGetTestSuggestionsRequest) returns (BatchGetTestSuggestionsResponse) {}
+  rpc BatchCreateTestSuggestions(BatchCreateTestSuggestionsRequest) returns (BatchCreateTestSuggestionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
+      ]
+    };
+  }
+  rpc BatchGetTestSuggestions(BatchGetTestSuggestionsRequest) returns (BatchGetTestSuggestionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ
+      ]
+    };
+  }
 }
 
 message BatchCreateTestSuggestionsRequest {
