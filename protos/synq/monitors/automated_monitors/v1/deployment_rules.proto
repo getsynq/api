@@ -80,6 +80,7 @@ message QueryConfig {
       not_in: [0]
     }
   ];
+  bool keep_deleted_monitors = 5;
 }
 
 message ExclusiveQueryConfig {
@@ -124,6 +125,7 @@ message ProductConfig {
   ];
   ProductConfigUpstreamStrategy upstream = 5;
   ProductConfigSelfStrategy self = 6;
+  bool keep_deleted_monitors = 7;
 }
 
 message ProductConfigUpstreamStrategy {

@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package synq.datachecks.testsuggestions.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
+
+// Test types that can be suggested
+message TestSuggestion {
+  synq.entities.v1.Identifier identifier = 1 [(buf.validate.field).required = true];
+  string explanation = 2 [(buf.validate.field).required = true];
+  // Read-only path of matched entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  optional string entity_synq_path = 3;
+
+  oneof test {
+    // Checks if specified columns contain no NULL values (e.g., user_id should never be null)
+    NotNullTest not_null_test = 11;
+    // Checks if specified columns contain empty values (e.g., description field can be empty)
+    EmptyTest empty_test = 12;
+    // Validates that column values are within an allowed set (e.g., status in ['active', 'inactive', 'pending'])
+    AcceptedValuesTest accepted_values_test = 13;
+    // Validates that column values are not in a forbidden set (e.g., country not in ['UNKNOWN', 'TEST'])
+    RejectedValuesTest rejected_values_test = 14;
+    // Ensures specified columns form a unique key combination (e.g., order_id is unique)
+    UniqueTest unique_test = 15;
+    // Checks if data is up-to-date based on a time column (e.g., latest event_timestamp within 24h)
+    FreshnessTest freshness_test = 16;
+    // Validates the total number of rows in a table (e.g., orders table should have records)
+    RowCountTest row_count_test = 17;
+    // Counts distinct values in specified columns (e.g., number of unique customers)
+    CountDistinctTest count_distinct_test = 18;
+    // Identifies duplicate records across specified columns (e.g., duplicate invoice numbers)
+    CountDuplicatesTest count_duplicates_test = 19;
+    // Validates numeric values are within specified range (e.g., price between 0 and 1000)
+    MinMaxTest min_max_test = 20;
+    // Compares time-based columns for logical order (e.g., start_date before end_date)
+    RelativeTimeTest relative_time_test = 21;
+    // Custom SQL-based business logic validation (e.g., total_amount = subtotal + tax)
+    BusinessRuleTest business_rule_test = 22;
+  }
+}
+
+message NotNullTest {
+  // List of column names to check for NULL values
+  repeated string column_names = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message EmptyTest {
+  // List of column names to check for empty values
+  repeated string column_names = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message AcceptedValuesTest {
+  // Name of the column to validate
+  string column_name = 1 [(buf.validate.field).required = true];
+  // List of allowed values for the column
+  repeated string accepted_values = 2 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message RejectedValuesTest {
+  // Name of the column to validate
+  string column_name = 1 [(buf.validate.field).required = true];
+  // List of disallowed values for the column
+  repeated string rejected_values = 2 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message MinMaxTest {
+  // Name of the numeric column to validate
+  string column_name = 1 [(buf.validate.field).required = true];
+  // Minimum allowed value (inclusive)
+  double min_value = 2;
+  // Maximum allowed value (inclusive)
+  double max_value = 3;
+}
+
+message UniqueTest {
+  // List of columns that should form a unique combination
+  repeated string column_names = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message FreshnessTest {
+  // Name of the timestamp column used for freshness check
+  string time_partition_column_name = 1 [(buf.validate.field).required = true];
+}
+
+message RowCountTest {}
+
+message CountDistinctTest {
+  // List of columns to count distinct combinations
+  repeated string column_names = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message CountDuplicatesTest {
+  // List of columns to check for duplicate combinations
+  repeated string column_names = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.unique = true
+  ];
+}
+
+message RelativeTimeTest {
+  // Name of the first time column to compare
+  string column_name = 1 [(buf.validate.field).required = true];
+  // Name of the second time column that should be later than the first
+  string relative_column_name = 2 [(buf.validate.field).required = true];
+}
+
+message BusinessRuleTest {
+  // SQL expression that should evaluate to TRUE for valid records
+  string sql_expression = 1 [(buf.validate.field).required = true];
+}
