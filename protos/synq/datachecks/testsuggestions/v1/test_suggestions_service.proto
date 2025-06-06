@@ -79,8 +79,7 @@ message BatchAcceptTestSuggestionsResponse {
 
 message BatchRejectTestSuggestionsRequest {
   repeated string ids = 1;
+  optional string reason = 2;
 }
 
-message BatchRejectTestSuggestionsResponse {
-  optional string reason = 1;
-}
+message BatchRejectTestSuggestionsResponse {}

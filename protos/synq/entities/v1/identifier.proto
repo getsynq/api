@@ -154,7 +154,7 @@ message SnowflakeTableIdentifier {
 
 message RedshiftTableIdentifier {
   // Redshift cluster
-  string cluster = 1 [(buf.validate.field).required = true];
+  string cluster = 1;
 
   // Redshift database
   string database = 2 [(buf.validate.field).required = true];
