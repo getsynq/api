@@ -5,6 +5,7 @@ package synq.datachecks.testsuggestions.v1;
 import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/entities/v1/annotation.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
 
@@ -17,11 +18,27 @@ service TestSuggestionsService {
       ]
     };
   }
-  rpc BatchGetTestSuggestions(BatchGetTestSuggestionsRequest) returns (BatchGetTestSuggestionsResponse) {
+  rpc BatchGetTestSuggestionsForEntities(BatchGetTestSuggestionsForEntitiesRequest) returns (BatchGetTestSuggestionsForEntitiesResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
         SCOPE_DATACHECKS_TESTSUGGESTIONS_READ
+      ]
+    };
+  }
+  rpc BatchAcceptTestSuggestions(BatchAcceptTestSuggestionsRequest) returns (BatchAcceptTestSuggestionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
+      ]
+    };
+  }
+  rpc BatchRejectTestSuggestions(BatchRejectTestSuggestionsRequest) returns (BatchRejectTestSuggestionsResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
       ]
     };
   }
@@ -33,10 +50,37 @@ message BatchCreateTestSuggestionsRequest {
 
 message BatchCreateTestSuggestionsResponse {}
 
-message BatchGetTestSuggestionsRequest {
+message BatchGetTestSuggestionsForEntitiesRequest {
   repeated synq.entities.v1.Identifier identifiers = 1;
 }
 
-message BatchGetTestSuggestionsResponse {
+message BatchGetTestSuggestionsForEntitiesResponse {
   repeated TestSuggestion suggestions = 1;
+}
+
+message BatchAcceptTestSuggestionsRequest {
+  repeated string ids = 1;
+
+  // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html) for the execution schedule of the SqlTest.
+  string recurrence_rule = 2;
+
+  // Annotations for the given test.These help filter the tests for later
+  // operations like listing by API, selection in UI, analytics, etc.
+  repeated entities.v1.Annotation annotations = 3;
+
+  // Boolean flag to to toggle saving of failure runs.
+  bool save_failures = 4;
+}
+
+message BatchAcceptTestSuggestionsResponse {
+  // Identifiers of created tests.
+  repeated synq.entities.v1.Identifier identifiers = 1;
+}
+
+message BatchRejectTestSuggestionsRequest {
+  repeated string ids = 1;
+}
+
+message BatchRejectTestSuggestionsResponse {
+  optional string reason = 1;
 }

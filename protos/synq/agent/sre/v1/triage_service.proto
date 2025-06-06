@@ -29,13 +29,32 @@ service TriageService {
     };
   }
 
+  // Retrieves the latest triage state for one or more issues. This method is used by the LLM agent
+  // to retrieve the current state of the issues it is working on.
   rpc BatchLatestConclusions(BatchLatestConclusionsRequest) returns (BatchLatestConclusionsResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
   }
 
+  // Retrieves the triage state for one or more issues. This method is used by the LLM agent
+  // to retrieve the current state of the issues it is working on.
   rpc BatchTriageState(BatchTriageStateRequest) returns (BatchTriageStateResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
+
+  // Retrieves the triage state for one or more issues. This method is used by the LLM agent
+  // to retrieve the current state of the issues it is working on.
+  rpc ListTriageState(ListTriageStateRequest) returns (ListTriageStateResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
+
+  // Marks an issue as in progress.  This method is used by the LLM agent to indicate that it has started working on an issue.
+  rpc MarkAsInProgress(MarkAsInProgressRequest) returns (MarkAsInProgressResponse) {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -89,10 +108,36 @@ message BatchLatestConclusionsResponse {
 }
 
 message BatchTriageStateRequest {
-  // List of issue IDs for which latest conclusion should be returned.
-  repeated string issue_ids = 1;
+  // List of issue IDs for which triage status should be returned.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }
 
 message BatchTriageStateResponse {
   map<string, IssueTriageState> states = 1;
+}
+
+message ListTriageStateRequest {
+  repeated synq.agent.sre.v1.IssueTriageStatus statuses = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+      min_items: 1
+    }
+  }];
+}
+
+message ListTriageStateResponse {
+  repeated IssueTriageState states = 1;
+}
+
+message MarkAsInProgressRequest {
+  // List of issue IDs for which work has started.
+  repeated string issue_ids = 1;
+}
+
+message MarkAsInProgressResponse {
+  repeated string marked_issue_ids = 1;
 }

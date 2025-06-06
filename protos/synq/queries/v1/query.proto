@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package synq.queries.v1;
+
+import "synq/queries/v1/query_operand.proto";
+import "synq/queries/v1/query_parts.proto";
+
+option go_package = "github.com/getsynq/api/queries/v1";
+
+// Query is a structured query that can be used to find entities in the system.
+// It consists of multiple parts, each representing a different aspect of the query.
+// The parts can be combined using the operand to form a complete query.
+message Query {
+  repeated QueryPart parts = 1;
+  QueryOperand operand = 2; // Defaults to AND if not specified.
+
+  message QueryPart {
+    oneof part {
+      IdentifierList identifier_list = 1;
+      WithNameSearch with_name_search = 2;
+      WithType with_type = 3;
+      WithAnnotation with_annotation = 4;
+      InDataproduct in_dataproduct = 5;
+      InDataPlatform in_data_platform = 6;
+      WithDataPlatformType with_data_platform_type = 7;
+      InFolder in_folder = 8;
+
+      Query query = 100;
+      Unsupported unsupported = 101;
+    }
+  }
+}

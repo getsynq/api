@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package synq.entities.coordinates.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/coordinates/v1/database_coordinates.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/coordinates/v1";
+
+// DatabaseCoordinatesService is a service for getting database coordinates of Entities.
+//
+service DatabaseCoordinatesService {
+  // Get multiple DatabaseCoordinates for identifiers.
+  rpc BatchDatabaseCoordinates(BatchDatabaseCoordinatesRequest) returns (BatchDatabaseCoordinatesResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+}
+
+// BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
+message BatchDatabaseCoordinatesRequest {
+  // Identifiers of the entities to get.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+// BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
+message BatchDatabaseCoordinatesResponse {
+  // The entities that were retrieved.
+  repeated synq.entities.coordinates.v1.DatabaseCoordinates coordinates = 1;
+}

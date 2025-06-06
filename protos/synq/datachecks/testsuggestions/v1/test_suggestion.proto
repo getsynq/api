@@ -29,16 +29,12 @@ message TestSuggestion {
     FreshnessTest freshness_test = 16;
     // Validates the total number of rows in a table (e.g., orders table should have records)
     RowCountTest row_count_test = 17;
-    // Counts distinct values in specified columns (e.g., number of unique customers)
-    CountDistinctTest count_distinct_test = 18;
-    // Identifies duplicate records across specified columns (e.g., duplicate invoice numbers)
-    CountDuplicatesTest count_duplicates_test = 19;
     // Validates numeric values are within specified range (e.g., price between 0 and 1000)
-    MinMaxTest min_max_test = 20;
+    MinMaxTest min_max_test = 18;
     // Compares time-based columns for logical order (e.g., start_date before end_date)
-    RelativeTimeTest relative_time_test = 21;
+    RelativeTimeTest relative_time_test = 19;
     // Custom SQL-based business logic validation (e.g., total_amount = subtotal + tax)
-    BusinessRuleTest business_rule_test = 22;
+    BusinessRuleTest business_rule_test = 20;
   }
 }
 
@@ -98,6 +94,8 @@ message UniqueTest {
 message FreshnessTest {
   // Name of the timestamp column used for freshness check
   string time_partition_column_name = 1 [(buf.validate.field).required = true];
+  // Time window for freshness check (in seconds)
+  int64 time_window_seconds = 2;
 }
 
 message RowCountTest {}

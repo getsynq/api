@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package synq.agent.sre.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/getsynq/api/agent/sre/v1";
 
 // IssueTriageStatus represents the current stage of an issue in the SRE agent's investigation workflow.
@@ -30,4 +32,6 @@ message IssueTriageState {
   string issue_id = 1;
   // Current status of the issue in the triage workflow, indicating the stage of investigation
   IssueTriageStatus status = 2;
+  // Timestamp indicating when the issue triage state was last updated
+  google.protobuf.Timestamp last_updated_at = 3;
 }

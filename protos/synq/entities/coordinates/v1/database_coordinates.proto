@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package synq.entities.coordinates.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/entities/v1/sql_dialect.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+import "synq/platforms/v1/data_platforms.proto";
+
+option go_package = "github.com/getsynq/api/entities/coordinates/v1";
+message DatabaseCoordinates {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {required: true}];
+  repeated string synq_paths = 2;
+
+  string dialect_name = 3;
+  synq.entities.v1.SqlDialect dialect = 4;
+  optional synq.platforms.v1.DataPlatformIdentifier data_platform = 6;
+  synq.platforms.v1.DataPlatformType data_platform_type = 7;
+  optional string connection_id = 5;
+
+  string instance_name = 10;
+  string database_name = 11;
+  string schema_name = 12;
+  string object_name = 13;
+  string sql_fqn = 14;
+}

@@ -48,7 +48,11 @@ message GetEntityResponse {
 // BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
 message BatchGetEntitiesRequest {
   // Identifiers of the entities to get.
-  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field).required = true];
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }
 
 // BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
