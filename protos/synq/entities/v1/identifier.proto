@@ -272,6 +272,18 @@ message DataproductIdentifier {
 }
 
 //
+// OWNER
+//
+
+message OwnerIdentifier {
+  // Owner id that identifies the Owner
+  string id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+//
 // MONITORS
 //
 

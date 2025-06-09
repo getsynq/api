@@ -3,9 +3,9 @@ syntax = "proto3";
 package synq.datachecks.testsuggestions.v1;
 
 import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
+import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
-import "synq/entities/v1/annotation.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
 

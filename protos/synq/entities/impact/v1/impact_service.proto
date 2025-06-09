@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package synq.entities.impact.v1;
+
+import "buf/validate/validate.proto";
+import "synq/entities/impact/v1/impact.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/impact/v1";
+
+service ImpactService {
+  rpc GetImpact(GetImpactRequest) returns (GetImpactResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+}
+
+message GetImpactRequest {
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message GetImpactResponse {
+  repeated ImpactedEntity impacted_entities = 1;
+  repeated ImpactedDataproduct impacted_dataproducts = 2;
+  repeated ImpactedOwner impacted_owners = 3;
+}
