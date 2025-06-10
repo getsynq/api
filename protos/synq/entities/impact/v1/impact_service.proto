@@ -30,10 +30,10 @@ message GetImpactRequest {
 }
 
 message GetImpactResponse {
-  repeated ImpactedEntity impacted_entities = 1;
-  repeated ImpactedEntity impacted_downstream_entities = 4;
-  repeated ImpactedDataproduct impacted_dataproducts = 2;
-  repeated ImpactedDataproduct impacted_downstream_dataproducts = 5;
-  repeated ImpactedOwner impacted_owners = 3;
-  repeated ImpactedOwner impacted_downstream_owners = 6;
+  repeated ImpactedEntityGroup entities = 1;
+  repeated ImpactedEntityGroup downstream_entities = 4;
+  repeated ImpactedDataproduct dataproducts = 2;
+  repeated ImpactedDataproduct downstream_dataproducts = 5;
+  repeated ImpactedOwner owners = 3;
+  repeated ImpactedOwner downstream_owners = 6;
 }

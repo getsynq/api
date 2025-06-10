@@ -7,15 +7,17 @@ import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/impact/v1";
 
-message ImpactedEntity {
-  synq.entities.v1.Identifier id = 1;
-  string synq_path = 2;
+// Multiple Entities which form logical group, e.g. dbt Model and it's table
+message ImpactedEntityGroup {
+  optional string name = 3;
+  repeated synq.entities.v1.Identifier ids = 1;
+  repeated string synq_paths = 2;
 }
 
 message ImpactedOwner {
   synq.entities.v1.OwnerIdentifier id = 1;
   string title = 2;
-  repeated ImpactedEntity impacted_entities = 3;
+  repeated ImpactedEntityGroup impacted_entities = 3;
 }
 
 message ImpactedDataproduct {
@@ -23,12 +25,6 @@ message ImpactedDataproduct {
   string title = 2;
   string description = 3;
   string folder = 4;
-  enum Priority {
-    PRIORITY_UNSPECIFIED = 0;
-    PRIORITY_P3 = 3;
-    PRIORITY_P2 = 4;
-    PRIORITY_P1 = 5;
-  }
   synq.dataproducts.v1.Dataproduct.Priority priority = 5;
-  repeated ImpactedEntity impacted_entities = 6;
+  repeated ImpactedEntityGroup impacted_entities = 6;
 }
