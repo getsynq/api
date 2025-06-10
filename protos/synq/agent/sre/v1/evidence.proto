@@ -52,6 +52,10 @@ message EvidenceItem {
     synq.agent.sre.v1.DataQueryEvidenceV2 data_query_v2 = 107;
     // Evidence containing general analysis that doesn't fit into other specialized types.
     synq.agent.sre.v1.OtherEvidence other = 108;
+    // Evidence of impact on important dataproduct
+    synq.agent.sre.v1.ImpactedDataproductEvidence impacted_dataproduct = 109;
+    // Evidence of serious impact on business owner
+    synq.agent.sre.v1.ImpactedOwnerEvidence impacted_owner = 110;
   }
 }
 
@@ -189,4 +193,26 @@ message OtherEvidence {
   // Detailed analysis of the issue, including observations, patterns, and potential implications.
   // This should provide clear reasoning for the conclusions drawn.
   string analysis = 1 [(buf.validate.field) = {required: true}];
+}
+
+// ImpactedDataproduct documents Data Products that are significantly affected by the issue.
+// This helps in understanding the business impact and prioritizing resolution efforts.
+message ImpactedDataproductEvidence {
+  // Detailed explanation of how and why the dataproduct is impacted by the issue.
+  // This should provide clear reasoning for the impact assessment.
+  string impact_reason = 1;
+  // List of dataproduct IDs that are affected by the issue.
+  // These IDs should reference existing dataproducts in the system.
+  repeated string dataproduct_ids = 2 [(buf.validate.field) = {required: true}];
+}
+
+// ImpactedOwner documents business owners or teams that are seriously affected by the issue.
+// This helps in understanding stakeholder impact and communication requirements.
+message ImpactedOwnerEvidence {
+  // Detailed explanation of how and why the owner is impacted by the issue.
+  // This should provide clear reasoning for the impact assessment.
+  string impact_reason = 1;
+  // List of owner IDs that are affected by the issue.
+  // These IDs should reference existing owners or teams in the system.
+  repeated string owner_ids = 2 [(buf.validate.field) = {required: true}];
 }
