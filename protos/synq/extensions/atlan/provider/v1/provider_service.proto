@@ -8,18 +8,21 @@ option go_package = "github.com/getsynq/api/extensions/atlan/provider/v1";
 
 service AtlanProviderService {
   rpc GetAtlanConnections(GetAtlanConnectionsRequest) returns (GetAtlanConnectionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc GetAtlanDataProducts(GetAtlanDataProductsRequest) returns (GetAtlanDataProductsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc GetAtlanDomains(GetAtlanDomainsRequest) returns (GetAtlanDomainsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };

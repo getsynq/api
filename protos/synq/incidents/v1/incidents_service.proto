@@ -15,12 +15,14 @@ option go_package = "github.com/getsynq/api/incidents/v1";
 // IncidentsService is a service for managing Incidents.
 service IncidentsService {
   rpc CreateIncident(CreateIncidentRequest) returns (CreateIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc RenameIncident(RenameIncidentRequest) returns (RenameIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
@@ -28,6 +30,7 @@ service IncidentsService {
 
   // Cancel an incident
   rpc CancelIncident(CancelIncidentRequest) returns (CancelIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
@@ -35,36 +38,42 @@ service IncidentsService {
 
   // Close an incident
   rpc CloseIncident(CloseIncidentRequest) returns (CloseIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc MergeIncidents(MergeIncidentsRequest) returns (MergeIncidentsResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc SplitIncident(SplitIncidentRequest) returns (SplitIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc AddIssuesToIncident(AddIssuesToIncidentRequest) returns (AddIssuesToIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc RemoveIssuesFromIncident(RemoveIssuesFromIncidentRequest) returns (RemoveIssuesFromIncidentResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
 
   rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INCIDENTS_READ,
@@ -74,6 +83,7 @@ service IncidentsService {
   }
 
   rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INCIDENTS_READ,

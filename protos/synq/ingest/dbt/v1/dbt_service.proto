@@ -43,6 +43,7 @@ message IngestInvocationResponse {}
 
 service DbtService {
   rpc IngestInvocation(IngestInvocationRequest) returns (IngestInvocationResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DBT]
     };

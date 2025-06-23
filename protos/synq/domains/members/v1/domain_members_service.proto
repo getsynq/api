@@ -12,6 +12,7 @@ option go_package = "github.com/getsynq/api/domains/members/v1";
 service DomainMembersService {
   // Add domain members.
   rpc AddDomainMembers(AddDomainMembersRequest) returns (AddDomainMembersResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_ASSIGN]
     };
@@ -19,6 +20,7 @@ service DomainMembersService {
 
   // Remove domain members.
   rpc RemoveDomainMembers(RemoveDomainMembersRequest) returns (RemoveDomainMembersResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_ASSIGN]
     };
@@ -26,6 +28,7 @@ service DomainMembersService {
 
   // List domain members.
   rpc ListDomainMembers(ListDomainMembersRequest) returns (ListDomainMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
     };
@@ -33,6 +36,7 @@ service DomainMembersService {
 
   // List domains for the given user.
   rpc ListUserDomains(ListUserDomainsRequest) returns (ListUserDomainsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
     };
@@ -40,6 +44,7 @@ service DomainMembersService {
 
   // Set default domain for user.
   rpc SetDefaultUserDomain(SetDefaultUserDomainRequest) returns (SetDefaultUserDomainResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
     };

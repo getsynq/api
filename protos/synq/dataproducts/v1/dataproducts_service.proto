@@ -13,6 +13,7 @@ option go_package = "github.com/getsynq/api/dataproducts/v1";
 service DataproductsService {
   // Create or update a dataproduct.
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
@@ -20,6 +21,7 @@ service DataproductsService {
 
   // Get multiple dataproducts by their identifiers.
   rpc Get(GetRequest) returns (GetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATAPRODUCT_READ,
@@ -30,6 +32,7 @@ service DataproductsService {
 
   // List all the dataproducts in the current scope.
   rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATAPRODUCT_READ,
@@ -41,6 +44,7 @@ service DataproductsService {
   // Delete a dataproduct by its identifier.
   // Soft deletes by default. Optionally purge the dataproduct to release the identifier.
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
@@ -48,6 +52,7 @@ service DataproductsService {
 
   // Set the definition for an existing dataproduct.
   rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
@@ -55,6 +60,7 @@ service DataproductsService {
 
   // Add definition part to the definition of an existing dataproduct.
   rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
@@ -62,6 +68,7 @@ service DataproductsService {
 
   // Remove definition part from the definition of an existing dataproduct.
   rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };

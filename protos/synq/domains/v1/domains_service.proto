@@ -13,6 +13,7 @@ option go_package = "github.com/getsynq/api/domains/v1";
 service DomainsService {
   // Create or update a domain.
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
@@ -20,6 +21,7 @@ service DomainsService {
 
   // Get multiple domains by their identifiers.
   rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_READ]
     };
@@ -27,6 +29,7 @@ service DomainsService {
 
   // Get a domain with its sub-domains
   rpc FetchDomainWithSubDomains(FetchDomainWithSubDomainsRequest) returns (FetchDomainWithSubDomainsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_READ]
     };
@@ -34,6 +37,7 @@ service DomainsService {
 
   // List all the domains in the current workspace.
   rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_READ]
     };
@@ -41,6 +45,7 @@ service DomainsService {
 
   // Delete a domain by its identifier.
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
@@ -48,6 +53,7 @@ service DomainsService {
 
   // Set the definition for an existing domain.
   rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
@@ -55,6 +61,7 @@ service DomainsService {
 
   // Add definition part to the definition of an existing domain.
   rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
@@ -62,12 +69,14 @@ service DomainsService {
 
   // Remove definition part from the definition of an existing domain.
   rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
     };
   }
 
   rpc GetUsage(GetUsageRequest) returns (GetUsageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USAGE_GET]
     };

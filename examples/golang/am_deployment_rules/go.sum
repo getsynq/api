@@ -1,11 +1,7 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20240508200655-46a4cf4ba109.1 h1:JCBiWHmLr8K2RZAtIauMEkekfCU5M2xn9LRfmsZ20mw=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20240508200655-46a4cf4ba109.1/go.mod h1:eOqrCVUfhh7SLo00urDe/XhJHljj0dWMZirS0aX7cmc=
-buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250307163437-5d80565c2964.2 h1:Zs8gq+HAViuwbbTDubZNULfhPOnKUusA1tFACi/Hd8E=
-buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250307163437-5d80565c2964.2/go.mod h1:xZl6SA3Fg0ru4gru2VwfEBZPbdGXGvnsaE5zbOXaurU=
 buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250312155459-f3880a67f953.2 h1:LQVD6HdoO3zEGd/v0WFpQWuoZmJqfXhZ+2pKw3tOL2c=
 buf.build/gen/go/getsynq/api/grpc/go v1.5.1-20250312155459-f3880a67f953.2/go.mod h1:ktWfghJl8t2VunV9HwkMLPU5SdqJZMKCpxrnWg5wbho=
-buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250307163437-5d80565c2964.1 h1:I73gszvDzpm40G/isMf7WIVyvSpmrMikwzJtOvcDD/c=
-buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250307163437-5d80565c2964.1/go.mod h1:RuDGlxYZp9LzG+ufLgspsKt6phwoAiL+oQE73zSS+Vw=
 buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250312155459-f3880a67f953.1 h1:TGYHs9G/HZSYJulGLIdr6517+l6h5r6i+H0yLjxB/+c=
 buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.5-20250312155459-f3880a67f953.1/go.mod h1:RuDGlxYZp9LzG+ufLgspsKt6phwoAiL+oQE73zSS+Vw=
 cloud.google.com/go/compute/metadata v0.3.0 h1:Tz+eQXMEqDIKRsmY3cHTL6FVaynIjX2QxYC4trgAKZc=

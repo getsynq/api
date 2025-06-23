@@ -13,6 +13,7 @@ option go_package = "github.com/getsynq/api/entities/executions/v1";
 service EntityExecutionsService {
   // Execution affects status of the custom entity
   rpc UpsertExecution(UpsertExecutionRequest) returns (UpsertExecutionResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXECUTION_EDIT]
     };
@@ -20,6 +21,7 @@ service EntityExecutionsService {
 
   // LogEntry is a log message for the custom entity
   rpc UpsertLogEntry(UpsertLogEntryRequest) returns (UpsertLogEntryResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_EXECUTION_EDIT,

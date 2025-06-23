@@ -12,6 +12,7 @@ option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 service SqlTestsService {
   // Upsert SqlTests based on a unique ID.
   rpc BatchUpsertSqlTests(BatchUpsertSqlTestsRequest) returns (BatchUpsertSqlTestsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
@@ -19,6 +20,7 @@ service SqlTestsService {
 
   // List SqlTests for given annotations.
   rpc ListSqlTests(ListSqlTestsRequest) returns (ListSqlTestsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_SQLTESTS_READ,
@@ -29,6 +31,7 @@ service SqlTestsService {
 
   // Get SqlTests by their IDs.
   rpc BatchGetSqlTests(BatchGetSqlTestsRequest) returns (BatchGetSqlTestsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_SQLTESTS_READ,
@@ -39,6 +42,7 @@ service SqlTestsService {
 
   // Delete SqlTests by their IDs.
   rpc BatchDeleteSqlTests(BatchDeleteSqlTestsRequest) returns (BatchDeleteSqlTestsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
@@ -46,6 +50,7 @@ service SqlTestsService {
 
   // Get SqlTest audit from a given execution ID in jwt token.
   rpc GetSqlTestAudit(GetSqlTestAuditRequest) returns (GetSqlTestAuditResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ,

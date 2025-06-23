@@ -14,6 +14,7 @@ option go_package = "github.com/getsynq/api/entities/coordinates/v1";
 service DatabaseCoordinatesService {
   // Get multiple DatabaseCoordinates for identifiers.
   rpc BatchDatabaseCoordinates(BatchDatabaseCoordinatesRequest) returns (BatchDatabaseCoordinatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

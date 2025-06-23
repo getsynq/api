@@ -110,30 +110,35 @@ message IngestTaskResultsResponse {}
 
 service DwhService {
   rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
   }
 
   rpc IngestSqlDefinitions(IngestSqlDefinitionsRequest) returns (IngestSqlDefinitionsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
   }
 
   rpc IngestSchemas(IngestSchemasRequest) returns (IngestSchemasResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
   }
 
   rpc IngestObjectMetrics(IngestObjectMetricsRequest) returns (IngestObjectMetricsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
   }
 
   rpc IngestTaskResults(IngestTaskResultsRequest) returns (IngestTaskResultsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };

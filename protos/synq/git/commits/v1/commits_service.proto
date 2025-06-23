@@ -10,6 +10,7 @@ option go_package = "github.com/getsynq/api/git/commits/v1";
 
 service CommitsService {
   rpc GetDiffByChangeId(GetDiffByChangeIdRequest) returns (GetDiffByChangeIdResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_CODE_READ,
@@ -19,6 +20,7 @@ service CommitsService {
   }
 
   rpc GetDiffByCommit(GetDiffByCommitRequest) returns (GetDiffByCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

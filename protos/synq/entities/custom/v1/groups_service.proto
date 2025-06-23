@@ -28,6 +28,7 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 service GroupsService {
   // ListEntityGroups lists all groups.
   rpc ListEntityGroups(ListEntityGroupsRequest) returns (ListEntityGroupsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
@@ -40,6 +41,7 @@ service GroupsService {
   // the difference of entity ids is calculated between past state and the current state and entities that are
   // no longer part of the group are removed.
   rpc UpsertEntitiesGroup(UpsertEntitiesGroupRequest) returns (UpsertEntitiesGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
@@ -47,6 +49,7 @@ service GroupsService {
 
   // DeleteEntitiesGroup deletes a group by its identifier. If the group does not exist, it will be a no-op.
   rpc DeleteEntitiesGroup(DeleteEntitiesGroupRequest) returns (DeleteEntitiesGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
@@ -61,7 +64,6 @@ message ListEntityGroupsResponse {
 
 message UpsertEntitiesGroupRequest {
   Group group = 1 [(buf.validate.field).required = true];
-  bool dry_run = 3;
 }
 
 message UpsertEntitiesGroupResponse {

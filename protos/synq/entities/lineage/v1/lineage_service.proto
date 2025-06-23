@@ -13,6 +13,7 @@ option go_package = "github.com/getsynq/api/entities/lineage/v1";
 // * Column Level lineage from a starting point of multiple columns of a single entity.
 service LineageService {
   rpc GetLineage(GetLineageRequest) returns (GetLineageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_LINEAGE_READ,

@@ -23,6 +23,7 @@ service ChangesService {
   // Changes are returned in chronological order (newest first) and include details about the type of change,
   // when it occurred, and who made it.
   rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
@@ -35,6 +36,7 @@ service ChangesService {
   // This is an optimized endpoint for fetching specific changes when you already know their IDs,
   // rather than listing changes for an entity.
   rpc BatchChange(BatchChangeRequest) returns (BatchChangeResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

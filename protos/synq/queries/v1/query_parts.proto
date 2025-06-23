@@ -34,11 +34,12 @@ message WithType {
   repeated Type types = 2;
 }
 
-// Resolves to all entities that contain the annotation with the provided accepted value.
-// In case of no given accepted value, all entities that carry the given annotation are returned.
+// Resolves to all entities that contain the annotation with at least one of the provided accepted values.
+// In case of no given accepted values, all entities that carry the given annotation are returned.
 message WithAnnotation {
   string name = 1;
-  optional string accepted_value = 2;
+  optional string accepted_value = 2 [deprecated = true];
+  repeated string accepted_values = 3;
 }
 
 // Resolves to all the assets that belong to the given data product.

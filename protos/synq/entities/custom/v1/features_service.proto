@@ -52,6 +52,7 @@ message Feature {
 service FeaturesService {
   // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
   rpc UpsertEntityFeature(UpsertEntityFeatureRequest) returns (UpsertEntityFeatureResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
@@ -59,6 +60,7 @@ service FeaturesService {
 
   // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
   rpc DeleteEntityFeature(DeleteEntityFeatureRequest) returns (DeleteEntityFeatureResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
@@ -66,6 +68,7 @@ service FeaturesService {
 
   // List all entities.
   rpc ListEntityFeatures(ListEntityFeaturesRequest) returns (ListEntityFeaturesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

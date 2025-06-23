@@ -11,6 +11,7 @@ option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
 
 service TestSuggestionsService {
   rpc BatchCreateTestSuggestions(BatchCreateTestSuggestionsRequest) returns (BatchCreateTestSuggestionsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
@@ -19,6 +20,7 @@ service TestSuggestionsService {
     };
   }
   rpc BatchGetTestSuggestionsForEntities(BatchGetTestSuggestionsForEntitiesRequest) returns (BatchGetTestSuggestionsForEntitiesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
@@ -27,6 +29,7 @@ service TestSuggestionsService {
     };
   }
   rpc BatchAcceptTestSuggestions(BatchAcceptTestSuggestionsRequest) returns (BatchAcceptTestSuggestionsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
@@ -35,6 +38,7 @@ service TestSuggestionsService {
     };
   }
   rpc BatchRejectTestSuggestions(BatchRejectTestSuggestionsRequest) returns (BatchRejectTestSuggestionsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,

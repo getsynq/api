@@ -13,6 +13,8 @@ message TestSuggestion {
   string explanation = 2 [(buf.validate.field).required = true];
   // Read-only path of matched entity. This is a unique path that can be used to access the entity in the Synq's UI.
   optional string entity_synq_path = 3;
+  // Read-only Synq ID of matched entity. This is a unique ID that can be used to access the entity in the Synq's UI.
+  optional string id = 4;
 
   oneof test {
     // Checks if specified columns contain no NULL values (e.g., user_id should never be null)

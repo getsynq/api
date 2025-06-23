@@ -9,6 +9,7 @@ option go_package = "github.com/getsynq/api/monitors/info/v1";
 
 service MonitorInfoService {
   rpc MonitorInfo(MonitorInfoRequest) returns (MonitorInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_MONITORS_READ,

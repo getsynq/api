@@ -88,11 +88,13 @@ message IngestExecutionResponse {}
 
 service SqlMeshService {
   rpc IngestMetadata(IngestMetadataRequest) returns (IngestMetadataResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_SQLMESH]
     };
   }
   rpc IngestExecution(IngestExecutionRequest) returns (IngestExecutionResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_SQLMESH]
     };

@@ -12,6 +12,7 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 service TypesService {
   // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
   rpc UpsertType(UpsertTypeRequest) returns (UpsertTypeResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_TYPE_EDIT]
     };
@@ -19,6 +20,7 @@ service TypesService {
 
   // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
   rpc DeleteType(DeleteTypeRequest) returns (DeleteTypeResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_TYPE_EDIT]
     };
@@ -26,6 +28,7 @@ service TypesService {
 
   // List all entities.
   rpc ListTypes(ListTypesRequest) returns (ListTypesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

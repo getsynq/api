@@ -76,54 +76,63 @@ message BatchGetDeploymentRulesResponse {
 
 service DeploymentRulesService {
   rpc GetDeployOverview(GetDeployOverviewRequest) returns (GetDeployOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc GetDeployDeleteOverview(GetDeployDeleteOverviewRequest) returns (GetDeployDeleteOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc DeleteDeploymentRule(DeleteDeploymentRuleRequest) returns (DeleteDeploymentRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc ListDeploymentRules(ListDeploymentRulesRequest) returns (ListDeploymentRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc ListDeploymentRulesForAsset(ListDeploymentRulesForAssetRequest) returns (ListDeploymentRulesForAssetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc BatchGetDeploymentRules(BatchGetDeploymentRulesRequest) returns (BatchGetDeploymentRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc UpsertDeploymentRule(UpsertDeploymentRuleRequest) returns (UpsertDeploymentRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc BatchUpdateDeploymentRuleTitle(BatchUpdateDeploymentRuleTitleRequest) returns (BatchUpdateDeploymentRuleTitleResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
   }
 
   rpc DeployDeploymentRule(DeployDeploymentRuleRequest) returns (DeployDeploymentRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };

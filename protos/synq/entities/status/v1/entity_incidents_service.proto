@@ -14,6 +14,7 @@ option go_package = "github.com/getsynq/api/entities/status/v1";
 service EntityIncidentsService {
   // Get specific entity status by its identifier.
   rpc GetIncidents(GetIncidentsRequest) returns (GetIncidentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_STATUS_READ,
@@ -24,6 +25,7 @@ service EntityIncidentsService {
 
   // Get multiple entity statuses by their identifiers.
   rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_STATUS_READ,

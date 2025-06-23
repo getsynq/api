@@ -16,6 +16,7 @@ service TriageService {
   // Concludes the triage investigation for one or more issues by providing a structured conclusion
   // and supporting evidence. This method is used by the LLM agent to finalize its investigation.
   rpc Conclude(ConcludeRequest) returns (ConcludeResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -24,6 +25,7 @@ service TriageService {
   // Records evidence collected during the triage investigation. This method allows the LLM agent
   // to incrementally add evidence as it discovers information during the investigation process.
   rpc RecordEvidence(RecordEvidenceRequest) returns (RecordEvidenceResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -32,6 +34,7 @@ service TriageService {
   // Retrieves the latest triage state for one or more issues. This method is used by the LLM agent
   // to retrieve the current state of the issues it is working on.
   rpc BatchLatestConclusions(BatchLatestConclusionsRequest) returns (BatchLatestConclusionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -40,6 +43,7 @@ service TriageService {
   // Retrieves the triage state for one or more issues. This method is used by the LLM agent
   // to retrieve the current state of the issues it is working on.
   rpc BatchTriageState(BatchTriageStateRequest) returns (BatchTriageStateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -48,6 +52,7 @@ service TriageService {
   // Retrieves the triage state for one or more issues. This method is used by the LLM agent
   // to retrieve the current state of the issues it is working on.
   rpc ListTriageState(ListTriageStateRequest) returns (ListTriageStateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
@@ -55,6 +60,7 @@ service TriageService {
 
   // Marks an issue as in progress.  This method is used by the LLM agent to indicate that it has started working on an issue.
   rpc MarkAsInProgress(MarkAsInProgressRequest) returns (MarkAsInProgressResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };

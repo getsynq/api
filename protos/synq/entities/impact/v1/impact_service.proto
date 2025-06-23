@@ -11,6 +11,7 @@ option go_package = "github.com/getsynq/api/entities/impact/v1";
 
 service ImpactService {
   rpc GetImpact(GetImpactRequest) returns (GetImpactResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

@@ -10,30 +10,35 @@ option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
 
 service AtlanWorkflowService {
   rpc SetConnectionMappings(SetConnectionMappingsRequest) returns (SetConnectionMappingsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc RemoveConnectionMappings(RemoveConnectionMappingsRequest) returns (RemoveConnectionMappingsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc GetConnectionMappings(GetConnectionMappingsRequest) returns (GetConnectionMappingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc GetProductMappings(GetProductMappingsRequest) returns (GetProductMappingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc GetDomainMappings(GetDomainMappingsRequest) returns (GetDomainMappingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
@@ -41,12 +46,14 @@ service AtlanWorkflowService {
 
   // Run a synchronization job for the integration.
   rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
   }
 
   rpc FetchRuns(FetchRunsRequest) returns (FetchRunsResponse) {
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };

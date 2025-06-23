@@ -32,6 +32,7 @@ message AssetSelectionQuery {
       synq.queries.v1.WithAnnotation with_annotation = 4;
       synq.queries.v1.InDataPlatform in_data_platform = 5;
       synq.queries.v1.InFolder in_folder = 6;
+      synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
 
       AssetSelectionQuery query = 100;
       synq.queries.v1.Unsupported unsupported = 101;

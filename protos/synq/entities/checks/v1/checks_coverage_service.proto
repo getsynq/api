@@ -21,6 +21,7 @@ service ChecksCoverageService {
   // - Check propagation paths
   // - Column usage statistics
   rpc GetCoverage(GetCoverageRequest) returns (GetCoverageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,

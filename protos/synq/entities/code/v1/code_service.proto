@@ -17,6 +17,7 @@ service CodeService {
   // This includes SQL queries, Python scripts, dbt models, and other code configurations
   // that define or are part of the entity's functionality.
   rpc ListCode(ListCodeRequest) returns (ListCodeResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_CODE_READ,
