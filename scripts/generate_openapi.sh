@@ -45,5 +45,13 @@ set -e
 
 echo "Generating swagger files..."
 protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS} --openapi_out=${DOCS_DIR} --openapi_opt='title=SYNQ,version=v1,description=REST API interface for SYNQ' $(grep -r -l "google.api.http" ${PROTOS_DIR}/synq)
+
+yq -i -I 4 -e -p yaml -o yaml '
+    .security[0].bearerAuth = [] |
+    .components.securitySchemes.bearerAuth.type = "http" |
+    .components.securitySchemes.bearerAuth.scheme = "bearer" |
+    .servers[0].url = "https://developer.synq.io"
+' "${DOCS_DIR}"/openapi.yaml
+
 set +e
 exit 0

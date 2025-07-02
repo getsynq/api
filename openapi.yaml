@@ -246,5 +246,11 @@ components:
             description: |-
                 Authentication using a user-managed key pair.
                  The private key is stored safely as a secret. The response does not include the private key for security.
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
 tags:
     - name: PlatformsService
+security:
+    - bearerAuth: []
