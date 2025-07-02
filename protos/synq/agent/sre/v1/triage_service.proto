@@ -3,10 +3,10 @@ syntax = "proto3";
 package synq.agent.sre.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/agent/sre/v1/conclusion.proto";
 import "synq/agent/sre/v1/evidence.proto";
 import "synq/agent/sre/v1/triage_state.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
@@ -47,9 +47,7 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
-    option (google.api.http) = {
-      get: "/api/triage/v1/conclusions"
-    };
+    option (google.api.http) = {get: "/api/triage/v1/conclusions"};
   }
 
   // Retrieves the triage state for one or more issues. This method is used by the LLM agent
@@ -59,9 +57,7 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
-    option (google.api.http) = {
-      get: "/api/triage/v1/states"
-    };
+    option (google.api.http) = {get: "/api/triage/v1/states"};
   }
 
   // Retrieves the triage state for one or more issues. This method is used by the LLM agent
@@ -71,9 +67,7 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
-    option (google.api.http) = {
-      get: "/api/triage/v1/statuses"
-    };
+    option (google.api.http) = {get: "/api/triage/v1/statuses"};
   }
 
   // Marks an issue as in progress.  This method is used by the LLM agent to indicate that it has started working on an issue.
@@ -84,6 +78,18 @@ service TriageService {
     };
     option (google.api.http) = {
       patch: "/api/triage/v1/in-progress"
+      body: "*"
+    };
+  }
+
+  // Marks an issue as failed triaging.  This method is used by the LLM agent to indicate that it was unable to triage.
+  rpc MarkFailed(MarkFailedRequest) returns (MarkFailedResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+    option (google.api.http) = {
+      patch: "/api/triage/v1/failed"
       body: "*"
     };
   }
@@ -163,9 +169,34 @@ message ListTriageStateResponse {
 
 message MarkAsInProgressRequest {
   // List of issue IDs for which work has started.
-  repeated string issue_ids = 1;
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }
 
 message MarkAsInProgressResponse {
-  repeated string marked_issue_ids = 1;
+  repeated string marked_issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkFailedRequest {
+  // List of issue IDs for which work has started.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkFailedResponse {
+  repeated string marked_issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }

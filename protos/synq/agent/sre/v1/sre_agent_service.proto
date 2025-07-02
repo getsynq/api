@@ -19,6 +19,7 @@ service SreAgentService {
   }
 
   rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };

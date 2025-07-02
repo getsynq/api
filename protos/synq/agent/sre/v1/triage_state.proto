@@ -15,6 +15,10 @@ enum IssueTriageStatus {
   ISSUE_TRIAGE_STATUS_SCHEDULED = 1;
   // SRE agent is actively investigating the issue, collecting evidence and analyzing the situation
   ISSUE_TRIAGE_STATUS_IN_PROGRESS = 2;
+  // Issue has been scheduled but later cancelled
+  ISSUE_TRIAGE_STATUS_CANCELLED = 7;
+  // Issue wasn't triaged as such process failed. Scheduling again is possible.
+  ISSUE_TRIAGE_STATUS_FAILED = 8;
   // SRE agent has generated conclusion for the issue
   ISSUE_TRIAGE_STATUS_TRIAGED = 3;
   // User accepted the issue conclusion SRE agent has determined
