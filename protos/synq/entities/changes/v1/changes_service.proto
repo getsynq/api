@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/entity_change.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/changes/v1";
@@ -30,6 +31,9 @@ service ChangesService {
         SCOPE_SRE_AGENT
       ]
     };
+    option (google.api.http) = {
+      get: "/api/changes/v1"
+    };
   }
 
   // BatchChange retrieves multiple entity changes by their IDs in a single request.
@@ -42,6 +46,9 @@ service ChangesService {
         SCOPE_ENTITY_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/changes/v1/batch"
     };
   }
 }

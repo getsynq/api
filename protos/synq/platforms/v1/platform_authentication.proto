@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package synq.platforms.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/platforms/v1";
+
+message PlatformAuthentication {
+  oneof authentication {
+    option (buf.validate.oneof).required = true;
+    TokenAuthentication token = 1;
+    OAuthAuthentication oauth = 2;
+    PasswordAuthentication password = 3;
+    SynqManagedKeyPairAuthentication synq_managed_key_pair = 4;
+    UserManagedKeyPairAuthentication user_managed_key_pair = 5;
+  }
+}
+
+// Authentication using a token (API key, PAT, etc)
+message TokenAuthentication {
+  string token = 1 [(buf.validate.field).required = true];
+}
+
+// Authentication using OAuth credentials
+message OAuthAuthentication {
+  string client_id = 1 [(buf.validate.field).required = true];
+  string client_secret = 2 [(buf.validate.field).required = true];
+}
+
+// Authentication using a username and password
+message PasswordAuthentication {
+  string username = 1 [(buf.validate.field).required = true];
+  string password = 2 [(buf.validate.field).required = true];
+}
+
+// Authentication using a managed key pair.
+// The public key will be set and returned by the server after the authentication is created.
+message SynqManagedKeyPairAuthentication {
+  optional string public_key = 1;
+}
+
+// Authentication using a user-managed key pair.
+// The private key is stored safely as a secret. The response does not include the private key for security.
+message UserManagedKeyPairAuthentication {
+  string private_key = 1 [(buf.validate.field).required = true];
+}

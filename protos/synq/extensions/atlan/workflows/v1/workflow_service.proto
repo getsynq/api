@@ -4,6 +4,7 @@ package synq.extensions.atlan.workflows.v1;
 import "buf/validate/validate.proto";
 import "synq/extensions/atlan/workflows/v1/mappings.proto";
 import "synq/extensions/atlan/workflows/v1/workflow_run.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
@@ -14,12 +15,20 @@ service AtlanWorkflowService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      post: "/api/extensions/atlan/workflows/v1/connection-mappings"
+      body: "*"
+    };
   }
 
   rpc RemoveConnectionMappings(RemoveConnectionMappingsRequest) returns (RemoveConnectionMappingsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      delete: "/api/extensions/atlan/workflows/v1/connection-mappings"
+      body: "*"
     };
   }
 
@@ -28,6 +37,9 @@ service AtlanWorkflowService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      get: "/api/extensions/atlan/workflows/v1/connection-mappings"
+    };
   }
 
   rpc GetProductMappings(GetProductMappingsRequest) returns (GetProductMappingsResponse) {
@@ -35,12 +47,18 @@ service AtlanWorkflowService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      get: "/api/extensions/atlan/workflows/v1/product-mappings"
+    };
   }
 
   rpc GetDomainMappings(GetDomainMappingsRequest) returns (GetDomainMappingsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      get: "/api/extensions/atlan/workflows/v1/domain-mappings"
     };
   }
 
@@ -50,12 +68,18 @@ service AtlanWorkflowService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      post: "/api/extensions/atlan/workflows/v1/synchronize"
+    };
   }
 
   rpc FetchRuns(FetchRunsRequest) returns (FetchRunsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      get: "/api/extensions/atlan/workflows/v1/runs"
     };
   }
 }

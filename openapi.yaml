@@ -1,0 +1,250 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: SYNQ
+    description: REST API interface for SYNQ
+    version: v1
+servers:
+    - url: https://developer.synq.io
+paths:
+    /api/platforms/v1:
+        post:
+            tags:
+                - PlatformsService
+            operationId: PlatformsService_SetPlatformAuthentication
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SetPlatformAuthenticationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetPlatformAuthenticationResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+components:
+    schemas:
+        BigqueryIdentifier:
+            type: object
+            properties:
+                project:
+                    type: string
+                    description: BigQuery project
+        ClickhouseIdentifier:
+            type: object
+            properties:
+                host:
+                    type: string
+                    description: Clickhouse host inclusive of port
+                schema:
+                    type: string
+                    description: Clickhouse database
+        DataPlatformIdentifier:
+            type: object
+            properties:
+                unknown:
+                    $ref: '#/components/schemas/UnknownDataPlatform'
+                bigquery:
+                    $ref: '#/components/schemas/BigqueryIdentifier'
+                clickhouse:
+                    $ref: '#/components/schemas/ClickhouseIdentifier'
+                snowflake:
+                    $ref: '#/components/schemas/SnowflakeIdentifier'
+                redshift:
+                    $ref: '#/components/schemas/RedshiftIdentifier'
+                postgres:
+                    $ref: '#/components/schemas/PostgresIdentifier'
+                mysql:
+                    $ref: '#/components/schemas/MysqlIdentifier'
+                databricks:
+                    $ref: '#/components/schemas/DatabricksIdentifier'
+                dbtCloud:
+                    $ref: '#/components/schemas/DbtCloudIdentifier'
+                sqlMesh:
+                    $ref: '#/components/schemas/SqlMeshIdentifier'
+                duckdb:
+                    $ref: '#/components/schemas/DuckDbIdentifier'
+                trino:
+                    $ref: '#/components/schemas/TrinoIdentifier'
+                synqIntegrationId:
+                    type: string
+                    description: SYNQ integration ID maps to the created integration on the SYNQ platform.
+            description: DataPlatformIdentifier is a unique reference to a data platform integrated with Synq.
+        DatabricksIdentifier:
+            type: object
+            properties:
+                workspace:
+                    type: string
+                    description: URL of the databricks workspace
+        DbtCloudIdentifier:
+            type: object
+            properties:
+                apiEndpoint:
+                    type: string
+                    description: API endpoint for Dbt Cloud
+                accountId:
+                    type: string
+                    description: Account ID
+                projectId:
+                    type: string
+                    description: Project ID
+        DuckDbIdentifier:
+            type: object
+            properties:
+                motherduckAccount:
+                    type: string
+        GoogleProtobufAny:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        MysqlIdentifier:
+            type: object
+            properties:
+                host:
+                    type: string
+                    description: Mysql host inclusive of port
+        OAuthAuthentication:
+            type: object
+            properties:
+                clientId:
+                    type: string
+                clientSecret:
+                    type: string
+            description: Authentication using OAuth credentials
+        PasswordAuthentication:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+            description: Authentication using a username and password
+        PlatformAuthentication:
+            type: object
+            properties:
+                token:
+                    $ref: '#/components/schemas/TokenAuthentication'
+                oauth:
+                    $ref: '#/components/schemas/OAuthAuthentication'
+                password:
+                    $ref: '#/components/schemas/PasswordAuthentication'
+                synqManagedKeyPair:
+                    $ref: '#/components/schemas/SynqManagedKeyPairAuthentication'
+                userManagedKeyPair:
+                    $ref: '#/components/schemas/UserManagedKeyPairAuthentication'
+        PostgresIdentifier:
+            type: object
+            properties:
+                host:
+                    type: string
+                    description: Postgres host inclusive of port
+                database:
+                    type: string
+                    description: Postgres database
+        RedshiftIdentifier:
+            type: object
+            properties:
+                cluster:
+                    type: string
+                    description: Redshift cluster
+                database:
+                    type: string
+                    description: Redshift database
+        SetPlatformAuthenticationRequest:
+            type: object
+            properties:
+                platform:
+                    allOf:
+                        - $ref: '#/components/schemas/DataPlatformIdentifier'
+                    description: Platform identifier
+                authentication:
+                    allOf:
+                        - $ref: '#/components/schemas/PlatformAuthentication'
+                    description: Authentication details
+        SetPlatformAuthenticationResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                authentication:
+                    allOf:
+                        - $ref: '#/components/schemas/PlatformAuthentication'
+                    description: The authentication is returned in case there is a server side set information to be passed to the client.
+        SnowflakeIdentifier:
+            type: object
+            properties:
+                account:
+                    type: string
+                    description: Snowflake account
+                database:
+                    type: string
+                    description: Snowflake database
+        SqlMeshIdentifier:
+            type: object
+            properties:
+                defaultDatabaseInstance:
+                    type: string
+                    description: Default database instance for SQL Mesh
+        Status:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+                    format: int32
+                message:
+                    type: string
+                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GoogleProtobufAny'
+                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
+            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
+        SynqManagedKeyPairAuthentication:
+            type: object
+            properties:
+                publicKey:
+                    type: string
+            description: |-
+                Authentication using a managed key pair.
+                 The public key will be set and returned by the server after the authentication is created.
+        TokenAuthentication:
+            type: object
+            properties:
+                token:
+                    type: string
+            description: Authentication using a token (API key, PAT, etc)
+        TrinoIdentifier:
+            type: object
+            properties:
+                coordinator:
+                    type: string
+        UnknownDataPlatform:
+            type: object
+            properties: {}
+        UserManagedKeyPairAuthentication:
+            type: object
+            properties:
+                privateKey:
+                    type: string
+            description: |-
+                Authentication using a user-managed key pair.
+                 The private key is stored safely as a secret. The response does not include the private key for security.
+tags:
+    - name: PlatformsService

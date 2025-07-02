@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.monitors.automated_monitors.v1;
 
 import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
@@ -80,12 +81,18 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
+    option (google.api.http) = {
+      get: "/api/monitors/automated/v1/deployment-rule"
+    };
   }
 
   rpc GetDeployDeleteOverview(GetDeployDeleteOverviewRequest) returns (GetDeployDeleteOverviewResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      get: "/api/monitors/automated/v1/deployment-rule/{id}/deleted"
     };
   }
 
@@ -94,12 +101,18 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
+    option (google.api.http) = {
+      delete: "/api/monitors/automated/v1/deployment-rule/{id}"
+    };
   }
 
   rpc ListDeploymentRules(ListDeploymentRulesRequest) returns (ListDeploymentRulesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      get: "/api/monitors/automated/v1/deployment-rules"
     };
   }
 
@@ -108,12 +121,18 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
+    option (google.api.http) = {
+      get: "/api/monitors/automated/v1/deployment-rules/{asset_path}"
+    };
   }
 
   rpc BatchGetDeploymentRules(BatchGetDeploymentRulesRequest) returns (BatchGetDeploymentRulesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      get: "/api/monitors/automated/v1/deployment-rules/batch"
     };
   }
 
@@ -122,6 +141,10 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/monitors/automated/v1/deployment-rules"
+      body: "*"
+    };
   }
 
   rpc BatchUpdateDeploymentRuleTitle(BatchUpdateDeploymentRuleTitleRequest) returns (BatchUpdateDeploymentRuleTitleResponse) {
@@ -129,12 +152,20 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
+    option (google.api.http) = {
+      patch: "/api/monitors/automated/v1/deployment-rules"
+      body: "*"
+    };
   }
 
   rpc DeployDeploymentRule(DeployDeploymentRuleRequest) returns (DeployDeploymentRuleResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/automated/v1/deployment-rules/deployed"
+      body: "*"
     };
   }
 }

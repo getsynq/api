@@ -3,6 +3,7 @@ package synq.monitors.info.v1;
 
 import "synq/entities/v1/identifier.proto";
 import "synq/monitors/info/v1/monitor_info.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/monitors/info/v1";
@@ -15,6 +16,9 @@ service MonitorInfoService {
         SCOPE_MONITORS_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/monitors/info/v1/{id}"
     };
   }
 }

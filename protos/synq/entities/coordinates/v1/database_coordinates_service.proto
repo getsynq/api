@@ -5,6 +5,7 @@ package synq.entities.coordinates.v1;
 import "buf/validate/validate.proto";
 import "synq/entities/coordinates/v1/database_coordinates.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/coordinates/v1";
@@ -20,6 +21,9 @@ service DatabaseCoordinatesService {
         SCOPE_ENTITY_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/coordinates/v1/database"
     };
   }
 }

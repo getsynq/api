@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "synq/agent/sre/v1/conclusion.proto";
 import "synq/agent/sre/v1/evidence.proto";
 import "synq/agent/sre/v1/triage_state.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
@@ -20,6 +21,10 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
+    option (google.api.http) = {
+      post: "/api/triage/v1/{session_id}/conclusion"
+      body: "*"
+    };
   }
 
   // Records evidence collected during the triage investigation. This method allows the LLM agent
@@ -28,6 +33,10 @@ service TriageService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
+    };
+    option (google.api.http) = {
+      post: "/api/triage/v1/{session_id}/evidence"
+      body: "*"
     };
   }
 
@@ -38,6 +47,9 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
+    option (google.api.http) = {
+      get: "/api/triage/v1/conclusions"
+    };
   }
 
   // Retrieves the triage state for one or more issues. This method is used by the LLM agent
@@ -46,6 +58,9 @@ service TriageService {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
+    };
+    option (google.api.http) = {
+      get: "/api/triage/v1/states"
     };
   }
 
@@ -56,6 +71,9 @@ service TriageService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
     };
+    option (google.api.http) = {
+      get: "/api/triage/v1/statuses"
+    };
   }
 
   // Marks an issue as in progress.  This method is used by the LLM agent to indicate that it has started working on an issue.
@@ -63,6 +81,10 @@ service TriageService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_SRE_AGENT]
+    };
+    option (google.api.http) = {
+      patch: "/api/triage/v1/in-progress"
+      body: "*"
     };
   }
 }

@@ -2,6 +2,7 @@ syntax = "proto3";
 package synq.extensions.atlan.integrations.v1;
 
 import "synq/extensions/atlan/integrations/v1/integration.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/extensions/atlan/integrations/v1";
@@ -13,12 +14,19 @@ service AtlanIntegrationService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      post: "/api/extensions/atlan/integrations/v1"
+      body: "*"
+    };
   }
 
   rpc Get(GetRequest) returns (GetResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      get: "/api/extensions/atlan/integrations/v1"
     };
   }
 
@@ -27,6 +35,9 @@ service AtlanIntegrationService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
+    option (google.api.http) = {
+      delete: "/api/extensions/atlan/integrations/v1"
+    };
   }
 
   // Activate or deactivate the integration.
@@ -34,6 +45,10 @@ service AtlanIntegrationService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      patch: "/api/extensions/atlan/integrations/v1"
+      body: "*"
     };
   }
 }

@@ -4,6 +4,7 @@ package synq.datachecks.sqltests.v1;
 
 import "synq/datachecks/sqltests/v1/sql_tests.proto";
 import "synq/entities/v1/annotation.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
@@ -16,6 +17,10 @@ service SqlTestsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/datachecks/sqltests/v1/batch"
+      body: "*"
+    };
   }
 
   // List SqlTests for given annotations.
@@ -26,6 +31,9 @@ service SqlTestsService {
         SCOPE_DATACHECKS_SQLTESTS_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/datachecks/sqltests/v1"
     };
   }
 
@@ -38,6 +46,9 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
+    option (google.api.http) = {
+      get: "/api/datachecks/sqltests/v1/batch"
+    };
   }
 
   // Delete SqlTests by their IDs.
@@ -45,6 +56,10 @@ service SqlTestsService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
+    };
+    option (google.api.http) = {
+      delete: "/api/datachecks/sqltests/v1/batch"
+      body: "*"
     };
   }
 
@@ -56,6 +71,9 @@ service SqlTestsService {
         SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/datachecks/sqltests/v1/audit"
     };
   }
 }

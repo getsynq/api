@@ -4,6 +4,7 @@ package synq.issues.issues.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/issues/issues/v1/issues.proto";
@@ -15,6 +16,9 @@ option go_package = "github.com/getsynq/api/issues/issues/v1";
 service IssuesService {
   rpc BatchGetIssues(BatchGetIssuesRequest) returns (BatchGetIssuesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      get: "/api/issues/v1/batch",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ISSUES_READ,
@@ -25,6 +29,10 @@ service IssuesService {
 
   rpc ListIssues(ListIssuesRequest) returns (ListIssuesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      get: "/api/issues/v1",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ISSUES_READ,
@@ -36,6 +44,10 @@ service IssuesService {
   // Mark issue as being investigated.
   rpc MarkInvestigating(MarkInvestigatingRequest) returns (MarkInvestigatingResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v1/{issue_id}/mark-investigating",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ISSUES_EDIT]
     };
@@ -44,6 +56,10 @@ service IssuesService {
   // Mark issue as fixed.
   rpc MarkFixed(MarkFixedRequest) returns (MarkFixedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v1/{issue_id}/mark-fixed",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ISSUES_EDIT]
     };
@@ -52,6 +68,10 @@ service IssuesService {
   // Mark issue as expected.
   rpc MarkExpected(MarkExpectedRequest) returns (MarkExpectedResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v1/{issue_id}/mark-expected",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ISSUES_EDIT]
     };
@@ -60,6 +80,10 @@ service IssuesService {
   // Mark issue as no action needed.
   rpc MarkNoActionNeeded(MarkNoActionNeededRequest) returns (MarkNoActionNeededResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v1/{issue_id}/mark-no-action-needed",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ISSUES_EDIT]
     };
@@ -68,6 +92,10 @@ service IssuesService {
   // Post a comment on an issue.
   rpc PostComment(PostCommentRequest) returns (PostCommentResponse) {
     option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/issues/v1/{issue_id}/comment",
+      body: "*",
+    };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ISSUES_EDIT]
     };

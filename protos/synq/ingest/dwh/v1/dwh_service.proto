@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/dwh/v1/dwh_agent_task.proto";
 import "synq/ingest/dwh/v1/dwh.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
@@ -114,12 +115,20 @@ service DwhService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/object-information"
+      body: "*"
+    };
   }
 
   rpc IngestSqlDefinitions(IngestSqlDefinitionsRequest) returns (IngestSqlDefinitionsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
+    };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/sql-definitions"
+      body: "*"
     };
   }
 
@@ -128,6 +137,10 @@ service DwhService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/schemas"
+      body: "*"
+    };
   }
 
   rpc IngestObjectMetrics(IngestObjectMetricsRequest) returns (IngestObjectMetricsResponse) {
@@ -135,12 +148,20 @@ service DwhService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
     };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/object-metrics"
+      body: "*"
+    };
   }
 
   rpc IngestTaskResults(IngestTaskResultsRequest) returns (IngestTaskResultsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INGEST_DWH]
+    };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/task-results"
+      body: "*"
     };
   }
 }

@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package synq.platforms.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "synq/platforms/v1/platform_authentication.proto";
+import "synq/platforms/v1/data_platforms.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/platforms/v1";
+
+// PlatformsService is a service for managing Platforms and Integrations.
+service PlatformsService {
+  option (google.api.default_host) = "developer.synq.io";
+
+  rpc SetPlatformAuthentication(SetPlatformAuthenticationRequest) returns (SetPlatformAuthenticationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/platforms/v1",
+      body: "*"
+    };
+  }
+}
+
+message SetPlatformAuthenticationRequest {
+  // Platform identifier
+  synq.platforms.v1.DataPlatformIdentifier platform = 1 [(buf.validate.field).required = true];
+
+  // Authentication details
+  synq.platforms.v1.PlatformAuthentication authentication = 2 [(buf.validate.field).required = true];
+}
+
+message SetPlatformAuthenticationResponse {
+  bool success = 1 [(buf.validate.field).required = true];
+  // The authentication is returned in case there is a server side set information to be passed to the client.
+  optional synq.platforms.v1.PlatformAuthentication authentication = 2;
+}

@@ -5,6 +5,7 @@ package synq.entities.entities.v1;
 import "buf/validate/validate.proto";
 import "synq/entities/v1/entity.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/entities/v1";
@@ -21,6 +22,9 @@ service EntitiesService {
         SCOPE_SRE_AGENT
       ]
     };
+    option (google.api.http) = {
+      get: "/api/entities/v1/{id}"
+    };
   }
 
   // Get multiple entities by their identifiers.
@@ -31,6 +35,9 @@ service EntitiesService {
         SCOPE_ENTITY_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/entities/v1"
     };
   }
 }

@@ -4,6 +4,7 @@ package synq.entities.lineage.v1;
 
 import "synq/entities/lineage/v1/lineage.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/lineage/v1";
@@ -19,6 +20,9 @@ service LineageService {
         SCOPE_LINEAGE_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/lineage/v1"
     };
   }
 }

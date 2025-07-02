@@ -5,6 +5,7 @@ package synq.datachecks.testsuggestions.v1;
 import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/testsuggestions/v1";
@@ -18,6 +19,10 @@ service TestSuggestionsService {
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
       ]
     };
+    option (google.api.http) = {
+      post: "/api/datachecks/testsuggestions/v1"
+      body: "*"
+    };
   }
   rpc BatchGetTestSuggestionsForEntities(BatchGetTestSuggestionsForEntitiesRequest) returns (BatchGetTestSuggestionsForEntitiesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -26,6 +31,9 @@ service TestSuggestionsService {
         SCOPE_SRE_AGENT,
         SCOPE_DATACHECKS_TESTSUGGESTIONS_READ
       ]
+    };
+    option (google.api.http) = {
+      get: "/api/datachecks/testsuggestions/v1"
     };
   }
   rpc BatchAcceptTestSuggestions(BatchAcceptTestSuggestionsRequest) returns (BatchAcceptTestSuggestionsResponse) {
@@ -36,6 +44,10 @@ service TestSuggestionsService {
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
       ]
     };
+    option (google.api.http) = {
+      patch: "/api/datachecks/testsuggestions/v1/accepted"
+      body: "*"
+    };
   }
   rpc BatchRejectTestSuggestions(BatchRejectTestSuggestionsRequest) returns (BatchRejectTestSuggestionsResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -44,6 +56,10 @@ service TestSuggestionsService {
         SCOPE_SRE_AGENT,
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
       ]
+    };
+    option (google.api.http) = {
+      patch: "/api/datachecks/testsuggestions/v1/rejected"
+      body: "*"
     };
   }
 }

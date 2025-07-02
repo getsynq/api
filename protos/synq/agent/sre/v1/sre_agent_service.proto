@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+service SreAgentService {
+  // buf:lint:ignore RPC_NO_CLIENT_STREAMING
+  rpc Connect(stream ConnectRequest) returns (stream ConnectResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
+}
+
+message ConnectRequest {
+  oneof message {
+    option (buf.validate.oneof).required = true;
+    Hello hello = 1;
+    AgentTaskResponse task_response = 3;
+  }
+}
+
+message ConnectResponse {
+  repeated agent.sre.v1.AgentTask tasks = 1;
+}
+
+message Hello {
+  string name = 1;
+  string build_version = 2;
+}
+
+message AgentTaskResponse {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string task_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  optional string error = 3;
+}
+
+message AgentTask {
+  string task_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  google.protobuf.Timestamp created_at = 2;
+  oneof task {
+    option (buf.validate.oneof).required = true;
+    synq.agent.sre.v1.TriageTask triage = 10;
+    synq.agent.sre.v1.SuggestTestsTask suggest_tests = 11;
+  }
+}
+
+message TriageTask {
+  repeated string issue_ids = 1;
+}
+
+message SuggestTestsTask {
+  repeated synq.entities.v1.Identifier entity_ids = 1;
+}

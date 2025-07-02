@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/executions/v1";
@@ -17,6 +18,10 @@ service EntityExecutionsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXECUTION_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/executions/v1"
+      body: "*"
+    };
   }
 
   // LogEntry is a log message for the custom entity
@@ -27,6 +32,10 @@ service EntityExecutionsService {
         SCOPE_EXECUTION_EDIT,
         SCOPE_EXECUTION_LOG_EDIT
       ]
+    };
+    option (google.api.http) = {
+      post: "/api/executions/v1/log-entry"
+      body: "*"
     };
   }
 }
