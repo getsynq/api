@@ -17,6 +17,12 @@ service SreAgentService {
       scopes: [SCOPE_SRE_AGENT]
     };
   }
+
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
 }
 
 message ConnectRequest {
@@ -37,8 +43,7 @@ message Hello {
 }
 
 message AgentTaskResponse {
-  string connection_id = 1 [(buf.validate.field) = {required: true}];
-  string task_id = 2 [(buf.validate.field) = {
+  string task_id = 1 [(buf.validate.field) = {
     required: true
     string: {uuid: true}
   }];
@@ -64,4 +69,12 @@ message TriageTask {
 
 message SuggestTestsTask {
   repeated synq.entities.v1.Identifier entity_ids = 1;
+}
+
+message GetConfigRequest {}
+
+message GetConfigResponse {
+  string workspace = 1;
+  string triage_system_prompt = 2;
+  string tester_system_prompt = 3;
 }
