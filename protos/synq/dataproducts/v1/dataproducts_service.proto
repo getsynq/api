@@ -58,8 +58,8 @@ service DataproductsService {
     };
   }
 
-  // Add definition part to the definition of an existing dataproduct.
-  rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+  // Upsert definition part to the definition of an existing dataproduct.
+  rpc UpsertDefinitionPart(UpsertDefinitionPartRequest) returns (UpsertDefinitionPartResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
@@ -117,12 +117,12 @@ message SetDefinitionRequest {
 
 message SetDefinitionResponse {}
 
-message AddDefinitionPartRequest {
+message UpsertDefinitionPartRequest {
   synq.entities.v1.DataproductIdentifier product_identifier = 1;
   synq.dataproducts.v1.DataproductDefinition.Part part = 2;
 }
 
-message AddDefinitionPartResponse {}
+message UpsertDefinitionPartResponse {}
 
 message RemoveDefinitionPartRequest {
   synq.entities.v1.DataproductIdentifier product_identifier = 1;

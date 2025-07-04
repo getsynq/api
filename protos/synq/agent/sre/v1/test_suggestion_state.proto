@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+enum TestSuggestionStatus {
+  TEST_SUGGESTION_STATUS_UNSPECIFIED = 0;
+  TEST_SUGGESTION_STATUS_SCHEDULED = 1;
+  TEST_SUGGESTION_STATUS_RUNNING = 2;
+  TEST_SUGGESTION_STATUS_COMPLETED = 3;
+  TEST_SUGGESTION_STATUS_FAILED = 4;
+  TEST_SUGGESTION_STATUS_CANCELLED = 5;
+}
+
+message TestSuggestionState {
+  string workspace = 1;
+  string path = 2;
+  synq.entities.v1.Identifier identifier = 3;
+  TestSuggestionStatus status = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp scheduled_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}

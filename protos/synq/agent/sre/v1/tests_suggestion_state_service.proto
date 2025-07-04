@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "synq/agent/sre/v1/test_suggestion_state.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+service TestsSuggestionStateService {
+  rpc SuggestFor(SuggestForRequest) returns (SuggestForResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc GetActiveSuggestionStatesFor(GetActiveSuggestionStatesForRequest) returns (GetActiveSuggestionStatesForResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+}
+
+message SuggestForRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1;
+  string user_prompt = 2;
+}
+
+message SuggestForResponse {}
+
+message GetActiveSuggestionStatesForRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1;
+}
+
+message GetActiveSuggestionStatesForResponse {
+  repeated synq.agent.sre.v1.TestSuggestionState test_suggestion_states = 1;
+}

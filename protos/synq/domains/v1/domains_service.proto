@@ -59,8 +59,8 @@ service DomainsService {
     };
   }
 
-  // Add definition part to the definition of an existing domain.
-  rpc AddDefinitionPart(AddDefinitionPartRequest) returns (AddDefinitionPartResponse) {
+  // Upsert definition part to the definition of an existing domain.
+  rpc UpsertDefinitionPart(UpsertDefinitionPartRequest) returns (UpsertDefinitionPartResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DOMAIN_EDIT]
@@ -141,12 +141,12 @@ message SetDefinitionRequest {
 
 message SetDefinitionResponse {}
 
-message AddDefinitionPartRequest {
+message UpsertDefinitionPartRequest {
   string domain_id = 1 [(buf.validate.field).string.uuid = true];
   synq.domains.v1.DomainDefinition.Part part = 2;
 }
 
-message AddDefinitionPartResponse {}
+message UpsertDefinitionPartResponse {}
 
 message RemoveDefinitionPartRequest {
   string domain_id = 1 [(buf.validate.field).string.uuid = true];
