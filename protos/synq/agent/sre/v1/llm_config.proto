@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+message LlmConfig {
+  OpenAIApi openai = 1 [(buf.validate.field) = {required: true}];
+
+  // How many Issue triages can run in parallel
+  int32 triage_parallelism = 2;
+  // How many test suggestions can be processed in parallel
+  int32 test_suggestions_parallelism = 3;
+}
+
+message OpenAIApi {
+  // Base URL of the OpenAPI compatible endpoint
+  string base_url = 1 [(buf.validate.field) = {required: true}];
+
+  // API key to use for the interaction with the API
+  string api_key = 2 [(buf.validate.field) = {required: true}];
+
+  // Model to use for complex operations
+  string thinking_model = 3 [(buf.validate.field) = {required: true}];
+
+  // Model to use for simpler operations, e.g. summary generation or improving the format of messages.
+  string summary_model = 4 [(buf.validate.field) = {required: true}];
+}

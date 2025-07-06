@@ -4,6 +4,7 @@ package synq.agent.sre.v1;
 
 import "buf/validate/validate.proto";
 import "synq/agent/dwh/v1/dwh_connection.proto";
+import "synq/agent/sre/v1/llm_config.proto";
 import "synq/agent/v1/synq.proto";
 
 option go_package = "github.com/getsynq/api/agent/sre/v1";
@@ -17,9 +18,11 @@ message Config {
   map<string, synq.agent.dwh.v1.Connection> connections = 3 [(buf.validate.field) = {
     map: {
       keys: {
-        string: {pattern: '^[a-zA-Z][a-zA-Z0-9-_]*$'}
+        string: {pattern: '^[0-9a-zA-Z][a-zA-Z0-9-_]*$'}
       }
       values: {required: true}
     }
   }];
+
+  synq.agent.sre.v1.LlmConfig llm = 4 [(buf.validate.field) = {required: true}];
 }
