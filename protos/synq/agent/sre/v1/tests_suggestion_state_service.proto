@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.agent.sre.v1;
 
+import "buf/validate/validate.proto";
 import "synq/agent/sre/v1/test_suggestion_state.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
@@ -28,6 +29,46 @@ service TestsSuggestionStateService {
       ]
     };
   }
+
+  rpc MarkAsRunning(MarkAsRunningRequest) returns (MarkAsRunningResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc MarkAsCompleted(MarkAsCompletedRequest) returns (MarkAsCompletedResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc MarkAsFailed(MarkAsFailedRequest) returns (MarkAsFailedResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc MarkAsCancelled(MarkAsCancelledRequest) returns (MarkAsCancelledResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
 }
 
 message SuggestForRequest {
@@ -43,4 +84,68 @@ message GetActiveSuggestionStatesForRequest {
 
 message GetActiveSuggestionStatesForResponse {
   repeated synq.agent.sre.v1.TestSuggestionState test_suggestion_states = 1;
+}
+
+message MarkAsRunningRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsRunningResponse {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsCompletedRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsCompletedResponse {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsFailedRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsFailedResponse {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsCancelledRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message MarkAsCancelledResponse {
+  repeated synq.entities.v1.Identifier identifiers = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
 }
