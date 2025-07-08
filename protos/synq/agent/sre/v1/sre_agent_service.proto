@@ -78,4 +78,5 @@ message GetConfigResponse {
   string workspace = 1;
   string triage_system_prompt = 2;
   string tester_system_prompt = 3;
+  string workspace_system_prompt = 4;
 }
