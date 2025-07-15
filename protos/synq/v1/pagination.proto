@@ -6,6 +6,17 @@ import "google/protobuf/descriptor.proto";
 option go_package = "github.com/getsynq/api/v1";
 
 message Pagination {
+  // Cursor for the next page of results. If not provided, returns the first page.
   optional string cursor = 1;
+  // Maximum number of items to return in a single page. If not provided, defaults vary per API.
   optional int32 page_size = 2;
+}
+
+message PageInfo {
+  // Total number of items matching the request.
+  int32 total_count = 1;
+  // Number of items returned in this response.
+  int32 count = 2;
+  // ID of the last item in the response. Used for pagination.
+  string last_id = 3;
 }

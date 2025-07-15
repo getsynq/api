@@ -1,0 +1,309 @@
+syntax = "proto3";
+
+package synq.issues.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/issues/issues/v1/issues.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/issues/v2";
+
+// IssuesService is a service for managing Issues.
+service IssuesService {
+  rpc BatchGetIssues(BatchGetIssuesRequest) returns (BatchGetIssuesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/issues/v2/batch"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ISSUES_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc ListIssues(ListIssuesRequest) returns (ListIssuesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      get: "/api/issues/v2"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ISSUES_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  // Mark issue as being investigated.
+  rpc MarkInvestigating(MarkInvestigatingRequest) returns (MarkInvestigatingResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v2/{issue_id}/mark-investigating"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as fixed.
+  rpc MarkFixed(MarkFixedRequest) returns (MarkFixedResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v2/{issue_id}/mark-fixed"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as expected.
+  rpc MarkExpected(MarkExpectedRequest) returns (MarkExpectedResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v2/{issue_id}/mark-expected"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Mark issue as no action needed.
+  rpc MarkNoActionNeeded(MarkNoActionNeededRequest) returns (MarkNoActionNeededResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v2/{issue_id}/mark-no-action-needed"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
+  // Post a comment on an issue.
+  rpc PostComment(PostCommentRequest) returns (PostCommentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/issues/v2/{issue_id}/comment"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+}
+
+message BatchGetIssuesRequest {
+  // IDs of the issues to get.
+  repeated string issue_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+message BatchGetIssuesResponse {
+  // Issues.
+  map<string, synq.issues.issues.v1.Issue> issues = 1;
+}
+
+message ListIssuesRequest {
+  // Filter by entities.
+  optional synq.queries.v1.Query entities_query = 1;
+
+  enum Field {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    FIELD_UPDATED_AT = 0;
+    FIELD_STARTED_AT = 1;
+  }
+
+  message Time {
+    Field field = 1;
+    google.protobuf.Timestamp from = 2 [(buf.validate.field) = {
+      timestamp: {
+        lt_now: true
+        gt: {seconds: 1640995200}
+      }
+    }];
+    google.protobuf.Timestamp to = 3 [(buf.validate.field) = {
+      timestamp: {
+        lt_now: true
+        gt: {seconds: 1640995200}
+      }
+    }];
+  }
+
+  // Time range filter
+  optional Time time = 2;
+
+  message Sort {
+    Field sort_by = 1;
+    enum Order {
+      // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+      ORDER_ASC = 0;
+      ORDER_DESC = 1;
+    }
+    Order order = 2;
+  }
+
+  // Sort options
+  optional Sort sort = 3;
+
+  // Pagination
+  optional synq.v1.Pagination pagination = 4;
+
+  // Filter by issue lifecycle state
+  optional synq.issues.issues.v1.LifecycleState lifecycle_state = 5;
+}
+
+message ListIssuesResponse {
+  // Paging information.
+  synq.v1.PageInfo page_info = 1 [(buf.validate.field) = {required: true}];
+  repeated string issue_ids = 2 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+message MarkInvestigatingRequest {
+  // ID of the issue to mark as investigating.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor marking the issue as investigating.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as investigating. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
+}
+
+message MarkInvestigatingResponse {}
+
+message MarkFixedRequest {
+  // ID of the issue to mark as fixed.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor marking the issue as fixed.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as fixed. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
+}
+
+message MarkFixedResponse {}
+
+message MarkExpectedRequest {
+  // ID of the issue to mark as expected.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor marking the issue as expected.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as expected. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
+}
+
+message MarkExpectedResponse {}
+
+message MarkNoActionNeededRequest {
+  // ID of the issue to mark as no action needed.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor marking the issue as no action needed.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the issue was marked as no action needed. Defaults to the current time.
+  google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // Ignore status change if the issue already has a status.
+  bool require_no_existing_status = 4;
+}
+
+message MarkNoActionNeededResponse {}
+
+message PostCommentRequest {
+  // ID of the issue to post a comment on.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor posting the comment.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Comment to post.
+  string comment = 3 [(buf.validate.field) = {required: true}];
+
+  // Time at which the comment was posted. Defaults to the current time.
+  google.protobuf.Timestamp time = 4 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+}
+
+message PostCommentResponse {
+  string comment_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+}

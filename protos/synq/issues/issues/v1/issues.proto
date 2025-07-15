@@ -58,6 +58,9 @@ message Issue {
 
   // List of comments posted on the issue.
   repeated IssueComment comments = 16;
+
+  // Lifecycle state of the issue.
+  LifecycleState lifecycle_state = 17;
 }
 
 message IssueComment {
@@ -74,11 +77,30 @@ message MonitorTriggerDetails {
   optional string segment_value = 5;
 }
 
-// Life-cycle status of the issue.
+// Whether the issue is open / close.
 enum State {
   STATE_UNSPECIFIED = 0;
   STATE_OPEN = 1;
   STATE_CLOSED = 2;
+}
+
+// Issue LifecycleState represents the current state of the issue in its life-cycle.
+// The state is exclusively determined as per the priority which is in the order of the fields below.
+enum LifecycleState {
+  LIFECYCLE_STATE_UNSPECIFIED = 0;
+  // Issue has not been triaged yet. These are all the issues that
+  // do not satisfy the following states.
+  LIFECYCLE_STATE_UNTRIAGED = 1;
+  // Issue is closed. This is a terminal state.
+  LIFECYCLE_STATE_CLOSED = 2;
+  // Open issue that has been marked as resolved by the user.
+  LIFECYCLE_STATE_ONGOING_RESOLVED = 3;
+  // Open issue that has been declared as an incident.
+  LIFECYCLE_STATE_ONGOING_DECLARED = 4;
+  // Open issue that has been queued for autotriage.
+  LIFECYCLE_STATE_AUTOTRIAGE_QUEUED = 11;
+  // Issue has been autotriaged and an action has been suggested.
+  LIFECYCLE_STATE_AUTOTRIAGE_ACTION_SUGGESTED = 12; 
 }
 
 // Progress status of the issue.

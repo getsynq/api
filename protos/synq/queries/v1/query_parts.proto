@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.queries.v1;
 
+import "buf/validate/validate.proto";
 import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/platforms/v1/data_platform_types.proto";
@@ -59,6 +60,11 @@ message WithDataPlatformType {
 // Resolves to all entities belonging to the given folder structure.
 message InFolder {
   repeated string path = 1;
+}
+
+// Resolves to all entities in the given data domain.
+message InDomain {
+  string domain_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 // Collects all the parts of the query that are currently unsupported in translation.

@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package synq.monitors.custom_monitors.v1;
+
+import "synq/entities/v1/identifier.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
+
+message Segmentation {
+  // The expression to segment on (eg. "country", "meta['country']")
+  string expression = 1 [(buf.validate.field).required = true];
+}
+
+message TimePartitioning {
+  // The expression to partition on (eg. "created_at", "meta['created_at']")
+  string expression = 1 [(buf.validate.field).required = true];
+}
+
+message ScheduleDaily {
+  // Minutes since midnight (0-1439)
+  int32 minutes_since_midnight = 1 [
+    (buf.validate.field).int32.gt = 0,
+    (buf.validate.field).int32.lt = 1439
+  ];
+}
+
+message ScheduleHourly {
+  // Minutes since midnight (0-59)
+  int32 minutes_since_midnight = 1 [
+    (buf.validate.field).int32.gt = 0,
+    (buf.validate.field).int32.lt = 59
+  ];
+}
+
+
+message MonitorFreshness {
+  // The expression to filter on (eg. "created_at", "meta['created_at']")
+  string expression = 1 [(buf.validate.field).required = true];
+}
+
+message MonitorCustomNumeric {
+  string metric_aggregation = 1;
+}
+
+message MonitorVolume {}
+
+message MonitorFieldStats {
+  repeated string fields = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_WARNING = 1;
+  SEVERITY_ERROR = 2;
+}
+
+enum Sensitivity {
+  SENSITIVITY_UNSPECIFIED = 0;
+  SENSITIVITY_PRECISE = 1;
+  SENSITIVITY_BALANCED = 2;
+  SENSITIVITY_RELAXED = 3;
+}
+
+message ModeAnomalyEngine {
+  int32 sensitivity = 1;
+}
+message ModeFixedThresholds {
+  google.protobuf.DoubleValue min = 1;
+  google.protobuf.DoubleValue max = 2;
+}
+
+message MonitorDefinition {
+  string id = 1 [(buf.validate.field) = {
+    required: true,
+    string: {uuid: true}
+  }];
+  synq.entities.v1.Identifier monitored_id = 2 [(buf.validate.field).required = true];
+  TimePartitioning time_partitioning = 3 [(buf.validate.field).required = true];
+  optional Segmentation segmentation = 4;
+  optional string filter = 5;
+  Severity severity = 6;
+
+  oneof monitor {
+    MonitorFreshness freshness = 20;
+    MonitorVolume volume = 21;
+    MonitorCustomNumeric custom_numeric = 22;
+    MonitorFieldStats field_stats = 23;
+  }
+
+  oneof mode {
+    ModeAnomalyEngine anomaly_engine = 30;
+    ModeFixedThresholds fixed_thresholds = 31;
+  }
+
+  oneof schedule {
+    ScheduleDaily daily = 40;
+    ScheduleHourly hourly = 41;
+  }
+}

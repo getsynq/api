@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package synq.monitors.custom_monitors.v1;
+
+import "synq/v1/scope_authorization.proto";
+import "buf/validate/validate.proto";
+import "synq/monitors/custom_monitors/v1/monitor_definition.proto";
+
+option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
+
+service CustomMonitorsService {
+  rpc BatchCreateMonitor(BatchCreateMonitorRequest) returns (BatchCreateMonitorResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
+  rpc BatchDeleteMonitor(BatchDeleteMonitorRequest) returns (BatchDeleteMonitorResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
+  rpc BatchUpdateMonitorMode(BatchUpdateMonitorModeRequest) returns (BatchUpdateMonitorModeResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
+  rpc BatchUpdateMonitorSeverity(BatchUpdateMonitorSeverityRequest) returns (BatchUpdateMonitorSeverityResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+  
+}
+
+
+message BatchCreateMonitorRequest {
+  repeated MonitorDefinition monitors = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message BatchCreateMonitorResponse {
+  repeated string created_monitor_ids = 1;
+}
+
+message BatchDeleteMonitorRequest {
+  repeated string ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        string: {uuid: true}
+      }
+    },
+  }];
+}
+
+message BatchDeleteMonitorResponse {
+  repeated string deleted_ids = 1;
+}
+
+message BatchUpdateMonitorModeRequest {
+  repeated string ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        string: {uuid: true}
+      }
+    },
+  }];
+  // updates are only allowed for the same mode type. If you want to change the mode type, you need to delete and create a new monitor.
+  // if you want to change min/max thresholds, you can update the mode with the new min/max thresholds.
+  oneof mode {
+    ModeAnomalyEngine anomaly_engine = 10;
+    ModeFixedThresholds fixed_thresholds = 11;
+  }
+}
+
+message BatchUpdateMonitorModeResponse {
+  repeated string updated_ids = 1;
+}
+
+message BatchUpdateMonitorSeverityRequest {
+  repeated string ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        string: {uuid: true}
+      }
+    },
+  }];
+  Severity severity = 2;
+}
+
+message BatchUpdateMonitorSeverityResponse {
+  repeated string updated_ids = 1;
+}
