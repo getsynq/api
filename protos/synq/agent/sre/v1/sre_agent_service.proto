@@ -48,6 +48,9 @@ message AgentTaskResponse {
     required: true
     string: {uuid: true}
   }];
+  // Human visible message
+  string message = 2;
+  // Error message indicating a problem
   optional string error = 3;
 }
 
