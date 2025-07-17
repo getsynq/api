@@ -77,9 +77,31 @@ message SuggestTestsTask {
 
 message GetConfigRequest {}
 
+message DwhConnection {
+  // This will be connection in the agent or integration_id when managed
+  string connection_id = 1;
+  // What is the instance of this, e.g. BigQuery project or Databricks workspace
+  string instance = 2;
+  // Type of the DWH connection
+  string type = 3;
+  // Databases in this instance, this would be BigQuery dataset or Databricks catalog
+  repeated string databases = 4;
+  // Extra parameters present on the connection
+  map<string, string> parameters = 5;
+  // Indicates that SYNQ managed agent can access this connection
+  bool agent_access_enabled = 6;
+}
+
 message GetConfigResponse {
+  // Workspace to which agent is authenticated
   string workspace = 1;
+  // Extra instructions used while triaging and concluding issues.
   string triage_system_prompt = 2;
+  // Extra instructions used while suggesting tests.
   string tester_system_prompt = 3;
+  // Extra instructions describing workspace to which agent is connected.
   string workspace_system_prompt = 4;
+  // Description of all DWH connections/integrations configured in SYNQ. Will indicate to the agent
+  // that it can't access all the data sources if agent has no connections enabled.
+  repeated DwhConnection synq_dwh_connections = 5;
 }
