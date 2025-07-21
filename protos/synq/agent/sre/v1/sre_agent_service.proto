@@ -104,4 +104,9 @@ message GetConfigResponse {
   // Description of all DWH connections/integrations configured in SYNQ. Will indicate to the agent
   // that it can't access all the data sources if agent has no connections enabled.
   repeated DwhConnection synq_dwh_connections = 5;
+  // Extra instructions describing how issues should be grouped
+  string issue_grouping_system_prompt = 6;
+  // Indicates that SRE shouldn't group any issues
+  bool issue_grouping_disabled = 7;
+
 }

@@ -30,6 +30,26 @@ service TestsSuggestionStateService {
     };
   }
 
+  rpc BatchSuggestionStates(BatchSuggestionStatesRequest) returns (BatchSuggestionStatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
+  rpc ListSuggestionStates(ListSuggestionStatesRequest) returns (ListSuggestionStatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
+      ]
+    };
+  }
+
   rpc MarkAsRunning(MarkAsRunningRequest) returns (MarkAsRunningResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -83,6 +103,22 @@ message GetActiveSuggestionStatesForRequest {
 }
 
 message GetActiveSuggestionStatesForResponse {
+  repeated synq.agent.sre.v1.TestSuggestionState test_suggestion_states = 1;
+}
+
+message BatchSuggestionStatesRequest {
+  repeated synq.entities.v1.Identifier identifiers = 1;
+}
+
+message BatchSuggestionStatesResponse {
+  repeated synq.agent.sre.v1.TestSuggestionState test_suggestion_states = 1;
+}
+
+message ListSuggestionStatesRequest {
+  repeated synq.agent.sre.v1.TestSuggestionStatus statuses = 1;
+}
+
+message ListSuggestionStatesResponse {
   repeated synq.agent.sre.v1.TestSuggestionState test_suggestion_states = 1;
 }
 
