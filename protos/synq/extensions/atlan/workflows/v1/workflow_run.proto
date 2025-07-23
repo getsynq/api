@@ -12,6 +12,7 @@ enum Status {
 }
 
 message CommandResult {
+  option deprecated = true; // Deprecated: Use Log instead.
   string command = 1;
   Status status = 2;
   repeated string logs = 3;
@@ -20,8 +21,16 @@ message CommandResult {
 
 message WorkflowRun {
   string workspace = 1;
-  repeated CommandResult results = 2;
+  repeated CommandResult results = 2 [deprecated = true]; // Deprecated: Use Log instead.
   Status status = 3;
   google.protobuf.Timestamp started_at = 4;
   google.protobuf.Timestamp ended_at = 5;
+  repeated Log logs = 6;
+}
+
+message Log {
+  string message = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  Status status = 3;
+  map<string, string> metadata = 4;
 }

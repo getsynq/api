@@ -185,12 +185,13 @@ message MarkAsInProgressResponse {
 }
 
 message MarkFailedRequest {
-  // List of issue IDs for which work has started.
+  // List of issue IDs for which work has failed.
   repeated string issue_ids = 1 [(buf.validate.field) = {
     repeated: {
       items: {required: true}
     }
   }];
+  string error_message = 2;
 }
 
 message MarkFailedResponse {

@@ -160,6 +160,7 @@ message MarkAsFailedRequest {
       items: {required: true}
     }
   }];
+  string error_message = 2;
 }
 
 message MarkAsFailedResponse {
