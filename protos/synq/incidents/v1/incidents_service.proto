@@ -3,8 +3,8 @@ syntax = "proto3";
 package synq.incidents.v1;
 
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/incidents/v1/incidents.proto";
 import "synq/issues/actor/v1/actor.proto";
@@ -18,8 +18,8 @@ service IncidentsService {
   rpc CreateIncident(CreateIncidentRequest) returns (CreateIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      post: "/api/incidents/v1",
-      body: "*",
+      post: "/api/incidents/v1"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -29,8 +29,8 @@ service IncidentsService {
   rpc RenameIncident(RenameIncidentRequest) returns (RenameIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      patch: "/api/incidents/v1/{incident_id}/rename",
-      body: "*",
+      patch: "/api/incidents/v1/{incident_id}/rename"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -41,8 +41,8 @@ service IncidentsService {
   rpc CancelIncident(CancelIncidentRequest) returns (CancelIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      patch: "/api/incidents/v1/{incident_id}/cancel",
-      body: "*",
+      patch: "/api/incidents/v1/{incident_id}/cancel"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -53,8 +53,8 @@ service IncidentsService {
   rpc CloseIncident(CloseIncidentRequest) returns (CloseIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      patch: "/api/incidents/v1/{incident_id}/close",
-      body: "*",
+      patch: "/api/incidents/v1/{incident_id}/close"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -64,8 +64,8 @@ service IncidentsService {
   rpc MergeIncidents(MergeIncidentsRequest) returns (MergeIncidentsResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      post: "/api/incidents/v1/{incident_id}/merge",
-      body: "*",
+      post: "/api/incidents/v1/{incident_id}/merge"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -75,8 +75,8 @@ service IncidentsService {
   rpc SplitIncident(SplitIncidentRequest) returns (SplitIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      post: "/api/incidents/v1/{incident_id}/split",
-      body: "*",
+      post: "/api/incidents/v1/{incident_id}/split"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -86,8 +86,8 @@ service IncidentsService {
   rpc AddIssuesToIncident(AddIssuesToIncidentRequest) returns (AddIssuesToIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      post: "/api/incidents/v1/{incident_id}/issues",
-      body: "*",
+      post: "/api/incidents/v1/{incident_id}/issues"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -97,8 +97,8 @@ service IncidentsService {
   rpc RemoveIssuesFromIncident(RemoveIssuesFromIncidentRequest) returns (RemoveIssuesFromIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
-      delete: "/api/incidents/v1/{incident_id}/issues",
-      body: "*",
+      delete: "/api/incidents/v1/{incident_id}/issues"
+      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
@@ -107,9 +107,7 @@ service IncidentsService {
 
   rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (google.api.http) = {
-      get: "/api/incidents/v1",
-    };
+    option (google.api.http) = {get: "/api/incidents/v1"};
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INCIDENTS_READ,
@@ -120,9 +118,7 @@ service IncidentsService {
 
   rpc BatchGetIncidents(BatchGetIncidentsRequest) returns (BatchGetIncidentsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (google.api.http) = {
-      get: "/api/incidents/v1/batch",
-    };
+    option (google.api.http) = {get: "/api/incidents/v1/batch"};
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INCIDENTS_READ,

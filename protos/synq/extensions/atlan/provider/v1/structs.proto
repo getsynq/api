@@ -17,7 +17,7 @@ message AtlanDataProduct {
   message Emails {
     repeated string emails = 1;
   }
-  Emails owner_users = 4;  // emails for the owner users
+  Emails owner_users = 4; // emails for the owner users
   map<string, Emails> owner_groups = 5; // emails for the owner groups mapped against group ID
 }
 

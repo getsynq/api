@@ -3,8 +3,8 @@ syntax = "proto3";
 package synq.git.commits.v1;
 
 import "buf/validate/validate.proto";
-import "synq/git/commits/v1/commit_diff.proto";
 import "google/api/annotations.proto";
+import "synq/git/commits/v1/commit_diff.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/git/commits/v1";
@@ -18,9 +18,7 @@ service CommitsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/git/v1/change/{change_id}"
-    };
+    option (google.api.http) = {get: "/api/git/v1/change/{change_id}"};
   }
 
   rpc GetDiffByCommit(GetDiffByCommitRequest) returns (GetDiffByCommitResponse) {
@@ -31,9 +29,7 @@ service CommitsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/git/v1/commit/{commit_sha}"
-    };
+    option (google.api.http) = {get: "/api/git/v1/commit/{commit_sha}"};
   }
 }
 

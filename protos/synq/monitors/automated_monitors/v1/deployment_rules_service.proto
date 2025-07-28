@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package synq.monitors.automated_monitors.v1;
 
-import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
 import "google/api/annotations.proto";
+import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
@@ -81,9 +81,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/automated/v1/deployment-rule"
-    };
+    option (google.api.http) = {get: "/api/monitors/automated/v1/deployment-rule"};
   }
 
   rpc GetDeployDeleteOverview(GetDeployDeleteOverviewRequest) returns (GetDeployDeleteOverviewResponse) {
@@ -91,9 +89,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/automated/v1/deployment-rule/{id}/deleted"
-    };
+    option (google.api.http) = {get: "/api/monitors/automated/v1/deployment-rule/{id}/deleted"};
   }
 
   rpc DeleteDeploymentRule(DeleteDeploymentRuleRequest) returns (DeleteDeploymentRuleResponse) {
@@ -101,9 +97,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      delete: "/api/monitors/automated/v1/deployment-rule/{id}"
-    };
+    option (google.api.http) = {delete: "/api/monitors/automated/v1/deployment-rule/{id}"};
   }
 
   rpc ListDeploymentRules(ListDeploymentRulesRequest) returns (ListDeploymentRulesResponse) {
@@ -111,9 +105,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/automated/v1/deployment-rules"
-    };
+    option (google.api.http) = {get: "/api/monitors/automated/v1/deployment-rules"};
   }
 
   rpc ListDeploymentRulesForAsset(ListDeploymentRulesForAssetRequest) returns (ListDeploymentRulesForAssetResponse) {
@@ -121,9 +113,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/automated/v1/deployment-rules/{asset_path}"
-    };
+    option (google.api.http) = {get: "/api/monitors/automated/v1/deployment-rules/{asset_path}"};
   }
 
   rpc BatchGetDeploymentRules(BatchGetDeploymentRulesRequest) returns (BatchGetDeploymentRulesResponse) {
@@ -131,9 +121,7 @@ service DeploymentRulesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/automated/v1/deployment-rules/batch"
-    };
+    option (google.api.http) = {get: "/api/monitors/automated/v1/deployment-rules/batch"};
   }
 
   rpc UpsertDeploymentRule(UpsertDeploymentRuleRequest) returns (UpsertDeploymentRuleResponse) {

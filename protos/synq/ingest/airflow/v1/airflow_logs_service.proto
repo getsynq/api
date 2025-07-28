@@ -1,0 +1,50 @@
+syntax = "proto3";
+package synq.ingest.airflow.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/ingest/airflow/v1";
+
+service AirflowLogsService {
+  rpc IngestLog(IngestLogRequest) returns (IngestLogResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_AIRFLOW]
+    };
+    option (google.api.http) = {
+      post: "/api/ingest/airflow/v1/{dag_id}/{task_id}/{run_id}/logs"
+      body: "log"
+    };
+  }
+
+  rpc IngestDatahubAspects(IngestDatahubAspectsRequest) returns (IngestDatahubAspectsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_AIRFLOW]
+    };
+    option (google.api.http) = {
+      post: "/api/ingest/airflow/v1"
+      body: "aspects"
+    };
+  }
+}
+
+message IngestLogRequest {
+  string dag_id = 1 [(buf.validate.field) = {required: true}];
+  string task_id = 2 [(buf.validate.field) = {required: true}];
+  string run_id = 3 [(buf.validate.field) = {required: true}];
+  optional int32 try_nr = 4;
+
+  string log = 5;
+}
+
+message IngestLogResponse {}
+
+message IngestDatahubAspectsRequest {
+  repeated google.protobuf.Struct aspects = 1;
+}
+
+message IngestDatahubAspectsResponse {}

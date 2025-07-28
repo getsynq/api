@@ -3,9 +3,9 @@ syntax = "proto3";
 package synq.entities.impact.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/entities/impact/v1/impact.proto";
 import "synq/entities/v1/identifier.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/impact/v1";
@@ -20,9 +20,7 @@ service ImpactService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/impact/v1"
-    };
+    option (google.api.http) = {get: "/api/impact/v1"};
   }
 }
 

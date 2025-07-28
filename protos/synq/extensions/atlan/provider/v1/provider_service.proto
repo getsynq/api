@@ -1,8 +1,8 @@
 syntax = "proto3";
 package synq.extensions.atlan.provider.v1;
 
-import "synq/extensions/atlan/provider/v1/structs.proto";
 import "google/api/annotations.proto";
+import "synq/extensions/atlan/provider/v1/structs.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/extensions/atlan/provider/v1";
@@ -13,9 +13,7 @@ service AtlanProviderService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      get: "/api/extensions/atlan/provider/v1/connections"
-    };
+    option (google.api.http) = {get: "/api/extensions/atlan/provider/v1/connections"};
   }
 
   rpc GetAtlanDataProducts(GetAtlanDataProductsRequest) returns (GetAtlanDataProductsResponse) {
@@ -23,9 +21,7 @@ service AtlanProviderService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      get: "/api/extensions/atlan/provider/v1/data-products"
-    };
+    option (google.api.http) = {get: "/api/extensions/atlan/provider/v1/data-products"};
   }
 
   rpc GetAtlanDomains(GetAtlanDomainsRequest) returns (GetAtlanDomainsResponse) {
@@ -33,9 +29,7 @@ service AtlanProviderService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      get: "/api/extensions/atlan/provider/v1/domains"
-    };
+    option (google.api.http) = {get: "/api/extensions/atlan/provider/v1/domains"};
   }
 }
 

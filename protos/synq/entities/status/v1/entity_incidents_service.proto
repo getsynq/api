@@ -3,9 +3,9 @@ syntax = "proto3";
 package synq.entities.status.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/entities/status/v1/entity_incidents.proto";
 import "synq/entities/v1/identifier.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/status/v1";
@@ -22,9 +22,7 @@ service EntityIncidentsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/status/v1/{id}/incidents"
-    };
+    option (google.api.http) = {get: "/api/status/v1/{id}/incidents"};
   }
 
   // Get multiple entity statuses by their identifiers.
@@ -36,9 +34,7 @@ service EntityIncidentsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/status/v1/incidents"
-    };
+    option (google.api.http) = {get: "/api/status/v1/incidents"};
   }
 }
 

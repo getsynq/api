@@ -100,7 +100,7 @@ enum LifecycleState {
   // Open issue that has been queued for autotriage.
   LIFECYCLE_STATE_AUTOTRIAGE_QUEUED = 11;
   // Issue has been autotriaged and an action has been suggested.
-  LIFECYCLE_STATE_AUTOTRIAGE_ACTION_SUGGESTED = 12; 
+  LIFECYCLE_STATE_AUTOTRIAGE_ACTION_SUGGESTED = 12;
 }
 
 // Progress status of the issue.

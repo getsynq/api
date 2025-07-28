@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package synq.datachecks.sqltests.v1;
 
+import "google/api/annotations.proto";
 import "synq/datachecks/sqltests/v1/sql_tests.proto";
 import "synq/entities/v1/annotation.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
@@ -32,9 +32,7 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/datachecks/sqltests/v1"
-    };
+    option (google.api.http) = {get: "/api/datachecks/sqltests/v1"};
   }
 
   // Get SqlTests by their IDs.
@@ -46,9 +44,7 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/datachecks/sqltests/v1/batch"
-    };
+    option (google.api.http) = {get: "/api/datachecks/sqltests/v1/batch"};
   }
 
   // Delete SqlTests by their IDs.
@@ -72,9 +68,7 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/datachecks/sqltests/v1/audit"
-    };
+    option (google.api.http) = {get: "/api/datachecks/sqltests/v1/audit"};
   }
 }
 

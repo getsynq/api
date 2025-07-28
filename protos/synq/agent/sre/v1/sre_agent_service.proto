@@ -108,5 +108,4 @@ message GetConfigResponse {
   string issue_grouping_system_prompt = 6;
   // Indicates that SRE shouldn't group any issues
   bool issue_grouping_disabled = 7;
-
 }

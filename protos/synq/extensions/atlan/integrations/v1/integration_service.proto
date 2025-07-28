@@ -1,8 +1,8 @@
 syntax = "proto3";
 package synq.extensions.atlan.integrations.v1;
 
-import "synq/extensions/atlan/integrations/v1/integration.proto";
 import "google/api/annotations.proto";
+import "synq/extensions/atlan/integrations/v1/integration.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/extensions/atlan/integrations/v1";
@@ -25,9 +25,7 @@ service AtlanIntegrationService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      get: "/api/extensions/atlan/integrations/v1"
-    };
+    option (google.api.http) = {get: "/api/extensions/atlan/integrations/v1"};
   }
 
   rpc Remove(RemoveRequest) returns (RemoveResponse) {
@@ -35,9 +33,7 @@ service AtlanIntegrationService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      delete: "/api/extensions/atlan/integrations/v1"
-    };
+    option (google.api.http) = {delete: "/api/extensions/atlan/integrations/v1"};
   }
 
   // Activate or deactivate the integration.

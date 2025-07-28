@@ -5,8 +5,8 @@ package synq.platforms.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "google/api/client.proto";
-import "synq/platforms/v1/platform_authentication.proto";
 import "synq/platforms/v1/data_platforms.proto";
+import "synq/platforms/v1/platform_authentication.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/platforms/v1";
@@ -21,7 +21,7 @@ service PlatformsService {
       scopes: [SCOPE_INTEGRATION_EDIT]
     };
     option (google.api.http) = {
-      post: "/api/platforms/v1",
+      post: "/api/platforms/v1"
       body: "*"
     };
   }

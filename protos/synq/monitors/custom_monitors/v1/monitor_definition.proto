@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package synq.monitors.custom_monitors.v1;
 
-import "synq/entities/v1/identifier.proto";
 import "buf/validate/validate.proto";
 import "google/protobuf/wrappers.proto";
+import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 
@@ -33,7 +33,6 @@ message ScheduleHourly {
     (buf.validate.field).int32.lt = 59
   ];
 }
-
 
 message MonitorFreshness {
   // The expression to filter on (eg. "created_at", "meta['created_at']")
@@ -73,7 +72,7 @@ message ModeFixedThresholds {
 
 message MonitorDefinition {
   string id = 1 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {uuid: true}
   }];
   synq.entities.v1.Identifier monitored_id = 2 [(buf.validate.field).required = true];

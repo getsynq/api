@@ -1,9 +1,9 @@
 syntax = "proto3";
 package synq.monitors.history.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/monitors/history/v1/predictions.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 // import "synq/entities/v1/identifier.proto";
 
@@ -18,9 +18,7 @@ service HistoryService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/monitors/history/v1/{monitor_path}"
-    };
+    option (google.api.http) = {get: "/api/monitors/history/v1/{monitor_path}"};
   }
 }
 

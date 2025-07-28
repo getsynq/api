@@ -3,10 +3,10 @@ syntax = "proto3";
 package synq.ingest.dwh.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/dwh/v1/dwh_agent_task.proto";
 import "synq/ingest/dwh/v1/dwh.proto";
-import "google/api/annotations.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
