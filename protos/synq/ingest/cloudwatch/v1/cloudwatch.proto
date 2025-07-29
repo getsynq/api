@@ -1,0 +1,12 @@
+syntax = "proto3";
+package synq.ingest.cloudwatch.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/ingest/cloudwatch/v1";
+
+message CloudwatchLogsLogEvent {
+  string id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string message = 3;
+}

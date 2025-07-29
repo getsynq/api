@@ -1,0 +1,33 @@
+syntax = "proto3";
+package synq.ingest.cloudwatch.v1;
+
+import "google/api/annotations.proto";
+import "synq/ingest/cloudwatch/v1/cloudwatch.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/ingest/cloudwatch/v1";
+
+service CloudwatchService {
+  rpc IngestCloudwatchLogsData(IngestCloudwatchLogsDataRequest) returns (IngestCloudwatchLogsDataResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_CLOUDWATCH]
+    };
+    option (google.api.http) = {
+      post: "/api/ingest/cloudwatch/v1/{log_group}/{log_stream}"
+      body: "log"
+    };
+  }
+}
+
+message IngestCloudwatchLogsDataRequest {
+  string owner = 1;
+  string log_group = 2;
+  string log_stream = 3;
+  repeated string subscription_filters = 4;
+  string message_type = 5;
+  repeated synq.ingest.cloudwatch.v1.CloudwatchLogsLogEvent log_events = 6;
+}
+
+message IngestCloudwatchLogsDataResponse {
+}
