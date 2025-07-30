@@ -4,6 +4,7 @@ package synq.extensions.atlan.workflows.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/extensions/atlan/workflows/v1/mappings.proto";
+import "synq/extensions/atlan/workflows/v1/toggles.proto";
 import "synq/extensions/atlan/workflows/v1/workflow_run.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -83,6 +84,14 @@ service AtlanWorkflowService {
       body: "*"
     };
   }
+
+  rpc GetMappingToggles(GetMappingTogglesRequest) returns (GetMappingTogglesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {get: "/api/extensions/atlan/workflows/v1/mappings/toggle"};
+  }
 }
 
 message SetConnectionMappingsRequest {
@@ -137,28 +146,13 @@ message FetchRunsResponse {
 }
 
 message SetMappingTogglesRequest {
-  message ProductMappingToggle {
-    string atlan_product_qualified_name = 1;
-  }
-
-  message DomainMappingToggle {
-    string atlan_domain_qualified_name = 1;
-  }
-
-  message ProductOwnerMappingToggle {
-    string atlan_product_qualified_name = 1;
-  }
-
-  message Toggle {
-    oneof mapping {
-      ProductMappingToggle product_mapping = 1;
-      DomainMappingToggle domain_mapping = 2;
-      ProductOwnerMappingToggle product_owner_mapping = 3;
-    }
-    bool enabled = 101;
-  }
-
-  repeated Toggle toggles = 1;
+  repeated MappingToggle toggles = 1;
 }
 
 message SetMappingTogglesResponse {}
+
+message GetMappingTogglesRequest {}
+
+message GetMappingTogglesResponse {
+  repeated MappingToggle toggles = 1;
+}

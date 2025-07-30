@@ -29,5 +29,4 @@ message IngestCloudwatchLogsDataRequest {
   repeated synq.ingest.cloudwatch.v1.CloudwatchLogsLogEvent log_events = 6;
 }
 
-message IngestCloudwatchLogsDataResponse {
-}
+message IngestCloudwatchLogsDataResponse {}

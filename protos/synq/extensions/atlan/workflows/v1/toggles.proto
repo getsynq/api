@@ -1,0 +1,25 @@
+syntax = "proto3";
+package synq.extensions.atlan.workflows.v1;
+
+option go_package = "github.com/getsynq/api/extensions/atlan/workflows/v1";
+
+message ProductMappingToggle {
+  string atlan_product_qualified_name = 1;
+}
+
+message DomainMappingToggle {
+  string atlan_domain_qualified_name = 1;
+}
+
+message ProductOwnerMappingToggle {
+  string atlan_product_qualified_name = 1;
+}
+
+message MappingToggle {
+  oneof mapping {
+    ProductMappingToggle product_mapping = 1;
+    DomainMappingToggle domain_mapping = 2;
+    ProductOwnerMappingToggle product_owner_mapping = 3;
+  }
+  bool enabled = 101;
+}

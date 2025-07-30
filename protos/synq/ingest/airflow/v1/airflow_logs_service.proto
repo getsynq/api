@@ -4,6 +4,7 @@ package synq.ingest.airflow.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/airflow/v1";
@@ -36,9 +37,9 @@ message IngestLogRequest {
   string dag_id = 1 [(buf.validate.field) = {required: true}];
   string task_id = 2 [(buf.validate.field) = {required: true}];
   string run_id = 3 [(buf.validate.field) = {required: true}];
-  optional int32 try_nr = 4;
-
+  int32 attempt = 4 [(buf.validate.field) = {required: true}];
   string log = 5;
+  google.protobuf.Timestamp log_time = 6 [(buf.validate.field) = {required: true}];
 }
 
 message IngestLogResponse {}
