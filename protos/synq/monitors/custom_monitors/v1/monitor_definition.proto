@@ -21,16 +21,16 @@ message TimePartitioning {
 message ScheduleDaily {
   // Minutes since midnight (0-1439)
   int32 minutes_since_midnight = 1 [
-    (buf.validate.field).int32.gt = 0,
-    (buf.validate.field).int32.lt = 1439
+    (buf.validate.field).int32.gte = 0,
+    (buf.validate.field).int32.lte = 1439
   ];
 }
 
 message ScheduleHourly {
   // Minutes since midnight (0-59)
   int32 minutes_since_midnight = 1 [
-    (buf.validate.field).int32.gt = 0,
-    (buf.validate.field).int32.lt = 59
+    (buf.validate.field).int32.gte = 0,
+    (buf.validate.field).int32.lte = 59
   ];
 }
 
@@ -63,7 +63,7 @@ enum Sensitivity {
 }
 
 message ModeAnomalyEngine {
-  int32 sensitivity = 1;
+  Sensitivity sensitivity = 1;
 }
 message ModeFixedThresholds {
   google.protobuf.DoubleValue min = 1;
@@ -77,6 +77,7 @@ message MonitorDefinition {
   }];
   synq.entities.v1.Identifier monitored_id = 2 [(buf.validate.field).required = true];
   TimePartitioning time_partitioning = 3 [(buf.validate.field).required = true];
+  // Segmentation is not supported for field stats monitors
   optional Segmentation segmentation = 4;
   optional string filter = 5;
   Severity severity = 6;

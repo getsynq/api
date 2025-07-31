@@ -15,7 +15,7 @@ service CloudwatchService {
     };
     option (google.api.http) = {
       post: "/api/ingest/cloudwatch/v1/{log_group}/{log_stream}"
-      body: "log"
+      body: "*"
     };
   }
 }
