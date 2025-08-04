@@ -2961,6 +2961,145 @@ components:
                     type: string
             title: Tag
             additionalProperties: false
+        synq.ingest.cloudwatch.v1.CloudwatchLogsLogEvent:
+            type: object
+            properties:
+                id:
+                    type: string
+                timestamp:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                message:
+                    type: string
+            title: CloudwatchLogsLogEvent
+            additionalProperties: false
+        synq.ingest.cloudwatch.v1.IngestCloudwatchLogsDataRequest:
+            type: object
+            properties:
+                owner:
+                    type: string
+                logGroup:
+                    type: string
+                logStream:
+                    type: string
+                subscriptionFilters:
+                    type: array
+                    items:
+                        type: string
+                messageType:
+                    type: string
+                logEvents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.ingest.cloudwatch.v1.CloudwatchLogsLogEvent'
+            title: IngestCloudwatchLogsDataRequest
+            additionalProperties: false
+        synq.ingest.cloudwatch.v1.IngestCloudwatchLogsDataResponse:
+            type: object
+            title: IngestCloudwatchLogsDataResponse
+            additionalProperties: false
+        google.protobuf.NullValue:
+            type: string
+            title: NullValue
+            enum:
+                - NULL_VALUE
+            description: |-
+                `NullValue` is a singleton enumeration to represent the null value for the
+                 `Value` type union.
+
+                 The JSON representation for `NullValue` is JSON `null`.
+        google.protobuf.ListValue:
+            type: object
+            properties:
+                values:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/google.protobuf.Value'
+                    description: Repeated field of dynamically typed values.
+            title: ListValue
+            additionalProperties: false
+            description: |-
+                `ListValue` is a wrapper around a repeated field of values.
+
+                 The JSON representation for `ListValue` is JSON array.
+        google.protobuf.Struct:
+            type: object
+            additionalProperties:
+                $ref: '#/components/schemas/google.protobuf.Value'
+            description: |-
+                `Struct` represents a structured data value, consisting of fields
+                 which map to dynamically typed values. In some languages, `Struct`
+                 might be supported by a native representation. For example, in
+                 scripting languages like JS a struct is represented as an
+                 object. The details of that representation are described together
+                 with the proto support for the language.
+
+                 The JSON representation for `Struct` is JSON object.
+        google.protobuf.Struct.FieldsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/google.protobuf.Value'
+            title: FieldsEntry
+            additionalProperties: false
+        google.protobuf.Value:
+            oneOf:
+                - type: "null"
+                - type: number
+                - type: string
+                - type: boolean
+                - type: array
+                - type: object
+                  additionalProperties: true
+            description: |-
+                `Value` represents a dynamically typed value which can be either
+                 null, a number, a string, a boolean, a recursive struct value, or a
+                 list of values. A producer of value is expected to set one of these
+                 variants. Absence of any variant indicates an error.
+
+                 The JSON representation for `Value` is JSON value.
+        synq.ingest.airflow.v1.IngestDatahubAspectsRequest:
+            type: object
+            properties:
+                aspects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/google.protobuf.Struct'
+            title: IngestDatahubAspectsRequest
+            additionalProperties: false
+        synq.ingest.airflow.v1.IngestDatahubAspectsResponse:
+            type: object
+            title: IngestDatahubAspectsResponse
+            additionalProperties: false
+        synq.ingest.airflow.v1.IngestLogRequest:
+            type: object
+            properties:
+                dagId:
+                    type: string
+                taskId:
+                    type: string
+                runId:
+                    type: string
+                attempt:
+                    type: integer
+                    format: int32
+                log:
+                    type: string
+                logTime:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: IngestLogRequest
+            required:
+                - dagId
+                - taskId
+                - runId
+                - attempt
+                - logTime
+            additionalProperties: false
+        synq.ingest.airflow.v1.IngestLogResponse:
+            type: object
+            title: IngestLogResponse
+            additionalProperties: false
         synq.agent.sre.v1.IssueTriageStatus:
             type: string
             title: IssueTriageStatus
@@ -3878,6 +4017,13 @@ components:
                     format: uuid
             title: DomainMapping
             additionalProperties: false
+        synq.extensions.atlan.workflows.v1.DomainMappingToggle:
+            type: object
+            properties:
+                atlanDomainQualifiedName:
+                    type: string
+            title: DomainMappingToggle
+            additionalProperties: false
         synq.extensions.atlan.workflows.v1.FetchRunsRequest:
             type: object
             properties:
@@ -3926,6 +4072,19 @@ components:
                         $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.DomainMapping'
             title: GetDomainMappingsResponse
             additionalProperties: false
+        synq.extensions.atlan.workflows.v1.GetMappingTogglesRequest:
+            type: object
+            title: GetMappingTogglesRequest
+            additionalProperties: false
+        synq.extensions.atlan.workflows.v1.GetMappingTogglesResponse:
+            type: object
+            properties:
+                toggles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.MappingToggle'
+            title: GetMappingTogglesResponse
+            additionalProperties: false
         synq.extensions.atlan.workflows.v1.GetProductMappingsRequest:
             type: object
             title: GetProductMappingsRequest
@@ -3964,6 +4123,34 @@ components:
                     type: string
             title: MetadataEntry
             additionalProperties: false
+        synq.extensions.atlan.workflows.v1.MappingToggle:
+            type: object
+            oneOf:
+                - properties:
+                    domainMapping:
+                        title: domain_mapping
+                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.DomainMappingToggle'
+                  title: domain_mapping
+                  required:
+                    - domainMapping
+                - properties:
+                    productMapping:
+                        title: product_mapping
+                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.ProductMappingToggle'
+                  title: product_mapping
+                  required:
+                    - productMapping
+                - properties:
+                    productOwnerMapping:
+                        title: product_owner_mapping
+                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.ProductOwnerMappingToggle'
+                  title: product_owner_mapping
+                  required:
+                    - productOwnerMapping
+            properties:
+                enabled:
+                    type: boolean
+            additionalProperties: false
         synq.extensions.atlan.workflows.v1.ProductMapping:
             type: object
             properties:
@@ -3972,6 +4159,20 @@ components:
                 synqDataproductIdentifier:
                     $ref: '#/components/schemas/synq.entities.v1.DataproductIdentifier'
             title: ProductMapping
+            additionalProperties: false
+        synq.extensions.atlan.workflows.v1.ProductMappingToggle:
+            type: object
+            properties:
+                atlanProductQualifiedName:
+                    type: string
+            title: ProductMappingToggle
+            additionalProperties: false
+        synq.extensions.atlan.workflows.v1.ProductOwnerMappingToggle:
+            type: object
+            properties:
+                atlanProductQualifiedName:
+                    type: string
+            title: ProductOwnerMappingToggle
             additionalProperties: false
         synq.extensions.atlan.workflows.v1.RemoveConnectionMappingsRequest:
             type: object
@@ -4005,57 +4206,8 @@ components:
                 toggles:
                     type: array
                     items:
-                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.Toggle'
+                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.MappingToggle'
             title: SetMappingTogglesRequest
-            additionalProperties: false
-        synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.DomainMappingToggle:
-            type: object
-            properties:
-                atlanDomainQualifiedName:
-                    type: string
-            title: DomainMappingToggle
-            additionalProperties: false
-        synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.ProductMappingToggle:
-            type: object
-            properties:
-                atlanProductQualifiedName:
-                    type: string
-            title: ProductMappingToggle
-            additionalProperties: false
-        synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.ProductOwnerMappingToggle:
-            type: object
-            properties:
-                atlanProductQualifiedName:
-                    type: string
-            title: ProductOwnerMappingToggle
-            additionalProperties: false
-        synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.Toggle:
-            type: object
-            oneOf:
-                - properties:
-                    domainMapping:
-                        title: domain_mapping
-                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.DomainMappingToggle'
-                  title: domain_mapping
-                  required:
-                    - domainMapping
-                - properties:
-                    productMapping:
-                        title: product_mapping
-                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.ProductMappingToggle'
-                  title: product_mapping
-                  required:
-                    - productMapping
-                - properties:
-                    productOwnerMapping:
-                        title: product_owner_mapping
-                        $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.SetMappingTogglesRequest.ProductOwnerMappingToggle'
-                  title: product_owner_mapping
-                  required:
-                    - productOwnerMapping
-            properties:
-                enabled:
-                    type: boolean
             additionalProperties: false
         synq.extensions.atlan.workflows.v1.SetMappingTogglesResponse:
             type: object
@@ -8622,6 +8774,173 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.ingest.dwh.v1.IngestTaskResultsResponse'
+    /api/ingest/cloudwatch/v1/{log_group}/{log_stream}:
+        post:
+            tags:
+                - synq.ingest.cloudwatch.v1.CloudwatchService
+            summary: IngestCloudwatchLogsData
+            operationId: synq.ingest.cloudwatch.v1.CloudwatchService.IngestCloudwatchLogsData
+            parameters:
+                - name: log_group
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    title: log_group
+                - name: log_stream
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    title: log_stream
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                owner:
+                                    type: string
+                                    title: owner
+                                subscriptionFilters:
+                                    type: array
+                                    items:
+                                        type: string
+                                    title: subscription_filters
+                                messageType:
+                                    type: string
+                                    title: message_type
+                                logEvents:
+                                    type: array
+                                    items:
+                                        $ref: '#/components/schemas/synq.ingest.cloudwatch.v1.CloudwatchLogsLogEvent'
+                                    title: log_events
+                            title: IngestCloudwatchLogsDataRequest
+                            additionalProperties: false
+                required: true
+            responses:
+                default:
+                    description: Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/connect.error'
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.ingest.cloudwatch.v1.IngestCloudwatchLogsDataResponse'
+    /api/ingest/airflow/v1/{dag_id}/{task_id}/{run_id}/logs:
+        post:
+            tags:
+                - synq.ingest.airflow.v1.AirflowLogsService
+            summary: IngestLog
+            operationId: synq.ingest.airflow.v1.AirflowLogsService.IngestLog
+            parameters:
+                - name: dag_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    title: dag_id
+                - name: task_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    title: task_id
+                - name: run_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    title: run_id
+                - name: attempt
+                  in: query
+                  required: true
+                  schema:
+                    type: integer
+                    title: attempt
+                    format: int32
+                - name: logTime.seconds
+                  in: query
+                  description: |-
+                    Represents seconds of UTC time since Unix epoch
+                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                     9999-12-31T23:59:59Z inclusive.
+                  schema:
+                    type:
+                        - integer
+                        - string
+                    title: seconds
+                    format: int64
+                    description: |-
+                        Represents seconds of UTC time since Unix epoch
+                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                         9999-12-31T23:59:59Z inclusive.
+                - name: logTime.nanos
+                  in: query
+                  description: |-
+                    Non-negative fractions of a second at nanosecond resolution. Negative
+                     second values with fractions must still have non-negative nanos values
+                     that count forward in time. Must be from 0 to 999,999,999
+                     inclusive.
+                  schema:
+                    type: integer
+                    title: nanos
+                    format: int32
+                    description: |-
+                        Non-negative fractions of a second at nanosecond resolution. Negative
+                         second values with fractions must still have non-negative nanos values
+                         that count forward in time. Must be from 0 to 999,999,999
+                         inclusive.
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: string
+                            title: log
+            responses:
+                default:
+                    description: Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/connect.error'
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.ingest.airflow.v1.IngestLogResponse'
+    /api/ingest/airflow/v1:
+        post:
+            tags:
+                - synq.ingest.airflow.v1.AirflowLogsService
+            summary: IngestDatahubAspects
+            operationId: synq.ingest.airflow.v1.AirflowLogsService.IngestDatahubAspects
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                $ref: '#/components/schemas/google.protobuf.Struct'
+                            title: aspects
+            responses:
+                default:
+                    description: Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/connect.error'
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.ingest.airflow.v1.IngestDatahubAspectsResponse'
     /api/triage/v1/{session_id}/conclusion:
         post:
             tags:
@@ -9090,6 +9409,24 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.FetchRunsResponse'
     /api/extensions/atlan/workflows/v1/mappings/toggle:
+        get:
+            tags:
+                - synq.extensions.atlan.workflows.v1.AtlanWorkflowService
+            summary: GetMappingToggles
+            operationId: synq.extensions.atlan.workflows.v1.AtlanWorkflowService.GetMappingToggles
+            responses:
+                default:
+                    description: Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/connect.error'
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.extensions.atlan.workflows.v1.GetMappingTogglesResponse'
         post:
             tags:
                 - synq.extensions.atlan.workflows.v1.AtlanWorkflowService
@@ -9237,12 +9574,688 @@ paths:
                 - synq.issues.v2.IssuesService
             summary: ListIssues
             operationId: synq.issues.v2.IssuesService.ListIssues
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/synq.issues.v2.ListIssuesRequest'
-                required: true
+            parameters:
+                - name: entitiesQuery.parts.identifierList.identifiers.dbtCoreNode.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entitiesQuery.parts.identifierList.identifiers.dbtCoreNode.nodeId
+                  in: query
+                  description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                  required: true
+                  schema:
+                    type: string
+                    title: node_id
+                    description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                - name: entitiesQuery.parts.identifierList.identifiers.dbtCloudNode.projectId
+                  in: query
+                  description: Your dbt Cloud project id
+                  required: true
+                  schema:
+                    type: string
+                    title: project_id
+                    description: Your dbt Cloud project id
+                - name: entitiesQuery.parts.identifierList.identifiers.dbtCloudNode.accountId
+                  in: query
+                  description: Your dbt Cloud account id
+                  schema:
+                    type: string
+                    title: account_id
+                    description: Your dbt Cloud account id
+                - name: entitiesQuery.parts.identifierList.identifiers.dbtCloudNode.nodeId
+                  in: query
+                  description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                  required: true
+                  schema:
+                    type: string
+                    title: node_id
+                    description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                - name: entitiesQuery.parts.identifierList.identifiers.bigqueryTable.project
+                  in: query
+                  description: BigQuery project
+                  required: true
+                  schema:
+                    type: string
+                    title: project
+                    description: BigQuery project
+                - name: entitiesQuery.parts.identifierList.identifiers.bigqueryTable.dataset
+                  in: query
+                  description: BigQuery dataset id
+                  required: true
+                  schema:
+                    type: string
+                    title: dataset
+                    description: BigQuery dataset id
+                - name: entitiesQuery.parts.identifierList.identifiers.bigqueryTable.table
+                  in: query
+                  description: BigQuery table name
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: BigQuery table name
+                - name: entitiesQuery.parts.identifierList.identifiers.snowflakeTable.account
+                  in: query
+                  description: Snowflake account
+                  required: true
+                  schema:
+                    type: string
+                    title: account
+                    description: Snowflake account
+                - name: entitiesQuery.parts.identifierList.identifiers.snowflakeTable.database
+                  in: query
+                  description: Snowflake database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Snowflake database
+                - name: entitiesQuery.parts.identifierList.identifiers.snowflakeTable.schema
+                  in: query
+                  description: Snowflake schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Snowflake schema
+                - name: entitiesQuery.parts.identifierList.identifiers.snowflakeTable.table
+                  in: query
+                  description: Snowflake table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Snowflake table
+                - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.cluster
+                  in: query
+                  description: Redshift cluster
+                  schema:
+                    type: string
+                    title: cluster
+                    description: Redshift cluster
+                - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.database
+                  in: query
+                  description: Redshift database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Redshift database
+                - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.schema
+                  in: query
+                  description: Redshift schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Redshift schema
+                - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.table
+                  in: query
+                  description: Redshift table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Redshift table
+                - name: entitiesQuery.parts.identifierList.identifiers.postgresTable.host
+                  in: query
+                  description: Postgres hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Postgres hostname without port
+                - name: entitiesQuery.parts.identifierList.identifiers.postgresTable.database
+                  in: query
+                  description: Postgres database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Postgres database
+                - name: entitiesQuery.parts.identifierList.identifiers.postgresTable.schema
+                  in: query
+                  description: Postgres schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Postgres schema
+                - name: entitiesQuery.parts.identifierList.identifiers.postgresTable.table
+                  in: query
+                  description: Postgres table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Postgres table
+                - name: entitiesQuery.parts.identifierList.identifiers.mysqlTable.host
+                  in: query
+                  description: Mysql hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Mysql hostname without port
+                - name: entitiesQuery.parts.identifierList.identifiers.mysqlTable.schema
+                  in: query
+                  description: Mysql database
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Mysql database
+                - name: entitiesQuery.parts.identifierList.identifiers.mysqlTable.table
+                  in: query
+                  description: Mysql table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Mysql table
+                - name: entitiesQuery.parts.identifierList.identifiers.clickhouseTable.host
+                  in: query
+                  description: Clickhouse hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Clickhouse hostname without port
+                - name: entitiesQuery.parts.identifierList.identifiers.clickhouseTable.schema
+                  in: query
+                  description: Clickhouse database
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Clickhouse database
+                - name: entitiesQuery.parts.identifierList.identifiers.clickhouseTable.table
+                  in: query
+                  description: Clickhouse table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Clickhouse table
+                - name: entitiesQuery.parts.identifierList.identifiers.airflowDag.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the Airflow instance
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id that identifies the Airflow instance
+                - name: entitiesQuery.parts.identifierList.identifiers.airflowDag.dagId
+                  in: query
+                  description: Airflow dag_id that identifies the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: dag_id
+                    description: Airflow dag_id that identifies the DAG
+                - name: entitiesQuery.parts.identifierList.identifiers.airflowTask.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the Airflow instance
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id that identifies the Airflow instance
+                - name: entitiesQuery.parts.identifierList.identifiers.airflowTask.dagId
+                  in: query
+                  description: Airflow dag_id that identifies the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: dag_id
+                    description: Airflow dag_id that identifies the DAG
+                - name: entitiesQuery.parts.identifierList.identifiers.airflowTask.taskId
+                  in: query
+                  description: Airflow task_id that identifies the task within the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: task_id
+                    description: Airflow task_id that identifies the task within the DAG
+                - name: entitiesQuery.parts.identifierList.identifiers.custom.id
+                  in: query
+                  description: |-
+                    Id that identifies the custom entity
+                     The Id should be unique within the custom entity Identifier.
+                  required: true
+                  schema:
+                    type: string
+                    title: id
+                    description: |-
+                        Id that identifies the custom entity
+                         The Id should be unique within the custom entity Identifier.
+                - name: entitiesQuery.parts.identifierList.identifiers.dataproduct.id
+                  in: query
+                  description: Dataproduct id that identifies the Dataproduct
+                  required: true
+                  schema:
+                    type: string
+                    title: id
+                    format: uuid
+                    description: Dataproduct id that identifies the Dataproduct
+                - name: entitiesQuery.parts.identifierList.identifiers.synqPath.path
+                  in: query
+                  description: SYNQ path that identifies the SYNQ entity, needs to be one of supported paths
+                  required: true
+                  schema:
+                    type: string
+                    title: path
+                    description: SYNQ path that identifies the SYNQ entity, needs to be one of supported paths
+                - name: entitiesQuery.parts.identifierList.identifiers.databricksTable.workspace
+                  in: query
+                  description: URL of Databricks workspace
+                  required: true
+                  schema:
+                    type: string
+                    title: workspace
+                    description: URL of Databricks workspace
+                - name: entitiesQuery.parts.identifierList.identifiers.databricksTable.catalog
+                  in: query
+                  description: Databricks catalog
+                  required: true
+                  schema:
+                    type: string
+                    title: catalog
+                    description: Databricks catalog
+                - name: entitiesQuery.parts.identifierList.identifiers.databricksTable.schema
+                  in: query
+                  description: Databricks schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Databricks schema
+                - name: entitiesQuery.parts.identifierList.identifiers.databricksTable.table
+                  in: query
+                  description: Databricks table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Databricks table or view
+                - name: entitiesQuery.parts.identifierList.identifiers.trinoTable.host
+                  in: query
+                  description: Hostname of the Trino instance
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Hostname of the Trino instance
+                - name: entitiesQuery.parts.identifierList.identifiers.trinoTable.catalog
+                  in: query
+                  description: Trino catalog
+                  required: true
+                  schema:
+                    type: string
+                    title: catalog
+                    description: Trino catalog
+                - name: entitiesQuery.parts.identifierList.identifiers.trinoTable.schema
+                  in: query
+                  description: Trino schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Trino schema
+                - name: entitiesQuery.parts.identifierList.identifiers.trinoTable.table
+                  in: query
+                  description: Trino table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Trino table or view
+                - name: entitiesQuery.parts.identifierList.identifiers.sqlMeshModel.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entitiesQuery.parts.identifierList.identifiers.sqlMeshModel.fqn
+                  in: query
+                  description: SQLMesh model fully qualified name
+                  required: true
+                  schema:
+                    type: string
+                    title: fqn
+                    description: SQLMesh model fully qualified name
+                - name: entitiesQuery.parts.identifierList.identifiers.sqlMeshAudit.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entitiesQuery.parts.identifierList.identifiers.sqlMeshAudit.fqn
+                  in: query
+                  description: SQLMesh model fully qualified name
+                  required: true
+                  schema:
+                    type: string
+                    title: fqn
+                    description: SQLMesh model fully qualified name
+                - name: entitiesQuery.parts.identifierList.identifiers.sqlMeshAudit.auditId
+                  in: query
+                  description: Identifier of the audit
+                  required: true
+                  schema:
+                    type: string
+                    title: audit_id
+                    description: Identifier of the audit
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitorId
+                  in: query
+                  description: Identifier of the monitor
+                  required: true
+                  schema:
+                    type: string
+                    title: monitor_id
+                    description: Identifier of the monitor
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.segment
+                  in: query
+                  description: Optional monitor segmentation identifier
+                  schema:
+                    type: string
+                    title: segment
+                    description: Optional monitor segmentation identifier
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.integrationId
+                  in: query
+                  description: SYNQ integration_id of the monitored identifier
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id of the monitored identifier
+                    deprecated: true
+                - name: entitiesQuery.parts.withNameSearch.searchQuery
+                  in: query
+                  schema:
+                    type: string
+                    title: search_query
+                - name: entitiesQuery.parts.withType.type.default
+                  in: query
+                  description: Default SYNQ types
+                  schema:
+                    title: default
+                    description: Default SYNQ types
+                    $ref: '#/components/schemas/synq.entities.v1.EntityType'
+                - name: entitiesQuery.parts.withType.type.custom
+                  in: query
+                  description: Custom types as defined through synq.entities.custom.v1.TypesService
+                  schema:
+                    type: integer
+                    title: custom
+                    format: int32
+                    description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: entitiesQuery.parts.withAnnotation.name
+                  in: query
+                  schema:
+                    type: string
+                    title: name
+                - name: entitiesQuery.parts.withAnnotation.acceptedValue
+                  in: query
+                  schema:
+                    type: string
+                    title: accepted_value
+                    deprecated: true
+                - name: entitiesQuery.parts.withAnnotation.acceptedValues
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: accepted_values
+                - name: entitiesQuery.parts.inDataPlatform.identifier.bigquery.project
+                  in: query
+                  description: BigQuery project
+                  required: true
+                  schema:
+                    type: string
+                    title: project
+                    description: BigQuery project
+                - name: entitiesQuery.parts.inDataPlatform.identifier.clickhouse.host
+                  in: query
+                  description: Clickhouse host inclusive of port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Clickhouse host inclusive of port
+                - name: entitiesQuery.parts.inDataPlatform.identifier.clickhouse.schema
+                  in: query
+                  description: Clickhouse database
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Clickhouse database
+                - name: entitiesQuery.parts.inDataPlatform.identifier.snowflake.account
+                  in: query
+                  description: Snowflake account
+                  required: true
+                  schema:
+                    type: string
+                    title: account
+                    description: Snowflake account
+                - name: entitiesQuery.parts.inDataPlatform.identifier.snowflake.database
+                  in: query
+                  description: Snowflake database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Snowflake database
+                - name: entitiesQuery.parts.inDataPlatform.identifier.redshift.cluster
+                  in: query
+                  description: Redshift cluster
+                  required: true
+                  schema:
+                    type: string
+                    title: cluster
+                    description: Redshift cluster
+                - name: entitiesQuery.parts.inDataPlatform.identifier.redshift.database
+                  in: query
+                  description: Redshift database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Redshift database
+                - name: entitiesQuery.parts.inDataPlatform.identifier.postgres.host
+                  in: query
+                  description: Postgres host inclusive of port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Postgres host inclusive of port
+                - name: entitiesQuery.parts.inDataPlatform.identifier.postgres.database
+                  in: query
+                  description: Postgres database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Postgres database
+                - name: entitiesQuery.parts.inDataPlatform.identifier.mysql.host
+                  in: query
+                  description: Mysql host inclusive of port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Mysql host inclusive of port
+                - name: entitiesQuery.parts.inDataPlatform.identifier.databricks.workspace
+                  in: query
+                  description: URL of the databricks workspace
+                  required: true
+                  schema:
+                    type: string
+                    title: workspace
+                    description: URL of the databricks workspace
+                - name: entitiesQuery.parts.inDataPlatform.identifier.dbtCloud.apiEndpoint
+                  in: query
+                  description: API endpoint for Dbt Cloud
+                  required: true
+                  schema:
+                    type: string
+                    title: api_endpoint
+                    description: API endpoint for Dbt Cloud
+                - name: entitiesQuery.parts.inDataPlatform.identifier.dbtCloud.accountId
+                  in: query
+                  description: Account ID
+                  required: true
+                  schema:
+                    type: string
+                    title: account_id
+                    description: Account ID
+                - name: entitiesQuery.parts.inDataPlatform.identifier.dbtCloud.projectId
+                  in: query
+                  description: Project ID
+                  required: true
+                  schema:
+                    type: string
+                    title: project_id
+                    description: Project ID
+                - name: entitiesQuery.parts.inDataPlatform.identifier.sqlMesh.defaultDatabaseInstance
+                  in: query
+                  description: Default database instance for SQL Mesh
+                  required: true
+                  schema:
+                    type: string
+                    title: default_database_instance
+                    description: Default database instance for SQL Mesh
+                - name: entitiesQuery.parts.inDataPlatform.identifier.duckdb.motherduckAccount
+                  in: query
+                  schema:
+                    type: string
+                    title: motherduck_account
+                - name: entitiesQuery.parts.inDataPlatform.identifier.trino.coordinator
+                  in: query
+                  schema:
+                    type: string
+                    title: coordinator
+                - name: entitiesQuery.parts.inDataPlatform.identifier.synqIntegrationId
+                  in: query
+                  description: SYNQ integration ID maps to the created integration on the SYNQ platform.
+                  schema:
+                    type: string
+                    title: synq_integration_id
+                    description: SYNQ integration ID maps to the created integration on the SYNQ platform.
+                - name: entitiesQuery.parts.withDataPlatformType.types
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    title: types
+                - name: entitiesQuery.parts.inFolder.path
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: path
+                - name: entitiesQuery.parts.inDomain.domainId
+                  in: query
+                  schema:
+                    type: string
+                    title: domain_id
+                    format: uuid
+                - name: entitiesQuery.parts.query.operand
+                  in: query
+                  description: Defaults to AND if not specified.
+                  schema:
+                    title: operand
+                    description: Defaults to AND if not specified.
+                    $ref: '#/components/schemas/synq.queries.v1.QueryOperand'
+                - name: entitiesQuery.parts.unsupported.queryJson
+                  in: query
+                  schema:
+                    type: string
+                    title: query_json
+                - name: time.field
+                  in: query
+                  schema:
+                    title: field
+                    $ref: '#/components/schemas/synq.issues.v2.ListIssuesRequest.Field'
+                - name: time.from.seconds
+                  in: query
+                  description: |-
+                    Represents seconds of UTC time since Unix epoch
+                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                     9999-12-31T23:59:59Z inclusive.
+                  schema:
+                    type:
+                        - integer
+                        - string
+                    title: seconds
+                    format: int64
+                    description: |-
+                        Represents seconds of UTC time since Unix epoch
+                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                         9999-12-31T23:59:59Z inclusive.
+                - name: time.from.nanos
+                  in: query
+                  description: |-
+                    Non-negative fractions of a second at nanosecond resolution. Negative
+                     second values with fractions must still have non-negative nanos values
+                     that count forward in time. Must be from 0 to 999,999,999
+                     inclusive.
+                  schema:
+                    type: integer
+                    title: nanos
+                    format: int32
+                    description: |-
+                        Non-negative fractions of a second at nanosecond resolution. Negative
+                         second values with fractions must still have non-negative nanos values
+                         that count forward in time. Must be from 0 to 999,999,999
+                         inclusive.
+                - name: sort.sortBy
+                  in: query
+                  schema:
+                    title: sort_by
+                    $ref: '#/components/schemas/synq.issues.v2.ListIssuesRequest.Field'
+                - name: sort.order
+                  in: query
+                  schema:
+                    title: order
+                    $ref: '#/components/schemas/synq.issues.v2.ListIssuesRequest.Sort.Order'
+                - name: pagination.cursor
+                  in: query
+                  description: Cursor for the next page of results. If not provided, returns the first page.
+                  schema:
+                    type: string
+                    title: cursor
+                    description: Cursor for the next page of results. If not provided, returns the first page.
+                - name: pagination.pageSize
+                  in: query
+                  description: Maximum number of items to return in a single page. If not provided, defaults vary per API.
+                  schema:
+                    type: integer
+                    title: page_size
+                    format: int32
+                    description: Maximum number of items to return in a single page. If not provided, defaults vary per API.
+                - name: lifecycleState
+                  in: query
+                  description: Filter by issue lifecycle state
+                  schema:
+                    title: lifecycle_state
+                    description: Filter by issue lifecycle state
+                    $ref: '#/components/schemas/synq.issues.issues.v1.LifecycleState'
             responses:
                 default:
                     description: Error
@@ -9553,12 +10566,455 @@ paths:
                 - synq.issues.issues.v1.IssuesService
             summary: ListIssues
             operationId: synq.issues.issues.v1.IssuesService.ListIssues
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/synq.issues.issues.v1.ListIssuesRequest'
-                required: true
+            parameters:
+                - name: from.seconds
+                  in: query
+                  description: |-
+                    Represents seconds of UTC time since Unix epoch
+                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                     9999-12-31T23:59:59Z inclusive.
+                  schema:
+                    type:
+                        - integer
+                        - string
+                    title: seconds
+                    format: int64
+                    description: |-
+                        Represents seconds of UTC time since Unix epoch
+                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+                         9999-12-31T23:59:59Z inclusive.
+                - name: from.nanos
+                  in: query
+                  description: |-
+                    Non-negative fractions of a second at nanosecond resolution. Negative
+                     second values with fractions must still have non-negative nanos values
+                     that count forward in time. Must be from 0 to 999,999,999
+                     inclusive.
+                  schema:
+                    type: integer
+                    title: nanos
+                    format: int32
+                    description: |-
+                        Non-negative fractions of a second at nanosecond resolution. Negative
+                         second values with fractions must still have non-negative nanos values
+                         that count forward in time. Must be from 0 to 999,999,999
+                         inclusive.
+                - name: limit.max
+                  in: query
+                  schema:
+                    type: integer
+                    title: max
+                    format: int32
+                - name: limit.afterId
+                  in: query
+                  schema:
+                    type: string
+                    title: after_id
+                - name: entities.dbtCoreNode.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entities.dbtCoreNode.nodeId
+                  in: query
+                  description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                  required: true
+                  schema:
+                    type: string
+                    title: node_id
+                    description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                - name: entities.dbtCloudNode.projectId
+                  in: query
+                  description: Your dbt Cloud project id
+                  required: true
+                  schema:
+                    type: string
+                    title: project_id
+                    description: Your dbt Cloud project id
+                - name: entities.dbtCloudNode.accountId
+                  in: query
+                  description: Your dbt Cloud account id
+                  schema:
+                    type: string
+                    title: account_id
+                    description: Your dbt Cloud account id
+                - name: entities.dbtCloudNode.nodeId
+                  in: query
+                  description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                  required: true
+                  schema:
+                    type: string
+                    title: node_id
+                    description: Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
+                - name: entities.bigqueryTable.project
+                  in: query
+                  description: BigQuery project
+                  required: true
+                  schema:
+                    type: string
+                    title: project
+                    description: BigQuery project
+                - name: entities.bigqueryTable.dataset
+                  in: query
+                  description: BigQuery dataset id
+                  required: true
+                  schema:
+                    type: string
+                    title: dataset
+                    description: BigQuery dataset id
+                - name: entities.bigqueryTable.table
+                  in: query
+                  description: BigQuery table name
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: BigQuery table name
+                - name: entities.snowflakeTable.account
+                  in: query
+                  description: Snowflake account
+                  required: true
+                  schema:
+                    type: string
+                    title: account
+                    description: Snowflake account
+                - name: entities.snowflakeTable.database
+                  in: query
+                  description: Snowflake database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Snowflake database
+                - name: entities.snowflakeTable.schema
+                  in: query
+                  description: Snowflake schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Snowflake schema
+                - name: entities.snowflakeTable.table
+                  in: query
+                  description: Snowflake table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Snowflake table
+                - name: entities.redshiftTable.cluster
+                  in: query
+                  description: Redshift cluster
+                  schema:
+                    type: string
+                    title: cluster
+                    description: Redshift cluster
+                - name: entities.redshiftTable.database
+                  in: query
+                  description: Redshift database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Redshift database
+                - name: entities.redshiftTable.schema
+                  in: query
+                  description: Redshift schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Redshift schema
+                - name: entities.redshiftTable.table
+                  in: query
+                  description: Redshift table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Redshift table
+                - name: entities.postgresTable.host
+                  in: query
+                  description: Postgres hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Postgres hostname without port
+                - name: entities.postgresTable.database
+                  in: query
+                  description: Postgres database
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Postgres database
+                - name: entities.postgresTable.schema
+                  in: query
+                  description: Postgres schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Postgres schema
+                - name: entities.postgresTable.table
+                  in: query
+                  description: Postgres table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Postgres table
+                - name: entities.mysqlTable.host
+                  in: query
+                  description: Mysql hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Mysql hostname without port
+                - name: entities.mysqlTable.schema
+                  in: query
+                  description: Mysql database
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Mysql database
+                - name: entities.mysqlTable.table
+                  in: query
+                  description: Mysql table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Mysql table
+                - name: entities.clickhouseTable.host
+                  in: query
+                  description: Clickhouse hostname without port
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Clickhouse hostname without port
+                - name: entities.clickhouseTable.schema
+                  in: query
+                  description: Clickhouse database
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Clickhouse database
+                - name: entities.clickhouseTable.table
+                  in: query
+                  description: Clickhouse table
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Clickhouse table
+                - name: entities.airflowDag.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the Airflow instance
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id that identifies the Airflow instance
+                - name: entities.airflowDag.dagId
+                  in: query
+                  description: Airflow dag_id that identifies the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: dag_id
+                    description: Airflow dag_id that identifies the DAG
+                - name: entities.airflowTask.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the Airflow instance
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id that identifies the Airflow instance
+                - name: entities.airflowTask.dagId
+                  in: query
+                  description: Airflow dag_id that identifies the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: dag_id
+                    description: Airflow dag_id that identifies the DAG
+                - name: entities.airflowTask.taskId
+                  in: query
+                  description: Airflow task_id that identifies the task within the DAG
+                  required: true
+                  schema:
+                    type: string
+                    title: task_id
+                    description: Airflow task_id that identifies the task within the DAG
+                - name: entities.custom.id
+                  in: query
+                  description: |-
+                    Id that identifies the custom entity
+                     The Id should be unique within the custom entity Identifier.
+                  required: true
+                  schema:
+                    type: string
+                    title: id
+                    description: |-
+                        Id that identifies the custom entity
+                         The Id should be unique within the custom entity Identifier.
+                - name: entities.dataproduct.id
+                  in: query
+                  description: Dataproduct id that identifies the Dataproduct
+                  required: true
+                  schema:
+                    type: string
+                    title: id
+                    format: uuid
+                    description: Dataproduct id that identifies the Dataproduct
+                - name: entities.synqPath.path
+                  in: query
+                  description: SYNQ path that identifies the SYNQ entity, needs to be one of supported paths
+                  required: true
+                  schema:
+                    type: string
+                    title: path
+                    description: SYNQ path that identifies the SYNQ entity, needs to be one of supported paths
+                - name: entities.databricksTable.workspace
+                  in: query
+                  description: URL of Databricks workspace
+                  required: true
+                  schema:
+                    type: string
+                    title: workspace
+                    description: URL of Databricks workspace
+                - name: entities.databricksTable.catalog
+                  in: query
+                  description: Databricks catalog
+                  required: true
+                  schema:
+                    type: string
+                    title: catalog
+                    description: Databricks catalog
+                - name: entities.databricksTable.schema
+                  in: query
+                  description: Databricks schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Databricks schema
+                - name: entities.databricksTable.table
+                  in: query
+                  description: Databricks table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Databricks table or view
+                - name: entities.trinoTable.host
+                  in: query
+                  description: Hostname of the Trino instance
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Hostname of the Trino instance
+                - name: entities.trinoTable.catalog
+                  in: query
+                  description: Trino catalog
+                  required: true
+                  schema:
+                    type: string
+                    title: catalog
+                    description: Trino catalog
+                - name: entities.trinoTable.schema
+                  in: query
+                  description: Trino schema
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Trino schema
+                - name: entities.trinoTable.table
+                  in: query
+                  description: Trino table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Trino table or view
+                - name: entities.sqlMeshModel.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entities.sqlMeshModel.fqn
+                  in: query
+                  description: SQLMesh model fully qualified name
+                  required: true
+                  schema:
+                    type: string
+                    title: fqn
+                    description: SQLMesh model fully qualified name
+                - name: entities.sqlMeshAudit.integrationId
+                  in: query
+                  description: SYNQ integration_id that identifies the dbt Core project
+                  required: true
+                  schema:
+                    type: string
+                    title: integration_id
+                    format: uuid
+                    description: SYNQ integration_id that identifies the dbt Core project
+                - name: entities.sqlMeshAudit.fqn
+                  in: query
+                  description: SQLMesh model fully qualified name
+                  required: true
+                  schema:
+                    type: string
+                    title: fqn
+                    description: SQLMesh model fully qualified name
+                - name: entities.sqlMeshAudit.auditId
+                  in: query
+                  description: Identifier of the audit
+                  required: true
+                  schema:
+                    type: string
+                    title: audit_id
+                    description: Identifier of the audit
+                - name: entities.monitor.monitorId
+                  in: query
+                  description: Identifier of the monitor
+                  required: true
+                  schema:
+                    type: string
+                    title: monitor_id
+                    description: Identifier of the monitor
+                - name: entities.monitor.segment
+                  in: query
+                  description: Optional monitor segmentation identifier
+                  schema:
+                    type: string
+                    title: segment
+                    description: Optional monitor segmentation identifier
+                - name: entities.monitor.integrationId
+                  in: query
+                  description: SYNQ integration_id of the monitored identifier
+                  schema:
+                    type: string
+                    title: integration_id
+                    description: SYNQ integration_id of the monitored identifier
+                    deprecated: true
             responses:
                 default:
                     description: Error
@@ -14225,6 +15681,8 @@ tags:
     - name: synq.platforms.v1.PlatformsService
       description: PlatformsService is a service for managing Platforms and Integrations.
     - name: synq.ingest.dwh.v1.DwhService
+    - name: synq.ingest.cloudwatch.v1.CloudwatchService
+    - name: synq.ingest.airflow.v1.AirflowLogsService
     - name: synq.agent.sre.v1.TriageService
       description: |-
         Service for managing issue triage operations, allowing LLM agents to conclude investigations

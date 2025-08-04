@@ -28,10 +28,7 @@ service IssuesService {
 
   rpc ListIssues(ListIssuesRequest) returns (ListIssuesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (google.api.http) = {
-      get: "/api/issues/v2"
-      body: "*"
-    };
+    option (google.api.http) = {get: "/api/issues/v2"};
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ISSUES_READ,

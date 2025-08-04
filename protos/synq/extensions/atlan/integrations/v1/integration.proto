@@ -9,9 +9,10 @@ message Integration {
   string workspace = 1;
   string id = 2; // ID for the integration. Unique for a workspace.
   string atlan_tenant_url = 3;
-  string atlan_api_token = 4;
+  string atlan_api_token = 4 [deprecated = true]; // Deprecated: Token is not returned and is set as a secret.
   bool is_valid = 5; // Whether the integration is valid or not. Set on `upsert` as a result of connection to atlan api.
   bool is_active = 6; // Whether the integration is active or not. Only valid integrations can be activated.
   google.protobuf.Timestamp created_at = 7;
   optional google.protobuf.Timestamp deleted_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }

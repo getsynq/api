@@ -20,6 +20,18 @@ service AtlanIntegrationService {
     };
   }
 
+  // Pings Atlan with the given connection credentials.
+  rpc Ping(PingRequest) returns (PingResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_EXTENSIONS_MANAGE]
+    };
+    option (google.api.http) = {
+      post: "/api/extensions/atlan/integrations/v1/ping"
+      body: "*"
+    };
+  }
+
   rpc Get(GetRequest) returns (GetResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -56,6 +68,15 @@ message UpsertRequest {
 
 message UpsertResponse {
   Integration integration = 1;
+}
+
+message PingRequest {
+  string atlan_tenant_url = 1;
+  string atlan_api_token = 2;
+}
+
+message PingResponse {
+  bool success = 1;
 }
 
 message GetRequest {}
