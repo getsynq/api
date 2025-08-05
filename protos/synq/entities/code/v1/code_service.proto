@@ -41,4 +41,6 @@ message ListCodeResponse {
   // List of code artifacts associated with the requested entity.
   // Each code artifact includes its content, type, and metadata about when it was captured.
   repeated synq.entities.v1.Code codes = 1;
+  repeated synq.entities.v1.Identifier identifiers = 2 [(buf.validate.field) = {required: true}];
+  repeated string synq_paths = 3;
 }

@@ -18,6 +18,11 @@ message Entity {
   // Unique identifier for this entity.
   Identifier id = 2 [(buf.validate.field).required = true];
 
+  // Return only value. All identifiers of entities which are tightly related
+  repeated Identifier ids = 12;
+  // Return only value. Synq Path to the all identifiers of entities which are tightly related
+  repeated string synq_paths = 13;
+
   // Id of custom type or default type when 0
   int32 type_id = 11 [(buf.validate.field) = {
     int32: {

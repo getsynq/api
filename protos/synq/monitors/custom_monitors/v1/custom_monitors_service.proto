@@ -70,8 +70,6 @@ message BatchUpdateMonitorModeRequest {
       }
     }
   }];
-  // updates are only allowed for the same mode type. If you want to change the mode type, you need to delete and create a new monitor.
-  // if you want to change min/max thresholds, you can update the mode with the new min/max thresholds.
   oneof mode {
     ModeAnomalyEngine anomaly_engine = 10;
     ModeFixedThresholds fixed_thresholds = 11;
