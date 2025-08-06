@@ -29,7 +29,6 @@ service AtlanWorkflowService {
     };
     option (google.api.http) = {
       delete: "/api/extensions/atlan/workflows/v1/connection-mappings"
-      body: "*"
     };
   }
 

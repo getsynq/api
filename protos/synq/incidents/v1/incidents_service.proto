@@ -98,7 +98,6 @@ service IncidentsService {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (google.api.http) = {
       delete: "/api/incidents/v1/{incident_id}/issues"
-      body: "*"
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]

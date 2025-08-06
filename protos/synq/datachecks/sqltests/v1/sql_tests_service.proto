@@ -55,7 +55,6 @@ service SqlTestsService {
     };
     option (google.api.http) = {
       delete: "/api/datachecks/sqltests/v1/batch"
-      body: "*"
     };
   }
 
