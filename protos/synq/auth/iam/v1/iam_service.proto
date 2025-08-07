@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package synq.auth.iam.v1;
+
+import "google/api/annotations.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/auth/iam/v1";
+
+service IamService {
+  // Iam returns information about caller authentication
+  rpc Iam(IamRequest) returns (IamResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/iam/v1"};
+  }
+}
+
+message IamRequest {}
+message IamResponse {
+  // Workspace to which caller is authenticated
+  string workspace = 1;
+  // What scopes are granted
+  repeated synq.v1.Scope scopes = 2;
+  // Names of the scopes available
+  repeated string scope_names = 3;
+  // Indicates that the token is scoped to a specific integration
+  optional string integration_id = 4;
+  // Identifier of the provided token
+  string subject = 5;
+}

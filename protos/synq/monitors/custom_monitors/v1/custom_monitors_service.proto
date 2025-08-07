@@ -36,6 +36,13 @@ service CustomMonitorsService {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
     };
   }
+
+  rpc ListConfigMonitors(ListConfigMonitorsRequest) returns (ListConfigMonitorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
 }
 
 message BatchCreateMonitorRequest {
@@ -94,4 +101,10 @@ message BatchUpdateMonitorSeverityRequest {
 
 message BatchUpdateMonitorSeverityResponse {
   repeated string updated_ids = 1;
+}
+
+message ListConfigMonitorsRequest {}
+
+message ListConfigMonitorsResponse {
+  repeated MonitorDefinition monitors = 1;
 }

@@ -160,7 +160,7 @@ service DwhService {
       scopes: [SCOPE_INGEST_DWH]
     };
     option (google.api.http) = {
-      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/task-results"
+      post: "/api/datawarehouse/v1/connection/{connection_id}/task/{task_id}/task-results"
       body: "*"
     };
   }
