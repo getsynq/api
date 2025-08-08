@@ -27,9 +27,7 @@ service AtlanWorkflowService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_EXTENSIONS_MANAGE]
     };
-    option (google.api.http) = {
-      delete: "/api/extensions/atlan/workflows/v1/connection-mappings"
-    };
+    option (google.api.http) = {delete: "/api/extensions/atlan/workflows/v1/connection-mappings"};
   }
 
   rpc GetConnectionMappings(GetConnectionMappingsRequest) returns (GetConnectionMappingsResponse) {

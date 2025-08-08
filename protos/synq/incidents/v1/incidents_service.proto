@@ -96,9 +96,7 @@ service IncidentsService {
 
   rpc RemoveIssuesFromIncident(RemoveIssuesFromIncidentRequest) returns (RemoveIssuesFromIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
-    option (google.api.http) = {
-      delete: "/api/incidents/v1/{incident_id}/issues"
-    };
+    option (google.api.http) = {delete: "/api/incidents/v1/{incident_id}/issues"};
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };

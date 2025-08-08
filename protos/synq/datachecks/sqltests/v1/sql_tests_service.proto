@@ -53,9 +53,7 @@ service SqlTestsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
-    option (google.api.http) = {
-      delete: "/api/datachecks/sqltests/v1/batch"
-    };
+    option (google.api.http) = {delete: "/api/datachecks/sqltests/v1/batch"};
   }
 
   // Get SqlTest audit from a given execution ID in jwt token.
