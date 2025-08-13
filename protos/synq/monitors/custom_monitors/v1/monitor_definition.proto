@@ -62,12 +62,6 @@ enum Sensitivity {
   SENSITIVITY_RELAXED = 3;
 }
 
-enum MonitorSource {
-  MONITOR_SOURCE_UNSPECIFIED = 0;
-  MONITOR_SOURCE_API = 1;
-  MONITOR_SOURCE_CONFIG = 2;
-}
-
 message ModeAnomalyEngine {
   Sensitivity sensitivity = 1;
 }
@@ -88,8 +82,7 @@ message MonitorDefinition {
   optional string filter = 5;
   Severity severity = 6;
   string name = 7 [(buf.validate.field).required = true];
-  // As default will be set to MONITOR_SOURCE_API
-  MonitorSource source = 8;
+  string config_id = 8;
 
   oneof monitor {
     MonitorFreshness freshness = 20;

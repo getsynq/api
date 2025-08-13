@@ -16,6 +16,13 @@ service CustomMonitorsService {
     };
   }
 
+  rpc BatchUpdateMonitor(BatchUpdateMonitorRequest) returns (BatchUpdateMonitorResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
   rpc BatchDeleteMonitor(BatchDeleteMonitorRequest) returns (BatchDeleteMonitorResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -30,6 +37,13 @@ service CustomMonitorsService {
     };
   }
 
+  rpc ConfigChangesOverview(ConfigChangesOverviewRequest) returns (ConfigChangesOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
   rpc BatchUpdateMonitorSeverity(BatchUpdateMonitorSeverityRequest) returns (BatchUpdateMonitorSeverityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -37,7 +51,7 @@ service CustomMonitorsService {
     };
   }
 
-  rpc ListConfigMonitors(ListConfigMonitorsRequest) returns (ListConfigMonitorsResponse) {
+  rpc ListConfigsMonitors(ListConfigsMonitorsRequest) returns (ListConfigsMonitorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
@@ -103,8 +117,43 @@ message BatchUpdateMonitorSeverityResponse {
   repeated string updated_ids = 1;
 }
 
-message ListConfigMonitorsRequest {}
+message ListConfigsMonitorsRequest {
+  repeated string config_ids = 1;
+}
 
-message ListConfigMonitorsResponse {
+message ListConfigsMonitorsResponse {
   repeated MonitorDefinition monitors = 1;
+}
+
+message ConfigChangesOverviewRequest {
+  repeated string config_ids = 1;
+  repeated MonitorDefinition monitors = 2 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message ChangeOverview {
+  string monitor_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+  }];
+  MonitorDefinition origin_definition = 2;
+  MonitorDefinition new_definition = 3;
+  string changes = 4;
+  string changes_delta_json = 5;
+  bool should_reset = 6;
+}
+
+message ConfigChangesOverviewResponse {
+  repeated MonitorDefinition monitors_managed_by_app = 1;
+  repeated MonitorDefinition monitors_to_create = 2;
+  repeated MonitorDefinition monitors_to_delete = 3;
+  repeated MonitorDefinition monitors_unchanged = 4;
+  repeated ChangeOverview monitors_changes_overview = 5;
+}
+
+message BatchUpdateMonitorRequest {
+  repeated string monitor_ids_to_reset = 1;
+  repeated MonitorDefinition monitors = 2 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message BatchUpdateMonitorResponse {
+  repeated string updated_ids = 1;
 }

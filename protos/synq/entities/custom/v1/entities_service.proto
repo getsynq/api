@@ -35,7 +35,7 @@ service EntitiesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
-    option (google.api.http) = {delete: "/api/entities/custom/v1/{id}"};
+    option (google.api.http) = {delete: "/api/entities/custom/v1"};
   }
 
   // List all entities.

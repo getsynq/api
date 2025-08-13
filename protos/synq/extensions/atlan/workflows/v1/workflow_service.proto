@@ -122,7 +122,7 @@ message GetDomainMappingsResponse {
 }
 
 message SynchronizeRequest {
-  bool use_v2 = 1;
+  bool use_v2 = 1 [deprecated = true];
 }
 
 message SynchronizeResponse {

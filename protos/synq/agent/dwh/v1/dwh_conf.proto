@@ -182,4 +182,8 @@ message TrinoConf {
   bool no_show_create_view = 7;
   // Use SHOW CREATE TABLE to get tables DDLs
   bool no_show_create_table = 8;
+  // Should it fetch system.metadata.materialized_views to get information about Trino MVs
+  bool no_materialized_views = 9;
+  // Fetch Trino table comments from system.metadata.table_comments
+  bool fetch_table_comments = 10;
 }

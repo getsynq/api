@@ -22,7 +22,7 @@ service EntitiesService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/entities/v1/{id}"};
+    option (google.api.http) = {get: "/api/entities/v1"};
   }
 
   // Get multiple entities by their identifiers.
