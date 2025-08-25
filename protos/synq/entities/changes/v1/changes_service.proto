@@ -45,7 +45,10 @@ service ChangesService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/changes/v1/batch"};
+    option (google.api.http) = {
+      post: "/api/changes/v1/by-id"
+      body: "*"
+    };
   }
 }
 

@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package synq.users.v1;
+
+import "synq/users/v1/users.proto";
+import "synq/v1/scope_authorization.proto";
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/users/v1";
+
+service UsersService {
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_READ
+      ]
+    };
+  }
+
+  rpc GetByAlias(GetByAliasRequest) returns (GetByAliasResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_READ
+      ]
+    };
+  }
+
+  rpc GetByEmail(GetByEmailRequest) returns (GetByEmailResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_READ
+      ]
+    };
+  }
+
+  rpc UpsertUserAliases(UpsertUserAliasesRequest) returns (UpsertUserAliasesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_EDIT
+      ]
+    };
+  }
+
+  rpc DeleteUserAliases(DeleteUserAliasesRequest) returns (DeleteUserAliasesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_EDIT
+      ]
+    };
+  }
+
+  rpc GetUserAliases(GetUserAliasesRequest) returns (GetUserAliasesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_READ
+      ]
+    };
+  }
+}
+
+message GetByEmailRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+}
+
+message GetByEmailResponse {
+  User user = 1;
+}
+
+message GetByAliasRequest {
+  UserAlias alias = 1;
+}
+
+message GetByAliasResponse {
+  User user = 1;
+}
+
+message ListUsersRequest { }
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message UpsertUserAliasesRequest {
+  repeated UserAlias aliases = 1;
+}
+
+message UpsertUserAliasesResponse { }
+
+message DeleteUserAliasesRequest {
+  repeated UserAlias aliases = 1;
+}
+
+message DeleteUserAliasesResponse { }
+
+message GetUserAliasesRequest {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetUserAliasesResponse {
+  repeated UserAlias aliases = 1;
+}

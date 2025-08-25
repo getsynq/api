@@ -143,6 +143,7 @@ message ChangeOverview {
 
 message ConfigChangesOverviewResponse {
   repeated MonitorDefinition monitors_managed_by_app = 1;
+  repeated MonitorDefinition monitors_managed_by_other_configs = 6;
   repeated MonitorDefinition monitors_to_create = 2;
   repeated MonitorDefinition monitors_to_delete = 3;
   repeated MonitorDefinition monitors_unchanged = 4;

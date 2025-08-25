@@ -16,12 +16,15 @@ option go_package = "github.com/getsynq/api/issues/issues/v1";
 service IssuesService {
   rpc BatchGetIssues(BatchGetIssuesRequest) returns (BatchGetIssuesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (google.api.http) = {get: "/api/issues/v1/batch"};
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ISSUES_READ,
         SCOPE_SRE_AGENT
       ]
+    };
+    option (google.api.http) = {
+      post: "/api/issues/v1/by-id"
+      body: "*"
     };
   }
 

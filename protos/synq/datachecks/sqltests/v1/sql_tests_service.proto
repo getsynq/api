@@ -18,7 +18,7 @@ service SqlTestsService {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
     option (google.api.http) = {
-      post: "/api/datachecks/sqltests/v1/batch"
+      post: "/api/datachecks/sqltests/v1"
       body: "*"
     };
   }
@@ -44,7 +44,10 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/datachecks/sqltests/v1/batch"};
+    option (google.api.http) = {
+      post: "/api/datachecks/sqltests/v1/by-id"
+      body: "*"
+    };
   }
 
   // Delete SqlTests by their IDs.
@@ -53,7 +56,7 @@ service SqlTestsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
     };
-    option (google.api.http) = {delete: "/api/datachecks/sqltests/v1/batch"};
+    option (google.api.http) = {delete: "/api/datachecks/sqltests/v1"};
   }
 
   // Get SqlTest audit from a given execution ID in jwt token.
@@ -65,7 +68,6 @@ service SqlTestsService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/datachecks/sqltests/v1/audit"};
   }
 }
 

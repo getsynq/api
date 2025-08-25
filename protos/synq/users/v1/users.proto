@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package synq.users.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/users/v1";
+
+message User {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+}
+
+message UserAlias {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+
+  oneof type {
+    SlackUser slack = 30;
+    EmailUser email = 31;
+  }
+}
+
+message SlackUser {
+  string user_id = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+    required: true
+  }];
+}
+
+message EmailUser {
+  string user_email = 1 [(buf.validate.field) = {
+    string: {
+      min_len: 1
+      email: true
+    }
+    required: true
+  }];
+}

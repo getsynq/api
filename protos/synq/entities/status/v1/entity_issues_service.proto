@@ -22,7 +22,6 @@ service EntityIssuesService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/status/v1/issues"};
   }
 
   // Get multiple entity statuses by their identifiers.
@@ -34,7 +33,10 @@ service EntityIssuesService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/status/v1/issues"};
+    option (google.api.http) = {
+      post: "/api/status/v1/issues/by-id"
+      body: "*"
+    };
   }
 }
 

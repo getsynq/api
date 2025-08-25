@@ -22,7 +22,10 @@ service DatabaseCoordinatesService {
         SCOPE_SRE_AGENT
       ]
     };
-    option (google.api.http) = {get: "/api/coordinates/v1/database"};
+    option (google.api.http) = {
+      post: "/api/coordinates/v1/database/by-id"
+      body: "*"
+    };
   }
 }
 
