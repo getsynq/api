@@ -37,6 +37,14 @@ service IncidentsService {
     };
   }
 
+  rpc UpdateIncidentState(UpdateIncidentStateRequest) returns (UpdateIncidentStateResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (google.api.http) = {
+      patch: "/api/incidents/v1/{incident_id}/state"
+      body: "*"
+    };
+  }
+
   // Cancel an incident
   rpc CancelIncident(CancelIncidentRequest) returns (CancelIncidentResponse) {
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
@@ -126,6 +134,14 @@ service IncidentsService {
       ]
     };
   }
+
+  rpc AssignIncidentOwner(AssignIncidentOwnerRequest) returns (AssignIncidentOwnerResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/incidents/v1/{incident_id}/assign-owner"
+      body: "*"
+    };
+  }
 }
 
 //
@@ -194,6 +210,32 @@ message RenameIncidentRequest {
 }
 
 message RenameIncidentResponse {}
+
+message UpdateIncidentStateRequest {
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor updating the incident state
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the incident state was updated. Defaults to the current time.
+  google.protobuf.Timestamp at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // New state for the incident
+  synq.incidents.v1.Incident.State state = 4 [(buf.validate.field) = {required: true}];
+}
+
+message UpdateIncidentStateResponse {
+  synq.incidents.v1.Incident incident = 1;
+}
 
 message CancelIncidentRequest {
   // ID of the incident to cancel
@@ -451,3 +493,15 @@ message BatchGetIncidentsResponse {
   // Incidents keyed by their IDs
   map<string, synq.incidents.v1.Incident> incidents = 1;
 }
+
+message AssignIncidentOwnerRequest {
+  // ID of the incident to assign the owner to
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+  string owner_email = 2 [(buf.validate.field) = {required: true}];
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+}
+
+message AssignIncidentOwnerResponse {}

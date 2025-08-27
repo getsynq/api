@@ -7,10 +7,10 @@ import "buf/validate/validate.proto";
 option go_package = "github.com/getsynq/api/users/v1";
 
 message User {
-    string id = 1;
-    string first_name = 2;
-    string last_name = 3;
-    string email = 4;
+  string id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string email = 4;
 }
 
 message UserAlias {
