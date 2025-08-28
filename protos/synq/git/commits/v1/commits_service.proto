@@ -15,7 +15,8 @@ service CommitsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_CODE_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/git/v1/change/{change_id}"};
@@ -26,7 +27,8 @@ service CommitsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/git/v1/commit/{commit_sha}"};

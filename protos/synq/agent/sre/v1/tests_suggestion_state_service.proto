@@ -25,7 +25,8 @@ service TestsSuggestionStateService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -35,7 +36,8 @@ service TestsSuggestionStateService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -45,7 +47,8 @@ service TestsSuggestionStateService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
   }

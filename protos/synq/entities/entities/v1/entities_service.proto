@@ -19,7 +19,8 @@ service EntitiesService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -30,7 +31,8 @@ service EntitiesService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {
@@ -64,6 +66,18 @@ message BatchGetEntitiesRequest {
 
 // BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
 message BatchGetEntitiesResponse {
+  // The entities that were retrieved.
+  repeated synq.entities.v1.Entity entities = 1;
+}
+
+message SearchEntitiesRequest {
+  // Full text search query, it will search in name but also in description and columns of the entities
+  string query = 1;
+  optional int32 page = 2;
+  optional int32 limit_per_page = 3;
+}
+
+message SearchEntitiesResponse {
   // The entities that were retrieved.
   repeated synq.entities.v1.Entity entities = 1;
 }

@@ -25,7 +25,7 @@ message Incident {
   synq.issues.actor.v1.Actor created_by = 5;
 
   // Owner of the incident.
-  synq.users.v1.User owner = 11; 
+  synq.users.v1.User owner = 11;
 
   // Time at which the incident was created.
   google.protobuf.Timestamp created_at = 6;

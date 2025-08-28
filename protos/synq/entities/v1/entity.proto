@@ -18,11 +18,6 @@ message Entity {
   // Unique identifier for this entity.
   Identifier id = 2 [(buf.validate.field).required = true];
 
-  // Return only value. All identifiers of entities which are tightly related
-  repeated Identifier ids = 12;
-  // Return only value. Synq Path to the all identifiers of entities which are tightly related
-  repeated string synq_paths = 13;
-
   // Id of custom type or default type when 0
   int32 type_id = 11 [(buf.validate.field) = {
     int32: {
@@ -61,6 +56,11 @@ message Entity {
   string synq_path = 8;
   // Return only value. Synq URL to the entity. This is a unique URL that can be used to access the entity in the Synq's UI.
   string synq_catalog_url = 9;
+
+  // Return only value. All identifiers of entities which are tightly related
+  repeated Identifier ids = 12;
+  // Return only value. Synq Path to the all identifiers of entities which are tightly related
+  repeated string synq_paths = 13;
 
   // Annotations attached to the entity. Annotations are key-value pairs that can be used to store metadata about the entity.
   repeated entities.v1.Annotation annotations = 10 [(buf.validate.field) = {

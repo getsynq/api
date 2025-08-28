@@ -14,7 +14,8 @@ service MonitorInfoService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_MONITORS_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/monitors/info/v1"};

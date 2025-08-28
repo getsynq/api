@@ -29,7 +29,8 @@ service SqlTestsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_SQLTESTS_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/datachecks/sqltests/v1"};
@@ -41,7 +42,8 @@ service SqlTestsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_DATACHECKS_SQLTESTS_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {
@@ -63,10 +65,7 @@ service SqlTestsService {
   rpc GetSqlTestAudit(GetSqlTestAuditRequest) returns (GetSqlTestAuditResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ,
-        SCOPE_SRE_AGENT
-      ]
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ]
     };
   }
 }

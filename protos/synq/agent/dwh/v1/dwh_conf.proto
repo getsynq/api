@@ -153,6 +153,8 @@ message SnowflakeConf {
   repeated string databases = 7;
   // Use GET_DDL to determine queries used for table/view creation
   bool use_get_ddl = 8;
+  // Name of the database where ACCOUNT_USAGE schema is present, fallbacks to SNOWFLAKE
+  optional string account_usage_db = 9;
 }
 
 // Trino specific configuration

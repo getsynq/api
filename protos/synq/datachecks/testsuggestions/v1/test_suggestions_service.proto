@@ -29,7 +29,8 @@ service TestSuggestionsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/datachecks/testsuggestions/v1"};
@@ -51,8 +52,8 @@ service TestSuggestionsService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [
-        SCOPE_SRE_AGENT,
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_SRE_AGENT
       ]
     };
     option (google.api.http) = {

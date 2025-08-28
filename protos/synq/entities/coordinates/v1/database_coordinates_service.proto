@@ -19,7 +19,8 @@ service DatabaseCoordinatesService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {
