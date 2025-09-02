@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package synq.ingest.openlineage.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/ingest/openlineage/v1";
+
+service OpenlineageService {
+  rpc Ingest(IngestRequest) returns (IngestResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INGEST_AIRFLOW,
+        SCOPE_INGEST_OPENLINEAGE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/ingest/openlineage/v1"
+      body: "*"
+    };
+  }
+}
+
+message IngestRequest {
+  google.protobuf.Struct payload = 1;
+}
+
+message IngestResponse {}
