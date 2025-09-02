@@ -27,8 +27,8 @@ message ScheduleDaily {
 }
 
 message ScheduleHourly {
-  // Minutes since midnight (0-59)
-  int32 minutes_since_midnight = 1 [
+  // Minute of hour (0-59)
+  int32 minute_of_hour = 1 [
     (buf.validate.field).int32.gte = 0,
     (buf.validate.field).int32.lte = 59
   ];
