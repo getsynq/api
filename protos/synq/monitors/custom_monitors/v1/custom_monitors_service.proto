@@ -127,7 +127,7 @@ message ListConfigsMonitorsResponse {
 
 message ConfigChangesOverviewRequest {
   repeated string config_ids = 1;
-  repeated MonitorDefinition monitors = 2 [(buf.validate.field).repeated.min_items = 1];
+  repeated MonitorDefinition monitors = 2;
 }
 
 message ChangeOverview {

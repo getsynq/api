@@ -6,6 +6,8 @@ import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/entity.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/entities/v1";
@@ -39,6 +41,18 @@ service EntitiesService {
       post: "/api/entities/v1/by-id"
       body: "*"
     };
+  }
+
+  // List entities matching the given filter
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+    option (google.api.http) = {get: "/api/entities/v1"};
   }
 }
 
@@ -80,4 +94,14 @@ message SearchEntitiesRequest {
 message SearchEntitiesResponse {
   // The entities that were retrieved.
   repeated synq.entities.v1.Entity entities = 1;
+}
+
+message ListEntitiesRequest {
+  synq.queries.v1.Query query = 1;
+  synq.v1.Pagination pagination = 2;
+}
+
+message ListEntitiesResponse {
+  synq.v1.PageInfo page_info = 1;
+  repeated synq.entities.v1.Identifier entity_ids = 2;
 }

@@ -143,6 +143,9 @@ service IncidentsService {
       patch: "/api/incidents/v1/{incident_id}/assign-owner"
       body: "*"
     };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
   }
 }
 
@@ -178,6 +181,7 @@ message CreateIncidentRequest {
 
   // Optional group IDs associated with the incident
   repeated string group_ids = 5;
+  string owner_email = 6;
 }
 
 message CreateIncidentResponse {

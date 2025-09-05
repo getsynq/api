@@ -19,7 +19,7 @@ service OpenlineageService {
     };
     option (google.api.http) = {
       post: "/api/ingest/openlineage/v1"
-      body: "*"
+      body: "payload"
     };
   }
 }

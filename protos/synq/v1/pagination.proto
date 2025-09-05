@@ -1,6 +1,7 @@
 syntax = "proto3";
 package synq.v1;
 
+import "buf/validate/validate.proto";
 import "google/protobuf/descriptor.proto";
 
 option go_package = "github.com/getsynq/api/v1";
@@ -9,7 +10,7 @@ message Pagination {
   // Cursor for the next page of results. If not provided, returns the first page.
   optional string cursor = 1;
   // Maximum number of items to return in a single page. If not provided, defaults vary per API.
-  optional int32 page_size = 2;
+  optional int32 page_size = 2 [(buf.validate.field).int32.gte = 0];
 }
 
 message PageInfo {
