@@ -4,7 +4,9 @@ package synq.entities.entities.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "synq/entities/entities/v1/search_hit.proto";
 import "synq/entities/v1/entity.proto";
+import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/queries/v1/query.proto";
 import "synq/v1/pagination.proto";
@@ -42,17 +44,30 @@ service EntitiesService {
       body: "*"
     };
   }
-
   // List entities matching the given filter
   rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
-        SCOPE_SRE_AGENT
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
       ]
     };
     option (google.api.http) = {get: "/api/entities/v1"};
+  }
+
+  // Search for entities.
+  rpc SearchEntities(SearchEntitiesRequest) returns (SearchEntitiesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/entities/v1/search"};
   }
 }
 
@@ -84,18 +99,6 @@ message BatchGetEntitiesResponse {
   repeated synq.entities.v1.Entity entities = 1;
 }
 
-message SearchEntitiesRequest {
-  // Full text search query, it will search in name but also in description and columns of the entities
-  string query = 1;
-  optional int32 page = 2;
-  optional int32 limit_per_page = 3;
-}
-
-message SearchEntitiesResponse {
-  // The entities that were retrieved.
-  repeated synq.entities.v1.Entity entities = 1;
-}
-
 message ListEntitiesRequest {
   synq.queries.v1.Query query = 1;
   synq.v1.Pagination pagination = 2;
@@ -104,4 +107,29 @@ message ListEntitiesRequest {
 message ListEntitiesResponse {
   synq.v1.PageInfo page_info = 1;
   repeated synq.entities.v1.Identifier entity_ids = 2;
+}
+
+message SearchEntitiesRequest {
+  // Full text search query, it will search in name but also in description and columns of the entities
+  string query = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Limit results to specific entity types, leave empty to use only the query
+  repeated synq.entities.v1.EntityType limit_to_types = 2 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+  optional uint32 page = 10;
+  optional uint32 limit_per_page = 11;
+}
+
+message SearchEntitiesResponse {
+  // The entities that were retrieved.
+  repeated SearchHit hits = 1;
+  // Estimated number of all search results
+  uint64 estimated_total_hits = 2;
+  // Estimated number of all search results by entity type
+  repeated EntityTypeSearchFacet entity_type_estimates = 3;
 }

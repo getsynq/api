@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package synq.entities.entities.v1;
+
+import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/entities/v1";
+
+message SearchHit {
+  // Name of the found entity with optional folder like path
+  string name = 1;
+  // Description is used for display and search
+  string description = 3;
+  // Identifier of the entity
+  optional synq.entities.v1.Identifier entity_id = 4;
+  // SYNQ path, as used in frontend
+  optional string synq_path = 5;
+  // Information about entity type
+  optional synq.entities.v1.EntityType entity_type = 6;
+  // Ranking score, higher is better
+  float ranking_score = 12;
+}
+
+message EntityTypeSearchFacet {
+  synq.entities.v1.EntityType entity_type = 1;
+  uint32 count = 2;
+}

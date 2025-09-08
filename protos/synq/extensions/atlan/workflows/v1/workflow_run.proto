@@ -25,7 +25,7 @@ message WorkflowRun {
   Status status = 3;
   google.protobuf.Timestamp started_at = 4;
   google.protobuf.Timestamp ended_at = 5;
-  repeated Log logs = 6;
+  repeated Log logs = 6 [deprecated = true];
 }
 
 message Log {
