@@ -69,6 +69,8 @@ protoc \
     --connect-openapi_opt=base=$basefile \
     --connect-openapi_opt=path=openapi.yaml \
     --connect-openapi_opt=content-types=json \
+    --connect-openapi_opt=only-googleapi-http \
+    --connect-openapi_opt=trim-unused-types \
     $(grep -r -l "google.api.http" ${PROTOS_DIR}/synq)
 
 # Having an explicit title on any of the schemas that use `oneOf` makes the mintlify docs hard to read
