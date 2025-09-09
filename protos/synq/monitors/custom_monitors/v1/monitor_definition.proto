@@ -10,7 +10,22 @@ option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 
 message Segmentation {
   // The expression to segment on (eg. "country", "meta['country']")
+  // You can optionally specify values to include or exclude from segmentation.
+  // If neither are provided, all values are included by default.
   string expression = 1 [(buf.validate.field).required = true];
+  option (buf.validate.message).oneof = {
+    fields: [
+      "include_values",
+      "exclude_values"
+    ]
+    required: false
+  };
+  optional ValueList include_values = 2; // List of expression values to include for segmentation (eg. "UK", "France")
+  optional ValueList exclude_values = 3; // List of expression values to exclude for segmentation (eg. "NA", "")
+}
+
+message ValueList {
+  repeated string values = 1;
 }
 
 message TimePartitioning {
@@ -20,18 +35,32 @@ message TimePartitioning {
 
 message ScheduleDaily {
   // Minutes since midnight (0-1439)
-  int32 minutes_since_midnight = 1 [
-    (buf.validate.field).int32.gte = 0,
-    (buf.validate.field).int32.lte = 1439
-  ];
+  int32 minutes_since_midnight = 1 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 1439
+    }
+  }];
+  // Delay monitoring by given number of days.
+  optional int32 delay_num_days = 2 [(buf.validate.field) = {
+    int32: {gte: 0}
+    required: false
+  }];
 }
 
 message ScheduleHourly {
   // Minute of hour (0-59)
-  int32 minute_of_hour = 1 [
-    (buf.validate.field).int32.gte = 0,
-    (buf.validate.field).int32.lte = 59
-  ];
+  int32 minute_of_hour = 1 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 59
+    }
+  }];
+  // Delay monitoring by given number of hours.
+  optional int32 delay_num_hours = 2 [(buf.validate.field) = {
+    int32: {gte: 0}
+    required: false
+  }];
 }
 
 message MonitorFreshness {
