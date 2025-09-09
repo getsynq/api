@@ -506,7 +506,7 @@ message AssignIncidentOwnerRequest {
     string: {uuid: true}
     required: true
   }];
-  string owner_email = 2 [(buf.validate.field) = {required: true}];
+  string owner_email = 2;
   synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
 }
 
