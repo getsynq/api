@@ -54,6 +54,7 @@ security:
   - bearerAuth: []
 servers:
   - url: https://developer.synq.io
+  - url: https://api.us.synq.io
 components:
   securitySchemes:
     bearerAuth:

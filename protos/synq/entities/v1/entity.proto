@@ -5,8 +5,8 @@ package synq.entities.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/annotation.proto";
-import "synq/entities/v1/identifier.proto";
 import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
