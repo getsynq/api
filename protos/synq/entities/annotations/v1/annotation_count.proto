@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package synq.entities.annotations.v1;
+
+option go_package = "github.com/getsynq/api/entities/annotations/v1";
+
+// AnnotationCount represents the count of entities that have a specific annotation name-value pair.
+// This is used for aggregating and reporting annotation statistics across entities.
+message AnnotationCount {
+  // The annotation name (key).
+  string name = 1;
+  // The annotation value. If empty, represents the count for all values of this annotation name.
+  string value = 2;
+  // The number of entities that have this annotation name-value pair.
+  int32 count = 3;
+}

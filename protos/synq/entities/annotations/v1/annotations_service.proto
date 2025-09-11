@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package synq.entities.annotations.v1;
+
+import "google/api/annotations.proto";
+import "synq/entities/annotations/v1/annotation_count.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/annotations/v1";
+
+// AnnotationsService provides operations for managing and querying entity annotations.
+// Annotations are key-value pairs that can be attached to entities for categorization and filtering.
+service AnnotationsService {
+  // List all available annotations with their usage counts across entities.
+  rpc ListAnnotations(ListAnnotationsRequest) returns (ListAnnotationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      get: "/api/entities/annotations/v1"
+      body: "*"
+    };
+  }
+}
+
+// ListAnnotationsRequest is the request message for the ListAnnotations method.
+message ListAnnotationsRequest {}
+
+// ListAnnotationsResponse is the response message for the ListAnnotations method.
+message ListAnnotationsResponse {
+  // The annotation counts grouped by name and value.
+  repeated AnnotationCount annotation_counts = 1;
+}
