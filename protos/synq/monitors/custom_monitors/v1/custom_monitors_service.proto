@@ -4,6 +4,7 @@ package synq.monitors.custom_monitors.v1;
 
 import "buf/validate/validate.proto";
 import "synq/monitors/custom_monitors/v1/monitor_definition.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
@@ -52,6 +53,13 @@ service CustomMonitorsService {
   }
 
   rpc ListConfigsMonitors(ListConfigsMonitorsRequest) returns (ListConfigsMonitorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+  }
+
+  rpc ListMonitors(ListMonitorsRequest) returns (ListMonitorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
@@ -123,6 +131,24 @@ message ListConfigsMonitorsRequest {
 
 message ListConfigsMonitorsResponse {
   repeated MonitorDefinition monitors = 1;
+}
+
+message ListMonitorsRequest {
+  repeated string integration_ids = 1;
+  repeated string monitored_asset_paths = 2;
+  repeated string monitor_ids = 3;
+  repeated string source = 4;
+  repeated string config_ids = 5;
+
+  // Pagination
+  optional synq.v1.Pagination pagination = 10;
+}
+
+message ListMonitorsResponse {
+  repeated MonitorDefinition monitors = 1;
+
+  // Paging information.
+  synq.v1.PageInfo page_info = 10 [(buf.validate.field) = {required: true}];
 }
 
 message ConfigChangesOverviewRequest {

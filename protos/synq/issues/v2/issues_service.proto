@@ -165,7 +165,10 @@ message ListIssuesRequest {
   optional synq.v1.Pagination pagination = 4;
 
   // Filter by issue lifecycle state
-  optional synq.issues.issues.v1.LifecycleState lifecycle_state = 5;
+  optional synq.issues.issues.v1.LifecycleState lifecycle_state = 5 [deprecated = true];
+
+  // Filter by issue lifecycle states
+  repeated synq.issues.issues.v1.LifecycleState lifecycle_states = 6;
 }
 
 message ListIssuesResponse {

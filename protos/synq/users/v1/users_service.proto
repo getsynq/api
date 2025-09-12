@@ -16,6 +16,13 @@ service UsersService {
     };
   }
 
+  rpc BatchGetUsers(BatchGetUsersRequest) returns (BatchGetUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USER_READ]
+    };
+  }
+
   rpc GetByAlias(GetByAliasRequest) returns (GetByAliasResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -92,4 +99,12 @@ message GetUserAliasesRequest {
 
 message GetUserAliasesResponse {
   repeated UserAlias aliases = 1;
+}
+
+message BatchGetUsersRequest {
+  repeated string user_ids = 1;
+}
+
+message BatchGetUsersResponse {
+  repeated User users = 1;
 }

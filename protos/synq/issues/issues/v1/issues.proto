@@ -88,8 +88,7 @@ enum State {
 // The state is exclusively determined as per the priority which is in the order of the fields below.
 enum LifecycleState {
   LIFECYCLE_STATE_UNSPECIFIED = 0;
-  // Issue has not been triaged yet. These are all the issues that
-  // do not satisfy the following states.
+  // Issue has not been triaged yet. A triaged issue is one that has been acted upon (status update or incident declaration)
   LIFECYCLE_STATE_UNTRIAGED = 1;
   // Issue is closed. This is a terminal state.
   LIFECYCLE_STATE_CLOSED = 2;
@@ -97,6 +96,8 @@ enum LifecycleState {
   LIFECYCLE_STATE_ONGOING_RESOLVED = 3;
   // Open issue that has been declared as an incident.
   LIFECYCLE_STATE_ONGOING_DECLARED = 4;
+  // Open issue that has status set.
+  LIFECYCLE_STATE_ONGOING_STATUS_SET = 5;
   // Open issue that has been queued for autotriage.
   LIFECYCLE_STATE_AUTOTRIAGE_QUEUED = 11;
   // Issue has been autotriaged and an action has been suggested.
