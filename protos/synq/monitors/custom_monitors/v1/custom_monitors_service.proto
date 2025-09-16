@@ -137,8 +137,9 @@ message ListMonitorsRequest {
   repeated string integration_ids = 1;
   repeated string monitored_asset_paths = 2;
   repeated string monitor_ids = 3;
-  repeated string source = 4;
+  repeated string source = 4 [deprecated = true];
   repeated string config_ids = 5;
+  repeated MonitorDefinition.Source sources = 6;
 
   // Pagination
   optional synq.v1.Pagination pagination = 10;

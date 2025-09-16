@@ -112,6 +112,12 @@ message MonitorDefinition {
   Severity severity = 6;
   string name = 7 [(buf.validate.field).required = true];
   string config_id = 8;
+  enum Source {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SOURCE_APP = 0;
+    SOURCE_API = 1;
+  }
+  Source source = 9; // Source of the monitor.
 
   oneof monitor {
     MonitorFreshness freshness = 20;

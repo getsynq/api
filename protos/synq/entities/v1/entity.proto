@@ -19,8 +19,13 @@ message Entity {
   // Unique identifier for this entity.
   Identifier id = 2 [(buf.validate.field).required = true];
 
-  reserved "type_id";
-  reserved 11;
+  // Id of custom type or default type when 0, ignored for non-custom entities
+  int32 type_id = 11 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 1000
+    }
+  }];
 
   // Information about entity type
   optional synq.entities.v1.EntityType entity_type = 14;

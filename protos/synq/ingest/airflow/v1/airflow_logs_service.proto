@@ -27,7 +27,7 @@ service AirflowLogsService {
       scopes: [SCOPE_INGEST_AIRFLOW]
     };
     option (google.api.http) = {
-      post: "/api/ingest/airflow/v1"
+      post: "/api/ingest/airflow/v1/aspects"
       body: "aspects"
     };
   }
@@ -46,6 +46,7 @@ message IngestLogResponse {}
 
 message IngestDatahubAspectsRequest {
   repeated google.protobuf.Struct aspects = 1;
+  optional string action = 2;
 }
 
 message IngestDatahubAspectsResponse {}

@@ -5,6 +5,7 @@ package synq.entities.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/code_type.proto";
+import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/entities/v1/sql_dialect.proto";
 
@@ -21,6 +22,9 @@ message Code {
 
   // Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI.
   string definer_synq_path = 7;
+
+  // Information about entity type of the entity defining code
+  synq.entities.v1.EntityType definer_entity_type = 9;
 
   // Timestamp indicating when this specific version of the code was captured or last modified.
   // This helps track the evolution of code over time.
