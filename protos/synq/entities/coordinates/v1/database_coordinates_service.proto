@@ -28,6 +28,21 @@ service DatabaseCoordinatesService {
       body: "*"
     };
   }
+  // Given database FQN return possible entity ids.
+  rpc BatchIdsByCoordinates(BatchIdsByCoordinatesRequest) returns (BatchIdsByCoordinatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/coordinates/v1/database/by-fqn"
+      body: "*"
+    };
+  }
 }
 
 // BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
@@ -44,4 +59,21 @@ message BatchDatabaseCoordinatesRequest {
 message BatchDatabaseCoordinatesResponse {
   // The entities that were retrieved.
   repeated synq.entities.coordinates.v1.DatabaseCoordinates coordinates = 1;
+}
+
+message BatchIdsByCoordinatesRequest {
+  // Databases coordinates as present in the SQL, e.g. `db.schema.table`
+  repeated string sql_fqn = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message BatchIdsByCoordinatesResponse {
+  message MatchedCoordinates {
+    string sql_fqn = 1;
+    repeated synq.entities.coordinates.v1.DatabaseCoordinates candidates = 2;
+  }
+  repeated MatchedCoordinates matched_coordinates = 1;
 }
