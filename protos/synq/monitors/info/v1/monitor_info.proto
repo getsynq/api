@@ -9,7 +9,11 @@ option go_package = "github.com/getsynq/api/monitors/info/v1";
 
 message MonitorInfo {
   // Identifier of the monitor
-  synq.entities.v1.MonitorIdentifier id = 1;
+  synq.entities.v1.MonitorIdentifier id = 1 [deprecated = true];
+  // Identifier of the monitor
+  synq.entities.v1.Identifier monitor_id = 8;
+  // SYNQ Path to the entity.
+  string monitor_synq_path = 9;
   // Name of the monitor
   string name = 2;
   // Information how this monitor segments the data
@@ -21,12 +25,14 @@ message MonitorInfo {
   // Metrics which this monitor monitors
   repeated Metric metrics = 6;
   // Entity which is monitored
-  optional Monitored monitored = 7;
+  repeated Monitored monitored = 7;
 }
 
 message Monitored {
   // Identifier of the monitored entity.
   synq.entities.v1.Identifier id = 1;
+  // SYNQ Path to the monitored entity.
+  string synq_path = 7;
   // Name of the monitored entity
   string name = 2;
   // Description of the monitored entity
@@ -56,6 +62,7 @@ message Metric {
     MonitorFreshness freshness = 2;
     MonitorVolume volume = 3;
     MonitorValue value = 4;
+    MonitorFailedRows failed_rows = 5;
   }
 }
 
@@ -76,6 +83,10 @@ message MonitorVolume {
     CountRows count_rows = 2;
     MetadataSource table_metadata = 3;
   }
+}
+
+message MonitorFailedRows {
+  string sql = 1;
 }
 
 message Segmentation {
