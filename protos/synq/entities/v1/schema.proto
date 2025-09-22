@@ -84,6 +84,9 @@ message Schema {
   // Unique identifier for this entity.
   Identifier id = 2 [(buf.validate.field).required = true];
 
+  // Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  string synq_path = 6;
+
   // Time when the schema was defined.
   google.protobuf.Timestamp state_at = 3;
 
