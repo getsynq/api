@@ -118,6 +118,7 @@ message MonitorDefinition {
     SOURCE_API = 1;
   }
   Source source = 9; // Source of the monitor.
+  string timezone = 10;
 
   oneof monitor {
     MonitorFreshness freshness = 20;
