@@ -37,9 +37,9 @@ message TestSuggestion {
     RelativeTimeTest relative_time_test = 19;
     // Custom SQL-based business logic validation (e.g., total_amount = subtotal + tax)
     BusinessRuleTest business_rule_test = 20;
-    // Validates numeric values are greater than or equal to a minimum value (e.g., price >= 0)
+    // Validates numeric values are greater than or equal to a minimum value (e.g., price &gt;= 0)
     MinValueTest min_value_test = 21;
-    // Validates numeric values are less than or equal to a maximum value (e.g., price <= 1000)
+    // Validates numeric values are less than or equal to a maximum value (e.g., price &lt;= 1000)
     MaxValueTest max_value_test = 22;
   }
 }
