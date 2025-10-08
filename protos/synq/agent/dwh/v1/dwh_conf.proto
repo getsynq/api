@@ -148,6 +148,8 @@ message SnowflakeConf {
   string password = 5 [(buf.validate.field) = {}];
   // Content of Private key used for Snowflake authentication
   string private_key = 6 [(buf.validate.field) = {}];
+  // Location of the file containing Private key used for Snowflake authentication
+  string private_key_file = 11 [(buf.validate.field) = {}];
   // Passphrase used to decode Private key
   optional string private_key_passphrase = 10;
   // Database to connect to

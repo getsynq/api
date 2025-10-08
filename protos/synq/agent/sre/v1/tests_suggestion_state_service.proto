@@ -24,7 +24,7 @@ service TestsSuggestionStateService {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ,
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
@@ -35,7 +35,7 @@ service TestsSuggestionStateService {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ,
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
@@ -46,7 +46,7 @@ service TestsSuggestionStateService {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ,
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
