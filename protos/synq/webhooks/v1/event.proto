@@ -20,6 +20,9 @@ message Event {
     EVENT_TYPE_ISSUE_UPDATED = 12;
     EVENT_TYPE_ISSUE_STATUS_UPDATED = 13;
     EVENT_TYPE_ISSUE_CLOSED = 14;
+    EVENT_TYPE_INCIDENT_OPEN = 20;
+    EVENT_TYPE_INCIDENT_CLOSED = 21;
+    EVENT_TYPE_INCIDENT_CANCELLED = 22;
   }
   EventType event_type = 4;
   oneof data {
@@ -28,6 +31,9 @@ message Event {
     IssueUpdated issue_updated = 12;
     IssueStatusUpdated issue_status_updated = 13;
     IssueClosed issue_closed = 14;
+    IncidentOpen incident_open = 20;
+    IncidentClosed incident_closed = 21;
+    IncidentCancelled incident_cancelled = 22;
   }
 
   repeated Callback callbacks = 40;
@@ -96,4 +102,24 @@ message IssueSummary {
   string trigger_message = 12;
 
   IssueStatus status = 13;
+}
+
+message IncidentOpen {
+  IncidentSummary incident = 1;
+}
+message IncidentClosed {
+  IncidentSummary incident = 1;
+}
+message IncidentCancelled {
+  IncidentSummary incident = 1;
+}
+
+message IncidentSummary {
+  string incident_id = 1;
+  string incident_url = 2;
+  string title = 3;
+  string description = 4;
+  string description_html = 5;
+  google.protobuf.Timestamp started_at = 6;
+  optional google.protobuf.Timestamp ended_at = 7;
 }
