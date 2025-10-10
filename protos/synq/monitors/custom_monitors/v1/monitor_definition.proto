@@ -46,6 +46,8 @@ message ScheduleDaily {
     int32: {gte: 0}
     required: false
   }];
+  // if true, the minutes_since_midnight will be related to delay scheduling/execution instead of time shifting time partitions
+  bool only_schedule_delay = 3;
 }
 
 message ScheduleHourly {
@@ -61,6 +63,8 @@ message ScheduleHourly {
     int32: {gte: 0}
     required: false
   }];
+  // if true, the minute_of_hour will be related to delay scheduling/execution instead of time shifting time partitions
+  bool only_schedule_delay = 3;
 }
 
 message MonitorFreshness {

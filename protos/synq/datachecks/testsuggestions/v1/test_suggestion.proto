@@ -29,8 +29,8 @@ message TestSuggestion {
     UniqueTest unique_test = 15;
     // Checks if data is up-to-date based on a time column (e.g., latest event_timestamp within 24h)
     FreshnessTest freshness_test = 16;
-    // Validates the total number of rows in a table (e.g., orders table should have records)
-    RowCountTest row_count_test = 17;
+    // Deprecated: Validates the total number of rows in a table (e.g., orders table should have records)
+    RowCountTest row_count_test = 17 [deprecated = true];
     // Validates numeric values are within specified range (e.g., price between 0 and 1000)
     MinMaxTest min_max_test = 18;
     // Compares time-based columns for logical order (e.g., start_date before end_date)
