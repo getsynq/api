@@ -19,11 +19,19 @@ message UserAlias {
   oneof type {
     SlackUser slack = 30;
     EmailUser email = 31;
+    MsTeamsUser ms_teams = 32;
   }
 }
 
 message SlackUser {
   string user_id = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+    required: true
+  }];
+}
+
+message MsTeamsUser {
+  string member_id = 1 [(buf.validate.field) = {
     string: {min_len: 1}
     required: true
   }];
