@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package synq.agent.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "synq/agent/dwh/v1/dwh_connection.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/dwh/v1";
+
+// ConnectionsService provides methods for managing data warehouse connections.
+// These connections represent data warehouse integrations configured in SYNQ that can be used by:
+// - DWH Agent: For metadata extraction and data quality monitoring
+// - SYNQ Scout: On-premise AI agent for data exploration and analysis
+// Both agents share the same or very similar configuration file format.
+service ConnectionsService {
+  // ListConnections retrieves data warehouse connections for a workspace.
+  // Converts SYNQ integration configurations to a standardized connection format.
+  // Requires workspace context in the request metadata.
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INGEST_DWH,
+        SCOPE_MCP_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_EXTENSIONS_MANAGE,
+        SCOPE_ENTITY_READ
+      ]
+    };
+  }
+
+  // GenerateConnectionsYaml converts data warehouse connections to YAML configuration format.
+  // The generated YAML can be used directly as a config file for DWH Agent or SYNQ Scout.
+  // Secret fields are replaced with environment variable placeholders (e.g., ${CONNECTION_ID_PASSWORD}).
+  // Documentation: https://docs.synq.io/dw-integrations/agent#config-file-schema
+  rpc GenerateConnectionsYaml(GenerateConnectionsYamlRequest) returns (GenerateConnectionsYamlResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INGEST_DWH,
+        SCOPE_MCP_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_EXTENSIONS_MANAGE,
+        SCOPE_ENTITY_READ
+      ]
+    };
+  }
+}
+
+message ListConnectionsRequest {
+  // Optional filter to only return connections with these ids. If empty, all DWH connections are returned.
+  repeated string connection_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        required: true
+        string: {uuid: true}
+      }
+    }
+  }];
+}
+
+message ListConnectionsResponse {
+  map<string, Connection> connections = 1;
+}
+
+// Request to generate YAML configuration from data warehouse connections.
+message GenerateConnectionsYamlRequest {
+  // Map of connection ID to Connection configuration.
+  // Typically obtained from ListConnectionsResponse.
+  map<string, Connection> connections = 1;
+}
+
+// Response containing the generated YAML configuration.
+message GenerateConnectionsYamlResponse {
+  // Generated YAML configuration string.
+  // Can be written directly to a file and used by DWH Agent or SYNQ Scout.
+  // Includes header comments with documentation links.
+  string yaml = 1;
+
+  // Error message if YAML generation failed.
+  // If set, the yaml field should be ignored.
+  optional string error = 2;
+}
