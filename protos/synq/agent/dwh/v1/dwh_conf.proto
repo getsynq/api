@@ -8,6 +8,12 @@ option go_package = "github.com/getsynq/api/agent/dwh/v1";
 
 // BigQuery specific configuration
 message BigQueryConf {
+  option (buf.validate.message).cel = {
+    id: "bigquery_auth"
+    message: "Either service_account_key or service_account_key_file must be provided, but not both"
+    expression: "(this.service_account_key != '' && this.service_account_key_file == '') || (this.service_account_key == '' && this.service_account_key_file != '')"
+  };
+
   // GCP project ID
   string project_id = 1 [(buf.validate.field) = {required: true}];
   // Service account key JSON
@@ -43,6 +49,12 @@ message ClickhouseConf {
 }
 
 message DatabricksConf {
+  option (buf.validate.message).cel = {
+    id: "databricks_auth"
+    message: "Either auth_token or both auth_client and auth_secret must be provided"
+    expression: "(has(this.auth_token) && this.auth_token != '') || (has(this.auth_client) && this.auth_client != '' && has(this.auth_secret) && this.auth_secret != '')"
+  };
+
   string workspace_url = 1 [(buf.validate.field) = {
     required: true
     string: {uri: true}
@@ -93,7 +105,6 @@ message PostgresConf {
   }];
   // Port number
   int32 port = 2 [(buf.validate.field) = {
-    required: false
     int32: {
       gt: 0
       lte: 65535
@@ -136,6 +147,12 @@ message RedshiftConf {
 
 // Snowflake specific configuration
 message SnowflakeConf {
+  option (buf.validate.message).cel = {
+    id: "snowflake_auth"
+    message: "Username is required, along with either password or private_key/private_key_file"
+    expression: "this.username != '' && (this.password != '' || this.private_key != '' || this.private_key_file != '')"
+  };
+
   // Snowflake account identifier
   string account = 1 [(buf.validate.field) = {required: true}];
   // Virtual warehouse to use
@@ -143,7 +160,7 @@ message SnowflakeConf {
   // Role to assume
   string role = 3 [(buf.validate.field) = {required: true}];
   // Username for authentication
-  string username = 4 [(buf.validate.field) = {}];
+  string username = 4 [(buf.validate.field) = {required: true}];
   // Password for authentication
   string password = 5 [(buf.validate.field) = {}];
   // Content of Private key used for Snowflake authentication
@@ -162,12 +179,18 @@ message SnowflakeConf {
 
 // Trino specific configuration
 message TrinoConf {
-  // Snowflake account identifier
+  // Host address
   string host = 1 [(buf.validate.field) = {
+    required: true
     string: {hostname: true}
   }];
   // Optional port to use, otherwise it will use the default port 8080
-  optional int32 port = 2;
+  optional int32 port = 2 [(buf.validate.field) = {
+    int32: {
+      gt: 0
+      lte: 65535
+    }
+  }];
   // Use non-SSL connection to Trino. This should only be enabled if the Trino cluster does not support SSL
   // or if the connection is secured through other means (e.g., a VPN). Defaults to false (SSL enabled).
   optional bool use_plaintext = 3;
