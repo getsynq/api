@@ -68,7 +68,9 @@ message ListConnectionsResponse {
 message GenerateConnectionsYamlRequest {
   // Map of connection ID to Connection configuration.
   // Typically obtained from ListConnectionsResponse.
-  map<string, Connection> connections = 1;
+  // Note: Validation is disabled for this field since Connection values may have empty credentials
+  // (which will be replaced with env var placeholders). Connection ID validation is handled in the service implementation.
+  map<string, Connection> connections = 1 [(buf.validate.field).ignore = IGNORE_ALWAYS];
 }
 
 // Response containing the generated YAML configuration.
