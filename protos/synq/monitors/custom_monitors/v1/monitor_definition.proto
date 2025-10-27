@@ -86,6 +86,7 @@ enum Severity {
   SEVERITY_UNSPECIFIED = 0;
   SEVERITY_WARNING = 1;
   SEVERITY_ERROR = 2;
+  SEVERITY_INFO = 3;
 }
 
 enum Sensitivity {
@@ -115,6 +116,7 @@ message MonitorDefinition {
   optional string filter = 5;
   Severity severity = 6;
   string name = 7 [(buf.validate.field).required = true];
+  string description = 11;
   string config_id = 8;
   enum Source {
     // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
