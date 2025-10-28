@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package synq.entities.orchestration.v1;
+
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/orchestration/v1";
+
+// Orchestration represents the orchestration relationships for a given entity.
+// It shows both what the entity orchestrates (downstream) and what orchestrates it (upstream).
+message Orchestration {
+  // The entity being queried along with its other identities.
+  // For example, if querying a dbt or SQLMesh model, this group includes both the model
+  // and the table it creates, as they represent the same logical concept.
+  OrchestrationGroup entity = 1;
+
+  // Downstream entities that this entity orchestrates.
+  // Each group contains all identities of the orchestrated concept.
+  // Examples:
+  // - If entity is an Airflow task: groups containing [dbt model, table] or [SQLMesh model, table]
+  // - If entity is an Airflow task: groups containing downstream Airflow tasks and their orchestrated entities
+  repeated OrchestrationGroup downstream = 2;
+
+  // Upstream entities that orchestrate this entity.
+  // Each group contains all identities of the orchestrating concept.
+  // Examples:
+  // - If entity is a dbt/SQLMesh model or table: groups containing the Airflow task that executes it
+  // - If entity is an Airflow task: groups containing upstream Airflow tasks that trigger it
+  repeated OrchestrationGroup upstream = 3;
+}
+
+// OrchestrationGroup represents different identities of the same logical concept.
+// For example, a dbt model and the table it creates are different representations
+// of the same entity, so they appear together in one group. An Airflow task
+// typically has only one identity (the task itself).
+message OrchestrationGroup {
+  // Identifiers of all representations of this logical entity.
+  // Examples:
+  // - For a dbt model: [dbt model, table it creates]
+  // - For a SQLMesh model: [SQLMesh model, table it creates]
+  // - For an Airflow task: [Airflow task]
+  repeated synq.entities.v1.Identifier entities = 1;
+
+  // SYNQ paths of the entities for easier reference, in the same order as entities
+  repeated string synq_paths = 2;
+}

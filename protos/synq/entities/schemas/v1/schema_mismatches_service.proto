@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package synq.entities.schemas.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/schemas/v1";
+
+// SchemaMismatchesService provides access to schema drift information between
+// data platform tables and their definitions (e.g., dbt models).
+service SchemaMismatchesService {
+  // Get schema mismatches for a batch of entities by their identifiers.
+  rpc BatchSchemaMismatches(BatchSchemaMismatchesRequest) returns (BatchSchemaMismatchesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {post: "/api/schema-mismatches/v1"};
+  }
+}
+
+// BatchGetSchemaMismatchesRequest is the request message for the BatchGetSchemaMismatches method.
+message BatchSchemaMismatchesRequest {
+  // Identifiers of the entities to get schema mismatches for.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field).required = true];
+}
+
+// BatchGetSchemaMismatchesResponse is the response message for the BatchGetSchemaMismatches method.
+message BatchSchemaMismatchesResponse {
+  // Schema mismatches found for the requested entities.
+  repeated SchemaMismatch schema_mismatches = 1;
+}
+
+// SchemaMismatch represents a schema drift between a definer entity (e.g., dbt model)
+// and an origin entity (e.g., BigQuery table) where columns are defined but missing in origin.
+message SchemaMismatch {
+  // Identifier of the entity that defines the columns (e.g., dbt model).
+  synq.entities.v1.Identifier definer_id = 1 [(buf.validate.field).required = true];
+
+  // Identifier of the entity where the columns are expected but missing (e.g., BigQuery table).
+  synq.entities.v1.Identifier origin_id = 2 [(buf.validate.field).required = true];
+
+  // Names of the columns that are defined but missing in the origin.
+  repeated string missing_origin_column_names = 3;
+
+  // Human-readable names of the columns that are defined but missing in the origin.
+  repeated string missing_origin_column_human_names = 4;
+}

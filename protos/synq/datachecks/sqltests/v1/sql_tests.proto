@@ -4,10 +4,10 @@ package synq.datachecks.sqltests.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/entities/v1/annotation.proto";
-import "synq/platforms/v1/data_platforms.proto";
-import "synq/entities/v1/identifier.proto";
 import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
+import "synq/entities/v1/annotation.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/platforms/v1/data_platforms.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 
@@ -38,7 +38,6 @@ message SqlTest {
 
   // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html) for the execution schedule of the SqlTest.
   string recurrence_rule = 5;
-
 
   // Annotations for the given SqlTest.These help filter the SqlTests for later
   // operations like listing by API, selection in UI, analytics, etc.

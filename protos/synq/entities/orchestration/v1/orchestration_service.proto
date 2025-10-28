@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package synq.entities.orchestration.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/orchestration/v1/orchestration.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/orchestration/v1";
+
+// OrchestrationService provides information about orchestration relationships between entities.
+// This includes relationships between Airflow tasks and transformation models (dbt, SQLMesh),
+// as well as task-to-task dependencies.
+service OrchestrationService {
+  // BatchOrchestration retrieves orchestration relationships for multiple entities.
+  // For each entity, it returns both upstream entities (what orchestrates it) and
+  // downstream entities (what it orchestrates).
+  rpc BatchOrchestration(BatchOrchestrationRequest) returns (BatchOrchestrationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/orchestration/v1"};
+  }
+}
+
+message BatchOrchestrationRequest {
+  // Entities to query for orchestration relationships (e.g., Airflow tasks, dbt models, SQLMesh models, tables)
+  repeated entities.v1.Identifier entities = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {required: true}
+    }
+  }];
+}
+
+message BatchOrchestrationResponse {
+  // Orchestration relationships for each requested entity.
+  // The order corresponds to the order of entities in the request.
+  repeated Orchestration orchestrations = 1;
+}
