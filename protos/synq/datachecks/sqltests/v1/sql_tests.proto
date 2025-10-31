@@ -18,8 +18,14 @@ message SqlTest {
     expression: "has(this.sql_expression) != has(this.template)"
     message: "exactly one of sql_expression or template must be provided, but not both"
   };
+  option (buf.validate.message).cel = {
+    id: "sql_test_requires_platform_or_template"
+    expression: "has(this.platform) || has(this.template.identifier)"
+    message: "at least one of platform or template identifier must be provided"
+  };
+
   // Identifier for the data platform which the SqlTest would be executed on.
-  platforms.v1.DataPlatformIdentifier platform = 1 [(buf.validate.field).required = true];
+  platforms.v1.DataPlatformIdentifier platform = 1;
 
   // Unique resource identifier for the SqlTest. This is externally maintained and can
   // be used to fetch/update/delete this test.
