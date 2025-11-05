@@ -2,10 +2,13 @@ syntax = "proto3";
 
 package synq.datachecks.sqltests.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/datachecks/sqltests/v1/sql_tests.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 
@@ -102,10 +105,19 @@ message BatchUpsertSqlTestsResponse {
 message ListSqlTestsRequest {
   // Optional annotations to fetch SqlTests for.
   repeated entities.v1.Annotation annotations = 1;
+  repeated string integration_ids = 2;
+  repeated string ids = 3;
+  repeated string config_ids = 4;
+  repeated synq.v1.Source sources = 5;
+
+  optional synq.v1.Pagination pagination = 6;
 }
 
 message ListSqlTestsResponse {
   repeated SqlTest sql_tests = 1;
+
+  // Paging information
+  synq.v1.PageInfo page_info = 10 [(buf.validate.field) = {required: true}];
 }
 
 message BatchGetSqlTestsRequest {

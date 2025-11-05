@@ -1,0 +1,10 @@
+syntax = "proto3";
+package synq.v1;
+
+option go_package = "github.com/getsynq/api/v1";
+
+enum Source {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  SOURCE_APP = 0;
+  SOURCE_API = 1;
+}

@@ -8,6 +8,7 @@ import "synq/datachecks/testsuggestions/v1/test_suggestion.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/platforms/v1/data_platforms.proto";
+import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 
@@ -55,6 +56,11 @@ message SqlTest {
   // Template for the SqlTest.
   // required when sql_expression is not provided
   Template template = 8;
+
+  // Config ID for the SqlTest.
+  string config_id = 11;
+
+  synq.v1.Source source = 12;
 }
 
 enum Severity {

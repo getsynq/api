@@ -87,6 +87,8 @@ message MinMaxTest {
   double min_value = 2;
   // Maximum allowed value (inclusive)
   double max_value = 3;
+  // If true, bounds are exclusive
+  bool strictly = 4;
 }
 
 message MinValueTest {
@@ -94,6 +96,8 @@ message MinValueTest {
   string column_name = 1 [(buf.validate.field).required = true];
   // Minimum allowed value (inclusive)
   double min_value = 2;
+  // If true, the minimum value is exclusive
+  bool strictly = 3;
 }
 
 message MaxValueTest {
@@ -101,6 +105,8 @@ message MaxValueTest {
   string column_name = 1 [(buf.validate.field).required = true];
   // Maximum allowed value (inclusive)
   double max_value = 2;
+  // If true, the maximum value is exclusive
+  bool strictly = 3;
 }
 
 message UniqueTest {
