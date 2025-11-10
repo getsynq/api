@@ -6,8 +6,8 @@ import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/datachecks/sqltests/v1/sql_tests.proto";
 import "synq/entities/v1/annotation.proto";
-import "synq/v1/scope_authorization.proto";
 import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
 import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";

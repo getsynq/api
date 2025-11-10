@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package synq.entities.executions.v1;
+package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
@@ -9,12 +9,9 @@ import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
-option go_package = "github.com/getsynq/api/entities/executions/v1";
+option go_package = "github.com/getsynq/api/entities/custom/v1";
 
-// Deprecated: Use [synq.entities.custom.v1.EntityExecutionsService] instead
 service EntityExecutionsService {
-  option deprecated = true;
-
   // Execution affects status of the custom entity
   rpc UpsertExecution(UpsertExecutionRequest) returns (UpsertExecutionResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -22,7 +19,7 @@ service EntityExecutionsService {
       scopes: [SCOPE_EXECUTION_EDIT]
     };
     option (google.api.http) = {
-      post: "/api/executions/v1"
+      post: "/api/entities/custom/executions/v1"
       body: "*"
     };
   }
@@ -37,7 +34,7 @@ service EntityExecutionsService {
       ]
     };
     option (google.api.http) = {
-      post: "/api/executions/v1/log-entry"
+      post: "/api/entities/custom/executions/v1/log-entry"
       body: "*"
     };
   }
