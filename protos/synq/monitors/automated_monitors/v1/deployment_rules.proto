@@ -4,6 +4,7 @@ package synq.monitors.automated_monitors.v1;
 import "buf/validate/validate.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
+import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
 
@@ -167,6 +168,9 @@ message MonitorsDeploymentRule {
     ExclusiveStaticConfig exclusive_static_config = 6;
     ProductConfig product_config = 7;
   }
+
+  synq.v1.Source source = 8;
+  string config_id = 9;
 }
 
 message MonitorsDeploymentRuleView {
@@ -181,4 +185,7 @@ message MonitorsDeploymentRuleView {
     ExclusiveStaticConfig exclusive_static_config = 7;
     ProductConfig product_config = 8;
   }
+
+  synq.v1.Source source = 9;
+  string config_id = 10;
 }

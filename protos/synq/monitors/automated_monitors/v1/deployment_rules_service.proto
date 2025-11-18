@@ -30,7 +30,11 @@ message DeleteDeploymentRuleRequest {
 
 message DeleteDeploymentRuleResponse {}
 
-message ListDeploymentRulesRequest {}
+message ListDeploymentRulesRequest {
+  repeated string source = 1;
+  repeated string config_ids = 2;
+  repeated string rule_ids = 3;
+}
 
 message ListDeploymentRulesResponse {
   repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView deployment_rules = 1;

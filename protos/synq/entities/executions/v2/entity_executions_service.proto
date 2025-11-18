@@ -1,0 +1,308 @@
+syntax = "proto3";
+
+package synq.entities.executions.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/execution_types.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/executions/v2";
+
+// EntityExecutionsService provides read-only access to entity execution history.
+// This service allows customers to retrieve information about all executions that happened on their entities,
+// including execution status, timing, and messages.
+//
+// Use cases:
+// - Retrieve execution history for specific entities
+// - Filter executions by time range, status, or execution type
+// - Get aggregated summaries of execution activity
+// - Track execution trends and patterns
+service EntityExecutionsService {
+  // ListExecutions retrieves a paginated list of executions for one or more entities.
+  // Executions are returned in reverse chronological order (newest first).
+  //
+  // Supports filtering by:
+  // - Entity identifiers (required)
+  // - Time range
+  // - Execution type(s)
+  // - Status(es)
+  rpc ListExecutions(ListExecutionsRequest) returns (ListExecutionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_EXECUTION_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/executions/v2/list"};
+  }
+
+  // BatchGetExecutions retrieves multiple executions by their IDs.
+  // This is useful when you already know the execution IDs and want to fetch their details.
+  rpc BatchGetExecutions(BatchGetExecutionsRequest) returns (BatchGetExecutionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_EXECUTION_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/executions/v2/by-id"
+      body: "*"
+    };
+  }
+
+  // GetExecutionsSummary provides aggregated statistics about executions for specified entities.
+  // This is useful for quickly understanding execution patterns without fetching all execution details.
+  //
+  // Returns:
+  // - Counts by execution type
+  // - Counts by status
+  // - Time range of available executions
+  // - Latest execution per entity
+  rpc GetExecutionsSummary(GetExecutionsSummaryRequest) returns (GetExecutionsSummaryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_EXECUTION_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/executions/v2/summary"
+      body: "*"
+    };
+  }
+
+  // GetLatestExecutions retrieves the most recent execution for each specified entity.
+  // Optionally filter by execution status to get the latest execution with a specific status.
+  rpc GetLatestExecutions(GetLatestExecutionsRequest) returns (GetLatestExecutionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_EXECUTION_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/executions/v2/latest"
+      body: "*"
+    };
+  }
+}
+
+// EntityExecution represents a single execution event on an entity.
+// This is a public representation of internal Run data, excluding sensitive metadata.
+message EntityExecution {
+  // Unique identifier for this execution.
+  string id = 1;
+
+  // Primary entities affected by this execution.
+  // These are the main entities this execution ran on or modified.
+  repeated synq.entities.v1.Identifier entities = 3;
+
+  // SYNQ paths of primary entities affected by this execution.
+  repeated string entities_synq_paths = 15;
+
+  // Target entities referenced by this execution.
+  // These are secondary entities that were targets of the execution.
+  repeated synq.entities.v1.Identifier targets = 4;
+
+  // SYNQ paths of target entities referenced by this execution.
+  repeated string targets_synq_paths = 16;
+
+  // Additional entity references.
+  // These are other entities referenced during the execution.
+  repeated synq.entities.v1.Identifier extra_references = 5;
+
+  // SYNQ paths of additional entity references.
+  repeated string extra_references_synq_paths = 17;
+
+  // Type of execution (e.g., query, job, test run).
+  synq.entities.v1.ExecutionType execution_type = 6;
+
+  // Status of the execution.
+  ExecutionStatus status = 7;
+
+  // Whether this execution was skipped.
+  bool skipped = 8;
+
+  // Human-readable message describing the execution result.
+  // This typically contains error messages, warnings, or success information.
+  string message = 9;
+
+  // When the execution record was created in SYNQ.
+  google.protobuf.Timestamp created_at = 10;
+
+  // When the execution actually started.
+  optional google.protobuf.Timestamp started_at = 11;
+
+  // When the execution finished.
+  optional google.protobuf.Timestamp finished_at = 12;
+
+  // IDs of parent executions, if this is a nested execution.
+  // For example, a task execution might have a parent DAG execution.
+  repeated string parent_execution_ids = 13;
+
+  // Duration of the execution in seconds.
+  // Only populated if both started_at and finished_at are present.
+  optional double duration_seconds = 14;
+}
+
+// ExecutionStatus represents the outcome of an execution.
+enum ExecutionStatus {
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+  EXECUTION_STATUS_OK = 1;
+  EXECUTION_STATUS_WARN = 2;
+  EXECUTION_STATUS_ERROR = 3;
+  EXECUTION_STATUS_CRITICAL = 4;
+}
+
+// ListExecutionsRequest specifies filters for listing executions.
+message ListExecutionsRequest {
+  // Entity identifiers to get executions for.
+  // Executions affecting any of these entities will be returned.
+  repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {required: true}
+    }
+  }];
+
+  // Return executions that started after this timestamp.
+  // If not provided, defaults to 7 days before execution_started_before.
+  optional google.protobuf.Timestamp execution_started_after = 2;
+
+  // Return executions that started before this timestamp.
+  // If not provided, defaults to now().
+  optional google.protobuf.Timestamp execution_started_before = 3;
+
+  // Filter by specific execution types.
+  // If empty, all execution types are included.
+  repeated synq.entities.v1.ExecutionType execution_types = 4;
+
+  // Filter by execution status.
+  // If empty, all statuses are included.
+  repeated ExecutionStatus statuses = 5;
+
+  // Include executions that reference the specified entities (not just primary entities).
+  // If true, executions where entity_ids appear in targets or extra_references are also returned.
+  bool include_referenced_executions = 7;
+
+  // Pagination parameters.
+  synq.v1.Pagination pagination = 8;
+}
+
+// ListExecutionsResponse contains the paginated list of executions.
+message ListExecutionsResponse {
+  // List of executions matching the filter criteria, ordered by started_at descending.
+  repeated EntityExecution executions = 1;
+
+  // Pagination information.
+  synq.v1.PageInfo page_info = 2;
+}
+
+// BatchGetExecutionsRequest requests specific executions by ID.
+message BatchGetExecutionsRequest {
+  // Execution IDs to retrieve.
+  repeated string execution_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      max_items: 100
+    }
+  }];
+}
+
+// BatchGetExecutionsResponse contains the requested executions.
+message BatchGetExecutionsResponse {
+  // Map of execution ID to EntityExecution.
+  // Only includes executions that were found and accessible.
+  map<string, EntityExecution> executions = 1;
+}
+
+// GetExecutionsSummaryRequest requests summary statistics for entities.
+message GetExecutionsSummaryRequest {
+  // Entity identifiers to get summary for.
+  repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {required: true}
+    }
+  }];
+
+  // Return executions that started after this timestamp.
+  // If not provided, defaults to 30 days before execution_started_before.
+  optional google.protobuf.Timestamp execution_started_after = 2;
+
+  // Return executions that started before this timestamp.
+  // If not provided, defaults to now().
+  optional google.protobuf.Timestamp execution_started_before = 3;
+}
+
+// GetExecutionsSummaryResponse contains aggregated execution statistics.
+message GetExecutionsSummaryResponse {
+  // Total number of executions matching the criteria.
+  int64 total_executions = 1;
+
+  // Count of executions by type.
+  repeated ExecutionTypeCount execution_type_counts = 2;
+
+  // Count of executions by status.
+  repeated ExecutionStatusCount status_counts = 3;
+
+  // Time range of available executions.
+  optional google.protobuf.Timestamp earliest_execution = 4;
+  optional google.protobuf.Timestamp latest_execution = 5;
+
+  // Latest execution for each requested entity.
+  map<string, EntityExecution> latest_by_entity = 6;
+}
+
+// ExecutionTypeCount represents the count of executions by type.
+message ExecutionTypeCount {
+  synq.entities.v1.ExecutionType execution_type = 1;
+  int64 count = 2;
+}
+
+// ExecutionStatusCount represents the count of executions by status.
+message ExecutionStatusCount {
+  ExecutionStatus status = 1;
+  int64 count = 2;
+}
+
+// GetLatestExecutionsRequest requests the latest execution for each entity.
+message GetLatestExecutionsRequest {
+  // Entity identifiers to get latest executions for.
+  repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {required: true}
+    }
+  }];
+
+  // Filter by execution status.
+  // If provided, returns the latest execution with one of these statuses.
+  // If empty, returns the latest execution regardless of status.
+  repeated ExecutionStatus statuses = 2;
+
+  // Filter by execution types.
+  // If provided, returns the latest execution of one of these types.
+  // If empty, returns the latest execution regardless of type.
+  repeated synq.entities.v1.ExecutionType execution_types = 3;
+}
+
+// GetLatestExecutionsResponse contains the latest execution for each requested entity.
+message GetLatestExecutionsResponse {
+  // Map of entity identifier (as string) to latest execution.
+  // Entities with no matching executions are omitted.
+  map<string, EntityExecution> latest_executions = 1;
+}
