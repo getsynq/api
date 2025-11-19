@@ -5,6 +5,7 @@ package synq.monitors.automated_monitors.v1;
 import "google/api/annotations.proto";
 import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
 import "synq/v1/scope_authorization.proto";
+import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
 
@@ -31,7 +32,7 @@ message DeleteDeploymentRuleRequest {
 message DeleteDeploymentRuleResponse {}
 
 message ListDeploymentRulesRequest {
-  repeated string source = 1;
+  repeated synq.v1.Source sources = 1;
   repeated string config_ids = 2;
   repeated string rule_ids = 3;
 }
