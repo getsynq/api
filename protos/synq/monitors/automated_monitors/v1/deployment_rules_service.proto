@@ -80,6 +80,33 @@ message BatchGetDeploymentRulesResponse {
   map<string, synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView> deployment_rules = 1;
 }
 
+message BatchUpsertDeploymentRulesRequest {
+  // List of DeploymentRules to upsert.
+  repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rules = 1;
+}
+
+message BatchUpsertDeploymentRulesResponse {
+  // IDs for which DeploymentRules were created without error.
+  repeated string created_ids = 1;
+  // IDs for which DeploymentRules were updated without error.
+  repeated string updated_ids = 2;
+
+  // Details of errors encountered during the upsert operation.
+  message UpsertError {
+    string id = 1;
+    string reason = 2;
+  }
+  // Errors raised while upsert. This list will be empty if there were no errors.
+  repeated UpsertError errors = 3;
+}
+
+message BatchDeleteDeploymentRulesRequest {
+  // IDs of the DeploymentRules to delete.
+  repeated string ids = 1;
+}
+
+message BatchDeleteDeploymentRulesResponse {}
+
 service DeploymentRulesService {
   rpc GetDeployOverview(GetDeployOverviewRequest) returns (GetDeployOverviewResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -160,5 +187,24 @@ service DeploymentRulesService {
       post: "/api/monitors/automated/v1/deployment-rules/deployed"
       body: "*"
     };
+  }
+
+  rpc BatchUpsertDeploymentRules(BatchUpsertDeploymentRulesRequest) returns (BatchUpsertDeploymentRulesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/automated/v1/deployment-rules/batch"
+      body: "*"
+    };
+  }
+
+  rpc BatchDeleteDeploymentRules(BatchDeleteDeploymentRulesRequest) returns (BatchDeleteDeploymentRulesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {delete: "/api/monitors/automated/v1/deployment-rules/batch"};
   }
 }
