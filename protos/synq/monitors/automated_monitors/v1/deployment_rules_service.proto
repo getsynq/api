@@ -61,6 +61,24 @@ message DeployDeploymentRuleRequest {
 
 message DeployDeploymentRuleResponse {}
 
+message BatchDeployDeploymentRulesRequest {
+  // List of DeploymentRules to deploy.
+  repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rules = 1;
+}
+
+message BatchDeployDeploymentRulesResponse {
+  // IDs for which DeploymentRules were deployed without error.
+  repeated string deployed_ids = 1;
+
+  // Details of errors encountered during the deploy operation.
+  message DeployError {
+    string id = 1;
+    string reason = 2;
+  }
+  // Errors raised while deploying. This list will be empty if there were no errors.
+  repeated DeployError errors = 2;
+}
+
 message BatchUpdateDeploymentRuleTitleRequest {
   repeated UpdateDeploymentRuleTitleRequest deployment_rules = 1;
 }
@@ -185,6 +203,17 @@ service DeploymentRulesService {
     };
     option (google.api.http) = {
       post: "/api/monitors/automated/v1/deployment-rules/deployed"
+      body: "*"
+    };
+  }
+
+  rpc BatchDeployDeploymentRules(BatchDeployDeploymentRulesRequest) returns (BatchDeployDeploymentRulesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MONITORS_AUTOMATIC_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/automated/v1/deployment-rules/batch/deployed"
       body: "*"
     };
   }
