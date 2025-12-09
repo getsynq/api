@@ -170,7 +170,7 @@ message MonitorsDeploymentRule {
   }
 
   synq.v1.Source source = 8;
-  string config_id = 9;
+  optional string config_id = 9;
 }
 
 message MonitorsDeploymentRuleView {
@@ -187,5 +187,5 @@ message MonitorsDeploymentRuleView {
   }
 
   synq.v1.Source source = 9;
-  string config_id = 10;
+  optional string config_id = 10;
 }

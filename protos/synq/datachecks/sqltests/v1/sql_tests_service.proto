@@ -102,12 +102,21 @@ message BatchUpsertSqlTestsResponse {
   repeated UpsertError errors = 3;
 }
 
+message ConfigsFilter {
+  repeated string ids = 1;
+}
+
 message ListSqlTestsRequest {
   // Optional annotations to fetch SqlTests for.
   repeated entities.v1.Annotation annotations = 1;
   repeated string integration_ids = 2;
   repeated string ids = 3;
-  repeated string config_ids = 4;
+  repeated string config_ids = 4 [deprecated = true];
+  // Filter SqlTests by config IDs.
+  // Pass ConfigsFilter{ids: ["config1", "config2"]} to filter by specific configs.
+  // If nil, no config_id filtering is applied.
+  // If empty, the one with NULL config_id will be excluded.
+  ConfigsFilter configs_filter = 7;
   repeated synq.v1.Source sources = 5;
 
   optional synq.v1.Pagination pagination = 6;

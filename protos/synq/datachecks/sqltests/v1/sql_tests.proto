@@ -57,7 +57,7 @@ message SqlTest {
   Template template = 8;
 
   // Config ID for the SqlTest.
-  string config_id = 11;
+  optional string config_id = 11;
 
   synq.v1.Source source = 12;
 }

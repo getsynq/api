@@ -31,9 +31,18 @@ message DeleteDeploymentRuleRequest {
 
 message DeleteDeploymentRuleResponse {}
 
+message ConfigsFilter {
+  repeated string ids = 1;
+}
+
 message ListDeploymentRulesRequest {
   repeated synq.v1.Source sources = 1;
-  repeated string config_ids = 2;
+  repeated string config_ids = 2 [deprecated = true];
+  // Filter SqlTests by config IDs.
+  // Pass ConfigsFilter{ids: ["config1", "config2"]} to filter by specific configs.
+  // If nil, no config_id filtering is applied.
+  // If empty, the one with NULL config_id will be excluded.
+  ConfigsFilter configs_filter = 4;
   repeated string rule_ids = 3;
 }
 

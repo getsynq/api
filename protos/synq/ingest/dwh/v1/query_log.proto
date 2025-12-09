@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package synq.ingest.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/ingest/dwh/v1/dwh.proto";
+
+option go_package = "github.com/getsynq/api/ingest/dwh/v1";
+
+// SqlObfuscationMode represents the level of SQL obfuscation applied to query logs.
+// This is critical for on-premise deployments where customers want to prevent
+// sensitive data in SQL queries from being sent to SYNQ backend.
+enum SqlObfuscationMode {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  // No obfuscation was applied
+  SQL_OBFUSCATION_MODE_NONE = 0;
+
+  // String and numeric literals were replaced with placeholders
+  // while preserving query structure for SQL parsing
+  SQL_OBFUSCATION_MODE_REDACT_LITERALS = 1;
+}
+
+// QueryLog represents a single query execution log entry from a data warehouse.
+// This is the format used for ingesting query logs via the DWH agent.
+//
+// The structure mirrors the internal QueryLogRawRow with protobuf serialization.
+message QueryLog {
+  // Workspace and integration identifiers (for multi-tenancy)
+  string workspace = 1;
+  string integration_id = 2;
+  optional string connection_id = 3; // Empty for direct connections, populated for agent uploads
+
+  // Query identifiers
+  string query_id = 4 [(buf.validate.field) = {required: true}];
+  google.protobuf.Timestamp created_at = 5 [(buf.validate.field) = {required: true}];
+  optional google.protobuf.Timestamp started_at = 6;  // Query start time (optional, uses created_at if not set)
+  optional google.protobuf.Timestamp finished_at = 7; // Query finish time (optional, uses created_at if not set)
+
+  // Query content
+  string sql = 8;           // SQL text (may be obfuscated based on sql_obfuscation_mode)
+  optional string sql_hash = 9;      // SHA256 hash of original SQL for deduplication (computed during storage if not provided)
+  optional string normalized_query_hash = 10; // Hash of normalized query for lineage caching (empty if not available from platform)
+  string sql_dialect = 11;   // SQL dialect (e.g., "snowflake", "bigquery", "clickhouse")
+  string query_type = 12;    // Platform-specific query type (e.g., "CREATE_TABLE_AS_SELECT", "SELECT")
+  string status = 13;        // Execution status: "SUCCESS", "FAILED", "CANCELED"
+
+  // DWH execution context
+  optional QueryLogDwhContext dwh_context = 14;
+
+  // Obfuscation and parsing hints
+  SqlObfuscationMode sql_obfuscation_mode = 15;
+  bool has_complete_native_lineage = 16; // If true, native lineage is complete and SQL parsing can be skipped
+  bool is_truncated = 17;                // If true, SQL was truncated by the warehouse
+
+  // Platform-specific metadata (arbitrary key-value pairs)
+  // Contains execution metrics, costs, etc. depending on the platform
+  optional google.protobuf.Struct metadata = 18;
+
+  // Native lineage from the platform (if available)
+  optional QueryLogNativeLineage native_lineage = 19;
+}
+
+// QueryLogDwhContext represents the execution context of a query.
+// Contains information about where and by whom the query was executed.
+//
+// Platform-specific mappings (Instance, Database, Schema):
+//   - Snowflake: account, database_name, schema_name
+//   - Databricks: workspace_url, catalog_name, schema_name
+//   - BigQuery: "", project_id, dataset_id
+//   - Redshift: host, database_name, schema_name
+//   - Postgres: host, database_name, schema_name
+//   - Trino: host, catalog, schema
+//   - MySQL: "", host, schema_name
+//   - ClickHouse: hostname, database_name, "" (2-level: hostname.database)
+//   - DuckDB: motherduck_account, database_name, schema_name
+message QueryLogDwhContext {
+  optional string instance = 1;   // Instance identifier (account, workspace_url, host, etc.)
+  optional string database = 2;   // Database/catalog name
+  optional string schema = 3;     // Schema name
+  optional string warehouse = 4;  // Warehouse identifier (Snowflake, Databricks)
+  optional string user = 5;       // User who executed the query
+  optional string role = 6;       // Role used for execution
+  optional string cluster = 7;    // Cluster identifier (Redshift, ClickHouse)
+}
+
+// QueryLogNativeLineage contains lineage information provided natively by the data warehouse.
+// Not all platforms provide this - when available, it can be more accurate than SQL parsing.
+message QueryLogNativeLineage {
+  repeated Fqn input_tables = 1;  // Tables read by the query
+  repeated Fqn output_tables = 2; // Tables written to by the query
+}

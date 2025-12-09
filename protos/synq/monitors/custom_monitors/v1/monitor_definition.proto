@@ -117,7 +117,7 @@ message MonitorDefinition {
   Severity severity = 6;
   string name = 7 [(buf.validate.field).required = true];
   string description = 11;
-  string config_id = 8;
+  optional string config_id = 8;
   enum Source {
     // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
     SOURCE_APP = 0;

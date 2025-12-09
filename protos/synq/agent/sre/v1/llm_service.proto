@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+// Service for evaluating LLM requests and producing structured output.
+service LlmService {
+  // Evaluates an LLM request with a structured output schema and message history.
+  // The main prompt should be constant as it will be cached for efficiency.
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_SRE_LLM
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/sre/llm/v1/evaluate"
+      body: "*"
+    };
+  }
+}
+
+// Type of model to use for the evaluation.
+enum ModelType {
+  MODEL_TYPE_UNSPECIFIED = 0;
+  // Summary model - faster and cheaper, suitable for simple tasks.
+  // This is the default when not specified.
+  MODEL_TYPE_SUMMARY = 1;
+  // Thinking model - more capable, suitable for complex reasoning tasks.
+  MODEL_TYPE_THINKING = 2;
+}
+
+// Role of the message in the conversation.
+enum MessageRole {
+  MESSAGE_ROLE_UNSPECIFIED = 0;
+  // Message from the user/human.
+  MESSAGE_ROLE_USER = 1;
+  // Message from the assistant/LLM.
+  MESSAGE_ROLE_ASSISTANT = 2;
+}
+
+// A single message in the conversation history.
+message Message {
+  // Role of the message author.
+  MessageRole role = 1 [(buf.validate.field) = {
+    enum: {defined_only: true, not_in: [0]}
+  }];
+
+  // Content of the message.
+  string content = 2 [(buf.validate.field) = {required: true}];
+}
+
+// Request to evaluate an LLM request with structured output.
+message EvaluateRequest {
+  // JSON schema defining the structure of the expected output.
+  // The LLM will produce output conforming to this schema.
+  google.protobuf.Struct output_schema = 1 [(buf.validate.field) = {required: true}];
+
+  // Main system prompt providing instructions to the LLM.
+  // This should be constant as it will be cached for efficiency.
+  string system_prompt = 2 [(buf.validate.field) = {required: true}];
+
+  // History of messages in the conversation.
+  // Must contain at least one message. The last message is used as the final request to the LLM.
+  repeated Message messages = 3 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {required: true}
+    }
+  }];
+
+  // Type of model to use for the evaluation.
+  // Defaults to MODEL_TYPE_SUMMARY if not specified or set to MODEL_TYPE_UNSPECIFIED.
+  ModelType model_type = 4;
+}
+
+// Metrics about the LLM response.
+message LlmResponseMetrics {
+  // Number of tokens in the input prompt and messages.
+  int32 input_tokens = 1;
+
+  // Number of tokens in the generated output.
+  int32 output_tokens = 2;
+
+  // Total number of tokens used (input + output).
+  int32 total_tokens = 3;
+
+  // Time taken to generate the response in milliseconds.
+  int64 latency_ms = 4;
+
+  // Model identifier used for the evaluation.
+  string model = 5;
+
+  // Number of tokens written to the prompt cache.
+  int32 cache_write_tokens = 6;
+
+  // Number of tokens read from the prompt cache.
+  int32 cache_read_tokens = 7;
+}
+
+// Response from the LLM evaluation.
+message EvaluateResponse {
+  // Structured output from the LLM conforming to the provided schema.
+  google.protobuf.Struct output = 1;
+
+  // Metrics about the LLM response.
+  LlmResponseMetrics metrics = 2;
+}

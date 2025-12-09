@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/dwh/v1/dwh_agent_task.proto";
 import "synq/ingest/dwh/v1/dwh.proto";
+import "synq/ingest/dwh/v1/query_log.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
@@ -109,6 +110,17 @@ message IngestTaskResultsRequest {
 }
 message IngestTaskResultsResponse {}
 
+message IngestQueryLogsRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  repeated QueryLog query_logs = 3;
+}
+message IngestQueryLogsResponse {}
+
 service DwhService {
   rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -161,6 +173,17 @@ service DwhService {
     };
     option (google.api.http) = {
       post: "/api/datawarehouse/v1/connection/{connection_id}/task/{task_id}/task-results"
+      body: "*"
+    };
+  }
+
+  rpc IngestQueryLogs(IngestQueryLogsRequest) returns (IngestQueryLogsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/query-logs"
       body: "*"
     };
   }

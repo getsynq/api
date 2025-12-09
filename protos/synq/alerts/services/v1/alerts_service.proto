@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package synq.alerts.services.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/alerts/v1/alerts.proto";
+import "synq/alerts/v1/targets.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/alerts/services/v1";
+
+// AlertsService provides operations for managing alert configurations.
+service AlertsService {
+  // Create a new alert configuration.
+  rpc Create(CreateRequest) returns (CreateResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v1"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Retrieves a list of alert configurations based on filters.
+  rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/alerts/v1/list"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_READ]
+    };
+  }
+
+  // Get multiple alert configurations by their identifiers.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/alerts/v1/get"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_READ]
+    };
+  }
+
+  // Update an existing alert configuration.
+  // The config can be identified by either ID or FQN.
+  rpc Update(UpdateRequest) returns (UpdateResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      put: "/api/alerts/v1"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Delete an existing alert configuration.
+  // The config can be identified by either ID or FQN.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      delete: "/api/alerts/v1"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Enables or disables an existing alert configuration.
+  // The config can be identified by either ID or FQN.
+  rpc ToggleEnabled(ToggleEnabledRequest) returns (ToggleEnabledResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v1/toggle"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+}
+
+// CreateRequest creates a new alert configuration.
+message CreateRequest {
+  // Human-readable name for the alert configuration.
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  
+  // User-provided fully qualified name for the alert config.
+  // This is a unique identifier that users can specify to reference the alert.
+  string fqn = 2 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
+  
+  // Query that defines which entities can trigger this alert.
+  synq.alerts.v1.EntityGroupQuery trigger = 3 [(buf.validate.field).required = true];
+  
+  // Targets where alerts will be sent.
+  repeated synq.alerts.v1.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
+  
+  // Additional settings for the specific alert type.
+  synq.alerts.v1.AlertSettings settings = 5 [(buf.validate.field).required = true];
+  
+  // Optional owner information for the alert configuration.
+  optional synq.alerts.v1.Alert.Owner owner = 6;
+}
+
+// CreateResponse returns the created alert configuration.
+message CreateResponse {
+  // The alert configuration that was created.
+  synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+message AlertIdentifier {
+  oneof identifier {
+    // ID of the alert configuration to update.
+    string id = 1 [(buf.validate.field).string = {min_len: 1}];
+    // FQN of the alert configuration to update.
+    string fqn = 2 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
+  }
+  // Validation to ensure exactly one identifier is set.
+  option (buf.validate.message) = {oneof: {required: true}};
+}
+
+// UpdateRequest updates an existing alert configuration.
+// The config can be identified by either ID or FQN.
+message UpdateRequest {
+  // Identifier for the config to update.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+  
+  // Human-readable name for the alert configuration.
+  optional string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  
+  // Query that defines which entities can trigger this alert.
+  optional synq.alerts.v1.EntityGroupQuery trigger = 3;
+  
+  // Targets where alerts will be sent.
+  repeated synq.alerts.v1.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
+  
+  // Additional settings for the specific alert type.
+  optional synq.alerts.v1.AlertSettings settings = 5;
+
+  // Optional owner information for the alert configuration.
+  optional synq.alerts.v1.Alert.Owner owner = 6;
+}
+
+// UpdateResponse returns the updated alert configuration.
+message UpdateResponse {
+  // The alert configuration that was updated.
+  synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteRequest specifies which alert configuration to delete.
+// The config can be identified by either ID or FQN.
+message DeleteRequest {
+  // Identifier for the config to delete.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse confirms the deletion (empty response).
+message DeleteResponse {
+  // Empty response - successful deletion is indicated by HTTP 200 status.
+}
+
+// ToggleEnabledRequest enables or disables an alert configuration.
+// The config can be identified by either ID or FQN.
+message ToggleEnabledRequest {
+  // Identifier for the config to toggle.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+  
+  // Whether the alert configuration should be enabled.
+  // true = enable the alert, false = disable the alert.
+  bool is_enabled = 2;
+}
+
+// ToggleEnabledResponse confirms the toggle operation (empty response).
+message ToggleEnabledResponse {
+  // Empty response - successful toggle is indicated by HTTP 200 status.
+}
+
+// ListRequest filters alert configurations to retrieve.
+message ListRequest {
+  // Optional filter by owner of the alert configurations.
+  optional synq.alerts.v1.Alert.Owner owner = 1;
+}
+
+// ListResponse returns the filtered list of alert configurations.
+message ListResponse {
+  // The list of alert configurations matching the filter criteria.
+  repeated string alerts_ids = 1;
+}
+
+message BatchGetRequest {
+  // IDs of the alerts to get.
+  repeated AlertIdentifier identifiers = 1 [(buf.validate.field).repeated = {min_items: 1}];
+}
+
+message BatchGetResponse {
+  // Alerts mapped by their identifiers.
+  map<string, synq.alerts.v1.Alert> alerts = 1;
+}

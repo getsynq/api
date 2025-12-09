@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package synq.datachecks.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/v1";
+
+// TriggerService provides synchronous execution of datachecks on entities.
+service TriggerService {
+  // TriggerDatachecks executes datachecks for the specified entities.
+  rpc TriggerDatachecks(TriggerDatachecksRequest) returns (TriggerDatachecksResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_TRIGGER]
+    };
+    option (google.api.http) = {
+      post: "/api/datachecks/scheduler/v1/trigger"
+      body: "*"
+    };
+  }
+}
+
+message TriggerDatachecksRequest {
+  // List of entity identifiers to trigger datachecks for.
+  repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message TriggerDatachecksResponse {
+  // Results from all datacheck executions.
+  repeated DatacheckResult results = 1;
+}
+
+// Result of a datacheck execution
+enum DatacheckStatus {
+  DATACHECK_STATUS_UNSPECIFIED = 0;
+
+  // Check passed successfully.
+  DATACHECK_STATUS_PASSED = 1;
+
+  // Check failed due to violations.
+  DATACHECK_STATUS_FAILED = 2;
+
+  // Check failed due to error in check itself.
+  DATACHECK_STATUS_ERROR = 3;
+
+  // Check was skipped (e.g. not applicable)
+  DATACHECK_STATUS_SKIPPED = 4;
+}
+
+// Result from a single datacheck execution.
+message DatacheckResult {
+  DatacheckStatus status = 1;
+  
+  option (buf.validate.message).oneof = {
+    fields: ["sql_test_result", "monitor_result"]
+    required: true
+  };
+  SqlTestResult sql_test_result = 10;
+  MonitorResult monitor_result = 11;
+}
+
+// Result of a SQL test execution.
+message SqlTestResult {
+  // The SQL test ID that was executed.
+  string sql_test_id = 1;
+
+  // The entities that the test was executed on.
+  repeated synq.entities.v1.Identifier entity_ids = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // Number of rows returned by the test query.
+  // For a passing test, this should typically be 0 (no violations found).
+  int32 rows_count = 3;
+
+  // Execution ID that can be used to retrieve detailed audit information.
+  string execution_id = 4;
+
+  // Timestamp when the test was executed.
+  google.protobuf.Timestamp executed_at = 5;
+
+  // Optional error message if the execution failed.
+  string error_message = 6;
+
+  // Optional result data or sample rows from the test execution.
+  string result_data = 7;
+}
+
+// Result of a monitor execution.
+message MonitorResult {
+  // The monitor ID that was executed.
+  string monitor_id = 1;
+
+  // The entity that was monitored.
+  synq.entities.v1.Identifier entity_id = 2;
+
+  // Execution ID that can be used to retrieve detailed audit information.
+  string execution_id = 3;
+
+  // Timestamp when the monitor was executed.
+  google.protobuf.Timestamp executed_at = 4;
+
+  // Optional error message if the execution failed.
+  string error_message = 5;
+
+  // Optional metric value observed during execution.
+  optional double metric_value = 6;
+
+  // Optional expected value or threshold.
+  optional double expected_value = 7;
+
+  // Optional upper bound for anomaly detection.
+  optional double upper_bound = 8;
+
+  // Optional lower bound for anomaly detection.
+  optional double lower_bound = 9;
+}

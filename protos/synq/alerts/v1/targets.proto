@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package synq.alerts.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/alerts/v1";
+
+// AlertingTarget represents a destination where alert notifications will be sent.
+// Each target type has its own specific configuration requirements.
+message AlertingTarget {
+  // The specific target type. Exactly one must be specified.
+  oneof target {
+    // Send alert to a Slack channel or user.
+    SlackTarget slack = 1;
+    // Send alert via email.
+    EmailTarget email = 2;
+    // Send alert to the owner of the monitored entity.
+    OwnerTarget owner = 3;
+    // Send alert to Microsoft Teams channel or member.
+    MsTeamsTarget ms_teams = 4;
+    // Send alert via webhook integration.
+    WebhookTarget webhook = 5;
+  }
+
+  // Validation to ensure exactly one target type is set.
+  option (buf.validate.message) = {
+    oneof: {required: true}
+  };
+}
+
+// SlackTarget configures alert delivery to Slack.
+// Alerts are sent to a Slack channel.
+message SlackTarget {
+  // Slack channel name or ID (e.g., "#alerts" or "C1234567890").
+  string channel = 1 [(buf.validate.field).string = {min_len: 1}];
+}
+
+// EmailTarget configures alert delivery via email.
+message EmailTarget {
+  // List of email addresses that will receive the alert notifications.
+  // Each email must be a valid email address format.
+  repeated string recipient_emails = 1 [
+    (buf.validate.field).repeated = {min_items: 1},
+    (buf.validate.field).repeated.items.string.email = true
+  ];
+}
+
+// OwnerTarget configures alert delivery to the owner of the monitored entity.
+// This allows alerts to be automatically sent to whoever owns the data being monitored.
+message OwnerTarget {
+  // Path that identifies the ownership context for this target.
+  // This determines how the system will resolve the actual owner.
+  string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
+}
+
+// MsTeamsTarget configures alert delivery to Microsoft Teams.
+// Alerts are sent to a Microsoft Teams channel.
+message MsTeamsTarget {
+  // Teams channel name or ID.
+  string channel = 1 [(buf.validate.field).string = {min_len: 1}];
+}
+
+// WebhookTarget configures alert delivery via webhook/hook integrations.
+// This allows integration with external systems and custom notification workflows.
+message WebhookTarget {
+  // Unique identifier of the webhook to send alerts to.
+  // This references a pre-configured webhook in the system.
+  string webhook_id = 1 [(buf.validate.field).string = {min_len: 1}];
+}

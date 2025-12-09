@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package synq.alerts.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/alerts/v1/targets.proto";
+import "synq/queries/v1/query_operand.proto";
+import "synq/queries/v1/query_parts.proto";
+
+option go_package = "github.com/getsynq/api/alerts/v1";
+
+// Alert represents the configuration for an alert.
+// It contains all the necessary information to trigger and send alerts.
+message Alert {
+  // Unique identifier for the alert config (system-generated).
+  string id = 1 [(buf.validate.field).string = {min_len: 1}];
+
+  // Human-readable name for the alert configuration.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // User-provided fully qualified name for the alert config.
+  // This is a unique identifier that users can specify to reference the alert.
+  optional string fqn = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+
+  // Query that defines which entities can trigger this alert.
+  EntityGroupQuery trigger = 4 [(buf.validate.field).required = true];
+
+  // List of targets where alerts will be sent.
+  repeated AlertingTarget targets = 5 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Additional settings for the specific alert type.
+  AlertSettings settings = 6 [(buf.validate.field).required = true];
+
+  // Owner information for the alert configuration.
+  // If set, the alert is attributed to the specified owner and ownership.
+  message Owner {
+    // Path identifying the owner of this alert config.
+    string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
+    // Ownership identifier.
+    string ownership_id = 2 [(buf.validate.field).string = {min_len: 1}];
+  }
+  optional Owner owner = 7;
+
+  // Timestamp when the alert config was created.
+  google.protobuf.Timestamp created_at = 8 [(buf.validate.field).required = true];
+
+  // Whether the alert config is currently disabled.
+  bool is_disabled = 9;
+}
+
+// AlertSettings defines the properties that affect the trigger and presentation of an alert.
+// It specifies the conditions under which an alert should be fired and how it should behave.
+message AlertSettings {
+  // The specific type of alert settings. Exactly one must be specified.
+  oneof settings {
+    // Alert triggered by entity failures (e.g., table failures, test failures).
+    EntityFailureAlertSettings entity_failure = 1;
+    // Alert triggered by schema changes.
+    SchemaChangeAlertSettings schema_change = 2;
+  }
+
+  // Validation to ensure exactly one settings type is set.
+  option (buf.validate.message) = {oneof: {required: true}};
+}
+
+// EntityFailureAlertSettings configures alerts for entity failures.
+// This includes failures of tables, tests, and other data entities.
+message EntityFailureAlertSettings {
+  // Severity levels that define the criticality of failures.
+  enum Severity {
+    SEVERITY_UNSPECIFIED = 0; // Invalid/unspecified severity
+    SEVERITY_WARN = 1; // Warning level failures
+    SEVERITY_ERROR = 2; // Error level failures
+    SEVERITY_FATAL = 3; // Fatal/critical failures
+  }
+  // The severity levels that should trigger this alert.
+  repeated Severity severities = 2 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Whether to notify upstream dependencies when this alert triggers.
+  bool notify_upstream = 3;
+
+  // Whether to allow SQL test audit links in alert notifications.
+  bool allow_sql_test_audit_link = 4;
+
+  // Strategy for handling ongoing/repeated alerts.
+  OngoingAlertsStrategy ongoing = 5 [(buf.validate.field).required = true];
+}
+
+// SchemaChangeAlertSettings configures alerts for schema changes.
+// This alert triggers when the schema of monitored entities changes.
+message SchemaChangeAlertSettings {
+  // Whether to notify upstream dependencies when schema changes occur.
+  bool notify_upstream = 2;
+}
+
+// OngoingAlertsStrategy defines how to handle ongoing/repeated alerts.
+// This prevents alert spam by controlling notification frequency.
+message OngoingAlertsStrategy {
+  // Disabled strategy - no ongoing alerts will be sent after the initial alert.
+  message Disabled {
+    // No configuration needed - alerts are simply disabled after the first one.
+  }
+
+  // Stream strategy - alerts are sent continuously as issues persist.
+  message Stream {
+    // No configuration needed - alerts stream continuously.
+  }
+
+  // Schedule strategy - alerts are sent on a scheduled basis.
+  message Schedule {
+    // Cron expression defining when ongoing alerts should be sent.
+    // Must be a valid cron expression (e.g., "0 9 * * MON" for every Monday at 9 AM).
+    string cron = 1 [(buf.validate.field).string = {min_len: 1}];
+  }
+
+  // The strategy to use for ongoing alerts. Exactly one must be specified.
+  oneof strategy {
+    Disabled disabled = 1;
+    Stream stream = 2;
+    Schedule schedule = 3;
+  }
+
+  // Validation to ensure exactly one strategy is set.
+  option (buf.validate.message) = {oneof: {required: true}};
+}
+
+// EntityGroupQuery defines a query to select a group of entities.
+// This is used to specify which entities should be monitored by an alert.
+message EntityGroupQuery {
+  // The parts that compose this entity group query.
+  repeated SelectionQuery parts = 1 [(buf.validate.field).repeated = {min_items: 1}];
+}
+
+// SelectionQuery represents a query that selects entities based on various criteria.
+// It combines multiple query parts with a logical operand.
+message SelectionQuery {
+  // The individual query parts that make up this selection.
+  repeated QueryPart parts = 1 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // The logical operand used to combine the query parts (AND, OR, etc.).
+  synq.queries.v1.QueryOperand operand = 2 [(buf.validate.field).required = true];
+
+  // A single part of a selection query.
+  message QueryPart {
+    // The specific query part type. Exactly one must be specified.
+    oneof part {
+      // Filter by specific entity identifiers.
+      synq.queries.v1.IdentifierList identifier_list = 1;
+      // Filter by name pattern search.
+      synq.queries.v1.WithNameSearch with_name_search = 2;
+      // Filter by entity type.
+      synq.queries.v1.WithType with_type = 3;
+      // Filter by annotation presence/value.
+      synq.queries.v1.WithAnnotation with_annotation = 4;
+      // Filter by data platform.
+      synq.queries.v1.InDataPlatform in_data_platform = 5;
+      // Filter by folder location.
+      synq.queries.v1.InFolder in_folder = 6;
+      // Filter by data platform type.
+      synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
+      // Filter by data product membership.
+      synq.queries.v1.InDataproduct in_dataproduct = 8;
+
+      // Nested selection query for complex filtering.
+      SelectionQuery query = 100;
+      // Unsupported query types for backward compatibility.
+      synq.queries.v1.Unsupported unsupported = 101;
+    }
+
+    // Validation to ensure exactly one part type is set.
+    option (buf.validate.message) = {oneof: {required: true}};
+  }
+}
