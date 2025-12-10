@@ -149,8 +149,8 @@ message RedshiftConf {
 message SnowflakeConf {
   option (buf.validate.message).cel = {
     id: "snowflake_auth"
-    message: "Username is required, along with either password or private_key/private_key_file"
-    expression: "this.username != '' && (this.password != '' || this.private_key != '' || this.private_key_file != '')"
+    message: "Username required. For auth: use password, private_key/private_key_file, or auth_type=externalbrowser"
+    expression: "this.username != '' && (this.password != '' || this.private_key != '' || this.private_key_file != '' || this.auth_type == 'externalbrowser')"
   };
 
   // Snowflake account identifier
@@ -175,6 +175,9 @@ message SnowflakeConf {
   bool use_get_ddl = 8;
   // Name of the database where ACCOUNT_USAGE schema is present, fallbacks to SNOWFLAKE
   optional string account_usage_db = 9;
+  // Authentication type: empty (default, uses password or private_key), "externalbrowser" (SSO via browser)
+  // When set to "externalbrowser", opens browser for SSO login and caches the token locally.
+  optional string auth_type = 12;
 }
 
 // Trino specific configuration
