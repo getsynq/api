@@ -55,14 +55,14 @@ service CustomMonitorsService {
   rpc ListConfigsMonitors(ListConfigsMonitorsRequest) returns (ListConfigsMonitorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+      scopes: [SCOPE_MONITORS_READ]
     };
   }
 
   rpc ListMonitors(ListMonitorsRequest) returns (ListMonitorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+      scopes: [SCOPE_MONITORS_READ]
     };
   }
 }

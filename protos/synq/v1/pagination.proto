@@ -7,17 +7,21 @@ import "google/protobuf/descriptor.proto";
 option go_package = "github.com/getsynq/api/v1";
 
 message Pagination {
-  // Cursor for the next page of results. If not provided, returns the first page.
+  // Opaque cursor token for the next page of results. If not provided, returns the first page.
+  // This is an encoded token that should be passed as-is from the previous PageInfo.last_id.
   optional string cursor = 1;
   // Maximum number of items to return in a single page. If not provided, defaults vary per API.
   optional int32 page_size = 2 [(buf.validate.field).int32.gte = 0];
 }
 
 message PageInfo {
-  // Total number of items matching the request.
-  int32 total_count = 1;
+  // Total number of items matching the request. May not be available for cursor-based pagination
+  // where the total is unknown or expensive to compute.
+  // Deprecated: most of the APIs which require pagination don't know the total count.
+  int32 total_count = 1 [deprecated = true];
   // Number of items returned in this response.
   int32 count = 2;
-  // ID of the last item in the response. Used for pagination.
+  // Opaque cursor token for fetching the next page of results. Pass this value as the cursor
+  // in the next Pagination request to continue pagination. Empty if there are no more pages.
   string last_id = 3;
 }

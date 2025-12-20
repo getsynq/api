@@ -83,6 +83,11 @@ service EntityExecutionsService {
   }
 
   // GetLatestExecutions retrieves the most recent execution for each specified entity.
+  // IMPORTANT: Only returns executions where the entity appears in EntityExecution.entities (what executed).
+  // This means it returns executions OF the entity (e.g., model runs, monitor runs, task runs),
+  // NOT executions that merely reference the entity in targets or extra_references.
+  // For example, querying for a table won't return results because tables don't execute on their own -
+  // they are created/updated by models (which do execute).
   // Optionally filter by execution status to get the latest execution with a specific status.
   rpc GetLatestExecutions(GetLatestExecutionsRequest) returns (GetLatestExecutionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -282,6 +287,9 @@ message ExecutionStatusCount {
 // GetLatestExecutionsRequest requests the latest execution for each entity.
 message GetLatestExecutionsRequest {
   // Entity identifiers to get latest executions for.
+  // Only returns executions where these entities appear in EntityExecution.entities (what executed).
+  // Examples that WILL return results: monitors, dbt models, airflow tasks, tests
+  // Examples that WON'T return results: tables (they don't execute, they are created/updated by models)
   repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
     repeated: {
       min_items: 1

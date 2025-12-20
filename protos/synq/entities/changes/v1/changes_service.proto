@@ -7,22 +7,31 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/entity_change.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/changes/v1";
 
-// ChangesService provides functionality to track and retrieve changes made to entities in the system.
-// It supports various types of changes including git commits, schema changes, and SQL definition changes.
-// The service is designed to help track the history and evolution of entities over time.
+// ChangesService provides functionality to track and retrieve all types of changes to data entities.
 //
-// The service supports multiple types of changes:
-// - Git commits: Changes made through version control
-// - Schema changes: Modifications to database schemas
-// - SQL definition changes: Updates to SQL queries and definitions
+// This unified service returns ALL change types for an entity:
+// - Git commits: Changes to code files (dbt models, SQL files) tracked in version control
+// - Schema changes: Database schema modifications (columns added/removed/changed)
+// - SQL definition changes: View/materialized view definition updates detected by SYNQ
+//
+// Changes are returned with structured metadata including:
+// - For git commits: structured statistics (directories, file types, top changes)
+// - For schema changes: detailed column-level diffs
+// - For SQL changes: before/after SQL definitions
+//
+// Use cases:
+// - "What changed in the last week for table X?" → Returns git commits, schema changes, SQL changes
+// - "Show me all commits affecting this dbt model" → Returns git commits with lineage context
+// - "What schema changes happened to this table?" → Returns schema changes detected by SYNQ
 service ChangesService {
-  // List retrieves the history of changes for a specific entity identified by its path.
-  // Changes are returned in chronological order (newest first) and include details about the type of change,
-  // when it occurred, and who made it.
+  // Retrieves the complete change history for specified entities.
+  // Returns all change types (git commits, schema changes, SQL changes) in chronological order (newest first).
+  // Changes include lineage context showing upstream_distance when changes affect dependencies.
   rpc List(ListRequest) returns (ListResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -76,6 +85,9 @@ message ListRequest {
 
   // Return only changes of specific types.
   repeated synq.entities.v1.EntityChangeType limit_to_change_types = 5;
+
+  // Pagination parameters for limiting and cursoring through results.
+  optional synq.v1.Pagination pagination = 6;
 }
 
 // ListResponse contains the list of changes made to the requested entity.
@@ -87,6 +99,9 @@ message ListResponse {
   // - Details specific to the type of change
   // - Metadata about who made the change
   repeated synq.entities.v1.EntityChange changes = 1;
+
+  // Pagination information for navigating through results.
+  optional synq.v1.PageInfo page_info = 2;
 }
 
 // BatchChangeRequest contains the parameters needed to retrieve multiple changes by their IDs.

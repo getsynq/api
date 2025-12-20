@@ -9,6 +9,19 @@ import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/checks/v1";
 
+// PropagationFilter controls which types of checks are included in the coverage response.
+enum PropagationFilter {
+  // PROPAGATION_FILTER_UNSPECIFIED - Default behavior: returns both direct and propagated checks
+  PROPAGATION_FILTER_UNSPECIFIED = 0;
+
+  // PROPAGATION_FILTER_DIRECT_ONLY - Returns only direct checks, skips lineage resolution and propagation
+  PROPAGATION_FILTER_DIRECT_ONLY = 1;
+
+  // PROPAGATION_FILTER_PROPAGATED_ONLY - Returns only propagated checks from upstream entities,
+  // direct checks arrays will be empty but still present
+  PROPAGATION_FILTER_PROPAGATED_ONLY = 2;
+}
+
 // ChecksCoverageService provides functionality to retrieve and analyze the coverage of checks
 // for entities in the system. It helps track which checks are applied to entities, including
 // both direct checks and propagated checks from upstream entities.
@@ -37,6 +50,10 @@ message GetCoverageRequest {
   // Identifier of the entity to get checks coverage for.
   // This can be a path identifier that uniquely identifies the entity in the system.
   synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+
+  // Filter to control which checks are included in the coverage response.
+  // Default (UNSPECIFIED) returns both direct and propagated checks.
+  PropagationFilter propagation_filter = 2;
 }
 
 // GetCoverageResponse contains the check coverage information for the requested entity.

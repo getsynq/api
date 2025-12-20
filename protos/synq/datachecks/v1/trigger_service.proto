@@ -103,18 +103,15 @@ message MonitorResult {
   // Timestamp when the monitor was executed.
   google.protobuf.Timestamp executed_at = 4;
 
-  // Optional error message if the execution failed.
-  string error_message = 5;
+  // Individual segment predictions.
+  repeated MonitorPrediction predictions = 5;
+}
 
-  // Optional metric value observed during execution.
-  optional double metric_value = 6;
-
-  // Optional expected value or threshold.
-  optional double expected_value = 7;
-
-  // Optional upper bound for anomaly detection.
-  optional double upper_bound = 8;
-
-  // Optional lower bound for anomaly detection.
-  optional double lower_bound = 9;
+message MonitorPrediction {
+  DatacheckStatus status = 1;
+  string message = 2;
+  double value = 3;
+  double expected = 4;
+  string field = 5;
+  string segment = 6;
 }

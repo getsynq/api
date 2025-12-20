@@ -67,6 +67,8 @@ message ScheduleHourly {
   bool only_schedule_delay = 3;
 }
 
+message ScheduleOnDemand {}
+
 message MonitorFreshness {
   // The expression to filter on (eg. "created_at", "meta['created_at']")
   string expression = 1 [(buf.validate.field).required = true];
@@ -141,5 +143,6 @@ message MonitorDefinition {
   oneof schedule {
     ScheduleDaily daily = 40;
     ScheduleHourly hourly = 41;
+    ScheduleOnDemand on_demand = 42;
   }
 }

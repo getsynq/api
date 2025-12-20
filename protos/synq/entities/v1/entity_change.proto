@@ -64,6 +64,90 @@ message GitCommitChange {
     int32 deletions = 2;
   }
 
+  // TopFileChange represents a significant file change within a directory.
+  message TopFileChange {
+    // Path of the file relative to the directory.
+    string file_path = 1;
+    // Number of lines added.
+    int32 lines_added = 2;
+    // Number of lines removed.
+    int32 lines_removed = 3;
+  }
+
+  // DirectoryChangeSummary provides hierarchical directory-level statistics.
+  message DirectoryChangeSummary {
+    // Path of the directory.
+    string directory_path = 1;
+    // Number of files changed in this directory (excluding subdirectories).
+    int32 files_changed = 2;
+    // Total lines added in this directory (excluding subdirectories).
+    int32 total_lines_added = 3;
+    // Total lines removed in this directory (excluding subdirectories).
+    int32 total_lines_removed = 4;
+    // Subdirectory summaries.
+    repeated DirectoryChangeSummary subdirs = 5;
+    // Top 3-5 most significant file changes in this directory.
+    repeated TopFileChange top_files = 6;
+  }
+
+  // FileTypeChangeSummary aggregates changes by file type/extension.
+  message FileTypeChangeSummary {
+    // File extension (e.g., ".sql", ".py", ".yml").
+    string file_extension = 1;
+    // Number of files with this extension that were changed.
+    int32 files_count = 2;
+    // Total lines added across all files of this type.
+    int32 total_lines_added = 3;
+    // Total lines removed across all files of this type.
+    int32 total_lines_removed = 4;
+    // Example file paths (up to 5) showing where these changes occurred.
+    repeated string example_files = 5;
+    // Common directories where files of this type were modified.
+    repeated string common_directories = 6;
+  }
+
+  // FileChangeDistribution categorizes files by change magnitude.
+  message FileChangeDistribution {
+    // Files with fewer than 10 lines changed.
+    int32 files_with_small_changes = 1;
+    // Files with 10-100 lines changed.
+    int32 files_with_medium_changes = 2;
+    // Files with more than 100 lines changed.
+    int32 files_with_large_changes = 3;
+    // Files that were newly added.
+    int32 files_added = 4;
+    // Files that were modified.
+    int32 files_modified = 5;
+    // Files that were deleted.
+    int32 files_deleted = 6;
+  }
+
+  // TopChange represents one of the most significant file changes.
+  message TopChange {
+    // Path of the file.
+    string file_path = 1;
+    // Lines added.
+    int32 lines_added = 2;
+    // Lines removed.
+    int32 lines_removed = 3;
+    // Total lines changed (added + removed).
+    int32 total_lines_changed = 4;
+  }
+
+  // ChangeStatistics provides statistical summaries of the entire commit.
+  message ChangeStatistics {
+    // Total number of files changed.
+    int32 total_files = 1;
+    // Total lines added across all files.
+    int32 total_lines_added = 2;
+    // Total lines removed across all files.
+    int32 total_lines_removed = 3;
+    // Distribution of changes by magnitude.
+    FileChangeDistribution distribution = 4;
+    // Top 10 files by total lines changed.
+    repeated TopChange top_changes = 5;
+  }
+
   // Hash of the Git commit.
   string hash = 1;
 
@@ -81,12 +165,16 @@ message GitCommitChange {
   // Statistics about changes made to each modified file.
   map<string, ChangeStats> file_change_stats = 5;
 
-  // All changed file paths in the Commit
+  // All file paths changed in this commit (complete list).
+  // For commits with many files, this may be a large array.
   repeated string changed_file_paths = 8;
 
-  // File paths which are related with the entities for which changes are requested.
-  // When no paths are present it means that is impossible to determine most relevant file changes.
-  // This field will be empty when retrieving change by id.
+  // File paths that directly affect the queried entity (filtered subset of changed_file_paths).
+  // When querying changes for a specific entity (e.g., dbt model "customers"), this contains
+  // only the files that directly impact that entity (e.g., "models/customers.sql", "models/staging/stg_customers.sql").
+  // Empty when retrieving a change by change_id directly (not scoped to a specific entity).
+  // Empty when it's impossible to determine entity-specific file mappings.
+  // Example: If a commit changes 50 files but only 2 affect your queried dbt model, this contains those 2 files.
   repeated string related_changed_file_paths = 9;
 
   // Name of the branch associated with the commit, if any.
@@ -97,6 +185,18 @@ message GitCommitChange {
 
   // URL to e.g. Github which opens the Commit
   optional string web_commit_url = 11;
+
+  // STRUCTURED METADATA (Phase 1 - Core):
+  // These fields provide efficient, token-optimized representations of large commits.
+
+  // Hierarchical directory summaries showing where changes occurred.
+  repeated DirectoryChangeSummary directory_changes = 30;
+
+  // Aggregated statistics by file type/extension.
+  map<string, FileTypeChangeSummary> changes_by_file_type = 31;
+
+  // Overall statistical summary of the commit.
+  optional ChangeStatistics statistics = 34;
 }
 
 // SqlDefinitionChange represents a change detected in a SQL definition.
