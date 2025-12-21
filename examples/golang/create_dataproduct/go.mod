@@ -8,7 +8,6 @@ require (
 	github.com/google/uuid v1.6.0
 	golang.org/x/oauth2 v0.20.0
 	google.golang.org/grpc v1.64.1
-	google.golang.org/protobuf v1.36.5
 )
 
 require (
@@ -18,4 +17,5 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 )
