@@ -5,6 +5,7 @@ package synq.monitors.custom_monitors.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/wrappers.proto";
 import "synq/entities/v1/identifier.proto";
+import "google/protobuf/duration.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 
@@ -31,6 +32,7 @@ message ValueList {
 message TimePartitioning {
   // The expression to partition on (eg. "created_at", "meta['created_at']")
   string expression = 1 [(buf.validate.field).required = true];
+  google.protobuf.Duration interval = 2 [(buf.validate.field).required = false];
 }
 
 message ScheduleDaily {
