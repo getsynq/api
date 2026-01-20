@@ -118,13 +118,13 @@ message CreateResponse {
 
 message AlertIdentifier {
   oneof identifier {
+    option (buf.validate.oneof).required = true;
+    
     // ID of the alert configuration to update.
     string id = 1 [(buf.validate.field).string = {min_len: 1}];
     // FQN of the alert configuration to update.
     string fqn = 2 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
   }
-  // Validation to ensure exactly one identifier is set.
-  option (buf.validate.message) = {oneof: {required: true}};
 }
 
 // UpdateRequest updates an existing alert configuration.
@@ -140,13 +140,11 @@ message UpdateRequest {
   optional synq.alerts.v1.EntityGroupQuery trigger = 3;
   
   // Targets where alerts will be sent.
-  repeated synq.alerts.v1.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
+  // Leave empty to keep existing targets.
+  repeated synq.alerts.v1.AlertingTarget targets = 4;
   
   // Additional settings for the specific alert type.
   optional synq.alerts.v1.AlertSettings settings = 5;
-
-  // Optional owner information for the alert configuration.
-  optional synq.alerts.v1.Alert.Owner owner = 6;
 }
 
 // UpdateResponse returns the updated alert configuration.

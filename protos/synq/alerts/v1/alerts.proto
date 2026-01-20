@@ -60,14 +60,13 @@ message Alert {
 message AlertSettings {
   // The specific type of alert settings. Exactly one must be specified.
   oneof settings {
+    option (buf.validate.oneof).required = true;
+
     // Alert triggered by entity failures (e.g., table failures, test failures).
     EntityFailureAlertSettings entity_failure = 1;
     // Alert triggered by schema changes.
     SchemaChangeAlertSettings schema_change = 2;
   }
-
-  // Validation to ensure exactly one settings type is set.
-  option (buf.validate.message) = {oneof: {required: true}};
 }
 
 // EntityFailureAlertSettings configures alerts for entity failures.
@@ -122,13 +121,12 @@ message OngoingAlertsStrategy {
 
   // The strategy to use for ongoing alerts. Exactly one must be specified.
   oneof strategy {
+    option (buf.validate.oneof).required = true;
+
     Disabled disabled = 1;
     Stream stream = 2;
     Schedule schedule = 3;
   }
-
-  // Validation to ensure exactly one strategy is set.
-  option (buf.validate.message) = {oneof: {required: true}};
 }
 
 // EntityGroupQuery defines a query to select a group of entities.
@@ -151,6 +149,8 @@ message SelectionQuery {
   message QueryPart {
     // The specific query part type. Exactly one must be specified.
     oneof part {
+      option (buf.validate.oneof).required = true;
+
       // Filter by specific entity identifiers.
       synq.queries.v1.IdentifierList identifier_list = 1;
       // Filter by name pattern search.
@@ -173,8 +173,5 @@ message SelectionQuery {
       // Unsupported query types for backward compatibility.
       synq.queries.v1.Unsupported unsupported = 101;
     }
-
-    // Validation to ensure exactly one part type is set.
-    option (buf.validate.message) = {oneof: {required: true}};
   }
 }

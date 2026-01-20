@@ -11,6 +11,8 @@ option go_package = "github.com/getsynq/api/alerts/v1";
 message AlertingTarget {
   // The specific target type. Exactly one must be specified.
   oneof target {
+    option (buf.validate.oneof).required = true;
+    
     // Send alert to a Slack channel or user.
     SlackTarget slack = 1;
     // Send alert via email.
@@ -23,10 +25,6 @@ message AlertingTarget {
     WebhookTarget webhook = 5;
   }
 
-  // Validation to ensure exactly one target type is set.
-  option (buf.validate.message) = {
-    oneof: {required: true}
-  };
 }
 
 // SlackTarget configures alert delivery to Slack.
