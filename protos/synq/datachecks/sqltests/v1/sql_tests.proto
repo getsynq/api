@@ -79,7 +79,10 @@ message SqlTestAudit {
 // Represents a value that can be either a literal (to be quoted in SQL) or a SQL expression (to be used as plain text).
 message SqlValue {
   option (buf.validate.message).oneof = {
-    fields: ["string_literal", "expression"]
+    fields: [
+      "string_literal",
+      "expression"
+    ]
     required: true
   };
   // Literal value that should be quoted in SQL (e.g., '2025-05-12', 'active')
@@ -137,18 +140,14 @@ message AcceptedValuesTest {
   // Name of the column to validate
   string column_name = 1 [(buf.validate.field).required = true];
   // List of allowed values for the column
-  repeated SqlValue accepted_values = 2 [
-    (buf.validate.field).repeated.min_items = 1
-  ];
+  repeated SqlValue accepted_values = 2 [(buf.validate.field).repeated.min_items = 1];
 }
 
 message RejectedValuesTest {
   // Name of the column to validate
   string column_name = 1 [(buf.validate.field).required = true];
   // List of disallowed values for the column
-  repeated SqlValue rejected_values = 2 [
-    (buf.validate.field).repeated.min_items = 1
-  ];
+  repeated SqlValue rejected_values = 2 [(buf.validate.field).repeated.min_items = 1];
 }
 
 message MinMaxTest {

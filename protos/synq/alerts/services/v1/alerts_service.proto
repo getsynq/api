@@ -91,21 +91,27 @@ service AlertsService {
 // CreateRequest creates a new alert configuration.
 message CreateRequest {
   // Human-readable name for the alert configuration.
-  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
-  
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
   // User-provided fully qualified name for the alert config.
   // This is a unique identifier that users can specify to reference the alert.
-  string fqn = 2 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
-  
+  string fqn = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+
   // Query that defines which entities can trigger this alert.
   synq.alerts.v1.EntityGroupQuery trigger = 3 [(buf.validate.field).required = true];
-  
+
   // Targets where alerts will be sent.
   repeated synq.alerts.v1.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
-  
+
   // Additional settings for the specific alert type.
   synq.alerts.v1.AlertSettings settings = 5 [(buf.validate.field).required = true];
-  
+
   // Optional owner information for the alert configuration.
   optional synq.alerts.v1.Alert.Owner owner = 6;
 }
@@ -119,11 +125,14 @@ message CreateResponse {
 message AlertIdentifier {
   oneof identifier {
     option (buf.validate.oneof).required = true;
-    
+
     // ID of the alert configuration to update.
     string id = 1 [(buf.validate.field).string = {min_len: 1}];
     // FQN of the alert configuration to update.
-    string fqn = 2 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
+    string fqn = 2 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 500
+    }];
   }
 }
 
@@ -132,17 +141,20 @@ message AlertIdentifier {
 message UpdateRequest {
   // Identifier for the config to update.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
-  
+
   // Human-readable name for the alert configuration.
-  optional string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
-  
+  optional string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
   // Query that defines which entities can trigger this alert.
   optional synq.alerts.v1.EntityGroupQuery trigger = 3;
-  
+
   // Targets where alerts will be sent.
   // Leave empty to keep existing targets.
   repeated synq.alerts.v1.AlertingTarget targets = 4;
-  
+
   // Additional settings for the specific alert type.
   optional synq.alerts.v1.AlertSettings settings = 5;
 }
@@ -170,7 +182,7 @@ message DeleteResponse {
 message ToggleEnabledRequest {
   // Identifier for the config to toggle.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
-  
+
   // Whether the alert configuration should be enabled.
   // true = enable the alert, false = disable the alert.
   bool is_enabled = 2;

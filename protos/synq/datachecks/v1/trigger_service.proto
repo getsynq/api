@@ -56,9 +56,12 @@ enum DatacheckStatus {
 message DatacheckResult {
   DatacheckStatus status = 1;
   string message = 2;
-  
+
   option (buf.validate.message).oneof = {
-    fields: ["sql_test_result", "monitor_result"]
+    fields: [
+      "sql_test_result",
+      "monitor_result"
+    ]
     required: true
   };
   SqlTestResult sql_test_result = 10;

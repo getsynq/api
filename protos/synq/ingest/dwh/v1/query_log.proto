@@ -35,16 +35,16 @@ message QueryLog {
   // Query identifiers
   string query_id = 4 [(buf.validate.field) = {required: true}];
   google.protobuf.Timestamp created_at = 5 [(buf.validate.field) = {required: true}];
-  optional google.protobuf.Timestamp started_at = 6;  // Query start time (optional, uses created_at if not set)
+  optional google.protobuf.Timestamp started_at = 6; // Query start time (optional, uses created_at if not set)
   optional google.protobuf.Timestamp finished_at = 7; // Query finish time (optional, uses created_at if not set)
 
   // Query content
-  string sql = 8;           // SQL text (may be obfuscated based on sql_obfuscation_mode)
-  optional string sql_hash = 9;      // SHA256 hash of original SQL for deduplication (computed during storage if not provided)
+  string sql = 8; // SQL text (may be obfuscated based on sql_obfuscation_mode)
+  optional string sql_hash = 9; // SHA256 hash of original SQL for deduplication (computed during storage if not provided)
   optional string normalized_query_hash = 10; // Hash of normalized query for lineage caching (empty if not available from platform)
-  string sql_dialect = 11;   // SQL dialect (e.g., "snowflake", "bigquery", "clickhouse")
-  string query_type = 12;    // Platform-specific query type (e.g., "CREATE_TABLE_AS_SELECT", "SELECT")
-  string status = 13;        // Execution status: "SUCCESS", "FAILED", "CANCELED"
+  string sql_dialect = 11; // SQL dialect (e.g., "snowflake", "bigquery", "clickhouse")
+  string query_type = 12; // Platform-specific query type (e.g., "CREATE_TABLE_AS_SELECT", "SELECT")
+  string status = 13; // Execution status: "SUCCESS", "FAILED", "CANCELED"
 
   // DWH execution context
   optional QueryLogDwhContext dwh_context = 14;
@@ -52,7 +52,7 @@ message QueryLog {
   // Obfuscation and parsing hints
   SqlObfuscationMode sql_obfuscation_mode = 15;
   bool has_complete_native_lineage = 16; // If true, native lineage is complete and SQL parsing can be skipped
-  bool is_truncated = 17;                // If true, SQL was truncated by the warehouse
+  bool is_truncated = 17; // If true, SQL was truncated by the warehouse
 
   // Platform-specific metadata (arbitrary key-value pairs)
   // Contains execution metrics, costs, etc. depending on the platform
@@ -76,18 +76,18 @@ message QueryLog {
 //   - ClickHouse: hostname, database_name, "" (2-level: hostname.database)
 //   - DuckDB: motherduck_account, database_name, schema_name
 message QueryLogDwhContext {
-  optional string instance = 1;   // Instance identifier (account, workspace_url, host, etc.)
-  optional string database = 2;   // Database/catalog name
-  optional string schema = 3;     // Schema name
-  optional string warehouse = 4;  // Warehouse identifier (Snowflake, Databricks)
-  optional string user = 5;       // User who executed the query
-  optional string role = 6;       // Role used for execution
-  optional string cluster = 7;    // Cluster identifier (Redshift, ClickHouse)
+  optional string instance = 1; // Instance identifier (account, workspace_url, host, etc.)
+  optional string database = 2; // Database/catalog name
+  optional string schema = 3; // Schema name
+  optional string warehouse = 4; // Warehouse identifier (Snowflake, Databricks)
+  optional string user = 5; // User who executed the query
+  optional string role = 6; // Role used for execution
+  optional string cluster = 7; // Cluster identifier (Redshift, ClickHouse)
 }
 
 // QueryLogNativeLineage contains lineage information provided natively by the data warehouse.
 // Not all platforms provide this - when available, it can be more accurate than SQL parsing.
 message QueryLogNativeLineage {
-  repeated Fqn input_tables = 1;  // Tables read by the query
+  repeated Fqn input_tables = 1; // Tables read by the query
   repeated Fqn output_tables = 2; // Tables written to by the query
 }

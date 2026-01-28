@@ -3,9 +3,9 @@ syntax = "proto3";
 package synq.monitors.custom_monitors.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 import "synq/entities/v1/identifier.proto";
-import "google/protobuf/duration.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 

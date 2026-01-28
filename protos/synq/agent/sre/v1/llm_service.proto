@@ -51,7 +51,10 @@ enum MessageRole {
 message Message {
   // Role of the message author.
   MessageRole role = 1 [(buf.validate.field) = {
-    enum: {defined_only: true, not_in: [0]}
+    enum: {
+      defined_only: true
+      not_in: [0]
+    }
   }];
 
   // Content of the message.

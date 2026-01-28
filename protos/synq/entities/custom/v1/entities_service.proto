@@ -24,7 +24,7 @@ service EntitiesService {
       scopes: [SCOPE_ENTITY_EDIT]
     };
     option (google.api.http) = {
-      post: "/api/entities/custom/v1"
+      post: "/api/entities/custom/v1/entities"
       body: "*"
     };
   }
@@ -35,7 +35,7 @@ service EntitiesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
-    option (google.api.http) = {delete: "/api/entities/custom/v1"};
+    option (google.api.http) = {delete: "/api/entities/custom/v1/entities"};
   }
 
   // List all entities.
@@ -48,7 +48,7 @@ service EntitiesService {
         SCOPE_MCP_READ
       ]
     };
-    option (google.api.http) = {get: "/api/entities/custom/v1"};
+    option (google.api.http) = {get: "/api/entities/custom/v1/entities"};
   }
 }
 

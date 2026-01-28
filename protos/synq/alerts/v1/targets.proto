@@ -12,7 +12,7 @@ message AlertingTarget {
   // The specific target type. Exactly one must be specified.
   oneof target {
     option (buf.validate.oneof).required = true;
-    
+
     // Send alert to a Slack channel or user.
     SlackTarget slack = 1;
     // Send alert via email.
@@ -24,7 +24,6 @@ message AlertingTarget {
     // Send alert via webhook integration.
     WebhookTarget webhook = 5;
   }
-
 }
 
 // SlackTarget configures alert delivery to Slack.

@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -18,6 +19,10 @@ service RelationshipsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_LINEAGE_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/relationships"
+      body: "*"
+    };
   }
 
   // Delete relationships between entities. If the relationship does not exist, it will be ignored.
@@ -25,6 +30,10 @@ service RelationshipsService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      delete: "/api/entities/custom/v1/relationships"
+      body: "*"
     };
   }
 
@@ -37,6 +46,10 @@ service RelationshipsService {
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/relationships/list"
+      body: "*"
     };
   }
 }
