@@ -43,12 +43,20 @@ done
 
 set -e
 
+# Run jsonschema-markdown, preferring local install, falling back to docker
+run_jsonschema_markdown() {
+    if command -v jsonschema-markdown >/dev/null 2>&1; then
+        jsonschema-markdown "$@"
+    else
+        docker run --rm -i elisiariocouto/jsonschema-markdown "$@"
+    fi
+}
 
 echo "Generating DWH agent config docs..."
 protoc  --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS} --jsonschema_opt=enforce_oneof '--jsonschema_opt=messages=[Config]' --jsonschema_opt=enums_as_strings_only --jsonschema_out=${DOCS_DIR} ${PROTOS_DIR}/synq/agent/dwh/v1/dwh_agent_config.proto
 mv ${DOCS_DIR}/Config.json ${DOCS_DIR}/dwhagentconfig.schema.json
 
-cat ${DOCS_DIR}/dwhagentconfig.schema.json  | docker run --rm -i elisiariocouto/jsonschema-markdown --no-empty-columns --examples-format yaml - | sed 's/synq.agent.dwh.v1.//g' | sed 's/#config./#config-/g' > ${DOCS_DIR}/dwhagentconfig.schema.md
+cat ${DOCS_DIR}/dwhagentconfig.schema.json | run_jsonschema_markdown --no-empty-columns --examples-format yaml - | sed 's/synq.agent.dwh.v1.//g' | sed 's/#config./#config-/g' > ${DOCS_DIR}/dwhagentconfig.schema.md
 
 set +e
 exit 0

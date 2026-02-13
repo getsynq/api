@@ -1,0 +1,555 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Config",
+    "definitions": {
+        "Config": {
+            "properties": {
+                "agent": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.Config.Agent",
+                    "additionalProperties": true,
+                    "description": "Agent configuration"
+                },
+                "synq": {
+                    "$ref": "#/definitions/synq.agent.v1.SYNQ",
+                    "additionalProperties": true,
+                    "description": "SYNQ platform configuration"
+                },
+                "connections": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/synq.agent.dwh.v1.Connection",
+                        "additionalProperties": true
+                    },
+                    "type": "object",
+                    "description": "Map of connection configurations"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config",
+            "description": "Config represents the main configuration for the DWH agent"
+        },
+        "synq.agent.dwh.v1.BigQueryConf": {
+            "properties": {
+                "project_id": {
+                    "type": "string",
+                    "description": "GCP project ID"
+                },
+                "service_account_key": {
+                    "type": "string",
+                    "description": "Service account key JSON"
+                },
+                "service_account_key_file": {
+                    "type": "string",
+                    "description": "Location of service account key file"
+                },
+                "region": {
+                    "type": "string",
+                    "description": "Region for BigQuery resources"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Big Query Conf",
+            "description": "BigQuery specific configuration"
+        },
+        "synq.agent.dwh.v1.ClickhouseConf": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Host address"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Port number"
+                },
+                "database": {
+                    "type": "string",
+                    "description": "Database name"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "allow_insecure": {
+                    "type": "boolean",
+                    "description": "Whether to use disable SSL for connection"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Clickhouse Conf"
+        },
+        "synq.agent.dwh.v1.Config.Agent": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the agent instance"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags to categorize and organize the agent"
+                },
+                "log_level": {
+                    "enum": [
+                        "LOG_LEVEL_UNSPECIFIED",
+                        "LOG_LEVEL_TRACE",
+                        "LOG_LEVEL_DEBUG",
+                        "LOG_LEVEL_INFO",
+                        "LOG_LEVEL_WARN",
+                        "LOG_LEVEL_ERROR"
+                    ],
+                    "type": "string",
+                    "title": "Log Level"
+                },
+                "log_json": {
+                    "type": "boolean"
+                },
+                "log_report_caller": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "log_json"
+                    ]
+                },
+                {
+                    "required": [
+                        "log_report_caller"
+                    ]
+                }
+            ],
+            "title": "Agent",
+            "description": "Agent contains metadata about this agent instance"
+        },
+        "synq.agent.dwh.v1.Connection": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the connection"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "parallelism": {
+                    "type": "integer",
+                    "description": "How many queries to DWH can be executed in parallel, defaults to 2"
+                },
+                "bigquery": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.BigQueryConf",
+                    "additionalProperties": true
+                },
+                "clickhouse": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.ClickhouseConf",
+                    "additionalProperties": true
+                },
+                "databricks": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.DatabricksConf",
+                    "additionalProperties": true
+                },
+                "mysql": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.MySQLConf",
+                    "additionalProperties": true
+                },
+                "postgres": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.PostgresConf",
+                    "additionalProperties": true
+                },
+                "redshift": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.RedshiftConf",
+                    "additionalProperties": true
+                },
+                "snowflake": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.SnowflakeConf",
+                    "additionalProperties": true
+                },
+                "trino": {
+                    "$ref": "#/definitions/synq.agent.dwh.v1.TrinoConf",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "bigquery"
+                    ]
+                },
+                {
+                    "required": [
+                        "clickhouse"
+                    ]
+                },
+                {
+                    "required": [
+                        "databricks"
+                    ]
+                },
+                {
+                    "required": [
+                        "mysql"
+                    ]
+                },
+                {
+                    "required": [
+                        "postgres"
+                    ]
+                },
+                {
+                    "required": [
+                        "redshift"
+                    ]
+                },
+                {
+                    "required": [
+                        "snowflake"
+                    ]
+                },
+                {
+                    "required": [
+                        "trino"
+                    ]
+                }
+            ],
+            "title": "Connection",
+            "description": "Connection represents a database connection configuration"
+        },
+        "synq.agent.dwh.v1.DatabricksConf": {
+            "properties": {
+                "workspace_url": {
+                    "type": "string"
+                },
+                "auth_token": {
+                    "type": "string"
+                },
+                "auth_client": {
+                    "type": "string"
+                },
+                "auth_secret": {
+                    "type": "string"
+                },
+                "warehouse": {
+                    "type": "string"
+                },
+                "refresh_table_metrics": {
+                    "type": "boolean"
+                },
+                "refresh_table_metrics_use_scan": {
+                    "type": "boolean"
+                },
+                "fetch_table_tags": {
+                    "type": "boolean"
+                },
+                "use_show_create_table": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "auth_token"
+                    ]
+                },
+                {
+                    "required": [
+                        "auth_client"
+                    ]
+                },
+                {
+                    "required": [
+                        "auth_secret"
+                    ]
+                },
+                {
+                    "required": [
+                        "warehouse"
+                    ]
+                }
+            ],
+            "title": "Databricks Conf"
+        },
+        "synq.agent.dwh.v1.MySQLConf": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Host address"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Port number"
+                },
+                "database": {
+                    "type": "string",
+                    "description": "Database name"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "allow_insecure": {
+                    "type": "boolean",
+                    "description": "Whether to allow insecure connections"
+                },
+                "params": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Additional connection parameters"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "My SQL Conf",
+            "description": "MySQL specific configuration"
+        },
+        "synq.agent.dwh.v1.PostgresConf": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Host address"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Port number"
+                },
+                "database": {
+                    "type": "string",
+                    "description": "Database name"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "allow_insecure": {
+                    "type": "boolean",
+                    "description": "Whether to allow insecure connections"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Postgres Conf",
+            "description": "Postgres specific configuration"
+        },
+        "synq.agent.dwh.v1.RedshiftConf": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Host address"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Port number"
+                },
+                "database": {
+                    "type": "string",
+                    "description": "Database name"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "freshness_from_query_logs": {
+                    "type": "boolean",
+                    "description": "Estimate table freshness based on query logs"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Redshift Conf",
+            "description": "Redshift specific configuration"
+        },
+        "synq.agent.dwh.v1.SnowflakeConf": {
+            "properties": {
+                "account": {
+                    "type": "string",
+                    "description": "Snowflake account identifier"
+                },
+                "warehouse": {
+                    "type": "string",
+                    "description": "Virtual warehouse to use"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "Role to assume"
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "private_key": {
+                    "type": "string",
+                    "description": "Content of Private key used for Snowflake authentication"
+                },
+                "private_key_file": {
+                    "type": "string",
+                    "description": "Location of the file containing Private key used for Snowflake authentication"
+                },
+                "private_key_passphrase": {
+                    "type": "string",
+                    "description": "Passphrase used to decode Private key"
+                },
+                "databases": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Database to connect to"
+                },
+                "use_get_ddl": {
+                    "type": "boolean",
+                    "description": "Use GET_DDL to determine queries used for table/view creation"
+                },
+                "account_usage_db": {
+                    "type": "string",
+                    "description": "Name of the database where ACCOUNT_USAGE schema is present, fallbacks to SNOWFLAKE"
+                },
+                "auth_type": {
+                    "type": "string",
+                    "description": "Authentication type: empty (default, uses password or private_key), \"externalbrowser\" (SSO via browser) When set to \"externalbrowser\", opens browser for SSO login and caches the token locally."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "private_key_passphrase"
+                    ]
+                },
+                {
+                    "required": [
+                        "account_usage_db"
+                    ]
+                },
+                {
+                    "required": [
+                        "auth_type"
+                    ]
+                }
+            ],
+            "title": "Snowflake Conf",
+            "description": "Snowflake specific configuration"
+        },
+        "synq.agent.dwh.v1.TrinoConf": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Host address"
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Optional port to use, otherwise it will use the default port 8080"
+                },
+                "use_plaintext": {
+                    "type": "boolean",
+                    "description": "Use non-SSL connection to Trino. This should only be enabled if the Trino cluster does not support SSL or if the connection is secured through other means (e.g., a VPN). Defaults to false (SSL enabled)."
+                },
+                "username": {
+                    "type": "string",
+                    "description": "Username for authentication"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Password for authentication"
+                },
+                "catalogs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "To which catalogs to connect"
+                },
+                "no_show_create_view": {
+                    "type": "boolean",
+                    "description": "Use SHOW CREATE VIEW to get views DDLs"
+                },
+                "no_show_create_table": {
+                    "type": "boolean",
+                    "description": "Use SHOW CREATE TABLE to get tables DDLs"
+                },
+                "no_materialized_views": {
+                    "type": "boolean",
+                    "description": "Should it fetch system.metadata.materialized_views to get information about Trino MVs"
+                },
+                "fetch_table_comments": {
+                    "type": "boolean",
+                    "description": "Fetch Trino table comments from system.metadata.table_comments"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "port"
+                    ]
+                },
+                {
+                    "required": [
+                        "use_plaintext"
+                    ]
+                }
+            ],
+            "title": "Trino Conf",
+            "description": "Trino specific configuration"
+        },
+        "synq.agent.v1.SYNQ": {
+            "properties": {
+                "client_id": {
+                    "type": "string",
+                    "description": "Client ID for OAuth authentication"
+                },
+                "client_secret": {
+                    "type": "string",
+                    "description": "Client secret for OAuth authentication"
+                },
+                "endpoint": {
+                    "type": "string",
+                    "description": "SYNQ API agent endpoint (host:port)"
+                },
+                "ingest_endpoint": {
+                    "type": "string",
+                    "description": "SYNQ API ingest endpoint (host:port)"
+                },
+                "oauth_url": {
+                    "type": "string",
+                    "description": "OAuth authentication URL"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "SYNQ",
+            "description": "SYNQ contains authentication and connection details for the SYNQ platform"
+        }
+    }
+}

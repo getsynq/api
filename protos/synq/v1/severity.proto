@@ -1,0 +1,11 @@
+syntax = "proto3";
+package synq.v1;
+
+option go_package = "github.com/getsynq/api/v1";
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0; // Invalid/unspecified severity
+  SEVERITY_WARN = 1; // Warning level failures
+  SEVERITY_ERROR = 2; // Error level failures
+  SEVERITY_FATAL = 3; // Fatal/critical failures
+}

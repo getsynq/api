@@ -35,8 +35,8 @@ while [ : ]; do
         PROTOC_OPTS="$PROTOC_OPTS --proto_path=$2"
         shift 2
         ;;
-    --) shift; 
-        break 
+    --) shift;
+        break
         ;;
   esac
 done
@@ -52,11 +52,11 @@ run_jsonschema_markdown() {
     fi
 }
 
-echo "Generating public webhook docs..."
-protoc  --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS} --jsonschema_opt=enforce_oneof '--jsonschema_opt=messages=[Event]' --jsonschema_opt=enums_as_strings_only --jsonschema_out=${DOCS_DIR} ${PROTOS_DIR}/synq/webhooks/v1/event.proto
-mv ${DOCS_DIR}/Event.json ${DOCS_DIR}/webhook.schema.json
+echo "Generating SRE agent config docs..."
+protoc  --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS} --jsonschema_opt=enforce_oneof '--jsonschema_opt=messages=[Config]' --jsonschema_opt=enums_as_strings_only --jsonschema_out=${DOCS_DIR} ${PROTOS_DIR}/synq/agent/sre/v1/sre_agent_config.proto
+mv ${DOCS_DIR}/Config.json ${DOCS_DIR}/sreagentconfig.schema.json
 
-cat ${DOCS_DIR}/webhook.schema.json | run_jsonschema_markdown --no-empty-columns - | sed 's/synq.webhooks.v1.//g' > ${DOCS_DIR}/webhook.schema.md
+cat ${DOCS_DIR}/sreagentconfig.schema.json | run_jsonschema_markdown --no-empty-columns --examples-format yaml - | sed 's/synq.agent.sre.v1.//g' | sed 's/synq.agent.dwh.v1.//g' | sed 's/synq.agent.v1.//g' | sed 's/#config./#config-/g' > ${DOCS_DIR}/sreagentconfig.schema.md
 
 set +e
 exit 0

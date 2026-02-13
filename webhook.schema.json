@@ -21,7 +21,10 @@
                         "EVENT_TYPE_ISSUE_CREATED",
                         "EVENT_TYPE_ISSUE_UPDATED",
                         "EVENT_TYPE_ISSUE_STATUS_UPDATED",
-                        "EVENT_TYPE_ISSUE_CLOSED"
+                        "EVENT_TYPE_ISSUE_CLOSED",
+                        "EVENT_TYPE_INCIDENT_OPEN",
+                        "EVENT_TYPE_INCIDENT_CLOSED",
+                        "EVENT_TYPE_INCIDENT_CANCELLED"
                     ],
                     "type": "string",
                     "title": "Event Type"
@@ -44,6 +47,18 @@
                 },
                 "issue_closed": {
                     "$ref": "#/definitions/synq.webhooks.v1.IssueClosed",
+                    "additionalProperties": true
+                },
+                "incident_open": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentOpen",
+                    "additionalProperties": true
+                },
+                "incident_closed": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentClosed",
+                    "additionalProperties": true
+                },
+                "incident_cancelled": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentCancelled",
                     "additionalProperties": true
                 },
                 "callbacks": {
@@ -80,6 +95,21 @@
                     "required": [
                         "issue_closed"
                     ]
+                },
+                {
+                    "required": [
+                        "incident_open"
+                    ]
+                },
+                {
+                    "required": [
+                        "incident_closed"
+                    ]
+                },
+                {
+                    "required": [
+                        "incident_cancelled"
+                    ]
                 }
             ],
             "title": "Event"
@@ -88,7 +118,7 @@
             "properties": {
                 "integration_id": {
                     "type": "string",
-                    "description": "Synq integration_id that identifies the Airflow instance"
+                    "description": "SYNQ integration_id that identifies the Airflow instance"
                 },
                 "dag_id": {
                     "type": "string",
@@ -103,7 +133,7 @@
             "properties": {
                 "integration_id": {
                     "type": "string",
-                    "description": "Synq integration_id that identifies the Airflow instance"
+                    "description": "SYNQ integration_id that identifies the Airflow instance"
                 },
                 "dag_id": {
                     "type": "string",
@@ -142,7 +172,7 @@
             "properties": {
                 "host": {
                     "type": "string",
-                    "description": "Clickhouse host inclusive of port"
+                    "description": "Clickhouse hostname without port"
                 },
                 "schema": {
                     "type": "string",
@@ -227,7 +257,7 @@
             "properties": {
                 "integration_id": {
                     "type": "string",
-                    "description": "Synq integration_id that identifies the dbt Core project"
+                    "description": "SYNQ integration_id that identifies the dbt Core project"
                 },
                 "node_id": {
                     "type": "string",
@@ -281,11 +311,6 @@
                     "additionalProperties": true,
                     "description": "Clickhouse table identifier"
                 },
-                "databricks_table": {
-                    "$ref": "#/definitions/synq.entities.v1.DatabricksTableIdentifier",
-                    "additionalProperties": true,
-                    "description": "Databricks table identifier"
-                },
                 "airflow_dag": {
                     "$ref": "#/definitions/synq.entities.v1.AirflowDagIdentifier",
                     "additionalProperties": true,
@@ -310,6 +335,31 @@
                     "$ref": "#/definitions/synq.entities.v1.SynqPathIdentifier",
                     "additionalProperties": true,
                     "description": "SynqPath identifier"
+                },
+                "databricks_table": {
+                    "$ref": "#/definitions/synq.entities.v1.DatabricksTableIdentifier",
+                    "additionalProperties": true,
+                    "description": "Databricks table identifier"
+                },
+                "trino_table": {
+                    "$ref": "#/definitions/synq.entities.v1.TrinoTableIdentifier",
+                    "additionalProperties": true,
+                    "description": "Trino table identifier"
+                },
+                "sql_mesh_model": {
+                    "$ref": "#/definitions/synq.entities.v1.SqlMeshModelIdentifier",
+                    "additionalProperties": true,
+                    "description": "SQLMesh Model identifier"
+                },
+                "sql_mesh_audit": {
+                    "$ref": "#/definitions/synq.entities.v1.SqlMeshAuditIdentifier",
+                    "additionalProperties": true,
+                    "description": "SQLMesh Audit identifier"
+                },
+                "monitor": {
+                    "$ref": "#/definitions/synq.entities.v1.MonitorIdentifier",
+                    "additionalProperties": true,
+                    "description": "Monitor identifier"
                 }
             },
             "additionalProperties": true,
@@ -357,11 +407,6 @@
                 },
                 {
                     "required": [
-                        "databricks_table"
-                    ]
-                },
-                {
-                    "required": [
                         "airflow_dag"
                     ]
                 },
@@ -384,16 +429,78 @@
                     "required": [
                         "synq_path"
                     ]
+                },
+                {
+                    "required": [
+                        "databricks_table"
+                    ]
+                },
+                {
+                    "required": [
+                        "trino_table"
+                    ]
+                },
+                {
+                    "required": [
+                        "sql_mesh_model"
+                    ]
+                },
+                {
+                    "required": [
+                        "sql_mesh_audit"
+                    ]
+                },
+                {
+                    "required": [
+                        "monitor"
+                    ]
                 }
             ],
             "title": "Identifier",
-            "description": "Identifier is a unique reference to an entity in Synq system. Entity identifiers are designed to closely mimic identifiers used by data platforms and tools. To construct an identifier, you need to know the kind of the entity and the ids that you would normally use to identify it in the data platform or tool. For example, to identify a table in BigQuery, you would need to know the project, dataset, and table names."
+            "description": "Identifier is a unique reference to an entity in SYNQ system. Entity identifiers are designed to closely mimic identifiers used by data platforms and tools. To construct an identifier, you need to know the kind of the entity and the ids that you would normally use to identify it in the data platform or tool. For example, to identify a table in BigQuery, you would need to know the project, dataset, and table names."
+        },
+        "synq.entities.v1.MonitorIdentifier": {
+            "properties": {
+                "monitored_id": {
+                    "$ref": "#/definitions/synq.entities.v1.Identifier",
+                    "additionalProperties": true,
+                    "description": "Identifier of the monitored entity"
+                },
+                "monitor_id": {
+                    "type": "string",
+                    "description": "Identifier of the monitor"
+                },
+                "segment": {
+                    "type": "string",
+                    "description": "Optional monitor segmentation identifier"
+                },
+                "integration_id": {
+                    "type": "string",
+                    "description": "SYNQ integration_id of the monitored identifier"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "segment"
+                    ]
+                },
+                {
+                    "required": [
+                        "integration_id"
+                    ]
+                }
+            ],
+            "title": "MONITORS",
+            "description": "MONITORS"
         },
         "synq.entities.v1.MysqlTableIdentifier": {
             "properties": {
                 "host": {
                     "type": "string",
-                    "description": "Mysql host inclusive of port"
+                    "description": "Mysql hostname without port"
                 },
                 "schema": {
                     "type": "string",
@@ -412,7 +519,7 @@
             "properties": {
                 "host": {
                     "type": "string",
-                    "description": "Postgres host inclusive of port"
+                    "description": "Postgres hostname without port"
                 },
                 "database": {
                     "type": "string",
@@ -477,17 +584,75 @@
             "type": "object",
             "title": "Snowflake Table Identifier"
         },
+        "synq.entities.v1.SqlMeshAuditIdentifier": {
+            "properties": {
+                "integration_id": {
+                    "type": "string",
+                    "description": "SYNQ integration_id that identifies the dbt Core project"
+                },
+                "fqn": {
+                    "type": "string",
+                    "description": "SQLMesh model fully qualified name"
+                },
+                "audit_id": {
+                    "type": "string",
+                    "description": "Identifier of the audit"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Sql Mesh Audit Identifier"
+        },
+        "synq.entities.v1.SqlMeshModelIdentifier": {
+            "properties": {
+                "integration_id": {
+                    "type": "string",
+                    "description": "SYNQ integration_id that identifies the dbt Core project"
+                },
+                "fqn": {
+                    "type": "string",
+                    "description": "SQLMesh model fully qualified name"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "SQLMesh",
+            "description": "SQLMesh"
+        },
         "synq.entities.v1.SynqPathIdentifier": {
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Synq path that identifies the Synq entity, needs to be one of supported paths"
+                    "description": "SYNQ path that identifies the SYNQ entity, needs to be one of supported paths"
                 }
             },
             "additionalProperties": true,
             "type": "object",
             "title": "SYNQ PATH",
             "description": "SYNQ PATH"
+        },
+        "synq.entities.v1.TrinoTableIdentifier": {
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "Hostname of the Trino instance"
+                },
+                "catalog": {
+                    "type": "string",
+                    "description": "Trino catalog"
+                },
+                "schema": {
+                    "type": "string",
+                    "description": "Trino schema"
+                },
+                "table": {
+                    "type": "string",
+                    "description": "Trino table or view"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Trino Table Identifier"
         },
         "synq.issues.actor.v1.Actor": {
             "properties": {
@@ -626,6 +791,15 @@
                     "$ref": "#/definitions/synq.issues.actor.v1.Actor",
                     "additionalProperties": true,
                     "description": "Actor marking the issue as expected."
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time at which the issue was marked as expected. Defaults to the current time.",
+                    "format": "date-time"
+                },
+                "require_no_existing_status": {
+                    "type": "boolean",
+                    "description": "Ignore status change if the issue already has a status."
                 }
             },
             "additionalProperties": true,
@@ -642,6 +816,15 @@
                     "$ref": "#/definitions/synq.issues.actor.v1.Actor",
                     "additionalProperties": true,
                     "description": "Actor marking the issue as fixed."
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time at which the issue was marked as fixed. Defaults to the current time.",
+                    "format": "date-time"
+                },
+                "require_no_existing_status": {
+                    "type": "boolean",
+                    "description": "Ignore status change if the issue already has a status."
                 }
             },
             "additionalProperties": true,
@@ -658,6 +841,15 @@
                     "$ref": "#/definitions/synq.issues.actor.v1.Actor",
                     "additionalProperties": true,
                     "description": "Actor marking the issue as investigating."
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time at which the issue was marked as investigating. Defaults to the current time.",
+                    "format": "date-time"
+                },
+                "require_no_existing_status": {
+                    "type": "boolean",
+                    "description": "Ignore status change if the issue already has a status."
                 }
             },
             "additionalProperties": true,
@@ -674,6 +866,15 @@
                     "$ref": "#/definitions/synq.issues.actor.v1.Actor",
                     "additionalProperties": true,
                     "description": "Actor marking the issue as no action needed."
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time at which the issue was marked as no action needed. Defaults to the current time.",
+                    "format": "date-time"
+                },
+                "require_no_existing_status": {
+                    "type": "boolean",
+                    "description": "Ignore status change if the issue already has a status."
                 }
             },
             "additionalProperties": true,
@@ -694,6 +895,11 @@
                 "comment": {
                     "type": "string",
                     "description": "Comment to post."
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time at which the comment was posted. Defaults to the current time.",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": true,
@@ -723,6 +929,76 @@
                 }
             ],
             "title": "Callback"
+        },
+        "synq.webhooks.v1.IncidentCancelled": {
+            "properties": {
+                "incident": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentSummary",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Incident Cancelled"
+        },
+        "synq.webhooks.v1.IncidentClosed": {
+            "properties": {
+                "incident": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentSummary",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Incident Closed"
+        },
+        "synq.webhooks.v1.IncidentOpen": {
+            "properties": {
+                "incident": {
+                    "$ref": "#/definitions/synq.webhooks.v1.IncidentSummary",
+                    "additionalProperties": true
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Incident Open"
+        },
+        "synq.webhooks.v1.IncidentSummary": {
+            "properties": {
+                "incident_id": {
+                    "type": "string"
+                },
+                "incident_url": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_html": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "ended_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "oneOf": [
+                {
+                    "required": [
+                        "ended_at"
+                    ]
+                }
+            ],
+            "title": "Incident Summary"
         },
         "synq.webhooks.v1.IssueClosed": {
             "properties": {
@@ -774,7 +1050,11 @@
                 },
                 "description": {
                     "type": "string",
-                    "description": "Detailed description of the issue."
+                    "description": "Detailed description of the issue. In the Markdown format."
+                },
+                "description_html": {
+                    "type": "string",
+                    "description": "Detailed description of the issue. In the HTML format."
                 },
                 "trigger_entity": {
                     "$ref": "#/definitions/synq.webhooks.v1.IssueSummary.IssueEntity",
