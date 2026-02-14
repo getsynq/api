@@ -71,10 +71,21 @@ message FetchMetricsResult {
   message ColumnValue {
     string name = 1;
     bool is_null = 2;
-    oneof value { // can be none of specified to indicate that the value was ignored
+    // The typed metric value. None of the oneof fields being set indicates
+    // that the value was present but its type is not supported (ignored).
+    oneof value {
       double double_value = 3;
+      // Integer value for values that fit within the signed 64-bit range
+      // [-9223372036854775808, 9223372036854775807].
       int64 int_value = 4;
       google.protobuf.Timestamp time_value = 5;
+      // Arbitrary-precision integer encoded as a base-10 string, used for
+      // values that exceed the signed 64-bit range. Covers DuckDB HUGEINT
+      // (128-bit), ClickHouse Int128/UInt128/Int256/UInt256, and similar
+      // wide integer types from other warehouses.
+      // Consumers should parse this with an arbitrary-precision library
+      // (e.g., Go's math/big.Int, Java's BigInteger, Python's int).
+      string big_int_value = 6;
     }
   }
 
