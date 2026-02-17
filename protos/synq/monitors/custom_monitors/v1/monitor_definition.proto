@@ -86,6 +86,8 @@ message MonitorFieldStats {
   repeated string fields = 1 [(buf.validate.field).repeated.min_items = 1];
 }
 
+message MonitorTableStats {}
+
 enum Severity {
   SEVERITY_UNSPECIFIED = 0;
   SEVERITY_WARNING = 1;
@@ -109,13 +111,18 @@ message ModeFixedThresholds {
 }
 
 message MonitorDefinition {
+  option (buf.validate.message).cel = {
+    id: "segmentation_not_supported_for_field_stats_and_table_stats",
+    message: "Segmentation is not supported for field stats and table stats monitors",
+    expression: "!(has(this.field_stats) || has(this.table_stats)) || !has(this.segmentation)"
+  };
+
   string id = 1 [(buf.validate.field) = {
     required: true
     string: {uuid: true}
   }];
   synq.entities.v1.Identifier monitored_id = 2 [(buf.validate.field).required = true];
   TimePartitioning time_partitioning = 3 [(buf.validate.field).required = true];
-  // Segmentation is not supported for field stats monitors
   optional Segmentation segmentation = 4;
   optional string filter = 5;
   Severity severity = 6;
@@ -135,6 +142,7 @@ message MonitorDefinition {
     MonitorVolume volume = 21;
     MonitorCustomNumeric custom_numeric = 22;
     MonitorFieldStats field_stats = 23;
+    MonitorTableStats table_stats = 24;
   }
 
   oneof mode {

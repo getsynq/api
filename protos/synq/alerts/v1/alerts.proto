@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "synq/alerts/v1/targets.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
+import "synq/v1/severity.proto";
 
 option go_package = "github.com/getsynq/api/alerts/v1";
 
@@ -66,6 +67,8 @@ message AlertSettings {
     EntityFailureAlertSettings entity_failure = 1;
     // Alert triggered by schema changes.
     SchemaChangeAlertSettings schema_change = 2;
+    // Alert triggered for issue lifecycle events (e.g., issue created, updated, closed).
+    IssueLifecycleAlertSettings issue_lifecycle = 3;
   }
 }
 
@@ -97,6 +100,13 @@ message EntityFailureAlertSettings {
 message SchemaChangeAlertSettings {
   // Whether to notify upstream dependencies when schema changes occur.
   bool notify_upstream = 2;
+}
+
+// IssueLifecycleAlertSettings configures alerts for issue lifecycle events.
+// This alert triggers on events such as issue creation, updates, and closures.
+message IssueLifecycleAlertSettings {
+  // The severity levels that should trigger this alert.
+  repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
 }
 
 // OngoingAlertsStrategy defines how to handle ongoing/repeated alerts.
