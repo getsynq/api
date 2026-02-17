@@ -48,10 +48,20 @@ enum Sensitivity {
   SENSITIVITY_RELAXED = 3;
 }
 
+message MetricOption {
+  Sensitivity sensitivity = 1 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+  MetricId metric_id = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+}
+
 message AutomatedMonitorSettings {
   Severity severity = 1;
-  Sensitivity sensitivity = 2;
-  repeated MetricId metric_ids = 3;
+  Sensitivity sensitivity = 2;              // LEGACY - global sensitivity
+  repeated MetricId metric_ids = 3;         // LEGACY - which metrics to monitor
+  repeated MetricOption metric_options = 4; // NEW - per-metric sensitivity
 }
 
 message MonitorSettingsChange {
@@ -83,6 +93,7 @@ message QueryConfig {
     }
   ];
   bool keep_deleted_monitors = 5;
+  repeated MetricOption metric_options = 6; // NEW - optional per-metric config
 }
 
 message ExclusiveQueryConfig {
@@ -104,6 +115,7 @@ message StaticConfig {
       not_in: [0]
     }
   ];
+  repeated MetricOption metric_options = 5; // NEW
 }
 
 message ExclusiveStaticConfig {
@@ -128,6 +140,7 @@ message ProductConfig {
   ProductConfigUpstreamStrategy upstream = 5;
   ProductConfigSelfStrategy self = 6;
   bool keep_deleted_monitors = 7;
+  repeated MetricOption metric_options = 8; // NEW
 }
 
 message ProductConfigUpstreamStrategy {
