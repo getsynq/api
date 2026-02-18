@@ -114,6 +114,7 @@ message BatchGetResponse {
 
 message ListRequest {
   optional string parent_id = 1 [(buf.validate.field).string.uuid = true];
+  bool exclude_definition = 2;
 }
 
 message ListResponse {
@@ -128,6 +129,7 @@ message DeleteResponse {}
 
 message FetchDomainWithSubDomainsRequest {
   string domain_id = 1;
+  bool exclude_definition = 2;
 }
 
 message FetchDomainWithSubDomainsResponse {
