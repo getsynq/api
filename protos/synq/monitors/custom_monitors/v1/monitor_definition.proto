@@ -31,7 +31,7 @@ message ValueList {
 
 message TimePartitioning {
   // The expression to partition on (eg. "created_at", "meta['created_at']")
-  string expression = 1 [(buf.validate.field).required = true];
+  string expression = 1;
   google.protobuf.Duration interval = 2 [(buf.validate.field).required = false];
 }
 
@@ -115,6 +115,11 @@ message MonitorDefinition {
     id: "segmentation_not_supported_for_field_stats_and_table_stats",
     message: "Segmentation is not supported for field stats and table stats monitors",
     expression: "!(has(this.field_stats) || has(this.table_stats)) || !has(this.segmentation)"
+  };
+  option (buf.validate.message).cel = {
+    id: "time_partitioning_expression_required_for_non_table_stats",
+    message: "time_partitioning.expression is required",
+    expression: "has(this.table_stats) || this.time_partitioning.expression != ''"
   };
 
   string id = 1 [(buf.validate.field) = {

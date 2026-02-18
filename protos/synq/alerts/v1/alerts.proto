@@ -149,6 +149,12 @@ message EntityGroupQuery {
 // SelectionQuery represents a query that selects entities based on various criteria.
 // It combines multiple query parts with a logical operand.
 message SelectionQuery {
+  option (buf.validate.message).cel = {
+    id: "selection_query.except_requires_two_parts"
+    message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
+    expression: "this.operand != 3 || this.parts.size() == 2"
+  };
+
   // The individual query parts that make up this selection.
   repeated QueryPart parts = 1 [(buf.validate.field).repeated = {min_items: 1}];
 

@@ -9,6 +9,12 @@ import "synq/v1/source.proto";
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
 
 message EntitySelectionQuery {
+  option (buf.validate.message).cel = {
+    id: "entity_selection_query.except_requires_two_parts"
+    message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
+    expression: "this.operand != 3 || this.parts.size() == 2"
+  };
+
   repeated QueryPart parts = 1;
   synq.queries.v1.QueryOperand operand = 2;
 
@@ -59,8 +65,8 @@ message MetricOption {
 
 message AutomatedMonitorSettings {
   Severity severity = 1;
-  Sensitivity sensitivity = 2;              // LEGACY - global sensitivity
-  repeated MetricId metric_ids = 3;         // LEGACY - which metrics to monitor
+  Sensitivity sensitivity = 2; // LEGACY - global sensitivity
+  repeated MetricId metric_ids = 3; // LEGACY - which metrics to monitor
   repeated MetricOption metric_options = 4; // NEW - per-metric sensitivity
 }
 

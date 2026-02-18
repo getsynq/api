@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.dataproducts.v1;
 
+import "buf/validate/validate.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
@@ -21,6 +22,12 @@ message DataproductDefinition {
 }
 
 message AssetSelectionQuery {
+  option (buf.validate.message).cel = {
+    id: "asset_selection_query.except_requires_two_parts"
+    message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
+    expression: "this.operand != 3 || this.parts.size() == 2"
+  };
+
   repeated QueryPart parts = 1;
   synq.queries.v1.QueryOperand operand = 2;
 
