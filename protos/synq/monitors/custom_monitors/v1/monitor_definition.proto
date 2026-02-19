@@ -117,9 +117,14 @@ message MonitorDefinition {
     expression: "!(has(this.field_stats) || has(this.table_stats)) || !has(this.segmentation)"
   };
   option (buf.validate.message).cel = {
-    id: "time_partitioning_expression_required_for_non_table_stats",
-    message: "time_partitioning.expression is required",
-    expression: "has(this.table_stats) || this.time_partitioning.expression != ''"
+    id: "filter_not_supported_for_table_stats",
+    message: "filter is not supported for table stats monitors",
+    expression: "!has(this.table_stats) || !has(this.filter)"
+  };
+  option (buf.validate.message).cel = {
+    id: "time_partitioning_required_for_non_table_stats",
+    message: "time_partitioning is required when table_stats is not set, and must not be set when table_stats is set",
+    expression: "has(this.table_stats) != has(this.time_partitioning)"
   };
 
   string id = 1 [(buf.validate.field) = {
@@ -127,7 +132,7 @@ message MonitorDefinition {
     string: {uuid: true}
   }];
   synq.entities.v1.Identifier monitored_id = 2 [(buf.validate.field).required = true];
-  TimePartitioning time_partitioning = 3 [(buf.validate.field).required = true];
+  TimePartitioning time_partitioning = 3;
   optional Segmentation segmentation = 4;
   optional string filter = 5;
   Severity severity = 6;
