@@ -117,6 +117,8 @@ message Template {
     MinValueTest min_value_test = 20;
     // Validates numeric values are less than or equal to a maximum value (e.g., price &lt;= 1000)
     MaxValueTest max_value_test = 21;
+    // Validates referential integrity between source and reference tables
+    RelationshipsTest relationships_test = 22;
   }
 }
 
@@ -225,4 +227,33 @@ message RelativeTimeTest {
 message BusinessRuleTest {
   // SQL expression that should evaluate to TRUE for valid records
   string sql_expression = 1 [(buf.validate.field).required = true];
+}
+
+message RelationshipsTest {
+  // List of reference table relationships to check
+  repeated RelationshipReference references = 1 [
+    (buf.validate.field).repeated.min_items = 1
+  ];
+  // If true, source rows where all join columns are NULL are excluded from results
+  bool ignore_nulls = 2;
+  // Column name used to filter source rows by time (e.g., "created_at")
+  string time_partition_column = 3;
+  // Time window in seconds - only check source rows within this window
+  int64 time_window_seconds = 4;
+}
+
+message RelationshipReference {
+  // The reference entity (table to check foreign keys against)
+  synq.entities.v1.Identifier entity = 1 [(buf.validate.field).required = true];
+  // Column mappings between source and reference tables
+  repeated RelationshipColumn columns = 2 [
+    (buf.validate.field).repeated.min_items = 1
+  ];
+}
+
+message RelationshipColumn {
+  // Column name in the source table
+  string source = 1 [(buf.validate.field).required = true];
+  // Column name in the reference table
+  string reference = 2 [(buf.validate.field).required = true];
 }
