@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 
@@ -86,7 +87,10 @@ message MonitorFieldStats {
   repeated string fields = 1 [(buf.validate.field).repeated.min_items = 1];
 }
 
-message MonitorTableStats {}
+message MonitorTableStats {
+  // Metrics to monitor. If empty, all metrics are monitored.
+  repeated synq.monitors.automated_monitors.v1.MetricOption metric_options = 1;
+}
 
 enum Severity {
   SEVERITY_UNSPECIFIED = 0;
