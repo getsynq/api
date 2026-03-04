@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "synq/agent/recon/v1/recon_audit.proto";
+import "synq/agent/recon/v1/recon_measure.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// ReconcilationRunRequest describes what to execute in a reconciliation run.
+// It can start a fresh run, continue from a previous audit, or drill deeper
+// into specific mismatches found in a prior run.
+message ReconcilationRunRequest {
+  // Suite to execute. Required for fresh runs.
+  // When continuing from a parent audit, can be omitted to reuse the parent's suite.
+  optional ReconcilationSuite suite = 1;
+
+  // Parent audit log to continue from.
+  // When set, this run resumes or drills deeper into the parent's results.
+  optional AuditLog parent_audit = 2;
+
+  // Filter which reconciliations to execute.
+  // When empty, all reconciliations in the suite are executed.
+  optional ReconcilationFilter filter = 3;
+
+  // Variable overrides applied on top of suite-level variables.
+  map<string, string> variable_overrides = 4;
+
+  // Per-reconciliation drill-down and override instructions.
+  repeated ReconcilationOverride overrides = 5;
+}
+
+// ReconcilationFilter controls which reconciliations are included or excluded.
+message ReconcilationFilter {
+  option (buf.validate.message).cel = {
+    id: "include_exclude_exclusive"
+    message: "include and exclude are mutually exclusive"
+    expression: "size(this.include) == 0 || size(this.exclude) == 0"
+  };
+
+  // Run only these reconciliations (by name). Mutually exclusive with exclude.
+  repeated string include = 1;
+
+  // Skip these reconciliations (by name). Mutually exclusive with include.
+  repeated string exclude = 2;
+}
+
+// ReconcilationOverride provides per-reconciliation instructions for a run.
+// Used to drill into specific mismatches, adjust config, or extend comparisons.
+message ReconcilationOverride {
+  // Name of the reconciliation this override applies to.
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // What action to perform.
+  oneof action {
+    // Drill into specific bisection mismatch leaves from a prior run.
+    BisectionDrillTarget bisection_drill = 2;
+
+    // Drill into specific aggregate groups or add new dimensions from a prior run.
+    AggregateDrillTarget aggregate_drill = 3;
+
+    // Re-run the reconciliation from scratch, optionally with config changes.
+    RerunAction rerun = 4;
+  }
+}
+
+// BisectionDrillTarget specifies which mismatch leaves to drill deeper into.
+message BisectionDrillTarget {
+  // Specific segments to drill into. Each segment is identified by its boundaries.
+  // When empty, all mismatch leaves from the parent audit are drilled.
+  repeated SegmentTarget segments = 1;
+
+  // Override the bisection factor for this drill pass.
+  optional int32 factor = 2 [(buf.validate.field) = {
+    int32: {gte: 2}
+  }];
+
+  // Override the row count threshold for this drill pass.
+  optional int32 threshold = 3 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // Override the reporting level for this drill pass.
+  optional ReportingLevel reporting_level = 4;
+}
+
+// SegmentTarget identifies a specific segment to drill into.
+message SegmentTarget {
+  // Minimum key (inclusive). Unset means unbounded.
+  optional google.protobuf.Value min_key = 1;
+
+  // Maximum key (exclusive). Unset means unbounded.
+  optional google.protobuf.Value max_key = 2;
+
+  // Time bucket (for time-based segmentation).
+  optional string time_bucket = 3;
+}
+
+// AggregateDrillTarget specifies how to extend or drill deeper into aggregate results.
+message AggregateDrillTarget {
+  // Specific group key values to drill into.
+  // When empty, all mismatched groups from the parent audit are drilled.
+  repeated GroupTarget groups = 1;
+
+  // Additional group columns to add to the drill-down hierarchy.
+  // Appended after the existing group_columns from the reconciliation config.
+  repeated string additional_group_columns = 2;
+
+  // Additional measures to compute that weren't in the original config.
+  repeated Measure additional_measures = 3;
+
+  // Override thresholds for this drill pass.
+  optional ThresholdConfig threshold_overrides = 4;
+}
+
+// GroupTarget identifies a specific group to drill into by its key values.
+message GroupTarget {
+  // Group key values that identify this group (column name -> value).
+  google.protobuf.Struct key = 1 [(buf.validate.field).required = true];
+}
+
+// RerunAction re-runs a reconciliation from scratch with optional config overrides.
+message RerunAction {
+  // Override the comparison mode.
+  optional ReconcilationMode mode = 1;
+
+  // Override the bisection configuration.
+  optional BisectionConfig bisection = 2;
+
+  // Override the reporting configuration.
+  optional ReportingConfig reporting = 3;
+
+  // Override the aggregate configuration.
+  optional AggregateConfig aggregate = 4;
+
+  // Override the error handling configuration.
+  optional ErrorHandlingConfig error_handling = 5;
+}

@@ -52,5 +52,8 @@ protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS}\
     --doc_out="${TEMPLATE},api.mdx:${DOCS_DIR}" \
     ${proto_files}
 
+echo "Escaping MDX special characters..."
+python3 "${MY_PATH}/escape_mdx.py" "${DOCS_DIR}/api.mdx"
+
 set +e
 exit 0

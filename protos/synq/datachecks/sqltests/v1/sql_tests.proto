@@ -231,9 +231,7 @@ message BusinessRuleTest {
 
 message RelationshipsTest {
   // List of reference table relationships to check
-  repeated RelationshipReference references = 1 [
-    (buf.validate.field).repeated.min_items = 1
-  ];
+  repeated RelationshipReference references = 1 [(buf.validate.field).repeated.min_items = 1];
   // If true, source rows where all join columns are NULL are excluded from results
   bool ignore_nulls = 2;
   // Column name used to filter source rows by time (e.g., "created_at")
@@ -246,9 +244,7 @@ message RelationshipReference {
   // The reference entity (table to check foreign keys against)
   synq.entities.v1.Identifier entity = 1 [(buf.validate.field).required = true];
   // Column mappings between source and reference tables
-  repeated RelationshipColumn columns = 2 [
-    (buf.validate.field).repeated.min_items = 1
-  ];
+  repeated RelationshipColumn columns = 2 [(buf.validate.field).repeated.min_items = 1];
 }
 
 message RelationshipColumn {

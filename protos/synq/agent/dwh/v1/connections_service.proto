@@ -32,7 +32,7 @@ service ConnectionsService {
 
   // GenerateConnectionsYaml converts data warehouse connections to YAML configuration format.
   // The generated YAML can be used directly as a config file for DWH Agent or SYNQ Scout.
-  // Secret fields are replaced with environment variable placeholders (e.g., ${CONNECTION_ID_PASSWORD}).
+  // Secret fields are replaced with environment variable placeholders (e.g., `${CONNECTION_ID_PASSWORD}`).
   // Documentation: https://docs.synq.io/dw-integrations/agent#config-file-schema
   rpc GenerateConnectionsYaml(GenerateConnectionsYamlRequest) returns (GenerateConnectionsYamlResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;

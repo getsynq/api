@@ -1,0 +1,783 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// AuditLog is the root structure for a reconciliation run audit.
+// It captures all operations performed during a synq-recon reconciliation run.
+message AuditLog {
+  // Schema version. Must be "1".
+  string version = 1 [(buf.validate.field) = {
+    required: true
+    string: {const: "1"}
+  }];
+
+  // Unique identifier for this invocation/run.
+  string invocation_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Invocation ID of the parent run this continues from.
+  // Set when this run resumes or drills deeper into a previous run's results.
+  optional string parent_invocation_id = 3 [(buf.validate.field) = {
+    string: {uuid: true}
+  }];
+
+  // Suite machine identifier (promoted from suite.name).
+  string suite_name = 4 [(buf.validate.field).required = true];
+
+  // Human-readable title (promoted from suite.title).
+  optional string suite_title = 5;
+
+  // Suite description (promoted from suite.description).
+  optional string suite_description = 18;
+
+  // When the run started.
+  google.protobuf.Timestamp started_at = 6 [(buf.validate.field).required = true];
+
+  // When the run completed.
+  google.protobuf.Timestamp completed_at = 7 [(buf.validate.field).required = true];
+
+  // Total run duration.
+  google.protobuf.Duration duration = 8 [(buf.validate.field).required = true];
+
+  // Overall execution status derived from individual reconciliation outcomes.
+  AuditStatus status = 9;
+
+  // Aggregated counts derived from individual reconciliation results.
+  AuditSummary summary = 10;
+
+  // Audit records for each reconciliation executed.
+  repeated ReconciliationAudit reconciliations = 11;
+
+  // --- Detailed fields (not present in AuditLogEntry) ---
+
+  // Build and environment metadata for the synq-recon binary.
+  AuditMeta meta = 12;
+
+  // Path to the configuration file used.
+  string config_file = 13;
+
+  // Full suite configuration snapshot as executed.
+  // Contains all reconciliation definitions, variables, thresholds, etc.
+  ReconcilationSuite suite = 14;
+
+  // Resolved template variable values used for query interpolation.
+  // Contains the actual values after template evaluation
+  // (e.g. "{{today - 30d}}" resolved to "2026-01-27").
+  map<string, string> resolved_variables = 15;
+
+  // Suite-level warnings detected during config validation.
+  repeated string warnings = 16;
+
+  // Aggregated query execution statistics across all queries in this run.
+  QueryStats total_stats = 17;
+}
+
+// AuditStatus describes the overall outcome of a reconciliation run.
+// Values are ordered by severity: passed < within_threshold < mismatched < failed.
+enum AuditStatus {
+  AUDIT_STATUS_UNSPECIFIED = 0;
+
+  // All reconciliations completed and matched exactly.
+  AUDIT_STATUS_PASSED = 1;
+
+  // Differences were found but all were within configured thresholds.
+  // No reconciliation had hard mismatches or infrastructure errors.
+  // This is a warning-level outcome.
+  AUDIT_STATUS_MISMATCHED_WITHIN_THRESHOLD = 2;
+
+  // At least one reconciliation found data differences exceeding
+  // configured thresholds (or no thresholds were configured).
+  AUDIT_STATUS_MISMATCHED = 3;
+
+  // At least one reconciliation encountered an infrastructure error
+  // (connection failure, query error, setup failure, etc.).
+  AUDIT_STATUS_FAILED = 4;
+}
+
+// AuditSummary holds aggregated counts derived from individual reconciliation results.
+message AuditSummary {
+  // True when every reconciliation matched (exactly or within threshold).
+  // False when any reconciliation failed or had an exceeding mismatch.
+  bool overall_match = 1;
+
+  // Total number of reconciliations executed.
+  int32 total = 2 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Number of reconciliations that completed and matched exactly.
+  int32 matched = 3 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Number of reconciliations that had differences within configured thresholds.
+  // These are warning-level outcomes — data differs but within acceptable tolerance.
+  int32 matched_within_threshold = 4 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Number of reconciliations that completed but found data differences
+  // exceeding thresholds (or no thresholds configured).
+  int32 mismatched = 5 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Number of reconciliations that encountered an infrastructure error.
+  int32 failed = 6 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+}
+
+// AuditMeta holds build and environment metadata for the synq-recon binary.
+message AuditMeta {
+  // Module version or tag (e.g. v1.2.3).
+  string version = 1;
+
+  // VCS revision hash.
+  string vcs_commit = 2;
+
+  // VCS commit timestamp (RFC3339).
+  string vcs_time = 3;
+
+  // True if the working tree had uncommitted changes.
+  bool vcs_dirty = 4;
+
+  // Go toolchain version used to build the binary.
+  string go_version = 5;
+}
+
+// ReconciliationAudit captures the configuration and runtime execution data
+// for a single reconciliation.
+message ReconciliationAudit {
+  // The reconciliation configuration as executed.
+  Reconcilation reconcilation = 1 [(buf.validate.field).required = true];
+
+  // Runtime dataset information (resolved queries, detected dialects).
+  DatasetInfo source = 2 [(buf.validate.field).required = true];
+  DatasetInfo target = 3 [(buf.validate.field).required = true];
+
+  // Source query before variable interpolation (differs from suite query when variables are used).
+  string original_source_query = 4;
+
+  // Target query before variable interpolation.
+  string original_target_query = 5;
+
+  // Column names discovered at runtime via QueryShape.
+  repeated string columns = 6;
+
+  // Column normalization expressions applied after cross-DB type alignment.
+  Normalization normalization = 7;
+
+  // Execution stages (quick_check, bisection_drill, aggregate_check).
+  repeated StageAudit stages = 8;
+
+  // Per-reconciliation warnings.
+  repeated string warnings = 9;
+
+  // Outcome status of this reconciliation.
+  // Distinguishes infrastructure errors from data mismatches and threshold-based outcomes.
+  ReconciliationStatus status = 10;
+
+  // Whether source and target matched overall.
+  // True when data matched exactly or differences were within configured thresholds.
+  bool overall_match = 11;
+
+  // Error message if the reconciliation failed due to an infrastructure error.
+  string error = 12;
+}
+
+// ReconciliationStatus describes the outcome of a single reconciliation.
+// Distinguishes infrastructure errors from data comparison results.
+// Values are ordered by severity: passed < within_threshold < mismatched < failed.
+enum ReconciliationStatus {
+  RECONCILIATION_STATUS_UNSPECIFIED = 0;
+
+  // Reconciliation completed and data matched exactly — no differences found.
+  RECONCILIATION_STATUS_PASSED = 1;
+
+  // Reconciliation found data differences but all differences were within
+  // configured thresholds. This is a warning-level outcome — data differs
+  // but within acceptable tolerance.
+  RECONCILIATION_STATUS_MISMATCHED_WITHIN_THRESHOLD = 2;
+
+  // Reconciliation completed but found data differences that exceed
+  // configured thresholds (or no thresholds were configured).
+  RECONCILIATION_STATUS_MISMATCHED = 3;
+
+  // Reconciliation encountered an infrastructure error (connection failure,
+  // query error, setup failure, etc.) and could not complete the comparison.
+  RECONCILIATION_STATUS_FAILED = 4;
+}
+
+// DatasetInfo captures runtime information about a source or target dataset.
+message DatasetInfo {
+  // Connection name used.
+  string connection = 1 [(buf.validate.field).required = true];
+
+  // Database dialect detected at runtime (e.g. "postgres", "snowflake").
+  string dialect = 2;
+
+  // Resolved SQL query actually executed (after variable interpolation).
+  string query = 3 [(buf.validate.field).required = true];
+}
+
+// Normalization records the column expressions used after cross-DB type alignment.
+message Normalization {
+  // Source column expressions after normalization.
+  repeated string source_columns = 1;
+
+  // Target column expressions after normalization.
+  repeated string target_columns = 2;
+}
+
+// StageAudit captures one reconciliation stage execution.
+message StageAudit {
+  // Stage type.
+  StageType stage = 1 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+
+  // When the stage started.
+  google.protobuf.Timestamp started_at = 2 [(buf.validate.field).required = true];
+
+  // When the stage completed.
+  google.protobuf.Timestamp completed_at = 3 [(buf.validate.field).required = true];
+
+  // Stage duration.
+  google.protobuf.Duration duration = 4 [(buf.validate.field).required = true];
+
+  // SQL queries executed during this stage.
+  repeated QueryRecord queries = 5;
+
+  // Bisection segment tree (only for bisection_drill stage).
+  SegmentAuditNode segment_tree = 6;
+
+  // Stage-specific result.
+  oneof result {
+    // Result for quick_check stage.
+    QuickCheckStageResult quick_check_result = 7;
+
+    // Result for bisection_drill stage.
+    BisectionStageResult bisection_result = 8;
+
+    // Result for aggregate_check stage.
+    AggregateStageResult aggregate_result = 9;
+  }
+}
+
+// StageType identifies the type of reconciliation stage.
+enum StageType {
+  STAGE_TYPE_UNSPECIFIED = 0;
+
+  // Single-query count + checksum comparison.
+  STAGE_TYPE_QUICK_CHECK = 1;
+
+  // Recursive bisection drill-down to locate mismatches.
+  STAGE_TYPE_BISECTION_DRILL = 2;
+
+  // Aggregate GROUP BY comparison with measures and thresholds.
+  STAGE_TYPE_AGGREGATE_CHECK = 3;
+}
+
+// QuickCheckStageResult is the result for a quick_check stage.
+message QuickCheckStageResult {
+  int64 source_count = 1;
+  int64 target_count = 2;
+  int64 source_checksum = 3;
+  int64 target_checksum = 4;
+  bool match = 5;
+  int64 count_difference = 6;
+  string error = 7;
+}
+
+// BisectionStageResult is the result for a bisection_drill stage.
+message BisectionStageResult {
+  // Total number of segments processed.
+  int32 total_segments = 1;
+
+  // Number of mismatched leaf segments.
+  int32 mismatch_count = 2;
+
+  // Number of segments that encountered errors.
+  int32 error_count = 3;
+
+  // Maximum depth reached in the segment tree.
+  int32 max_depth = 4;
+
+  // Reason if bisection terminated early.
+  string early_termination_reason = 5;
+
+  // Detailed tree statistics.
+  BisectionStatistics statistics = 6;
+
+  // Details for each mismatched leaf segment.
+  repeated MismatchLeafDetail mismatch_leaves = 7;
+
+  // Merged investigation queries for adjacent mismatch regions.
+  repeated InvestigationQuery investigation_queries = 8;
+}
+
+// BisectionStatistics holds statistics about the bisection segment tree.
+message BisectionStatistics {
+  int32 total_nodes = 1;
+  int32 matched_nodes = 2;
+  int32 mismatched_nodes = 3;
+  int32 leaf_nodes = 4;
+  int32 intermediate_nodes = 5;
+  int32 matched_leaves = 6;
+  int32 mismatched_leaves = 7;
+
+  // Number of segments at each depth level.
+  map<int32, int32> depth_distribution = 8;
+
+  // Number of mismatched segments at each depth level.
+  map<int32, int32> mismatch_by_depth = 9;
+
+  // Detailed per-depth statistics.
+  map<string, DepthStats> per_depth = 10;
+
+  int64 total_source_rows = 11;
+  int64 total_target_rows = 12;
+  int64 mismatch_source_rows = 13;
+  int64 mismatch_target_rows = 14;
+}
+
+// DepthStats holds per-depth-level statistics for the bisection tree.
+message DepthStats {
+  int64 total_rows = 1;
+  int64 mismatched_rows = 2;
+  int32 segments = 3;
+  int32 mismatched_segments = 4;
+}
+
+// MismatchLeafDetail holds detailed information about a single mismatch leaf.
+message MismatchLeafDetail {
+  // Segment boundaries.
+  SegmentInfo segment = 1;
+
+  int64 source_count = 2;
+  int64 target_count = 3;
+  int64 source_checksum = 4;
+  int64 target_checksum = 5;
+  int64 count_difference = 6;
+
+  // Types of mismatch detected.
+  repeated MismatchType mismatch_types = 7;
+
+  // Why bisection stopped at this leaf.
+  TerminationReason termination_reason = 8;
+
+  // Investigation queries to inspect this mismatch.
+  DiffQueries diff_queries = 9;
+
+  // Per-row mismatch details (when reporting level allows).
+  repeated RowMismatchDetail row_mismatches = 10;
+
+  // Total number of row mismatches (may exceed row_mismatches length due to sample_limit).
+  int32 row_mismatch_count = 11;
+}
+
+// MismatchType categorizes how rows differ between source and target.
+enum MismatchType {
+  MISMATCH_TYPE_UNSPECIFIED = 0;
+  MISMATCH_TYPE_MISSING_IN_SOURCE = 1;
+  MISMATCH_TYPE_MISSING_IN_TARGET = 2;
+  MISMATCH_TYPE_COUNT_MISMATCH = 3;
+  MISMATCH_TYPE_DATA_MISMATCH = 4;
+  MISMATCH_TYPE_UNKNOWN = 5;
+}
+
+// TerminationReason explains why bisection stopped at a particular node.
+enum TerminationReason {
+  TERMINATION_REASON_UNSPECIFIED = 0;
+  TERMINATION_REASON_THRESHOLD_REACHED = 1;
+  TERMINATION_REASON_MAX_DEPTH_REACHED = 2;
+  TERMINATION_REASON_EMPTY_SEGMENT = 3;
+  TERMINATION_REASON_CANNOT_SPLIT = 4;
+  TERMINATION_REASON_MATCHED = 5;
+  TERMINATION_REASON_ERROR = 6;
+}
+
+// SegmentInfo identifies a key range segment.
+message SegmentInfo {
+  // Minimum key (inclusive). Unset means unbounded.
+  google.protobuf.Value min_key = 1;
+
+  // Maximum key (exclusive). Unset means unbounded.
+  google.protobuf.Value max_key = 2;
+
+  // Depth in the bisection tree.
+  int32 depth = 3 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Index within the depth level.
+  int32 index = 4 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Time bucket label (for time-based segmentation).
+  string time_bucket = 5;
+}
+
+// DiffQueries holds investigation queries for a mismatch leaf.
+message DiffQueries {
+  // SQL query to retrieve source rows in the mismatch segment.
+  string source_rows = 1;
+
+  // SQL query to retrieve target rows in the mismatch segment.
+  string target_rows = 2;
+}
+
+// RowMismatchDetail holds per-row mismatch detail.
+message RowMismatchDetail {
+  // Primary key value.
+  google.protobuf.Value pk = 1;
+
+  // Type of row mismatch.
+  RowMismatchType type = 2;
+
+  // Source row hash (when available).
+  optional int64 source_row_hash = 3;
+
+  // Target row hash (when available).
+  optional int64 target_row_hash = 4;
+}
+
+// RowMismatchType categorizes a single row-level mismatch.
+enum RowMismatchType {
+  ROW_MISMATCH_TYPE_UNSPECIFIED = 0;
+  ROW_MISMATCH_TYPE_MISSING_IN_TARGET = 1;
+  ROW_MISMATCH_TYPE_MISSING_IN_SOURCE = 2;
+  ROW_MISMATCH_TYPE_MODIFIED = 3;
+}
+
+// AggregateStageResult is the result for an aggregate_check stage.
+message AggregateStageResult {
+  // Total groups compared.
+  int32 total_groups = 1;
+
+  // Number of groups that matched.
+  int32 matched_groups = 2;
+
+  // Number of groups with value differences.
+  int32 mismatch_groups = 3;
+
+  // Groups present in target but missing in source.
+  int32 missing_source = 4;
+
+  // Groups present in source but missing in target.
+  int32 missing_target = 5;
+
+  // Overall match result.
+  bool match = 6;
+
+  // Reason if aggregate check terminated early.
+  string early_termination_reason = 7;
+
+  // Hierarchical drill-down tree for aggregate comparison.
+  AggregateDrillNode drill_down = 8;
+}
+
+// AggregateDrillNode represents a node in the hierarchical aggregate drill-down tree.
+message AggregateDrillNode {
+  // Drill-down level (0-based).
+  int32 level = 1;
+
+  // Group column used at this level.
+  string group_column = 2;
+
+  // Total groups at this level.
+  int32 total_groups = 3;
+
+  // Number of matched groups at this level.
+  int32 matched_groups = 4;
+
+  // Divergent children (mismatched or missing groups).
+  repeated AggregateDrillChild children = 5;
+}
+
+// AggregateDrillChild represents a single divergent group within a drill-down level.
+message AggregateDrillChild {
+  // Group key values (column name -> value).
+  google.protobuf.Struct key = 1;
+
+  // Type of divergence.
+  AggregateDivergenceType type = 2;
+
+  // Source measure values (measure key -> value).
+  map<string, double> source_values = 3;
+
+  // Target measure values (measure key -> value).
+  map<string, double> target_values = 4;
+
+  // All difference variants computed for this group.
+  MeasureDifferences differences = 5;
+
+  // Threshold evaluation results for this group.
+  ThresholdEvaluation threshold_evaluation = 6;
+
+  // Investigation query for source data.
+  string source_query = 7;
+
+  // Investigation query for target data.
+  string target_query = 8;
+
+  // Further drill-down into this divergent group.
+  AggregateDrillNode drill_down = 9;
+}
+
+// AggregateDivergenceType categorizes how an aggregate group diverges.
+enum AggregateDivergenceType {
+  AGGREGATE_DIVERGENCE_TYPE_UNSPECIFIED = 0;
+
+  // Values differ between source and target.
+  AGGREGATE_DIVERGENCE_TYPE_MISMATCH = 1;
+
+  // Group exists in target but not in source.
+  AGGREGATE_DIVERGENCE_TYPE_MISSING_SOURCE = 2;
+
+  // Group exists in source but not in target.
+  AGGREGATE_DIVERGENCE_TYPE_MISSING_TARGET = 3;
+
+  // Values differ (synonym for mismatch, used in specific contexts).
+  AGGREGATE_DIVERGENCE_TYPE_VALUE_MISMATCH = 4;
+}
+
+// MeasureDifferences holds all difference variants for measure comparisons.
+message MeasureDifferences {
+  // Relative difference per measure (target - source). Positive means target is larger.
+  map<string, double> relative = 1;
+
+  // Absolute difference per measure: |target - source|.
+  map<string, double> absolute = 2;
+
+  // Percentage difference relative to source: |diff| / |source|.
+  map<string, double> pct_vs_source = 3;
+
+  // Percentage difference relative to target: |diff| / |target|.
+  map<string, double> pct_vs_target = 4;
+
+  // Symmetric percentage difference: 2*|diff| / (|source| + |target|).
+  map<string, double> pct_symmetric = 5;
+}
+
+// ThresholdEvaluation captures the effective thresholds applied and per-measure verdicts.
+message ThresholdEvaluation {
+  // Configured maximum absolute difference, or 0 if not set.
+  double absolute_threshold = 1;
+
+  // Configured maximum percentage difference, or 0 if not set.
+  double percentage_threshold = 2;
+
+  // Which percentage formula was used.
+  string percentage_mode = 3;
+
+  // Per-measure threshold evaluation results.
+  map<string, MeasureVerdict> measures = 4;
+}
+
+// MeasureVerdict captures the threshold evaluation result for a single measure.
+message MeasureVerdict {
+  // True when the measure difference exceeds all configured thresholds.
+  bool exceeded = 1;
+
+  // Explains why the measure was considered within or outside thresholds.
+  MeasureVerdictReason reason = 2;
+
+  // Absolute threshold applied to this measure (may differ via per_measure config).
+  double effective_absolute = 3;
+
+  // Percentage threshold applied to this measure.
+  double effective_percentage = 4;
+
+  // Percentage mode applied to this measure.
+  string effective_percentage_mode = 5;
+}
+
+// MeasureVerdictReason explains the threshold evaluation outcome.
+enum MeasureVerdictReason {
+  MEASURE_VERDICT_REASON_UNSPECIFIED = 0;
+  MEASURE_VERDICT_REASON_EXACT_MATCH = 1;
+  MEASURE_VERDICT_REASON_WITHIN_ABSOLUTE_THRESHOLD = 2;
+  MEASURE_VERDICT_REASON_WITHIN_PERCENTAGE_THRESHOLD = 3;
+  MEASURE_VERDICT_REASON_EXCEEDED_ALL_THRESHOLDS = 4;
+  MEASURE_VERDICT_REASON_NO_THRESHOLDS_CONFIGURED = 5;
+}
+
+// QueryRecord captures a single SQL query execution.
+message QueryRecord {
+  // Unique query identifier within this run.
+  string id = 1 [(buf.validate.field).required = true];
+
+  // Whether this query ran against source or target.
+  QueryRole role = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+
+  // Connection name used.
+  string connection = 3 [(buf.validate.field).required = true];
+
+  // Database dialect.
+  string dialect = 4;
+
+  // SQL query text.
+  string sql = 5 [(buf.validate.field).required = true];
+
+  // When the query started.
+  google.protobuf.Timestamp started_at = 6 [(buf.validate.field).required = true];
+
+  // Query execution duration.
+  google.protobuf.Duration duration = 7 [(buf.validate.field).required = true];
+
+  // Number of result rows returned.
+  int32 rows_returned = 8 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Error message if the query failed.
+  string error = 9;
+
+  // Retry attempt number (0 for first attempt).
+  int32 retry_attempt = 10 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
+
+  // Execution statistics collected from the database driver.
+  QueryStats stats = 11;
+}
+
+// QueryRole identifies whether a query targets the source or target database.
+enum QueryRole {
+  QUERY_ROLE_UNSPECIFIED = 0;
+  QUERY_ROLE_SOURCE = 1;
+  QUERY_ROLE_TARGET = 2;
+}
+
+// QueryStats holds execution statistics collected from the database driver.
+// Fields are optional — absent means the metric is not available for the driver.
+message QueryStats {
+  // Database-assigned query identifier for auditing.
+  // Available for BigQuery (job ID), Snowflake, ClickHouse.
+  string query_id = 1;
+
+  // Number of rows read/scanned by the query engine.
+  optional int64 rows_read = 2;
+
+  // Number of bytes read/scanned by the query engine.
+  optional int64 bytes_read = 3;
+
+  // Number of result rows returned to the caller.
+  optional int64 rows_produced = 4;
+
+  // Whether the query result was served from cache.
+  optional bool cache_hit = 5;
+
+  // Number of bytes billed (BigQuery).
+  optional int64 bytes_billed = 6;
+
+  // Slot time consumed (BigQuery).
+  optional int64 slot_millis = 7;
+
+  // Number of data blocks read (ClickHouse).
+  optional int64 blocks = 8;
+
+  // Number of completed splits (Trino).
+  optional int64 completed_splits = 9;
+
+  // CPU time consumed (Trino).
+  optional int64 cpu_time_millis = 10;
+
+  // Wall time reported by the engine (Trino).
+  optional int64 wall_time_millis = 11;
+}
+
+// SegmentAuditNode represents a node in the bisection segment tree.
+message SegmentAuditNode {
+  // Segment boundaries.
+  SegmentInfo segment = 1;
+
+  int64 source_count = 2;
+  int64 target_count = 3;
+  int64 source_checksum = 4;
+  int64 target_checksum = 5;
+
+  // Whether source and target matched for this segment.
+  bool match = 6;
+
+  // Whether this is a leaf node (no further splitting).
+  bool is_leaf = 7;
+
+  // Why bisection stopped at this node.
+  TerminationReason termination_reason = 8;
+
+  // Sum of mismatched rows in this subtree.
+  int64 mismatch_rows_in_subtree = 9;
+
+  // Sum of all rows in this subtree.
+  int64 total_rows_in_subtree = 10;
+
+  // References to QueryRecord.id values for queries that populated this node.
+  repeated string query_ids = 11;
+
+  // Child segments (empty for leaf nodes).
+  repeated SegmentAuditNode children = 12;
+
+  // Row-level mismatches (only for leaf nodes with detailed reporting).
+  repeated RowMismatchAudit row_mismatches = 13;
+}
+
+// RowMismatchAudit captures a single row-level mismatch in the segment tree.
+message RowMismatchAudit {
+  // Primary key value.
+  google.protobuf.Value pk = 1;
+
+  // Type of row mismatch.
+  RowMismatchType type = 2;
+
+  // Source row hash (when available).
+  optional int64 source_row_hash = 3;
+
+  // Target row hash (when available).
+  optional int64 target_row_hash = 4;
+
+  // Source column values (detailed reporting only).
+  map<string, string> source_values = 5;
+
+  // Target column values (detailed reporting only).
+  map<string, string> target_values = 6;
+}
+
+// InvestigationQuery represents a merged diff query covering one or more
+// adjacent mismatch leaves.
+message InvestigationQuery {
+  // Minimum key (inclusive).
+  google.protobuf.Value min_key = 1;
+
+  // Maximum key (exclusive).
+  google.protobuf.Value max_key = 2;
+
+  // Time bucket label (for time-based segmentation).
+  string time_bucket = 3;
+
+  // Number of mismatch leaves covered by this query.
+  int32 leaves_covered = 4 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // SQL query to retrieve source rows.
+  string source_query = 5 [(buf.validate.field).required = true];
+
+  // SQL query to retrieve target rows.
+  string target_query = 6 [(buf.validate.field).required = true];
+}

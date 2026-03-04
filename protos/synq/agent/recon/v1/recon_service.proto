@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_audit.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// AuditLogService provides methods to ingest and query reconciliation audit logs.
+service AuditLogService {
+  // IngestAuditLog stores a reconciliation run audit log.
+  rpc IngestAuditLog(IngestAuditLogRequest) returns (IngestAuditLogResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_RECON]
+    };
+  }
+
+  // ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and time range.
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_INGEST_RECON,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // GetAuditLog returns a single audit log by invocation ID.
+  rpc GetAuditLog(GetAuditLogRequest) returns (GetAuditLogResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_INGEST_RECON,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+}
+
+message IngestAuditLogRequest {
+  // The audit log to store.
+  AuditLog audit_log = 1 [(buf.validate.field).required = true];
+}
+
+message IngestAuditLogResponse {}
+
+message ListAuditLogsRequest {
+  // Filter by suite name. When empty, returns all suites.
+  optional string suite_name = 1;
+
+  // Only return audit logs started after this timestamp (inclusive).
+  optional google.protobuf.Timestamp started_after = 2;
+
+  // Only return audit logs started before this timestamp (exclusive).
+  optional google.protobuf.Timestamp started_before = 3;
+
+  // Pagination parameters.
+  optional synq.v1.Pagination pagination = 4;
+
+  // Filter by audit status. When empty, returns all statuses.
+  repeated AuditStatus statuses = 5;
+}
+
+message ListAuditLogsResponse {
+  repeated AuditLogEntry audit_logs = 1;
+
+  // Pagination info for fetching the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+// AuditLogEntry is a summary of an audit log for listing purposes.
+// Use GetAuditLog to retrieve the full audit log data.
+message AuditLogEntry {
+  string invocation_id = 1;
+  optional string parent_invocation_id = 2;
+  string suite_name = 3;
+  optional string suite_title = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+  google.protobuf.Duration duration = 7;
+  AuditStatus status = 8;
+  AuditSummary summary = 9;
+  repeated ReconciliationSummary reconciliations = 10;
+}
+
+// ReconciliationSummary is a compact summary of a single reconciliation within an audit log entry.
+message ReconciliationSummary {
+  string name = 1;
+  optional string title = 2;
+  optional string description = 3;
+  // Source connection name.
+  string source_connection = 4;
+  // Target connection name.
+  string target_connection = 5;
+  ReconciliationStatus status = 6;
+  bool overall_match = 7;
+  // Error message if the reconciliation failed.
+  string error = 8;
+}
+
+message GetAuditLogRequest {
+  // Invocation ID of the audit log to retrieve.
+  string invocation_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+message GetAuditLogResponse {
+  AuditLog audit_log = 1;
+}

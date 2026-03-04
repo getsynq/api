@@ -1,0 +1,470 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "synq/agent/recon/v1/recon_dataset.proto";
+import "synq/agent/recon/v1/recon_measure.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// ReconcilationSuite is the root configuration for a reconciliation suite.
+// It defines template variables and one or more reconciliation scenarios
+// that compare data between source and target databases.
+// Database connections are configured separately and referenced by name.
+message ReconcilationSuite {
+  // Short machine identifier for the suite.
+  // Must start with a letter, followed by alphanumerics, hyphens, or underscores.
+  // Used as the stable key for tracking runs over time.
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    }
+  }];
+
+  // Human-readable title for the suite.
+  // Displayed in dashboards and reports. Defaults to name when not set.
+  optional string title = 2;
+
+  // Optional longer description of the suite's purpose.
+  optional string description = 3;
+
+  // Reconciliation scenarios to execute.
+  // Each reconciliation compares data between a source and target dataset.
+  repeated Reconcilation reconciliations = 4 [(buf.validate.field) = {
+    repeated: {min_items: 1}
+  }];
+
+  // Setup queries run once before all reconciliations begin.
+  // Use for creating temp tables, loading fixtures, or preparing the environment.
+  // Queries execute in order; all connections run sequentially.
+  repeated ConnectionQueries setup = 5;
+
+  // Teardown queries run once after all reconciliations complete.
+  // Use for cleaning up temp tables or restoring state.
+  repeated ConnectionQueries teardown = 6;
+
+  // Whether teardown runs even when reconciliations fail with infrastructure errors.
+  // When false (default), teardown is skipped on failure to preserve state for debugging.
+  bool teardown_on_failure = 7;
+
+  // When true, logs setup query errors as warnings and continues execution
+  // instead of aborting the run. Useful when setup creates IF NOT EXISTS objects.
+  bool ignore_setup_errors = 8;
+
+  // Template variables for query interpolation via {{variable_name}} syntax.
+  // Values can be literal strings or template expressions:
+  //   - Literal: "2026-01-01"
+  //   - Time expression: "{{today - 30d}}", "{{now - 2h}}"
+  //   - Built-in: "{{now}}", "{{today}}", "{{window_start}}"
+  // Variables are resolved once at the start of the run and frozen.
+  map<string, string> variables = 9;
+
+  // When true, time reference detection (e.g. NOW(), CURRENT_DATE, GETDATE()
+  // in queries) returns an error instead of a warning. Prevents non-deterministic
+  // queries that produce different results on each run.
+  bool strict_time_references = 10;
+}
+
+// ConnectionQueries associates SQL queries with a specific connection.
+// Used for setup and teardown blocks at both suite and reconciliation level.
+message ConnectionQueries {
+  // Connection name to execute these queries on.
+  // Must reference a connection configured in the runner's connection map.
+  string connection = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // SQL queries to execute in order on this connection.
+  repeated string queries = 2 [(buf.validate.field) = {
+    repeated: {min_items: 1}
+  }];
+}
+
+// Reconcilation defines a single reconciliation scenario comparing data
+// between a source and target dataset. Each reconciliation runs independently
+// and produces its own pass/mismatch/fail result.
+message Reconcilation {
+  option (buf.validate.message).cel = {
+    id: "key_column_required_for_non_aggregate"
+    message: "key_column is required unless mode is AGGREGATE"
+    expression: "this.key_column != '' || this.mode == 3"
+  };
+  option (buf.validate.message).cel = {
+    id: "aggregate_config_required"
+    message: "aggregate config is required when mode is AGGREGATE"
+    expression: "this.mode != 3 || has(this.aggregate)"
+  };
+
+  // Unique machine identifier within the suite.
+  // Must start with a letter, followed by alphanumerics, hyphens, or underscores.
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    }
+  }];
+
+  // Human-readable title. Displayed in reports. Defaults to name when not set.
+  optional string title = 2;
+
+  // Optional longer description explaining what this reconciliation validates.
+  optional string description = 3;
+
+  // Source dataset to compare from — the "expected" or "authoritative" side.
+  Dataset source = 4 [(buf.validate.field).required = true];
+
+  // Target dataset to compare against — the "actual" or "replicated" side.
+  Dataset target = 5 [(buf.validate.field).required = true];
+
+  // Primary key column used for ordering and segmentation during bisection.
+  // Required for ROW_CHECKSUM and ROW_COUNT modes.
+  // Optional in AGGREGATE mode when group_columns provides the grouping key.
+  optional string key_column = 6;
+
+  // Comparison mode controlling how source and target are compared.
+  ReconcilationMode mode = 7 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+
+  // Hash algorithm for row checksums in ROW_CHECKSUM mode.
+  // When unset, auto-negotiates the best common algorithm between the
+  // source and target database dialects.
+  optional HashAlgorithm hash_algorithm = 8;
+
+  // Explicit column name mapping between source and target.
+  // Only columns with different names need mapping — identical names
+  // (or case-insensitive matches) are matched automatically.
+  repeated ColumnMapping column_mapping = 9;
+
+  // When true, automatically matches columns differing only in letter case
+  // (e.g., user_id matches USER_ID). Defaults to true when not set.
+  // Set to false to require exact case matching.
+  optional bool case_insensitive = 10;
+
+  // Bisection drill-down configuration for ROW_CHECKSUM mode.
+  // Controls how the key range is recursively split to locate mismatches.
+  // When not set, uses sensible defaults (factor=32, threshold=16384).
+  optional BisectionConfig bisection = 11;
+
+  // Reporting output configuration controlling how much detail is included
+  // in the audit log for mismatched rows.
+  optional ReportingConfig reporting = 12;
+
+  // Aggregate comparison settings. Required when mode is AGGREGATE.
+  // Defines which measures to compare and tolerance thresholds.
+  optional AggregateConfig aggregate = 13;
+
+  // Error handling and retry configuration for database queries.
+  // Controls timeouts and retry behavior for transient failures.
+  optional ErrorHandlingConfig error_handling = 14;
+
+  // Time window for incremental comparison.
+  // When set, automatically provides a {{window_start}} template variable
+  // for filtering queries to a recent time range.
+  optional WindowConfig window = 15;
+
+  // Setup queries run before this specific reconciliation.
+  // Executes after suite-level setup but before data comparison.
+  repeated ConnectionQueries setup = 16;
+
+  // Teardown queries run after this specific reconciliation completes.
+  repeated ConnectionQueries teardown = 17;
+
+  // Whether teardown runs on failure for this reconciliation.
+  // When not set, inherits from suite-level teardown_on_failure.
+  optional bool teardown_on_failure = 18;
+
+  // When true, logs setup errors as warnings and continues.
+  // When not set, inherits from suite-level ignore_setup_errors.
+  optional bool ignore_setup_errors = 19;
+}
+
+// ReconcilationMode defines the comparison strategy for a reconciliation.
+// Modes are ordered by depth of comparison: ROW_COUNT < ROW_CHECKSUM < AGGREGATE.
+enum ReconcilationMode {
+  RECONCILATION_MODE_UNSPECIFIED = 0;
+
+  // Compare row counts only — no data access, just verifies both sides
+  // have the same number of rows. Fastest mode, useful as a smoke test.
+  RECONCILATION_MODE_ROW_COUNT = 1;
+
+  // Row-level checksum comparison with hierarchical bisection drill-down
+  // to locate individual mismatched rows. The default and most thorough mode
+  // for exact row-by-row comparison.
+  RECONCILATION_MODE_ROW_CHECKSUM = 2;
+
+  // Aggregate comparison — GROUP BY with configurable measures (SUM, AVG, etc.)
+  // and tolerance thresholds. Best for large datasets where exact row matching
+  // is impractical, or when business-level metrics matter more than individual rows.
+  RECONCILATION_MODE_AGGREGATE = 3;
+}
+
+// HashAlgorithm specifies the hash function used for row checksums
+// in ROW_CHECKSUM mode. Different databases natively support different
+// hash functions; choosing one supported by both sides avoids emulation overhead.
+enum HashAlgorithm {
+  // Auto-negotiates the best common algorithm between source and target.
+  // Prefers the fastest algorithm supported natively by both databases.
+  HASH_ALGORITHM_UNSPECIFIED = 0;
+
+  // MD5 — widely supported across all databases. Slowest but most compatible.
+  HASH_ALGORITHM_MD5 = 1;
+
+  // FarmHash Fingerprint64 — native to BigQuery. Fast for BigQuery-to-BigQuery.
+  HASH_ALGORITHM_FARM_FINGERPRINT = 2;
+
+  // xxHash64 — native to Databricks and Snowflake. Fast for those dialects.
+  HASH_ALGORITHM_XXHASH64 = 3;
+}
+
+// BisectionConfig controls the bisection drill-down algorithm that recursively
+// splits the key range to locate individual mismatched rows.
+// Only used in ROW_CHECKSUM mode.
+message BisectionConfig {
+  option (buf.validate.message).cel = {
+    id: "time_column_required_for_time_strategy"
+    message: "time_column is required when strategy is TIME"
+    expression: "this.strategy != 3 || this.time_column != ''"
+  };
+
+  // Whether bisection drill-down is enabled.
+  // When false, only the quick-check (count + checksum) runs — mismatches
+  // are detected but not localized to specific rows.
+  bool enabled = 1;
+
+  // Branching factor: how many segments each level is split into.
+  // Higher values find mismatches faster (fewer levels) but issue more queries per level.
+  // Default: 32. Typical range: 4–64.
+  optional int32 factor = 2 [(buf.validate.field) = {
+    int32: {
+      gte: 2
+      lte: 1024
+    }
+  }];
+
+  // Row count threshold: stop bisecting when a segment has fewer rows than this.
+  // Lower values find more precise mismatch locations but issue more queries.
+  // Default: 16384. Set to 1 to drill down to individual rows.
+  optional int32 threshold = 3 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // Segmentation strategy for splitting key ranges.
+  SegmentationStrategy strategy = 4;
+
+  // Column for time-based partitioning. Required when strategy is TIME.
+  // Must be a timestamp, date, or datetime column in the dataset.
+  optional string time_column = 5;
+
+  // Granularity for time-based segmentation. Default: DAY.
+  // Controls the width of each time bucket when strategy is TIME.
+  TimeGranularity time_granularity = 6;
+}
+
+// SegmentationStrategy defines how key ranges are split during bisection.
+// The strategy affects both performance and privacy characteristics.
+enum SegmentationStrategy {
+  // Auto: defaults to quantile.
+  SEGMENTATION_STRATEGY_UNSPECIFIED = 0;
+
+  // NTILE-based key-range splitting.
+  // Uses the key column's actual values to create equal-count segments.
+  // Note: exposes key values in segment boundaries in the audit log.
+  SEGMENTATION_STRATEGY_QUANTILE = 1;
+
+  // Hash-based bucketing followed by range drill-down.
+  // Uses a hash of the key column for segmentation.
+  // Privacy-safe: does not expose raw key values in the audit log.
+  SEGMENTATION_STRATEGY_HASH = 2;
+
+  // Time-based partitioning followed by range drill-down.
+  // Splits by time buckets using the configured time_column and time_granularity.
+  // Requires time_column to be set. Best for time-series data with a natural
+  // temporal ordering (e.g., event logs, daily snapshots).
+  SEGMENTATION_STRATEGY_TIME = 3;
+}
+
+// TimeGranularity defines the granularity for time-based segmentation.
+enum TimeGranularity {
+  // Default: DAY.
+  TIME_GRANULARITY_UNSPECIFIED = 0;
+
+  TIME_GRANULARITY_HOUR = 1;
+  TIME_GRANULARITY_DAY = 2;
+  TIME_GRANULARITY_WEEK = 3;
+  TIME_GRANULARITY_MONTH = 4;
+  TIME_GRANULARITY_QUARTER = 5;
+  TIME_GRANULARITY_YEAR = 6;
+}
+
+// ReportingConfig controls the level of detail included in reconciliation output
+// for mismatched rows. Higher detail levels reveal more data but may have
+// privacy implications.
+message ReportingConfig {
+  option (buf.validate.message).cel = {
+    id: "consent_required_for_detailed"
+    message: "consent_acknowledged must be true when level is DETAILED"
+    expression: "this.level != 3 || this.consent_acknowledged == true"
+  };
+
+  // Output detail level for mismatched rows.
+  ReportingLevel level = 1;
+
+  // Maximum number of sample rows to include in output per mismatch segment.
+  // Limits the size of the audit log when there are many mismatches.
+  // When not set, all mismatched rows within the reporting level are included.
+  optional int32 sample_limit = 2 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // Explicit acknowledgment that detailed row data may be included in the audit log.
+  // Required when level is DETAILED to prevent accidental exposure of sensitive data.
+  // The caller must set this to true to confirm they understand the privacy implications.
+  bool consent_acknowledged = 3;
+}
+
+// ReportingLevel controls how much detail is included in results for mismatched rows.
+// Levels are ordered by increasing data exposure.
+enum ReportingLevel {
+  // Default: COUNT_ONLY.
+  REPORTING_LEVEL_UNSPECIFIED = 0;
+
+  // Only report mismatch counts per segment.
+  // No row-level information is exposed. Privacy-safe.
+  REPORTING_LEVEL_COUNT_ONLY = 1;
+
+  // Include primary key values of mismatched rows.
+  // Reveals which rows differ, but not the actual data values.
+  REPORTING_LEVEL_WITH_KEYS = 2;
+
+  // Include full column values for mismatched rows.
+  // Requires consent_acknowledged = true.
+  // Warning: may expose sensitive data in the audit log.
+  REPORTING_LEVEL_DETAILED = 3;
+}
+
+// AggregateConfig defines aggregate comparison settings.
+// Used when mode is AGGREGATE to compare grouped measures between source and target.
+message AggregateConfig {
+  // Measures to compare between source and target.
+  // Each measure defines a column and one or more aggregate functions to apply.
+  repeated Measure measures = 1 [(buf.validate.field) = {
+    repeated: {min_items: 1}
+  }];
+
+  // Tolerance thresholds for aggregate comparisons.
+  // When not set, exact match is required for all measures.
+  optional ThresholdConfig thresholds = 2;
+
+  // Columns defining the drill-down hierarchy for aggregate comparison.
+  // Falls back to key_column if not set.
+  //
+  // Single column: flat GROUP BY comparison.
+  //   group_columns: ["region"]
+  //   → GROUP BY region
+  //
+  // Multiple columns: cumulative GROUP BY drill-down, pruning matched groups
+  // at each level to focus on divergent branches.
+  //   group_columns: ["region", "city", "store"]
+  //   → Level 0: GROUP BY region
+  //   → Level 1: GROUP BY region, city  (only for mismatched regions)
+  //   → Level 2: GROUP BY region, city, store (only for mismatched cities)
+  repeated string group_columns = 3;
+}
+
+// Measure defines a column and aggregate function(s) to compare
+// between source and target datasets.
+// A single measure with multiple functions expands into multiple comparisons
+// (e.g., column="amount" functions=[SUM, AVG] produces "SUM(amount)" and "AVG(amount)").
+message Measure {
+  // Column name to aggregate. Must exist in both source and target datasets
+  // (after column mapping is applied).
+  string column = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Aggregate functions to apply to this column.
+  // Multiple functions produce multiple measure comparisons from one column.
+  repeated AggregateFunction functions = 2 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        enum: {
+          not_in: [0]
+        }
+      }
+    }
+  }];
+}
+
+// ErrorHandlingConfig controls retry and timeout behavior for database queries.
+// Applies to all queries within a reconciliation (setup, comparison, teardown).
+message ErrorHandlingConfig {
+  // Per-query timeout. When a query exceeds this duration, it is cancelled.
+  // Default: no per-query limit (only the global run timeout applies).
+  optional google.protobuf.Duration query_timeout = 1;
+
+  // Maximum retry attempts for transient query failures.
+  // The total number of attempts is max_retries + 1 (initial + retries).
+  // Default: 2.
+  optional int32 max_retries = 2 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 10
+    }
+  }];
+
+  // Initial backoff delay before the first retry.
+  // Subsequent retries multiply this by retry_backoff_factor.
+  // Default: 1s.
+  optional google.protobuf.Duration retry_initial_delay = 3;
+
+  // Backoff multiplier applied after each retry.
+  // Delay for attempt N = retry_initial_delay * retry_backoff_factor^(N-1).
+  // Must be >= 1.0 to ensure delays don't decrease.
+  // Default: 2.0.
+  optional double retry_backoff_factor = 4 [(buf.validate.field) = {
+    double: {gte: 1.0}
+  }];
+}
+
+// WindowConfig defines a time window for incremental comparison.
+// When configured, automatically provides a {{window_start}} template variable
+// that resolves to (current_time - lookback). Use this in query WHERE clauses
+// to limit comparison to recent data.
+message WindowConfig {
+  // Column being windowed.
+  // Informational metadata for the audit trail — the actual filtering is done
+  // via the {{window_start}} variable in your query WHERE clause.
+  optional string column = 1;
+
+  // How far back to look from the current time.
+  // Defines the window as [now - lookback, now].
+  // Examples: "336h" (14 days), "2h", "720h" (30 days).
+  google.protobuf.Duration lookback = 2 [(buf.validate.field).required = true];
+
+  // Windowing strategy controlling how boundaries are computed.
+  WindowStrategy strategy = 3;
+}
+
+// WindowStrategy defines how the time window boundaries are computed.
+enum WindowStrategy {
+  // Default: SLIDING.
+  WINDOW_STRATEGY_UNSPECIFIED = 0;
+
+  // Sliding window: window_start = now - lookback.
+  // Each run covers a different absolute time range.
+  WINDOW_STRATEGY_SLIDING = 1;
+
+  // Fixed window: boundaries are aligned to calendar periods.
+  // Each run within the same period covers the same absolute time range.
+  WINDOW_STRATEGY_FIXED = 2;
+}

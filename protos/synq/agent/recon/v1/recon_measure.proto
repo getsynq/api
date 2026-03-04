@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// AggregateFunction defines the supported SQL aggregate functions
+// for measure comparisons in aggregate reconciliation mode.
+enum AggregateFunction {
+  AGGREGATE_FUNCTION_UNSPECIFIED = 0;
+
+  // SQL SUM() — total of all values in the group.
+  AGGREGATE_FUNCTION_SUM = 1;
+
+  // SQL COUNT() — number of rows in the group.
+  AGGREGATE_FUNCTION_COUNT = 2;
+
+  // SQL AVG() — arithmetic mean of values in the group.
+  AGGREGATE_FUNCTION_AVG = 3;
+
+  // SQL MIN() — smallest value in the group.
+  AGGREGATE_FUNCTION_MIN = 4;
+
+  // SQL MAX() — largest value in the group.
+  AGGREGATE_FUNCTION_MAX = 5;
+}
+
+// PercentageMode controls which percentage formula is used for threshold comparison.
+// The choice affects how "big" a difference appears when source and target values
+// differ in magnitude.
+enum PercentageMode {
+  // Default: source.
+  PERCENTAGE_MODE_UNSPECIFIED = 0;
+
+  // |diff| / |source| — "target is X% off from source."
+  // Best when source is the authoritative baseline.
+  PERCENTAGE_MODE_SOURCE = 1;
+
+  // |diff| / |target| — "source is X% off from target."
+  // Best when target is the authoritative baseline.
+  PERCENTAGE_MODE_TARGET = 2;
+
+  // 2 * |diff| / (|source| + |target|) — symmetric, neither side is privileged.
+  // Best when both sides are equally authoritative.
+  PERCENTAGE_MODE_SYMMETRIC = 3;
+}
+
+// ThresholdConfig defines tolerance thresholds for aggregate comparisons.
+// A difference is reported as a mismatch only when it exceeds ALL configured
+// thresholds (AND logic: both absolute AND percentage must be exceeded).
+//
+// Thresholds can be overridden at finer granularity:
+//   - per_column: override thresholds for a specific group_column drill-down level.
+//   - per_measure: override thresholds for a specific measure (e.g., "SUM(amount)").
+//   - Nesting: per_column entries may contain per_measure overrides (most specific wins).
+//
+// When no thresholds are configured at any level, exact match is required.
+message ThresholdConfig {
+  // Maximum allowed absolute difference per measure.
+  // When set, differences <= this value are considered within tolerance.
+  // Example: absolute = 0.01 accepts sub-cent rounding differences.
+  optional double absolute = 1 [(buf.validate.field) = {
+    double: {gte: 0}
+  }];
+
+  // Maximum allowed percentage difference per measure.
+  // Expressed as a decimal fraction: 0.1 = 10%, 0.01 = 1%.
+  // The formula used depends on percentage_mode.
+  // When set, differences <= this percentage are considered within tolerance.
+  optional double percentage = 2 [(buf.validate.field) = {
+    double: {gte: 0}
+  }];
+
+  // Which percentage formula to use for threshold evaluation.
+  // Only relevant when percentage is set.
+  PercentageMode percentage_mode = 3;
+
+  // Per group_column level threshold overrides.
+  // Allows different tolerance for different levels of the drill-down hierarchy.
+  // For example, tighter thresholds at the city level than at the region level.
+  // Entries may themselves contain per_measure overrides for maximum specificity.
+  repeated ColumnThresholdOverride per_column = 4;
+
+  // Per measure threshold overrides.
+  // Allows different tolerance for different measures within the same reconciliation.
+  // For example, allow 1% tolerance for SUM(amount) but require exact COUNT match.
+  repeated MeasureThresholdOverride per_measure = 5;
+}
+
+// ColumnThresholdOverride associates threshold overrides with a specific
+// group_column level in the aggregate drill-down hierarchy.
+message ColumnThresholdOverride {
+  // Group column name this override applies to.
+  // Must match one of the group_columns in the AggregateConfig.
+  string column = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Threshold overrides for this group column level.
+  // Values here override the parent ThresholdConfig for reconciliation groups
+  // at this drill-down level. May include per_measure for further specificity.
+  ThresholdConfig thresholds = 2 [(buf.validate.field).required = true];
+}
+
+// MeasureThresholdOverride associates threshold overrides with a specific
+// measure (aggregate function + column combination).
+message MeasureThresholdOverride {
+  // Aggregate function this override applies to.
+  AggregateFunction function = 1 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+
+  // Column name this override applies to.
+  // Together with function, forms the measure key (e.g., SUM + "amount" = "SUM(amount)").
+  string column = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Threshold overrides for this specific measure.
+  // Values here override the parent ThresholdConfig (and any per_column override)
+  // for this measure only.
+  ThresholdConfig thresholds = 3 [(buf.validate.field).required = true];
+}

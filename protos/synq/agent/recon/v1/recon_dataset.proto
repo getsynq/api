@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// Dataset defines a source or target dataset for reconciliation.
+// A dataset specifies which connection to use and how to select data —
+// either via a raw SQL query or by referencing a table with optional column filtering.
+message Dataset {
+  // Name of the connection to use. Must reference a connection configured
+  // in the runner's connection map.
+  string connection = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // How to select data from the connection.
+  // Exactly one of query or table must be specified.
+  oneof data_source {
+    option (buf.validate.oneof).required = true;
+
+    // Raw SQL query returning the dataset.
+    // Should be a SELECT or WITH (CTE) statement.
+    // Supports template variable interpolation via {{variable_name}} syntax.
+    string query = 2;
+
+    // Table reference with optional column selection.
+    // Automatically generates a SELECT query from the table metadata.
+    TableReference table = 3;
+  }
+
+  // Time-travel timestamp for snapshot queries (e.g., "2026-02-01 00:00:00").
+  // When set, wraps the query with database-specific time-travel syntax:
+  //   - Snowflake: AT(TIMESTAMP => '<as_of>')
+  //   - BigQuery: FOR SYSTEM_TIME AS OF TIMESTAMP '<as_of>'
+  //   - Databricks: TIMESTAMP AS OF '<as_of>'
+  // Has no effect on databases that don't support time-travel.
+  optional string as_of = 4;
+}
+
+// TableReference specifies a table and optional column filtering.
+// Use this instead of a raw query when you want to compare all (or most) columns
+// of a table without writing SQL.
+message TableReference {
+  option (buf.validate.message).cel = {
+    id: "columns_exclusive"
+    message: "columns and exclude_columns are mutually exclusive"
+    expression: "size(this.columns) == 0 || size(this.exclude_columns) == 0"
+  };
+
+  // Table name or fully qualified name (e.g., "schema.table", "database.schema.table").
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Explicit list of columns to include in the comparison.
+  // When set, only these columns are selected from the table.
+  // Mutually exclusive with exclude_columns.
+  repeated string columns = 2;
+
+  // Columns to exclude from the comparison.
+  // All columns except these are selected (resolved at runtime via table metadata).
+  // Useful for skipping volatile columns (e.g., updated_at, etl_batch_id).
+  // Mutually exclusive with columns.
+  repeated string exclude_columns = 3;
+}
+
+// ColumnMapping maps a source column name to a target column name.
+// Used when source and target use different naming conventions for the same data
+// (e.g., snake_case vs SCREAMING_SNAKE_CASE, or completely different names).
+// Only columns with different names need explicit mapping — columns with
+// identical names (or case-insensitive matches when case_insensitive is true)
+// are matched automatically.
+message ColumnMapping {
+  // Column name in the source dataset.
+  string source = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Corresponding column name in the target dataset.
+  string target = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}

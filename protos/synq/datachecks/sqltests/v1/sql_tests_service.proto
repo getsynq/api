@@ -113,7 +113,7 @@ message ListSqlTestsRequest {
   repeated string ids = 3;
   repeated string config_ids = 4 [deprecated = true];
   // Filter SqlTests by config IDs.
-  // Pass ConfigsFilter{ids: ["config1", "config2"]} to filter by specific configs.
+  // Pass `ConfigsFilter{ids: ["config1", "config2"]}` to filter by specific configs.
   // If nil, no config_id filtering is applied.
   // If empty, the one with NULL config_id will be excluded.
   ConfigsFilter configs_filter = 7;
