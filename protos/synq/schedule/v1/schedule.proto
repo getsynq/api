@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package synq.schedule.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/schedule/v1";
+
+// Schedule defines a recurring schedule with timezone context.
+message Schedule {
+  // IANA timezone, e.g. "Europe/Warsaw", "America/New_York".
+  string timezone = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  oneof type {
+    CronSchedule cron = 2;
+    ICalSchedule ical = 3;
+  }
+}
+
+// CronSchedule uses standard cron expression syntax.
+message CronSchedule {
+  // Standard cron expression (e.g. "0 */6 * * *").
+  string expression = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+// ICalSchedule uses RFC 5545 RRULE recurrence rules.
+message ICalSchedule {
+  // RFC 5545 RRULE recurrence rule (e.g. "FREQ=MONTHLY;BYDAY=-1TH;DTSTART=20260101T100000Z").
+  string recurrence_rule = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}

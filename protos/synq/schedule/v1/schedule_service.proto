@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package synq.schedule.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/schedule/v1/schedule.proto";
+
+option go_package = "github.com/getsynq/api/schedule/v1";
+
+// ScheduleService provides schedule evaluation utilities.
+service ScheduleService {
+  // PreviewSchedules returns the next occurrences for one or more schedule expressions.
+  // Never fails at the RPC level; per-schedule errors are returned in the response items.
+  // Response items match request items by index.
+  rpc PreviewSchedules(PreviewSchedulesRequest) returns (PreviewSchedulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/schedule/v1/preview"
+      body: "*"
+    };
+  }
+}
+
+// Parameters for evaluating a single schedule.
+message PreviewScheduleParams {
+  // The schedule to evaluate.
+  Schedule schedule = 1 [(buf.validate.field).required = true];
+
+  // Starting point for computing occurrences. Defaults to now if not set.
+  optional google.protobuf.Timestamp after = 2;
+
+  // Number of occurrences to return. Defaults to 7, maximum 100.
+  optional int32 limit = 3 [(buf.validate.field) = {
+    int32: {
+      gte: 1
+      lte: 100
+    }
+  }];
+}
+
+message PreviewSchedulesRequest {
+  // Schedules to evaluate. An empty list returns an empty response.
+  repeated PreviewScheduleParams schedules = 1 [(buf.validate.field) = {
+    repeated: {max_items: 100}
+  }];
+}
+
+// Result for a single schedule evaluation.
+message PreviewScheduleResult {
+  // The next occurrences in chronological order. Empty if error is set.
+  repeated google.protobuf.Timestamp occurrences = 1;
+
+  // Error message if the schedule expression is invalid or cannot be evaluated.
+  // Empty on success.
+  string error = 2;
+}
+
+message PreviewSchedulesResponse {
+  // Results matching the request schedules by index.
+  repeated PreviewScheduleResult results = 1;
+}

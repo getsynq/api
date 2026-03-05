@@ -1,0 +1,268 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// SuiteConfigService manages reconciliation suite configurations.
+// Managed suites are long-lived, optionally scheduled configs identified by suite_name.
+// Ad-hoc suites are one-off configs that get a generated UUID as suite_id.
+service SuiteConfigService {
+  // Upsert a managed suite config. Creates if new, updates with new version if exists.
+  // The suite_id equals the suite name (from ReconcilationSuite.name).
+  // Validates the ReconcilationSuite proto. Does NOT validate connections exist.
+  rpc UpsertSuiteConfig(UpsertSuiteConfigRequest) returns (UpsertSuiteConfigResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT, SCOPE_INGEST_RECON]
+    };
+  }
+
+  // Submit an ad-hoc suite config for one-off execution.
+  // Generates a UUID as suite_id. The config is stored for audit trail
+  // but not listed by default in ListSuiteConfigs.
+  rpc SubmitAdhocSuite(SubmitAdhocSuiteRequest) returns (SubmitAdhocSuiteResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT, SCOPE_INGEST_RECON]
+    };
+  }
+
+  // Get the latest version of a suite config by suite_id.
+  // Works for both managed (suite_id = suite_name) and ad-hoc (suite_id = UUID) configs.
+  rpc GetSuiteConfig(GetSuiteConfigRequest) returns (GetSuiteConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_INGEST_RECON,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // List latest suite configs with filtering and pagination.
+  // By default returns only managed suites. Set include_adhoc to also include ad-hoc configs.
+  rpc ListSuiteConfigs(ListSuiteConfigsRequest) returns (ListSuiteConfigsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_INGEST_RECON,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // Delete a managed suite config (soft delete — inserts a deleted version).
+  rpc DeleteSuiteConfig(DeleteSuiteConfigRequest) returns (DeleteSuiteConfigResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
+
+  // Get version history for a suite config.
+  rpc ListSuiteConfigVersions(ListSuiteConfigVersionsRequest) returns (ListSuiteConfigVersionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // Get a specific historical version of a suite config.
+  rpc GetSuiteConfigVersion(GetSuiteConfigVersionRequest) returns (GetSuiteConfigVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+}
+
+// --- Managed suite requests ---
+
+message UpsertSuiteConfigRequest {
+  // The suite configuration to store. suite_id will equal suite.name.
+  ReconcilationSuite suite = 1 [(buf.validate.field).required = true];
+
+  // Optional schedule for the managed suite.
+  optional SuiteSchedule schedule = 2;
+
+  // Human-readable summary of what changed in this version.
+  optional string change_summary = 3;
+}
+
+message UpsertSuiteConfigResponse {
+  // The stored suite config.
+  SuiteConfig suite_config = 1;
+}
+
+// --- Ad-hoc suite requests ---
+
+message SubmitAdhocSuiteRequest {
+  // The suite configuration. A UUID will be generated as suite_id.
+  ReconcilationSuite suite = 1 [(buf.validate.field).required = true];
+}
+
+message SubmitAdhocSuiteResponse {
+  // The stored suite config with generated suite_id.
+  SuiteConfig suite_config = 1;
+}
+
+// --- Common requests ---
+
+message GetSuiteConfigRequest {
+  // Suite ID to look up. For managed suites this equals the suite name,
+  // for ad-hoc suites this is the generated UUID.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message GetSuiteConfigResponse {
+  SuiteConfig suite_config = 1;
+}
+
+message ListSuiteConfigsRequest {
+  // Filter suites using a specific connection name. When empty, returns all.
+  optional string connection_name = 1;
+
+  // Pagination parameters.
+  optional synq.v1.Pagination pagination = 2;
+
+  // When true, also include ad-hoc suite configs in the results.
+  // By default only managed suites are returned.
+  bool include_adhoc = 3;
+}
+
+message ListSuiteConfigsResponse {
+  repeated SuiteConfig suite_configs = 1;
+
+  // Pagination info for fetching the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message DeleteSuiteConfigRequest {
+  // Suite ID to delete.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message DeleteSuiteConfigResponse {}
+
+message ListSuiteConfigVersionsRequest {
+  // Suite ID to get version history for.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Pagination parameters.
+  optional synq.v1.Pagination pagination = 2;
+}
+
+message ListSuiteConfigVersionsResponse {
+  repeated SuiteConfigVersion versions = 1;
+
+  // Pagination info for fetching the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message GetSuiteConfigVersionRequest {
+  // Suite ID.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Version timestamp.
+  google.protobuf.Timestamp state_at = 2 [(buf.validate.field).required = true];
+}
+
+message GetSuiteConfigVersionResponse {
+  SuiteConfigVersion version = 1;
+}
+
+// --- Response messages ---
+
+// SuiteConfig represents the latest version of a reconciliation suite configuration.
+message SuiteConfig {
+  // Unique identifier. Equals suite_name for managed suites, UUID for ad-hoc.
+  string suite_id = 1;
+
+  // Human-readable suite name from ReconcilationSuite.name.
+  string suite_name = 2;
+
+  optional string suite_title = 3;
+  optional string suite_description = 4;
+
+  // "managed" or "adhoc".
+  string suite_type = 5;
+
+  // The full suite configuration.
+  ReconcilationSuite suite = 6;
+
+  // Schedule (only present for managed suites).
+  optional SuiteSchedule schedule = 7;
+
+  // Deduplicated connection names referenced by this suite.
+  repeated string connection_names = 8;
+
+  // Summary of each reconciliation in the suite.
+  repeated ReconciliationConfigSummary reconciliation_summaries = 9;
+
+  // Who last updated this config.
+  optional SuiteConfigActor updated_by = 10;
+
+  // When this version was created.
+  google.protobuf.Timestamp state_at = 11;
+}
+
+// SuiteConfigVersion represents a historical version of a suite config.
+message SuiteConfigVersion {
+  string suite_id = 1;
+  string suite_name = 2;
+  optional string suite_title = 3;
+  optional string suite_description = 4;
+  string suite_type = 5;
+
+  // The full suite configuration at this version.
+  ReconcilationSuite suite = 6;
+
+  // Schedule at this version.
+  optional SuiteSchedule schedule = 7;
+
+  // Connection names at this version.
+  repeated string connection_names = 8;
+
+  // Reconciliation summaries at this version.
+  repeated ReconciliationConfigSummary reconciliation_summaries = 9;
+
+  // Who made this change.
+  optional SuiteConfigActor updated_by = 10;
+
+  // When this version was created.
+  google.protobuf.Timestamp state_at = 11;
+
+  // Whether this version represents a deletion.
+  bool deleted = 12;
+
+  // Human-readable summary of what changed.
+  optional string change_summary = 13;
+}

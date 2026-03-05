@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// Schedule configuration for managed suites.
+message SuiteSchedule {
+  // IANA timezone, e.g. "Europe/Warsaw".
+  string timezone = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  oneof type {
+    CronSchedule cron = 2;
+    ICalSchedule ical = 3;
+  }
+}
+
+message CronSchedule {
+  // Standard cron expression (e.g. "0 */6 * * *").
+  string expression = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message ICalSchedule {
+  // RFC 5545 RRULE recurrence rule.
+  string recurrence_rule = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+// Summary of a single reconciliation within a suite config (for listing without parsing full config).
+message ReconciliationConfigSummary {
+  string name = 1;
+  optional string title = 2;
+  optional string description = 3;
+  string source_connection = 4;
+  string target_connection = 5;
+  ReconcilationMode mode = 6;
+}
+
+// Actor identity for tracking who made changes.
+// Extracted from gRPC context: GetSubject(ctx) provides the subject ID,
+// GrantType distinguishes user vs M2M (API key) auth.
+message SuiteConfigActor {
+  // JWT subject (user ID or API client ID).
+  string subject = 1;
+
+  oneof identity {
+    // Frontend/OAuth user (from SynqUser).
+    string user_email = 2;
+    // M2M API client (from GrantType=client-credentials).
+    string api_client_id = 3;
+    // synq-recon agent (from integration_id).
+    string agent_id = 4;
+  }
+}
