@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package synq.common.v1;
+
+option go_package = "github.com/getsynq/api/common/v1";
+
+// ScopeRule is a multi-level pattern for matching data warehouse objects.
+// All non-empty fields must match for the rule to apply.
+// Empty field means "match anything" at that level (wildcard).
+// Patterns support glob syntax where * matches zero or more characters.
+// Matching is case-insensitive.
+message ScopeRule {
+  // Database-level pattern.
+  // Maps to: catalog in Databricks/Trino, project in BigQuery.
+  string database = 1;
+
+  // Schema-level pattern.
+  // Maps to: dataset in BigQuery, schema in all other warehouses.
+  string schema = 2;
+
+  // Table or view name pattern.
+  string table = 3;
+}
+
+// ScopeFilter defines include/exclude rules for scoping data warehouse queries.
+//
+// Matching semantics:
+//   - If include is non-empty, a (database, schema, table) tuple must match at least one include rule.
+//   - If exclude is non-empty, the tuple must NOT match any exclude rule.
+//   - Exclude takes precedence over include (exclude wins).
+//   - Empty/unset ScopeFilter means accept all.
+message ScopeFilter {
+  // Include rules. If non-empty, only matching objects are accepted.
+  repeated ScopeRule include = 1;
+
+  // Exclude rules. Matching objects are rejected, even if they match an include rule.
+  repeated ScopeRule exclude = 2;
+}
