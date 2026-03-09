@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package synq.entities.coordinates.v1;
+
+option go_package = "github.com/getsynq/api/entities/coordinates/v1";
+
+// DatabaseContext provides the default database execution context
+// for resolving unqualified references (e.g. table names in SQL).
+message DatabaseContext {
+  // Instance identifier (e.g. Snowflake account, Databricks workspace URL, BigQuery project)
+  string instance_name = 1;
+  // Database or catalog name
+  string database_name = 2;
+  // Schema name
+  string schema_name = 3;
+  // Object name (e.g. table or view name) that the SQL writes to or creates.
+  // Only set when the SQL defines or materializes an object, e.g. `CREATE TABLE <object_name> AS SELECT ...`.
+  // Leave empty for read-only SQL such as dashboard queries or SELECT statements.
+  string object_name = 4;
+}

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "google/api/annotations.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// YamlService provides stateless conversion between YAML config format and proto.
+// This is useful for UI editors that need to display/edit suite configs as YAML.
+service YamlService {
+  // ParseYaml parses a YAML config string into a ReconcilationSuite proto.
+  // Only the suite configuration fields are extracted (connections are ignored).
+  rpc ParseYaml(ParseYamlRequest) returns (ParseYamlResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/agent/recon/v1/yaml/parse"
+      body: "*"
+    };
+  }
+
+  // RenderYaml renders a ReconcilationSuite proto as a YAML config string.
+  rpc RenderYaml(RenderYamlRequest) returns (RenderYamlResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/agent/recon/v1/yaml/render"
+      body: "*"
+    };
+  }
+}
+
+message ParseYamlRequest {
+  // YAML config string to parse.
+  string yaml = 1;
+}
+
+message ParseYamlResponse {
+  // The parsed suite configuration.
+  ReconcilationSuite suite = 1;
+}
+
+message RenderYamlRequest {
+  // The suite configuration to render as YAML.
+  ReconcilationSuite suite = 1;
+}
+
+message RenderYamlResponse {
+  // The rendered YAML config string.
+  string yaml = 1;
+}

@@ -4,6 +4,7 @@ package synq.entities.custom.features.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/coordinates/v1/database_context.proto";
 import "synq/entities/v1/sql_dialect.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/features/v1";
@@ -28,4 +29,9 @@ message SqlDefinition {
       max_len: 1000000
     }
   }];
+
+  // Optional database context for resolving unqualified table references in the SQL.
+  // When provided, helps CLL resolve schema-qualified references (e.g. `PROD.TABLE_NAME`)
+  // to the correct database instance and catalog.
+  optional synq.entities.coordinates.v1.DatabaseContext database_context = 4;
 }
