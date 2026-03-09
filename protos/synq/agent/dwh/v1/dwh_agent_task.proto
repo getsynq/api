@@ -4,6 +4,7 @@ package synq.agent.dwh.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/common/v1/scope.proto";
 
 option go_package = "github.com/getsynq/api/agent/dwh/v1";
 
@@ -21,12 +22,15 @@ message AgentTask {
   // When the task was created
   google.protobuf.Timestamp created_at = 12;
 
+  reserved 5, 6, 8;
+
   oneof command {
     option (buf.validate.oneof).required = true;
     FetchFullCatalogCommand fetch_full_catalog = 3;
     FetchFullMetricsCommand fetch_full_metrics = 4;
     FetchSegmentsCommand fetch_segments = 7;
     FetchMetricsCommand fetch_metrics = 9;
+    FetchTableStatsCommand fetch_table_stats = 13;
   }
 }
 
@@ -58,6 +62,7 @@ message FetchMetricsCommand {
   // Application specific context around metrics retrieval
   optional string command_context = 1000;
 }
+
 message FetchMetricsResult {
   message QueryRows {
     repeated MetricsRow rows = 1;
@@ -90,7 +95,15 @@ message FetchMetricsResult {
   }
 
   repeated QueryRows query_rows = 1;
-  // Matches command_context of FetchMetricsCommand
+  // Matches command_context of FetchMetricsCommand / FetchTableStatsCommand
+  optional string command_context = 1000;
+}
+
+message FetchTableStatsCommand {
+  // Scope filter defining which tables to collect stats for.
+  // For a single-table monitor, set a single include rule with exact database/schema/table.
+  synq.common.v1.ScopeFilter scope_filter = 1 [(buf.validate.field) = {required: true}];
+  // Application-specific context, echoed back in the result (mirrors FetchMetricsCommand).
   optional string command_context = 1000;
 }
 
