@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package synq.agent.sre.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/sre/v1";
+
+// FeatureRequestService allows MCP clients to submit feature requests when users encounter
+// missing capabilities. This is a last-resort service — it should only be used when no
+// existing tool can fulfill the user's request.
+service FeatureRequestService {
+  // SubmitFeatureRequest submits a feature request to the SYNQ product team.
+  // This method should only be called as a last resort when the user's request cannot be
+  // fulfilled by any existing tool. It logs the request for product team review.
+  rpc SubmitFeatureRequest(SubmitFeatureRequestRequest) returns (SubmitFeatureRequestResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_MCP_READ]
+    };
+    option (google.api.http) = {
+      post: "/api/feature-request/v1/submit"
+      body: "*"
+    };
+  }
+}
+
+// Request to submit a feature request. Should only be used as a last resort when no
+// existing tool can handle the user's request.
+message SubmitFeatureRequestRequest {
+  // A clear description of what the user needs, including context about what they were trying
+  // to accomplish and why the current tools are insufficient. This should only be populated
+  // when no existing tool can fulfill the request.
+  string description = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 4096
+    }
+  }];
+}
+
+// Response for the SubmitFeatureRequest operation.
+message SubmitFeatureRequestResponse {}
