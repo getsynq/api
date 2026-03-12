@@ -65,3 +65,29 @@ message Tag {
   string tag_name = 1;
   string tag_value = 2;
 }
+
+// TableConstraints contains all constraints and indexes for a single table.
+message TableConstraints {
+  Fqn fqn = 1;
+  repeated TableConstraint constraints = 2;
+}
+
+// TableConstraint represents a single constraint or index on a database table.
+message TableConstraint {
+  // Name of the constraint or index
+  string name = 1;
+  // Type of the constraint (e.g. PRIMARY_KEY, FOREIGN_KEY, UNIQUE, CHECK, INDEX)
+  string type = 2;
+  // Column names involved in this constraint or index
+  repeated string columns = 3;
+  // For foreign key: referenced table FQN
+  optional Fqn foreign_key_target = 4;
+  // For foreign key: referenced column names
+  repeated string foreign_key_target_columns = 5;
+  // Index type (e.g. "btree", "hash", "gin")
+  string index_type = 6;
+  // Expression for check constraints or expression-based indexes
+  string expression = 7;
+  // Whether this constraint or index enforces uniqueness
+  bool is_unique = 8;
+}

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package synq.entities.constraints.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/entities/v1/table_constraint.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/constraints/v1";
+
+// TableConstraintsService provides access to table constraint and index information.
+service TableConstraintsService {
+  // Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity.
+  rpc GetTableConstraints(GetTableConstraintsRequest) returns (GetTableConstraintsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/constraints/v1/table-constraints"};
+  }
+}
+
+message GetTableConstraintsRequest {
+  // Identifier of the entity to get constraints for.
+  synq.entities.v1.Identifier id = 1 [(buf.validate.field).required = true];
+}
+
+message GetTableConstraintsResponse {
+  // Identifier of the entity whose constraints are returned.
+  // May differ from the requested identifier if identity resolution mapped
+  // the request to an underlying table (e.g. dbt model → warehouse table).
+  synq.entities.v1.Identifier id = 1;
+  // Synq path of the resolved entity.
+  string synq_path = 2;
+  // Constraints and indexes defined on the table.
+  repeated synq.entities.v1.TableConstraint constraints = 3;
+  // Database coordinates of the table whose constraints are returned.
+  string database_instance = 4;
+  string database_name = 5;
+  string schema_name = 6;
+  string object_name = 7;
+}

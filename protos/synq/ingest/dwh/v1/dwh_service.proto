@@ -121,6 +121,26 @@ message IngestQueryLogsRequest {
 }
 message IngestQueryLogsResponse {}
 
+message IngestTableConstraintsRequest {
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which state was collected
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  repeated TableConstraints table_constraints = 4;
+}
+message IngestTableConstraintsResponse {}
+
 service DwhService {
   rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -184,6 +204,17 @@ service DwhService {
     };
     option (google.api.http) = {
       post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/query-logs"
+      body: "*"
+    };
+  }
+
+  rpc IngestTableConstraints(IngestTableConstraintsRequest) returns (IngestTableConstraintsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/table-constraints"
       body: "*"
     };
   }

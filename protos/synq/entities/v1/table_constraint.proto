@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// TableConstraintType represents the type of a database table constraint or index.
+enum TableConstraintType {
+  TABLE_CONSTRAINT_TYPE_UNSPECIFIED = 0;
+  TABLE_CONSTRAINT_TYPE_PRIMARY_KEY = 1;
+  TABLE_CONSTRAINT_TYPE_FOREIGN_KEY = 2;
+  TABLE_CONSTRAINT_TYPE_UNIQUE = 3;
+  TABLE_CONSTRAINT_TYPE_CHECK = 4;
+  TABLE_CONSTRAINT_TYPE_INDEX = 5;
+  // DWH-specific constraint/ordering types
+  TABLE_CONSTRAINT_TYPE_SORTING_KEY = 6;
+  TABLE_CONSTRAINT_TYPE_PARTITION_BY = 7;
+  TABLE_CONSTRAINT_TYPE_CLUSTER_BY = 8;
+  TABLE_CONSTRAINT_TYPE_DISTRIBUTION_KEY = 9;
+  TABLE_CONSTRAINT_TYPE_PROJECTION = 10;
+}
+
+// ForeignKeyReference describes the target of a foreign key constraint.
+message ForeignKeyReference {
+  // Target database name
+  string database = 1 [(buf.validate.field) = {
+    string: {max_len: 255}
+  }];
+  // Target schema name
+  string schema = 2 [(buf.validate.field) = {
+    string: {max_len: 255}
+  }];
+  // Target table name
+  string table = 3 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+    }
+  }];
+  // Target column names in the referenced table
+  repeated string columns = 4 [(buf.validate.field) = {
+    repeated: {max_items: 100}
+  }];
+}
+
+// TableConstraint represents a single constraint or index on a database table.
+message TableConstraint {
+  // Name of the constraint or index
+  string name = 1 [(buf.validate.field) = {
+    string: {max_len: 255}
+  }];
+  // Type of the constraint (best-effort mapping to enum)
+  TableConstraintType type = 2;
+  // Column names involved in this constraint or index
+  repeated string columns = 3 [(buf.validate.field) = {
+    repeated: {max_items: 100}
+  }];
+  // Foreign key reference details (only set when type is FOREIGN_KEY)
+  optional ForeignKeyReference foreign_key_reference = 4;
+  // Index type (e.g. "btree", "hash", "gin", "gist") - only relevant for INDEX type
+  string index_type = 5 [(buf.validate.field) = {
+    string: {max_len: 100}
+  }];
+  // Expression for check constraints or expression-based indexes
+  string expression = 6 [(buf.validate.field) = {
+    string: {max_len: 4000}
+  }];
+  // Whether this constraint or index enforces uniqueness
+  bool is_unique = 7;
+  // Raw constraint type string from the data warehouse (e.g. "PRIMARY KEY", "SORTING KEY",
+  // "PARTITION BY", "CLUSTER BY", "DISTRIBUTION KEY", "PROJECTION", "INDEX", "UNIQUE INDEX").
+  // Preserved verbatim for consumers that need platform-specific details beyond the enum.
+  string raw_type = 8 [(buf.validate.field) = {
+    string: {max_len: 255}
+  }];
+}
