@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.monitors.custom_monitors.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/monitors/custom_monitors/v1/monitor_definition.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -15,12 +16,20 @@ service CustomMonitorsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/monitors/custom-monitors/v1"
+      body: "*"
+    };
   }
 
   rpc BatchUpdateMonitor(BatchUpdateMonitorRequest) returns (BatchUpdateMonitorResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+    option (google.api.http) = {
+      put: "/api/monitors/custom-monitors/v1"
+      body: "*"
     };
   }
 
@@ -29,12 +38,20 @@ service CustomMonitorsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/monitors/custom-monitors/v1/delete"
+      body: "*"
+    };
   }
 
   rpc BatchUpdateMonitorMode(BatchUpdateMonitorModeRequest) returns (BatchUpdateMonitorModeResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/custom-monitors/v1/mode"
+      body: "*"
     };
   }
 
@@ -43,12 +60,20 @@ service CustomMonitorsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/monitors/custom-monitors/v1/config-changes"
+      body: "*"
+    };
   }
 
   rpc BatchUpdateMonitorSeverity(BatchUpdateMonitorSeverityRequest) returns (BatchUpdateMonitorSeverityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_CUSTOM_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/custom-monitors/v1/severity"
+      body: "*"
     };
   }
 
@@ -57,6 +82,7 @@ service CustomMonitorsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_READ]
     };
+    option (google.api.http) = {get: "/api/monitors/custom-monitors/v1/by-config"};
   }
 
   rpc ListMonitors(ListMonitorsRequest) returns (ListMonitorsResponse) {
@@ -64,6 +90,7 @@ service CustomMonitorsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_MONITORS_READ]
     };
+    option (google.api.http) = {get: "/api/monitors/custom-monitors/v1"};
   }
 }
 
