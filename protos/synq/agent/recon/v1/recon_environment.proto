@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// TablePathOverride remaps components of a fully-qualified table name.
+// Only set fields are overridden — unset fields keep the suite's original value.
+// Applied to TableReference fields in datasets when an environment is active.
+message TablePathOverride {
+  // Replace the database/catalog component.
+  // e.g., "PROD_DB" → "DEV_LUKASZ_DB"
+  optional string database = 1;
+
+  // Replace the schema/dataset component.
+  // e.g., "analytics" → "dev_lukasz_analytics"
+  optional string schema = 2;
+
+  // Prefix to prepend to the table name.
+  // e.g., "dev_" → "dev_orders" instead of "orders"
+  optional string table_prefix = 3;
+
+  // Suffix to append to the table name.
+  // e.g., "_staging" → "orders_staging" instead of "orders"
+  optional string table_suffix = 4;
+}
+
+// ConnectionEnvironmentOverride applies to all datasets using a given connection.
+// Provides a default table path override for all datasets on that connection.
+message ConnectionEnvironmentOverride {
+  // Default table path override for all datasets on this connection.
+  // Can be further overridden by dataset-level overrides.
+  TablePathOverride table_path = 1;
+}
+
+// DatasetEnvironmentOverride applies to a specific dataset in a specific reconciliation.
+// Takes precedence over connection-level overrides.
+message DatasetEnvironmentOverride {
+  // Table path override for this specific dataset.
+  TablePathOverride table_path = 1;
+}
+
+// ReconEnvironment defines overrides applied to a suite before execution.
+// Environments allow the same suite definition to run against different
+// database locations (e.g., dev vs production schemas) without modifying
+// the suite itself.
+//
+// Used both in synq-recon CLI (loaded from .env.yaml files) and in
+// kernel-recon cloud (managed as workspace-level configurations).
+message ReconEnvironment {
+  // Environment name (e.g., "dev-lukasz", "staging", "production").
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    }
+  }];
+
+  // Human-readable description of this environment.
+  optional string description = 2;
+
+  // Connection-level overrides, keyed by connection name.
+  // Applied to all datasets using the specified connection.
+  map<string, ConnectionEnvironmentOverride> connections = 3;
+
+  // Dataset-level overrides, keyed by "reconciliation_name.source" or
+  // "reconciliation_name.target".
+  // Takes precedence over connection-level overrides for the matching dataset.
+  map<string, DatasetEnvironmentOverride> datasets = 4;
+
+  // Variable overrides merged on top of suite-level variables.
+  // Takes precedence over suite variables but is overridden by CLI --var flags.
+  map<string, string> variables = 5;
+}

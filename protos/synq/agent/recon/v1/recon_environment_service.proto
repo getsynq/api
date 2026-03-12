@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_environment.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// CloudConnectionOverride extends ConnectionEnvironmentOverride with
+// cloud-specific fields like integration remapping.
+// Used only in kernel-recon (cloud offering), not in synq-recon CLI.
+message CloudConnectionOverride {
+  // Remap this connection to a different workspace integration.
+  // When set, the suite's connection name resolves to this integration
+  // instead of the default one.
+  optional string integration_id = 1;
+
+  // Table path override for all datasets on this connection.
+  // Same semantics as ConnectionEnvironmentOverride.table_path.
+  TablePathOverride table_path = 2;
+}
+
+// CloudReconEnvironment is the cloud-managed version of ReconEnvironment.
+// It extends the base environment with cloud-specific features like
+// integration remapping and production designation.
+// Managed at workspace level in kernel-recon.
+message CloudReconEnvironment {
+  // Environment name (e.g., "dev-lukasz", "staging", "production").
+  string name = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    }
+  }];
+
+  // Human-readable description.
+  optional string description = 2;
+
+  // Whether this is the production environment.
+  // Scheduled runs always use the production environment.
+  // At most one environment per workspace should be marked as production.
+  bool is_production = 3;
+
+  // Connection-level overrides with cloud features, keyed by connection name.
+  map<string, CloudConnectionOverride> connections = 4;
+
+  // Dataset-level overrides, keyed by "reconciliation_name.source" or
+  // "reconciliation_name.target".
+  map<string, DatasetEnvironmentOverride> datasets = 5;
+
+  // Variable overrides merged on top of suite-level variables.
+  map<string, string> variables = 6;
+}
+
+// ReconEnvironmentService manages workspace-level environment configurations.
+// Environments allow the same suite to run against different database locations
+// (e.g., dev vs staging vs production) without modifying the suite itself.
+service ReconEnvironmentService {
+  // Create or update a workspace-level environment.
+  rpc UpsertEnvironment(UpsertEnvironmentRequest) returns (UpsertEnvironmentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
+
+  // Get an environment by name.
+  rpc GetEnvironment(GetEnvironmentRequest) returns (GetEnvironmentResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_READ]
+    };
+  }
+
+  // List all environments in the workspace.
+  rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_READ]
+    };
+  }
+
+  // Delete an environment.
+  rpc DeleteEnvironment(DeleteEnvironmentRequest) returns (DeleteEnvironmentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
+
+  // Execute a suite in a specific environment.
+  // Creates an ad-hoc execution with the environment's overrides applied.
+  rpc ExecuteInEnvironment(ExecuteInEnvironmentRequest) returns (ExecuteInEnvironmentResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
+
+  // Preview what a suite would look like after environment overrides.
+  // Returns the transformed suite without executing it.
+  // Useful for frontend to show resolved table references before running.
+  rpc PreviewSuiteInEnvironment(PreviewSuiteInEnvironmentRequest) returns (PreviewSuiteInEnvironmentResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_READ]
+    };
+  }
+}
+
+// --- Request/Response messages ---
+
+message UpsertEnvironmentRequest {
+  CloudReconEnvironment environment = 1 [(buf.validate.field).required = true];
+  SuiteConfigActor updated_by = 2;
+  string change_summary = 3;
+}
+
+message UpsertEnvironmentResponse {
+  CloudReconEnvironment environment = 1;
+  google.protobuf.Timestamp state_at = 2;
+}
+
+message GetEnvironmentRequest {
+  string environment_name = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message GetEnvironmentResponse {
+  CloudReconEnvironment environment = 1;
+  google.protobuf.Timestamp state_at = 2;
+}
+
+message ListEnvironmentsRequest {
+  synq.v1.PageInfo page_info = 1;
+}
+
+message ListEnvironmentsResponse {
+  repeated CloudReconEnvironment environments = 1;
+  synq.v1.PageInfo page_info = 2;
+}
+
+message DeleteEnvironmentRequest {
+  string environment_name = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  SuiteConfigActor updated_by = 2;
+}
+
+message DeleteEnvironmentResponse {}
+
+message ExecuteInEnvironmentRequest {
+  // Suite to execute (identified by suite_id for managed suites).
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Environment to apply.
+  string environment_name = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message ExecuteInEnvironmentResponse {
+  // The execution's invocation ID for tracking.
+  string invocation_id = 1;
+}
+
+message PreviewSuiteInEnvironmentRequest {
+  // Suite to preview.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Environment to apply.
+  string environment_name = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message PreviewSuiteInEnvironmentResponse {
+  // The suite after environment overrides are applied.
+  ReconcilationSuite transformed_suite = 1;
+
+  // Map of "recon_name.side" → resolved FQN string.
+  // Shows what table references will look like after overrides.
+  map<string, string> resolved_table_references = 2;
+
+  // Variables after merging environment overrides.
+  map<string, string> merged_variables = 3;
+}

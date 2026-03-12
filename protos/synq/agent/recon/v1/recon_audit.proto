@@ -80,6 +80,16 @@ message AuditLog {
 
   // Aggregated query execution statistics across all queries in this run.
   QueryStats total_stats = 17;
+
+  // Name of the environment used for this run.
+  // Empty for direct/unmanaged runs where no environment was applied.
+  optional string environment = 19;
+
+  // Effective table references after environment overrides were applied.
+  // Keyed by "reconciliation_name.source" or "reconciliation_name.target".
+  // Only populated when an environment was active and overrides were applied.
+  // The suite field (14) still contains the original pre-override config.
+  map<string, string> resolved_table_references = 20;
 }
 
 // AuditStatus describes the overall outcome of a reconciliation run.

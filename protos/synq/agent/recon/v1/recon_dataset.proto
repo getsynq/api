@@ -44,6 +44,10 @@ message Dataset {
 // TableReference specifies a table and optional column filtering.
 // Use this instead of a raw query when you want to compare all (or most) columns
 // of a table without writing SQL.
+//
+// `name` is the table or view name (e.g., "orders", "fact_sales").
+// `database` and `schema` are optional namespace qualifiers.
+// The actual SQL FQN is generated at runtime using the appropriate dialect quoting.
 message TableReference {
   option (buf.validate.message).cel = {
     id: "columns_exclusive"
@@ -51,7 +55,8 @@ message TableReference {
     expression: "size(this.columns) == 0 || size(this.exclude_columns) == 0"
   };
 
-  // Table name or fully qualified name (e.g., "schema.table", "database.schema.table").
+  // Table or view name (e.g., "orders", "fact_sales").
+  // Required — this is the actual object name.
   string name = 1 [(buf.validate.field) = {
     required: true
     string: {min_len: 1}
@@ -67,6 +72,14 @@ message TableReference {
   // Useful for skipping volatile columns (e.g., updated_at, etl_batch_id).
   // Mutually exclusive with columns.
   repeated string exclude_columns = 3;
+
+  // Database/catalog name (e.g., "PROD_RAW", "my_project").
+  // Maps to: Snowflake database, BigQuery project, Databricks catalog.
+  optional string database = 4;
+
+  // Schema/dataset name (e.g., "public", "analytics").
+  // Maps to: Snowflake schema, BigQuery dataset, Databricks schema.
+  optional string schema = 5;
 }
 
 // ColumnMapping maps a source column name to a target column name.
