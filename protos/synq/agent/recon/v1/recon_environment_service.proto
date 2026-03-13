@@ -5,7 +5,6 @@ package synq.agent.recon.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_environment.proto";
-import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -96,23 +95,6 @@ service ReconEnvironmentService {
     };
   }
 
-  // Execute a suite in a specific environment.
-  // Creates an ad-hoc execution with the environment's overrides applied.
-  rpc ExecuteInEnvironment(ExecuteInEnvironmentRequest) returns (ExecuteInEnvironmentResponse) {
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_EDIT]
-    };
-  }
-
-  // Preview what a suite would look like after environment overrides.
-  // Returns the transformed suite without executing it.
-  // Useful for frontend to show resolved table references before running.
-  rpc PreviewSuiteInEnvironment(PreviewSuiteInEnvironmentRequest) returns (PreviewSuiteInEnvironmentResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_READ]
-    };
-  }
 }
 
 // --- Request/Response messages ---
@@ -158,48 +140,3 @@ message DeleteEnvironmentRequest {
 }
 
 message DeleteEnvironmentResponse {}
-
-message ExecuteInEnvironmentRequest {
-  // Suite to execute (identified by suite_id for managed suites).
-  string suite_id = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-
-  // Environment to apply.
-  string environment_name = 2 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-}
-
-message ExecuteInEnvironmentResponse {
-  // The execution's invocation ID for tracking.
-  string invocation_id = 1;
-}
-
-message PreviewSuiteInEnvironmentRequest {
-  // Suite to preview.
-  string suite_id = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-
-  // Environment to apply.
-  string environment_name = 2 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-}
-
-message PreviewSuiteInEnvironmentResponse {
-  // The suite after environment overrides are applied.
-  ReconcilationSuite transformed_suite = 1;
-
-  // Map of "recon_name.side" → resolved FQN string.
-  // Shows what table references will look like after overrides.
-  map<string, string> resolved_table_references = 2;
-
-  // Variables after merging environment overrides.
-  map<string, string> merged_variables = 3;
-}

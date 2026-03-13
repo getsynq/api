@@ -25,11 +25,12 @@ service SuiteConfigService {
     };
   }
 
-  // Submit an ad-hoc suite config for one-off execution.
-  // Generates a UUID as suite_id. The config is stored for audit trail
-  // but not listed by default in ListSuiteConfigs.
+  // Submit an ad-hoc suite for one-off execution.
+  // Provide either an inline suite or a suite_id referencing an existing managed suite.
+  // Optionally apply environment overrides before execution.
+  // The client-provided invocation_id ensures idempotency.
   rpc SubmitAdhocSuite(SubmitAdhocSuiteRequest) returns (SubmitAdhocSuiteResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_RECON_EDIT, SCOPE_INGEST_RECON]
     };
@@ -90,6 +91,24 @@ service SuiteConfigService {
       ]
     };
   }
+
+  // Set or remove the schedule and optional environment for a managed suite.
+  // This is a focused API for promoting/scheduling a suite without re-submitting the full config.
+  rpc SetSuiteSchedule(SetSuiteScheduleRequest) returns (SetSuiteScheduleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
+
+  // Preview what a suite would look like after environment overrides.
+  // Returns the transformed suite without executing it.
+  rpc PreviewSuiteInEnvironment(PreviewSuiteInEnvironmentRequest) returns (PreviewSuiteInEnvironmentResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_READ]
+    };
+  }
 }
 
 // --- Managed suite requests ---
@@ -113,12 +132,33 @@ message UpsertSuiteConfigResponse {
 // --- Ad-hoc suite requests ---
 
 message SubmitAdhocSuiteRequest {
-  // The suite configuration. A UUID will be generated as suite_id.
-  ReconcilationSuite suite = 1 [(buf.validate.field).required = true];
+  option (buf.validate.message).cel = {
+    id: "suite_or_suite_id_required"
+    message: "either suite or suite_id must be provided"
+    expression: "has(this.suite) || has(this.suite_id)"
+  };
+
+  // Inline suite configuration. Required when suite_id is not set.
+  optional ReconcilationSuite suite = 1;
+
+  // Client-generated invocation ID for idempotency.
+  // If an execution with this ID already exists, the call is a no-op.
+  string invocation_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Reference to an existing managed suite (alternative to inline suite).
+  // When set, the suite config is loaded from the database.
+  optional string suite_id = 3 [(buf.validate.field).string.min_len = 1];
+
+  // Optional environment to apply before execution.
+  // Overrides connection mappings, table paths, and variables.
+  optional string environment_name = 4 [(buf.validate.field).string.min_len = 1];
 }
 
 message SubmitAdhocSuiteResponse {
-  // The stored suite config with generated suite_id.
+  // The stored suite config (includes the invocation_id as suite_id).
   SuiteConfig suite_config = 1;
 }
 
@@ -199,6 +239,26 @@ message GetSuiteConfigVersionResponse {
   SuiteConfigVersion version = 1;
 }
 
+message SetSuiteScheduleRequest {
+  // Suite ID of the managed suite to update.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Schedule to set. When absent, removes the schedule.
+  optional SuiteSchedule schedule = 2;
+
+  // Optional environment name to associate with scheduled runs.
+  // Empty string clears the environment association.
+  optional string environment_name = 3;
+}
+
+message SetSuiteScheduleResponse {
+  // The updated suite config.
+  SuiteConfig suite_config = 1;
+}
+
 // --- Response messages ---
 
 // SuiteConfig represents the latest version of a reconciliation suite configuration.
@@ -232,6 +292,9 @@ message SuiteConfig {
 
   // When this version was created.
   google.protobuf.Timestamp state_at = 11;
+
+  // Environment name associated with scheduled runs (empty = no environment).
+  optional string environment_name = 12;
 }
 
 // SuiteConfigVersion represents a historical version of a suite config.
@@ -265,4 +328,32 @@ message SuiteConfigVersion {
 
   // Human-readable summary of what changed.
   optional string change_summary = 13;
+
+  // Environment name associated with scheduled runs at this version.
+  optional string environment_name = 14;
+}
+
+message PreviewSuiteInEnvironmentRequest {
+  // Suite to preview.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Environment to apply.
+  string environment_name = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message PreviewSuiteInEnvironmentResponse {
+  // The suite after environment overrides are applied.
+  ReconcilationSuite transformed_suite = 1;
+
+  // Map of "recon_name.side" -> resolved FQN string.
+  map<string, string> resolved_table_references = 2;
+
+  // Variables after merging environment overrides.
+  map<string, string> merged_variables = 3;
 }
