@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
@@ -30,11 +31,17 @@ message CronSchedule {
 }
 
 message ICalSchedule {
-  // RFC 5545 RRULE recurrence rule.
+  // RFC 5545 RRULE recurrence rule (e.g. "FREQ=MONTHLY;BYDAY=TH;BYSETPOS=-1").
+  // DTSTART should be set via the dtstart field below rather than inline in the rule.
   string recurrence_rule = 1 [(buf.validate.field) = {
     required: true
     string: {min_len: 1}
   }];
+
+  // Anchor time for the recurrence rule. Wall-clock time interpreted in the
+  // schedule's timezone. Defines when the schedule starts and aligns occurrences.
+  // If not set and no DTSTART is present in the recurrence_rule, defaults to now().
+  optional google.protobuf.Timestamp dtstart = 2;
 }
 
 // Summary of a single reconciliation within a suite config (for listing without parsing full config).

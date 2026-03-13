@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.schedule.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/getsynq/api/schedule/v1";
 
@@ -31,9 +32,15 @@ message CronSchedule {
 
 // ICalSchedule uses RFC 5545 RRULE recurrence rules.
 message ICalSchedule {
-  // RFC 5545 RRULE recurrence rule (e.g. "FREQ=MONTHLY;BYDAY=-1TH;DTSTART=20260101T100000Z").
+  // RFC 5545 RRULE recurrence rule (e.g. "FREQ=MONTHLY;BYDAY=TH;BYSETPOS=-1").
+  // DTSTART should be set via the dtstart field below rather than inline in the rule.
   string recurrence_rule = 1 [(buf.validate.field) = {
     required: true
     string: {min_len: 1}
   }];
+
+  // Anchor time for the recurrence rule. Wall-clock time interpreted in the
+  // schedule's timezone. Defines when the schedule starts and aligns occurrences.
+  // If not set and no DTSTART is present in the recurrence_rule, defaults to now().
+  optional google.protobuf.Timestamp dtstart = 2;
 }
