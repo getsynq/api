@@ -15,14 +15,14 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // Database connections are configured separately and referenced by name.
 message ReconcilationSuite {
   // Short machine identifier for the suite.
-  // Must start with a letter, followed by alphanumerics, hyphens, or underscores.
-  // Used as the stable key for tracking runs over time.
+  // Unique machine identifier for the suite, used as the stable key for tracking runs over time.
+  // Alphanumerics, hyphens, and underscores. May be a UUID.
   string name = 1 [(buf.validate.field) = {
     required: true
     string: {
       min_len: 1
       max_len: 255
-      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+      pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
     }
   }];
 
@@ -101,13 +101,12 @@ message Reconcilation {
     expression: "this.mode != 3 || has(this.aggregate)"
   };
 
-  // Unique machine identifier within the suite.
-  // Must start with a letter, followed by alphanumerics, hyphens, or underscores.
+  // Unique machine identifier within the suite. Alphanumerics, hyphens, and underscores. May be a UUID.
   string name = 1 [(buf.validate.field) = {
     required: true
     string: {
       min_len: 1
-      pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+      pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
     }
   }];
 
