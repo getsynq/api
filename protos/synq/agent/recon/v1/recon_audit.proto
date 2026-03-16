@@ -146,6 +146,9 @@ message AuditSummary {
   int32 failed = 6 [(buf.validate.field) = {
     int32: {gte: 0}
   }];
+
+  // Error messages collected from failed reconciliations.
+  repeated string errors = 7;
 }
 
 // AuditMeta holds build and environment metadata for the synq-recon binary.
