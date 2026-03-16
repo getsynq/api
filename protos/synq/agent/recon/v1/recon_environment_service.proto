@@ -94,7 +94,6 @@ service ReconEnvironmentService {
       scopes: [SCOPE_RECON_EDIT]
     };
   }
-
 }
 
 // --- Request/Response messages ---

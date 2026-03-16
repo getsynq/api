@@ -24,4 +24,10 @@ message DatabaseCoordinates {
   string schema_name = 12;
   string object_name = 13;
   string sql_fqn = 14;
+
+  // SQL-addressable components (only parts usable in SQL queries).
+  // For Postgres, sql_database_name is empty since cross-database queries are not supported.
+  optional string sql_database_name = 15;
+  string sql_schema_name = 16;
+  string sql_object_name = 17;
 }

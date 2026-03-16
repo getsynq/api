@@ -21,7 +21,10 @@ service SuiteConfigService {
   rpc UpsertSuiteConfig(UpsertSuiteConfigRequest) returns (UpsertSuiteConfigResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_EDIT, SCOPE_INGEST_RECON]
+      scopes: [
+        SCOPE_RECON_EDIT,
+        SCOPE_INGEST_RECON
+      ]
     };
   }
 
@@ -32,7 +35,10 @@ service SuiteConfigService {
   rpc SubmitAdhocSuite(SubmitAdhocSuiteRequest) returns (SubmitAdhocSuiteResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_EDIT, SCOPE_INGEST_RECON]
+      scopes: [
+        SCOPE_RECON_EDIT,
+        SCOPE_INGEST_RECON
+      ]
     };
   }
 
