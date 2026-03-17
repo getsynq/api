@@ -18,7 +18,18 @@ service FeatureRequestService {
   rpc SubmitFeatureRequest(SubmitFeatureRequestRequest) returns (SubmitFeatureRequestResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MCP_READ]
+      scopes: [
+        SCOPE_MCP_READ,
+        SCOPE_ENTITY_READ,
+        SCOPE_ISSUES_READ,
+        SCOPE_INCIDENTS_READ,
+        SCOPE_LINEAGE_READ,
+        SCOPE_MONITORS_READ,
+        SCOPE_EXECUTION_READ,
+        SCOPE_CODE_READ,
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_READ
+      ]
     };
     option (google.api.http) = {
       post: "/api/feature-request/v1/submit"

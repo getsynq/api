@@ -9,8 +9,16 @@ import "synq/queries/v1/query_parts.proto";
 option go_package = "github.com/getsynq/api/queries/v1";
 
 // Query is a structured query that can be used to find entities in the system.
-// It consists of multiple parts, each representing a different aspect of the query.
-// The parts can be combined using the operand to form a complete query.
+// It consists of multiple parts, each representing a different filter or sub-query.
+// The parts are combined using the operand to form the final result:
+//   - AND (default): returns only entities matching ALL parts (intersection).
+//   - OR: returns entities matching ANY part (union).
+//   - EXCEPT: requires exactly 2 parts — returns entities from part[0] that are NOT in part[1].
+//   - UPSTREAM: returns entities that are upstream (dependencies) of the entities matched by the parts.
+//   - DOWNSTREAM: returns entities that are downstream (dependents) of the entities matched by the parts.
+//
+// Queries can be nested by using a Query as a QueryPart, enabling complex compositions
+// like "upstream of all Snowflake tables".
 message Query {
   option (buf.validate.message).cel = {
     id: "query.except_requires_two_parts"
@@ -33,7 +41,10 @@ message Query {
       InFolder in_folder = 8;
       InDomain in_domain = 9;
 
+      // Nested sub-query, enabling recursive composition of filters and operands.
       Query query = 100;
+      // Read-only. Represents internal query types that cannot be expressed in the public API.
+      // Do not construct these directly — they are returned when translating from internal queries.
       Unsupported unsupported = 101;
     }
   }

@@ -4,11 +4,17 @@ package synq.queries.v1;
 
 option go_package = "github.com/getsynq/api/queries/v1";
 
+// QueryOperand defines how multiple QueryParts within a Query are combined.
 enum QueryOperand {
-  QUERY_OPERAND_UNSPECIFIED = 0; // default to AND behaviour
+  QUERY_OPERAND_UNSPECIFIED = 0; // Defaults to AND behaviour.
+  // Intersection: returns only entities present in ALL parts.
   QUERY_OPERAND_AND = 1;
+  // Union: returns entities present in ANY part.
   QUERY_OPERAND_OR = 2;
+  // Set difference: requires exactly 2 parts. Returns entities from parts[0] that are NOT in parts[1].
   QUERY_OPERAND_EXCEPT = 3;
+  // Lineage traversal: returns all upstream dependencies of the entities matched by the parts (combined with AND).
   QUERY_OPERAND_UPSTREAM = 4;
+  // Lineage traversal: returns all downstream dependents of the entities matched by the parts (combined with AND).
   QUERY_OPERAND_DOWNSTREAM = 5;
 }
