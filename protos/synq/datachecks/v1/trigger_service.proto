@@ -96,7 +96,10 @@ message SqlTestResult {
 // Result of a monitor execution.
 message MonitorResult {
   // The monitor ID that was executed.
-  string monitor_id = 1;
+  string monitor_id = 1 [deprecated = true];
+  string monitor_name = 6;
+  string monitor_path = 7;
+  int32 metrics_version = 8;
 
   // The entity that was monitored.
   synq.entities.v1.Identifier entity_id = 2;
