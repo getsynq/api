@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.dataproducts.v1;
 
+import "google/api/annotations.proto";
 import "synq/dataproducts/v1/dataproduct.proto";
 import "synq/dataproducts/v1/dataproduct_definition.proto";
 import "synq/entities/v1/identifier.proto";
@@ -17,6 +18,10 @@ service DataproductsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1"
+      body: "*"
+    };
   }
 
   // Get multiple dataproducts by their identifiers.
@@ -28,6 +33,10 @@ service DataproductsService {
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1/get"
+      body: "*"
     };
   }
 
@@ -41,6 +50,9 @@ service DataproductsService {
         SCOPE_MCP_READ
       ]
     };
+    option (google.api.http) = {
+      get: "/api/dataproducts/v1"
+    };
   }
 
   // Delete a dataproduct by its identifier.
@@ -50,6 +62,10 @@ service DataproductsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1/delete"
+      body: "*"
+    };
   }
 
   // Set the definition for an existing dataproduct.
@@ -57,6 +73,10 @@ service DataproductsService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1/definition"
+      body: "*"
     };
   }
 
@@ -66,6 +86,10 @@ service DataproductsService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1/definition/part"
+      body: "*"
+    };
   }
 
   // Remove definition part from the definition of an existing dataproduct.
@@ -73,6 +97,10 @@ service DataproductsService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v1/definition/part/delete"
+      body: "*"
     };
   }
 }

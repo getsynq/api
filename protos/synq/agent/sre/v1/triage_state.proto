@@ -29,6 +29,27 @@ enum IssueTriageStatus {
   ISSUE_TRIAGE_STATUS_CLOSED = 6;
 }
 
+// TriageFailureCategory classifies why a triage attempt failed.
+// The frontend can use this to render appropriate user-facing messages and actions.
+enum TriageFailureCategory {
+  // Default value, should not be used
+  TRIAGE_FAILURE_CATEGORY_UNSPECIFIED = 0;
+  // Daily AI budget limit reached, triage will resume automatically the next day
+  TRIAGE_FAILURE_CATEGORY_BUDGET_EXCEEDED = 1;
+  // Issue context is too large for the AI agent to process
+  TRIAGE_FAILURE_CATEGORY_CONTEXT_TOO_LARGE = 2;
+  // AI agent couldn't reach a conclusion within the allowed number of steps
+  TRIAGE_FAILURE_CATEGORY_MAX_ITERATIONS = 3;
+  // AI agent produced an invalid or unparseable response
+  TRIAGE_FAILURE_CATEGORY_INVALID_AGENT_OUTPUT = 4;
+  // Temporary connectivity issue to upstream services
+  TRIAGE_FAILURE_CATEGORY_CONNECTIVITY = 5;
+  // Referenced resource (e.g. monitor) no longer exists
+  TRIAGE_FAILURE_CATEGORY_RESOURCE_NOT_FOUND = 6;
+  // An unexpected internal error occurred
+  TRIAGE_FAILURE_CATEGORY_INTERNAL = 7;
+}
+
 // IssueTriageState represents the current state of an issue in the SRE agent's investigation workflow.
 // This state is used to track the progress of automated triage and coordinate between different parts of the system.
 message IssueTriageState {
@@ -38,4 +59,8 @@ message IssueTriageState {
   IssueTriageStatus status = 2;
   // Timestamp indicating when the issue triage state was last updated
   google.protobuf.Timestamp last_updated_at = 3;
+  // Structured failure category for the frontend to render appropriate messages, only set when status is FAILED
+  TriageFailureCategory failure_category = 4;
+  // Raw error details for debugging, only set when status is FAILED. Visible to SYNQ admins.
+  optional string failure_details = 5;
 }
