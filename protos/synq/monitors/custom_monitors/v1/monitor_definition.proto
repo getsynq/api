@@ -114,6 +114,15 @@ message ModeFixedThresholds {
   google.protobuf.DoubleValue max = 2;
 }
 
+// SQL query to use as the data source for a monitor instead of querying a table directly.
+// The SQL is wrapped as a CTE, and the monitor's metric query runs against its output.
+// Column references (time partitioning, segmentation, filter) refer to columns in the SQL output.
+message SqlSource {
+  // The SQL query providing the data source.
+  // Example: "SELECT created_at, country, amount FROM orders WHERE status = 'completed'"
+  string sql = 1 [(buf.validate.field).required = true];
+}
+
 message MonitorDefinition {
   option (buf.validate.message).cel = {
     id: "segmentation_not_supported_for_field_stats_and_table_stats"
@@ -129,6 +138,11 @@ message MonitorDefinition {
     id: "time_partitioning_required_for_non_table_stats"
     message: "time_partitioning is required when table_stats is not set, and must not be set when table_stats is set"
     expression: "has(this.table_stats) != has(this.time_partitioning)"
+  };
+  option (buf.validate.message).cel = {
+    id: "sql_source_not_supported_for_table_stats"
+    message: "sql_source is not supported for table stats monitors"
+    expression: "!has(this.table_stats) || !has(this.sql_source)"
   };
 
   string id = 1 [(buf.validate.field) = {
@@ -169,4 +183,9 @@ message MonitorDefinition {
     ScheduleHourly hourly = 41;
     ScheduleOnDemand on_demand = 42;
   }
+
+  // Optional SQL source. When set, the monitor queries against this SQL (wrapped as a CTE)
+  // instead of the table identified by monitored_id directly.
+  // Column references in time_partitioning, segmentation, and filter refer to columns in the SQL output.
+  optional SqlSource sql_source = 50;
 }
