@@ -4,6 +4,7 @@ package synq.agent.sre.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/agent/sre/v1/llm_service.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -52,6 +53,11 @@ message AgentTaskResponse {
   string message = 2;
   // Error message indicating a problem
   optional string error = 3;
+
+  // Structured result data for tasks that return data
+  oneof result {
+    synq.agent.sre.v1.EvaluateResponse evaluate_response = 10;
+  }
 }
 
 message AgentTask {
@@ -64,6 +70,7 @@ message AgentTask {
     option (buf.validate.oneof).required = true;
     synq.agent.sre.v1.TriageTask triage = 10;
     synq.agent.sre.v1.SuggestTestsTask suggest_tests = 11;
+    synq.agent.sre.v1.EvaluateTask evaluate = 12;
   }
 }
 
@@ -73,6 +80,12 @@ message TriageTask {
 
 message SuggestTestsTask {
   repeated synq.entities.v1.Identifier entity_ids = 1;
+}
+
+// Task to evaluate an LLM request on the agent side (for self-hosted agents).
+message EvaluateTask {
+  // The evaluate request to be processed by the agent's local LLM.
+  synq.agent.sre.v1.EvaluateRequest request = 1;
 }
 
 message GetConfigRequest {}
