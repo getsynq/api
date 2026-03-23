@@ -24,7 +24,10 @@ service LineageService {
         SCOPE_MCP_READ
       ]
     };
-    option (google.api.http) = {get: "/api/lineage/v1"};
+    option (google.api.http) = {
+      post: "/api/lineage/v1"
+      body: "*"
+    };
   }
 }
 

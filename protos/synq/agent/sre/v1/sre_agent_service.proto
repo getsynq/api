@@ -66,6 +66,9 @@ message AgentTask {
     string: {uuid: true}
   }];
   google.protobuf.Timestamp created_at = 2;
+  // Deadline after which the task should not be processed.
+  // If set, the agent should skip or abort tasks past this time.
+  optional google.protobuf.Timestamp deadline_at = 3;
   oneof task {
     option (buf.validate.oneof).required = true;
     synq.agent.sre.v1.TriageTask triage = 10;
