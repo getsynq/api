@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.queries.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/queries/v1/query.proto";
 import "synq/v1/scope_authorization.proto";
@@ -24,9 +25,17 @@ service NLQueryService {
 }
 
 message GenerateQueryRequest {
-  string description = 1;
+  string description = 1 [(buf.validate.field).string.min_len = 1];
 }
 
 message GenerateQueryResponse {
-  Query query = 1;
+  // The public Query proto. Absent when unsupported.
+  optional Query query = 1;
+
+  // The generated ResolverQL query string. Empty when unsupported.
+  optional string resolver_ql = 2;
+
+  // When the LLM determines the request cannot be expressed as a query,
+  // this field contains the reason(s). The other fields will be empty.
+  optional string unsupported_reason = 3;
 }

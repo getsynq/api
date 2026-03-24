@@ -64,17 +64,57 @@ message AlertSettings {
     option (buf.validate.oneof).required = true;
 
     // Alert triggered by entity failures (e.g., table failures, test failures).
-    EntityFailureAlertSettings entity_failure = 1;
+    // Deprecated: use issue instead.
+    EntityFailureAlertSettings entity_failure = 1 [deprecated = true];
     // Alert triggered by schema changes.
     SchemaChangeAlertSettings schema_change = 2;
     // Alert triggered for issue lifecycle events (e.g., issue created, updated, closed).
-    IssueLifecycleAlertSettings issue_lifecycle = 3;
+    // Deprecated: use issue instead.
+    IssueLifecycleAlertSettings issue_lifecycle = 3 [deprecated = true];
+    // Unified issue alert settings (replaces entity_failure and issue_lifecycle).
+    IssueAlertSettings issue = 4;
+  }
+}
+
+// IssueAlertSettings is the unified alert settings type for issue-based alerts.
+// It replaces both EntityFailureAlertSettings and IssueLifecycleAlertSettings.
+message IssueAlertSettings {
+  // The severity levels that should trigger this alert.
+  repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Whether to notify upstream dependencies when this alert triggers.
+  bool notify_upstream = 2;
+
+  // Whether to allow SQL test audit links in alert notifications.
+  bool allow_sql_test_audit_link = 3;
+
+  // Strategy for handling ongoing/repeated alerts.
+  OngoingAlertsStrategy ongoing = 4 [(buf.validate.field).required = true];
+
+  // Strategy for grouping issues in alert notifications.
+  IssueGroupingStrategy grouping = 5;
+}
+
+// IssueGroupingStrategy controls how issues are grouped for alerting purposes.
+message IssueGroupingStrategy {
+  // NoGrouping - each issue triggers a separate alert.
+  message NoGrouping {}
+  // SystemDetected - the system automatically groups related issues.
+  message SystemDetected {}
+
+  // The grouping strategy to use. Exactly one must be specified.
+  oneof strategy {
+    option (buf.validate.oneof).required = true;
+
+    NoGrouping no_grouping = 1;
+    SystemDetected system_detected = 2;
   }
 }
 
 // EntityFailureAlertSettings configures alerts for entity failures.
-// This includes failures of tables, tests, and other data entities.
+// Deprecated: Use IssueAlertSettings instead.
 message EntityFailureAlertSettings {
+  option deprecated = true;
   // Severity levels that define the criticality of failures.
   enum Severity {
     SEVERITY_UNSPECIFIED = 0; // Invalid/unspecified severity
@@ -103,8 +143,9 @@ message SchemaChangeAlertSettings {
 }
 
 // IssueLifecycleAlertSettings configures alerts for issue lifecycle events.
-// This alert triggers on events such as issue creation, updates, and closures.
+// Deprecated: Use IssueAlertSettings instead.
 message IssueLifecycleAlertSettings {
+  option deprecated = true;
   // The severity levels that should trigger this alert.
   repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
 }
