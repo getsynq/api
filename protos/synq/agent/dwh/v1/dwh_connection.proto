@@ -33,5 +33,8 @@ message Connection {
     synq.agent.dwh.v1.RedshiftConf redshift = 55;
     synq.agent.dwh.v1.SnowflakeConf snowflake = 56;
     synq.agent.dwh.v1.TrinoConf trino = 57;
+    synq.agent.dwh.v1.MSSQLConf mssql = 58;
+    synq.agent.dwh.v1.OracleConf oracle = 59;
+    synq.agent.dwh.v1.DuckDBConf duckdb = 60;
   }
 }

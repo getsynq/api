@@ -30,11 +30,10 @@ message ClickhouseConf {
     required: true
     string: {min_len: 1}
   }];
-  // Port number
+  // Port number (default: 9000 for native protocol)
   int32 port = 2 [(buf.validate.field) = {
-    required: true
     int32: {
-      gt: 0
+      gte: 0
       lte: 65535
     }
   }];
@@ -76,11 +75,10 @@ message MySQLConf {
     required: true
     string: {min_len: 1}
   }];
-  // Port number
+  // Port number (default: 3306)
   int32 port = 2 [(buf.validate.field) = {
-    required: true
     int32: {
-      gt: 0
+      gte: 0
       lte: 65535
     }
   }];
@@ -103,10 +101,10 @@ message PostgresConf {
     required: true
     string: {min_len: 1}
   }];
-  // Port number
+  // Port number (default: 5432)
   int32 port = 2 [(buf.validate.field) = {
     int32: {
-      gt: 0
+      gte: 0
       lte: 65535
     }
   }];
@@ -127,11 +125,10 @@ message RedshiftConf {
     required: true
     string: {min_len: 1}
   }];
-  // Port number
+  // Port number (default: 5439)
   int32 port = 2 [(buf.validate.field) = {
-    required: true
     int32: {
-      gt: 0
+      gte: 0
       lte: 65535
     }
   }];
@@ -217,4 +214,129 @@ message TrinoConf {
   bool no_materialized_views = 9;
   // Fetch Trino table comments from system.metadata.table_comments
   bool fetch_table_comments = 10;
+}
+
+// Microsoft SQL Server / Azure SQL Database specific configuration.
+// SQL Server is database-scoped — each connection targets a single database.
+//
+// Authentication methods (in priority order):
+//   1. access_token: pre-acquired Azure AD OAuth token
+//   2. fed_auth: Azure AD federated authentication (with optional username/password)
+//   3. username + password: standard SQL Server Authentication
+message MSSQLConf {
+  option (buf.validate.message).cel = {
+    id: "mssql_auth"
+    message: "Provide access_token, fed_auth method, or both username and password"
+    expression: "this.access_token != '' || this.fed_auth != '' || (this.username != '' && this.password != '')"
+  };
+
+  // Host address or IP.
+  // For Azure SQL: e.g. "yourserver.database.windows.net"
+  string host = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Port number (default: 1433)
+  int32 port = 2 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 65535
+    }
+  }];
+  // Database name to connect to
+  string database = 3 [(buf.validate.field) = {required: true}];
+
+  // Username for SQL Server Authentication or Azure AD.
+  // For Azure AD Service Principal, this is the Application (Client) ID.
+  // Leave empty when using access_token or Azure AD Managed Identity.
+  string username = 4;
+  // Password for SQL Server Authentication or Azure AD client secret
+  string password = 5;
+
+  // Skip TLS server certificate verification
+  bool trust_cert = 6;
+  // Connection encryption mode: "true" (default), "false", "disable"
+  string encrypt = 7;
+
+  // Azure AD federated authentication method.
+  // When set, the azuread driver is used instead of the standard sqlserver driver.
+  // Values: "ActiveDirectoryDefault", "ActiveDirectoryMSI",
+  // "ActiveDirectoryServicePrincipal", "ActiveDirectoryAzCli"
+  string fed_auth = 8;
+  // Pre-acquired Azure AD OAuth access token.
+  // When set, takes precedence over all other authentication methods.
+  string access_token = 9;
+  // Azure AD Application (Client) ID.
+  // Used with ActiveDirectoryServicePrincipal and user-assigned MSI.
+  string application_client_id = 10;
+}
+
+// DuckDB / MotherDuck specific configuration.
+// Supports two modes:
+//   1. Local/embedded: set database to a file path (e.g. "/tmp/my.duckdb") or ":memory:"
+//   2. MotherDuck (cloud): set motherduck_account and motherduck_token
+message DuckDBConf {
+  option (buf.validate.message).cel = {
+    id: "duckdb_mode"
+    message: "Provide either database (local mode) or both motherduck_account and motherduck_token (cloud mode)"
+    expression: "(this.database != '' && this.motherduck_account == '' && this.motherduck_token == '') || (this.database == '' && this.motherduck_account != '' && this.motherduck_token != '')"
+  };
+
+  // Local database path (file path or ":memory:"). Mutually exclusive with motherduck_account.
+  string database = 1;
+  // MotherDuck account name. Requires motherduck_token.
+  string motherduck_account = 2;
+  // MotherDuck authentication token. Required when motherduck_account is set.
+  string motherduck_token = 3;
+}
+
+// Oracle Database specific configuration.
+// Oracle connections are scoped to a Pluggable Database (PDB) via the service name.
+//
+// Authentication methods:
+//   1. wallet_path: Oracle Wallet (mTLS) for OCI Autonomous Database
+//   2. username + password: standard Oracle database authentication
+// Both can be combined (wallet for TLS + explicit credentials).
+message OracleConf {
+  option (buf.validate.message).cel = {
+    id: "oracle_auth"
+    message: "Provide wallet_path or both username and password"
+    expression: "this.wallet_path != '' || (this.username != '' && this.password != '')"
+  };
+
+  // Host address or IP.
+  // For OCI: e.g. "adb.eu-frankfurt-1.oraclecloud.com"
+  string host = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Listener port (default: 1521, OCI Autonomous DB with mTLS uses 1522)
+  int32 port = 2 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 65535
+    }
+  }];
+  // Service name (PDB name).
+  // For OCI Autonomous DB: e.g. "mydb_high", "mydb_low", "mydb_tp"
+  string service_name = 3 [(buf.validate.field) = {required: true}];
+
+  // Username for authentication (optional when wallet stores credentials)
+  string username = 4;
+  // Password for authentication (optional when wallet stores credentials)
+  string password = 5;
+
+  // Enable TLS/SSL encryption (TCPS protocol).
+  // Required for OCI Autonomous Database. Auto-enabled when wallet_path is set.
+  bool ssl = 6;
+  // Enable server certificate verification when SSL is enabled
+  bool ssl_verify = 7;
+  // Path to Oracle Wallet directory for mTLS authentication (OCI Autonomous DB).
+  // Contains TLS certificates (cwallet.sso) and optionally stored credentials.
+  string wallet_path = 8;
+
+  // Use Oracle Diagnostics Pack (AWR) for persistent query log history.
+  // When false, query logs come from V$SQL (in-memory, no additional license).
+  // When true, query logs come from DBA_HIST views (requires Diagnostics Pack license).
+  bool use_diagnostics_pack = 9;
 }

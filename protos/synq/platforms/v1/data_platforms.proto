@@ -22,6 +22,8 @@ message DataPlatformIdentifier {
     SqlMeshIdentifier sql_mesh = 10;
     DuckDbIdentifier duckdb = 11;
     TrinoIdentifier trino = 12;
+    MssqlIdentifier mssql = 13;
+    OracleIdentifier oracle = 14;
 
     // SYNQ integration ID maps to the created integration on the SYNQ platform.
     string synq_integration_id = 101;
@@ -97,4 +99,18 @@ message DuckDbIdentifier {
 
 message TrinoIdentifier {
   string coordinator = 1;
+}
+
+message MssqlIdentifier {
+  // SQL Server host
+  string host = 1 [(buf.validate.field).required = true];
+  // Database name
+  string database = 2 [(buf.validate.field).required = true];
+}
+
+message OracleIdentifier {
+  // Oracle host
+  string host = 1 [(buf.validate.field).required = true];
+  // Oracle service name (PDB)
+  string service_name = 2 [(buf.validate.field).required = true];
 }
