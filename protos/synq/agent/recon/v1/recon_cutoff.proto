@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// CutoffConfig defines a dynamic cutoff filter for sync reconciliation.
+// It derives a watermark value from the actual data (e.g., MAX(created_at))
+// to automatically exclude rows that haven't been synced yet.
+//
+// The cutoff is resolved at runtime before comparison queries run:
+//  1. Derive watermark(s) from source and/or target via aggregate queries.
+//  2. Combine them (default: MIN of both sides).
+//  3. Optionally truncate to a time boundary and apply an offset.
+//  4. Apply as WHERE filter to both source and target queries.
+message CutoffConfig {
+  // Per-side watermark derivation config for source.
+  // When not set, derives from target only.
+  optional CutoffSideConfig source = 1;
+
+  // Per-side watermark derivation config for target.
+  // When not set, derives from source only.
+  optional CutoffSideConfig target = 2;
+
+  // How to combine watermarks when both sides are configured.
+  // Default: MIN (use the smaller watermark for safety).
+  // Ignored when only one side has a watermark.
+  CutoffCombine combine = 3;
+
+  // Truncate the combined watermark to a time boundary.
+  // Example: HOUR truncates 08:47:12 to 08:00:00.
+  // Applied after combining, before offset.
+  CutoffTruncate truncate = 4;
+
+  // Time offset applied after truncation.
+  // Negative durations subtract from the cutoff (safety buffer).
+  // Example: "-30m" shifts the cutoff 30 minutes earlier.
+  optional google.protobuf.Duration offset = 5;
+
+  // How to apply the cutoff as a WHERE filter on the source side.
+  // When not set, uses the source derivation column with <= operator.
+  optional CutoffApplyConfig apply_source = 6;
+
+  // How to apply the cutoff as a WHERE filter on the target side.
+  // When not set, uses the target derivation column with <= operator.
+  optional CutoffApplyConfig apply_target = 7;
+}
+
+// CutoffSideConfig configures watermark derivation for one side (source or target).
+message CutoffSideConfig {
+  // Column to derive the watermark from (e.g., "created_at", "synced_at").
+  string column = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Aggregate function to derive the watermark. Default: MAX.
+  CutoffAggregate aggregate = 2;
+}
+
+// CutoffApplyConfig controls how the resolved cutoff value is applied as a WHERE filter.
+message CutoffApplyConfig {
+  // Column to filter on. When not set, uses the derivation column from that side.
+  optional string column = 1;
+
+  // Comparison operator. Default: "<=".
+  optional string operator = 2;
+}
+
+// CutoffCombine defines how to combine watermarks from source and target.
+enum CutoffCombine {
+  // Default: MIN.
+  CUTOFF_COMBINE_UNSPECIFIED = 0;
+
+  // Use the smaller of source and target watermarks (safe default).
+  CUTOFF_COMBINE_MIN = 1;
+
+  // Use the larger of source and target watermarks.
+  CUTOFF_COMBINE_MAX = 2;
+
+  // Use only the source watermark (target must not be configured).
+  CUTOFF_COMBINE_SOURCE = 3;
+
+  // Use only the target watermark (source must not be configured).
+  CUTOFF_COMBINE_TARGET = 4;
+}
+
+// CutoffAggregate defines the aggregate function for watermark derivation.
+enum CutoffAggregate {
+  // Default: MAX.
+  CUTOFF_AGGREGATE_UNSPECIFIED = 0;
+
+  CUTOFF_AGGREGATE_MAX = 1;
+  CUTOFF_AGGREGATE_MIN = 2;
+}
+
+// CutoffTruncate defines time truncation for the cutoff value.
+enum CutoffTruncate {
+  // No truncation (default).
+  CUTOFF_TRUNCATE_UNSPECIFIED = 0;
+
+  CUTOFF_TRUNCATE_HOUR = 1;
+  CUTOFF_TRUNCATE_DAY = 2;
+  CUTOFF_TRUNCATE_WEEK = 3;
+  CUTOFF_TRUNCATE_MONTH = 4;
+  CUTOFF_TRUNCATE_QUARTER = 5;
+  CUTOFF_TRUNCATE_YEAR = 6;
+}

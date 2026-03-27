@@ -14,7 +14,10 @@ service CustomMonitorsService {
   rpc BatchCreateMonitor(BatchCreateMonitorRequest) returns (BatchCreateMonitorResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_CUSTOM_EDIT, SCOPE_MONITORS_CUSTOM_SQL_EDIT]
+      scopes: [
+        SCOPE_MONITORS_CUSTOM_EDIT,
+        SCOPE_MONITORS_CUSTOM_SQL_EDIT
+      ]
     };
     option (google.api.http) = {
       post: "/api/monitors/custom-monitors/v1"
@@ -25,7 +28,10 @@ service CustomMonitorsService {
   rpc BatchUpdateMonitor(BatchUpdateMonitorRequest) returns (BatchUpdateMonitorResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_MONITORS_CUSTOM_EDIT, SCOPE_MONITORS_CUSTOM_SQL_EDIT]
+      scopes: [
+        SCOPE_MONITORS_CUSTOM_EDIT,
+        SCOPE_MONITORS_CUSTOM_SQL_EDIT
+      ]
     };
     option (google.api.http) = {
       put: "/api/monitors/custom-monitors/v1"

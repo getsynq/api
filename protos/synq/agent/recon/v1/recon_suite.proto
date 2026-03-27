@@ -4,6 +4,7 @@ package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/duration.proto";
+import "synq/agent/recon/v1/recon_cutoff.proto";
 import "synq/agent/recon/v1/recon_dataset.proto";
 import "synq/agent/recon/v1/recon_measure.proto";
 
@@ -183,6 +184,11 @@ message Reconcilation {
   // When true, logs setup errors as warnings and continues.
   // When not set, inherits from suite-level ignore_setup_errors.
   optional bool ignore_setup_errors = 19;
+
+  // Dynamic cutoff filter for sync reconciliation.
+  // Derives a watermark from actual data to exclude rows not yet synced.
+  // Applied as WHERE filter to both source and target queries at runtime.
+  optional CutoffConfig cutoff = 20;
 }
 
 // ReconcilationMode defines the comparison strategy for a reconciliation.

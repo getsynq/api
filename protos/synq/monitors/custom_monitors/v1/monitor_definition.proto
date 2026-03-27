@@ -90,6 +90,11 @@ message MonitorFieldStats {
 message MonitorTableStats {
   // Metrics to monitor. If empty, all metrics are monitored.
   repeated synq.monitors.automated_monitors.v1.MetricOption metric_options = 1;
+  // Optional. When set, row count + last loaded time are read via SQL (sql = raw expression; field = column name).
+  oneof freshness_source {
+    string field = 2 [(buf.validate.field).string.min_len = 1];
+    string sql = 3 [(buf.validate.field).string.min_len = 1];
+  }
 }
 
 enum Severity {

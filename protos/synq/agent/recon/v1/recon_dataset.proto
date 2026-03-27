@@ -80,6 +80,10 @@ message TableReference {
   // Schema/dataset name (e.g., "public", "analytics").
   // Maps to: Snowflake schema, BigQuery dataset, Databricks schema.
   optional string schema = 5;
+
+  // Row filter — appended as WHERE clause to the generated SELECT.
+  // Example: "created_at >= '2024-01-01' AND status = 'active'"
+  optional string where = 6;
 }
 
 // ColumnMapping maps a source column name to a target column name.

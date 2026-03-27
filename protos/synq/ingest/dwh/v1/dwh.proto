@@ -90,4 +90,7 @@ message TableConstraint {
   string expression = 7;
   // Whether this constraint or index enforces uniqueness
   bool is_unique = 8;
+  // Whether this constraint is enforced by the database.
+  // nil/unset = unknown, true = enforced, false = not enforced.
+  optional bool is_enforced = 9;
 }

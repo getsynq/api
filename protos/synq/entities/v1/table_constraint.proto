@@ -76,4 +76,7 @@ message TableConstraint {
   string raw_type = 8 [(buf.validate.field) = {
     string: {max_len: 255}
   }];
+  // Whether this constraint is enforced by the database.
+  // nil/unset = unknown, true = enforced, false = not enforced (e.g. Snowflake NORELY, Oracle DISABLED).
+  optional bool is_enforced = 9;
 }
