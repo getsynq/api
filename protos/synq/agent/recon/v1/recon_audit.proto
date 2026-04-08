@@ -207,6 +207,34 @@ message ReconciliationAudit {
 
   // Error message if the reconciliation failed due to an infrastructure error.
   string error = 12;
+
+  // Cutoff resolution details (when cutoff was configured).
+  // Captures the derived watermark values, final cutoff, and WHERE clauses
+  // so the run can be fully understood and reproduced.
+  optional CutoffResult cutoff_result = 13;
+}
+
+// CutoffResult captures the runtime resolution of a cutoff filter.
+// Stored in the audit log to provide full transparency into how the cutoff
+// was derived and applied.
+message CutoffResult {
+  // Watermark value derived from the source dataset.
+  // Empty when cutoff was configured for target-only derivation.
+  string source_watermark = 1;
+
+  // Watermark value derived from the target dataset.
+  // Empty when cutoff was configured for source-only derivation.
+  string target_watermark = 2;
+
+  // Final cutoff value after combining source/target watermarks
+  // and applying truncation and offset transforms.
+  string cutoff_value = 3;
+
+  // WHERE clause applied to the source query.
+  string source_where = 4;
+
+  // WHERE clause applied to the target query.
+  string target_where = 5;
 }
 
 // ReconciliationStatus describes the outcome of a single reconciliation.

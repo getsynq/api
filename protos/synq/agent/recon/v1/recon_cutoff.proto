@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package synq.agent.recon.v1;
 
-import "buf/validate/validate.proto";
 import "google/protobuf/duration.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
@@ -50,15 +49,32 @@ message CutoffConfig {
 }
 
 // CutoffSideConfig configures watermark derivation for one side (source or target).
+//
+// There are two modes:
+//  1. Column + aggregate (default): auto-generates a watermark query from the dataset.
+//     For table-based datasets, queries the table directly (the column does NOT need
+//     to be in the reconciliation column list). For query-based datasets, wraps the
+//     query as a subquery (the column MUST be in the query's SELECT list).
+//  2. Custom query: provide a SQL query that returns a single row with a "watermark" column.
+//     Use this when the auto-generated query doesn't work (e.g., complex joins, custom logic).
+//
+// After resolution at runtime, the `query` field is always populated with the actual SQL
+// that was executed, regardless of which mode was used. This ensures the audit log captures
+// the exact query for reproducibility.
 message CutoffSideConfig {
   // Column to derive the watermark from (e.g., "created_at", "synced_at").
-  string column = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
+  // Required when query is not set.
+  string column = 1;
 
   // Aggregate function to derive the watermark. Default: MAX.
+  // Only used when query is not set.
   CutoffAggregate aggregate = 2;
+
+  // Custom SQL query for watermark derivation.
+  // Must return a single row with a "watermark" column.
+  // When not set, auto-generated from the dataset at runtime.
+  // After resolution, this field is populated with the actual query that was executed.
+  optional string query = 3;
 }
 
 // CutoffApplyConfig controls how the resolved cutoff value is applied as a WHERE filter.
