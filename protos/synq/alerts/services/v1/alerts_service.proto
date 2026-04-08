@@ -90,6 +90,24 @@ service AlertsService {
 
 // CreateRequest creates a new alert configuration.
 message CreateRequest {
+  option (buf.validate.message).cel = {
+    id: "create_request.webhook_incompatible_with_ongoing_alerts"
+    message: "Webhook targets are not compatible with ongoing alert strategies (stream or schedule). Use the disabled ongoing strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || "
+      "((!has(this.settings.issue) || has(this.settings.issue.ongoing.disabled)) && "
+      "(!has(this.settings.entity_failure) || has(this.settings.entity_failure.ongoing.disabled)))"
+  };
+  option (buf.validate.message).cel = {
+    id: "create_request.webhook_incompatible_with_grouped_alerts"
+    message: "Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || "
+      "!has(this.settings.issue) || "
+      "!has(this.settings.issue.grouping) || "
+      "has(this.settings.issue.grouping.no_grouping)"
+  };
+
   // Human-readable name for the alert configuration.
   string name = 1 [(buf.validate.field).string = {
     min_len: 1
@@ -139,6 +157,24 @@ message AlertIdentifier {
 // UpdateRequest updates an existing alert configuration.
 // The config can be identified by either ID or FQN.
 message UpdateRequest {
+  option (buf.validate.message).cel = {
+    id: "update_request.webhook_incompatible_with_ongoing_alerts"
+    message: "Webhook targets are not compatible with ongoing alert strategies (stream or schedule). Use the disabled ongoing strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
+      "((!has(this.settings.issue) || has(this.settings.issue.ongoing.disabled)) && "
+      "(!has(this.settings.entity_failure) || has(this.settings.entity_failure.ongoing.disabled)))"
+  };
+  option (buf.validate.message).cel = {
+    id: "update_request.webhook_incompatible_with_grouped_alerts"
+    message: "Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
+      "!has(this.settings.issue) || "
+      "!has(this.settings.issue.grouping) || "
+      "has(this.settings.issue.grouping.no_grouping)"
+  };
+
   // Identifier for the config to update.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
 
