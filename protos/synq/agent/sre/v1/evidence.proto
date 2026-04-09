@@ -177,16 +177,16 @@ message DataQueryEvidenceV2 {
 
 // DataQueryEvidenceItem represents a single SQL query and its analysis.
 message DataQueryEvidenceItem {
-  // Unique identifier for the query. This ID can be used to retrieve the actual SQL query
-  // from the session store.
-  string query_id = 1 [(buf.validate.field) = {
-    required: true,
-    string: {uuid: true}
-  }];
+  // DEPRECATED: Previously held the SQL query string despite being named query_id.
+  // Use the `sql` field instead. Kept for backward compatibility — readers should
+  // prefer `sql` when present, falling back to `query_id` for older evidence.
+  string query_id = 1 [deprecated = true];
 
   // Analysis specific to this query's results and their implications.
-  // This is the analysis of the results from executing the query identified by query_id.
   string data_analysis = 2 [(buf.validate.field) = {required: true}];
+
+  // The SQL query that was executed.
+  string sql = 3;
 }
 
 // OtherEvidence contains general analysis that doesn't fit into other specialized evidence types.

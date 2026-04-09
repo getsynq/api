@@ -60,6 +60,11 @@ message SqlTest {
   optional string config_id = 11;
 
   synq.v1.Source source = 12;
+
+  // IANA timezone name (e.g., "Europe/Prague", "America/New_York").
+  // Used to interpret the recurrence_rule in the given timezone.
+  // If empty, defaults to UTC.
+  string timezone = 13;
 }
 
 enum Severity {
