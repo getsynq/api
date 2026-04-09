@@ -179,7 +179,10 @@ message DataQueryEvidenceV2 {
 message DataQueryEvidenceItem {
   // Unique identifier for the query. This ID can be used to retrieve the actual SQL query
   // from the session store.
-  string query_id = 1 [(buf.validate.field) = {required: true}];
+  string query_id = 1 [(buf.validate.field) = {
+    required: true,
+    string: {uuid: true}
+  }];
 
   // Analysis specific to this query's results and their implications.
   // This is the analysis of the results from executing the query identified by query_id.
