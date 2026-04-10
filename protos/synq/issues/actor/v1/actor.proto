@@ -16,6 +16,15 @@ message Actor {
     EmailUser email = 3;
     PagerdutyUser pagerduty = 4;
   }
+
+  enum Via {
+    VIA_UNSPECIFIED = 0;  // Unknown / not set
+    VIA_API = 1;          // Public API
+    VIA_MCP = 2;          // Official MCP server
+    VIA_SLACK = 3;        // Slack bot integration
+    VIA_PAGERDUTY = 4;    // PagerDuty webhook
+  }
+  Via via = 5;
 }
 
 message SlackUser {
