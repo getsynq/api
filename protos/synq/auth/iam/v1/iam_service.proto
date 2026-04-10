@@ -27,4 +27,8 @@ message IamResponse {
   optional string integration_id = 4;
   // Identifier of the provided token
   string subject = 5;
+  // SYNQ user ID associated with the token, present for user-level credentials
+  optional string synq_user_id = 6;
+  // Indicates the client type through which the request was made
+  optional string client_type = 7;
 }
