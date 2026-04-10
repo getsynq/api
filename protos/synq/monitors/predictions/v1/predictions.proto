@@ -1,0 +1,61 @@
+syntax = "proto3";
+package synq.monitors.predictions.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/getsynq/api/monitors/predictions/v1";
+
+// Single prediction data point from the anomaly detection model.
+message MonitorPrediction {
+  // Monitored field.
+  string field = 1;
+
+  // Segment.
+  optional string segment = 2;
+
+  // Metric identifier.
+  string metric_id = 3;
+
+  // Observed value.
+  double value = 4;
+
+  // Model's expected value.
+  double expected = 5;
+
+  // Prediction standard deviation.
+  optional double stddev = 6;
+
+  // Confidence band upper bound.
+  optional google.protobuf.DoubleValue upper_bound = 7;
+
+  // Confidence band lower bound.
+  optional google.protobuf.DoubleValue lower_bound = 8;
+
+  // Anomaly pattern (e.g., "spike", "drop").
+  optional string pattern = 9;
+
+  // When the prediction was scheduled.
+  google.protobuf.Timestamp scheduled_at = 10;
+
+  // Whether a user has marked this prediction as expected behavior.
+  bool is_corrected = 11;
+}
+
+// Single observation of table-level metrics collected from the data warehouse.
+message EntityMetricDataPoint {
+  // Entity synq_path.
+  string synq_path = 1;
+
+  // Row count.
+  optional google.protobuf.Int64Value num_rows = 2;
+
+  // Last loaded time as reported by the data warehouse.
+  optional google.protobuf.Timestamp last_loaded_at = 3;
+
+  // When the metric was scheduled for collection.
+  google.protobuf.Timestamp scheduled_at = 4;
+
+  // Data warehouse snapshot time.
+  optional google.protobuf.Timestamp snapshotted_at = 5;
+}

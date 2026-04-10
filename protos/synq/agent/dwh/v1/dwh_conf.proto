@@ -22,6 +22,11 @@ message BigQueryConf {
   string service_account_key_file = 3 [(buf.validate.field) = {}];
   // Region for BigQuery resources
   string region = 4 [(buf.validate.field) = {required: true}];
+  // Explicit list of dataset names to scrape (e.g., ['analytics', 'mart_core']).
+  // When set, only these datasets are queried — the service account does not need
+  // project-level bigquery.datasets.list permission.
+  // When empty, all visible datasets in the project are discovered automatically.
+  repeated string datasets = 5;
 }
 
 message ClickhouseConf {

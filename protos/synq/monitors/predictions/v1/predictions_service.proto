@@ -1,0 +1,76 @@
+syntax = "proto3";
+package synq.monitors.predictions.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/monitors/predictions/v1/predictions.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/monitors/predictions/v1";
+
+// Access to anomaly detection model predictions and raw metric timeseries.
+service MonitorPredictionsService {
+  // Returns prediction timeseries for a monitor. The monitor must exist
+  // and not be deleted. Defaults to the monitor's current metrics_version.
+  rpc GetMonitorPredictions(GetMonitorPredictionsRequest) returns (GetMonitorPredictionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/monitors/predictions/v1"};
+  }
+
+  // Returns raw metric timeseries for an entity. Identity-aware: resolves
+  // logical assets (e.g., dbt models) to their underlying physical tables.
+  rpc GetEntityMetrics(GetEntityMetricsRequest) returns (GetEntityMetricsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/monitors/predictions/v1/entity-metrics"};
+  }
+}
+
+message GetMonitorPredictionsRequest {
+  // Monitor synq_path.
+  string synq_path = 1;
+
+  // Metrics version. Defaults to the monitor's current version.
+  optional int32 metrics_version = 2;
+
+  // Segment filters. If empty, all segments are returned.
+  repeated string segments = 3;
+
+  // Start of time range. Defaults to 30 days before `to`. Max lookback: 30 days.
+  optional google.protobuf.Timestamp from = 4;
+
+  // End of time range. Defaults to now.
+  optional google.protobuf.Timestamp to = 5;
+}
+
+message GetMonitorPredictionsResponse {
+  repeated MonitorPrediction predictions = 1;
+}
+
+message GetEntityMetricsRequest {
+  // Entity synq_path (table, view, or dbt model).
+  string synq_path = 1;
+
+  // Start of time range. Defaults to 30 days before `to`. Max lookback: 30 days.
+  optional google.protobuf.Timestamp from = 2;
+
+  // End of time range. Defaults to now.
+  optional google.protobuf.Timestamp to = 3;
+}
+
+message GetEntityMetricsResponse {
+  repeated EntityMetricDataPoint data_points = 1;
+}
