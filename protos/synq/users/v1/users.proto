@@ -11,6 +11,11 @@ message User {
   string first_name = 2;
   string last_name = 3;
   string email = 4;
+
+  // Canonical identity strings for this user.
+  // Includes "synq:<user_id>" and all linked aliases (email, slack, msteams).
+  // Can be passed to ListIssues(interacted_by_identities) to filter issues this user interacted with.
+  repeated string identities = 5;
 }
 
 message UserAlias {

@@ -57,6 +57,21 @@ service UsersService {
       scopes: [SCOPE_USER_READ]
     };
   }
+
+  // Returns all canonical identity strings for a user.
+  // If user_id is omitted, returns identities for the currently authenticated user.
+  // These identity strings can be passed to ListIssues(interacted_by_identities)
+  // to filter issues the user has interacted with.
+  // Format: "synq:<user_id>", "email:<email>", "slack:<slack_user_id>", "msteams:<member_id>", etc.
+  rpc GetUserIdentities(GetUserIdentitiesRequest) returns (GetUserIdentitiesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_USER_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
 }
 
 message GetByEmailRequest {
@@ -107,4 +122,15 @@ message BatchGetUsersRequest {
 
 message BatchGetUsersResponse {
   repeated User users = 1;
+}
+
+message GetUserIdentitiesRequest {
+  // User ID to resolve identities for. If omitted, uses the currently authenticated user.
+  optional string user_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetUserIdentitiesResponse {
+  // Canonical identity strings for the user.
+  // Always includes "synq:<user_id>" and all linked aliases.
+  repeated string identities = 1;
 }

@@ -169,6 +169,28 @@ message ListIssuesRequest {
 
   // Filter by issue lifecycle states
   repeated synq.issues.issues.v1.LifecycleState lifecycle_states = 6;
+
+  // Filter issues by users who interacted with them (status change, comment, or activity).
+  optional InteractionFilter interacted_by = 7;
+}
+
+// Filter for matching issues where an actor interacted with them.
+// If none of status_changes/comments/activities is set, all interaction types are matched.
+message InteractionFilter {
+  // Identity strings to match against the actor that performed the interaction.
+  // The caller is responsible for resolving a user to all their known identities
+  // (e.g. via GetUserIdentities or GetUserAliases + actoridentities.FromUserAliases()) before calling this API.
+  // Format: "synq:<user_id>", "email:<email>", "slack:<slack_user_id>", etc.
+  repeated string identities = 1 [(buf.validate.field).repeated.min_items = 1];
+
+  // Match issues where the user set a status (investigating, fixed, expected, etc.).
+  bool status_changes = 2;
+
+  // Match issues where the user posted a comment.
+  bool comments = 3;
+
+  // Match issues where the user has an activity record.
+  bool activities = 4;
 }
 
 message ListIssuesResponse {
