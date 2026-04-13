@@ -79,10 +79,13 @@ message HistoryEvidence {
 // This helps in understanding the fundamental reason behind the problem.
 message RootCauseEvidence {
   // ID of the issue that is believed to be the root cause of the current issue.
-  string issue_id = 1 [(buf.validate.field) = {
-    required: true
-    string: {uuid: true}
-  }];
+  optional string issue_id = 1 [(buf.validate.field) = {string: {uuid: true}}];
+  // IDs of entities that are identified as the root cause.
+  repeated string entity_ids = 2;
+  // IDs of executions that are identified as the root cause.
+  repeated string execution_ids = 3;
+  // Analysis text describing the root cause.
+  string analysis = 4;
 }
 
 // ChangeEvidence documents recent changes that may have contributed to the issue.
