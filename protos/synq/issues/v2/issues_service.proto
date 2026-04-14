@@ -172,6 +172,9 @@ message ListIssuesRequest {
 
   // Filter issues by users who interacted with them (status change, comment, or activity).
   optional InteractionFilter interacted_by = 7;
+
+  // Filter by issue severity. If empty, issues of any severity are returned.
+  repeated synq.issues.issues.v1.Severity severities = 8;
 }
 
 // Filter for matching issues where an actor interacted with them.

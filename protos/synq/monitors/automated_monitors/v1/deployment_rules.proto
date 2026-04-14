@@ -76,11 +76,30 @@ message MonitorSettingsChange {
   AutomatedMonitorSettings new_settings = 3;
 }
 
+message CustomMonitorSettingsChange {
+  string monitored_asset_path = 1;
+  AutomatedMonitorSettings original_settings = 2;
+  AutomatedMonitorSettings new_settings = 3;
+  optional string resolved_freshness_field = 4;
+}
+
+message SkippedAsset {
+  string asset_path = 1;
+  string reason = 2;
+}
+
 message MonitorsDeploymentOverview {
   repeated string monitors_to_create_for = 1;
   repeated string monitors_to_delete_for = 2;
   repeated string active_monitors_for = 3;
   repeated MonitorSettingsChange monitor_settings_changes = 4;
+
+  repeated string custom_monitors_to_create_for = 5;
+  repeated string custom_monitors_to_delete_for = 6;
+  repeated string active_custom_monitors_for = 7;
+  repeated CustomMonitorSettingsChange custom_monitor_settings_changes = 8;
+
+  repeated SkippedAsset skipped_assets = 9;
 }
 
 message QueryConfig {
