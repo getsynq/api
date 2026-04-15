@@ -147,6 +147,18 @@ service IncidentsService {
       scopes: [SCOPE_INCIDENTS_EDIT]
     };
   }
+
+  // Post a comment on an incident.
+  rpc PostComment(PostCommentRequest) returns (PostCommentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/incidents/v1/{incident_id}/comment"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INCIDENTS_EDIT]
+    };
+  }
 }
 
 //
@@ -511,3 +523,33 @@ message AssignIncidentOwnerRequest {
 }
 
 message AssignIncidentOwnerResponse {}
+
+message PostCommentRequest {
+  // ID of the incident to post a comment on.
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor posting the comment.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Comment to post.
+  string comment = 3 [(buf.validate.field) = {required: true}];
+
+  // Time at which the comment was posted. Defaults to the current time when
+  // not provided.
+  optional google.protobuf.Timestamp at = 4 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+  }];
+}
+
+message PostCommentResponse {
+  string comment_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+}

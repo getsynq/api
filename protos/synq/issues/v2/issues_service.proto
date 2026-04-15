@@ -90,6 +90,20 @@ service IssuesService {
     };
   }
 
+  // Clear the triage status of an issue, returning it to an untriaged state.
+  // Reverses a previous MarkInvestigating / MarkFixed / MarkExpected /
+  // MarkNoActionNeeded so the issue shows up again in open/untriaged views.
+  rpc ClearStatus(ClearStatusRequest) returns (ClearStatusResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      patch: "/api/issues/v2/{issue_id}/clear-status"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ISSUES_EDIT]
+    };
+  }
+
   // Post a comment on an issue.
   rpc PostComment(PostCommentRequest) returns (PostCommentResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -307,6 +321,28 @@ message MarkNoActionNeededRequest {
 }
 
 message MarkNoActionNeededResponse {}
+
+message ClearStatusRequest {
+  // ID of the issue whose status should be cleared.
+  string issue_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor clearing the status.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+
+  // Time at which the status was cleared. Defaults to the current time when
+  // not provided.
+  optional google.protobuf.Timestamp time = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+  }];
+}
+
+message ClearStatusResponse {}
 
 message PostCommentRequest {
   // ID of the issue to post a comment on.
