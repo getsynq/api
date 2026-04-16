@@ -37,6 +37,26 @@ service MonitorPredictionsService {
     };
     option (google.api.http) = {get: "/api/monitors/predictions/v1/entity-metrics"};
   }
+
+  // Returns the most recent observed table-stats sample (row count, freshness) for each
+  // requested entity. Identity-aware: resolves logical assets to their underlying physical
+  // tables. Paths with no recent sample are omitted from the response rather than returned
+  // with empty values — callers should treat a missing entry as "no data". Lookback matches
+  // GetEntityMetrics (30 days).
+  rpc BatchGetLatestEntityMetrics(BatchGetLatestEntityMetricsRequest) returns (BatchGetLatestEntityMetricsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/predictions/v1/entity-metrics:batchLatest"
+      body: "*"
+    };
+  }
 }
 
 message GetMonitorPredictionsRequest {
@@ -73,4 +93,15 @@ message GetEntityMetricsRequest {
 
 message GetEntityMetricsResponse {
   repeated EntityMetricDataPoint data_points = 1;
+}
+
+message BatchGetLatestEntityMetricsRequest {
+  // Entity synq_paths to look up. Duplicates are allowed and de-duplicated server-side.
+  repeated string synq_paths = 1;
+}
+
+message BatchGetLatestEntityMetricsResponse {
+  // Latest observed data point keyed by the requested synq_path. Entities with no recent
+  // sample are omitted — callers should treat a missing key as "no metrics available".
+  map<string, EntityMetricDataPoint> latest_by_synq_path = 1;
 }
