@@ -21,19 +21,19 @@ message EntityChange {
   // Identifier of the entity on which the change was detected when available.
   Identifier entity_id = 1 [(buf.validate.field) = {required: true}];
 
-  // SYNQ path representing entity on which the change was detected when available,
+  // Coalesce Quality path representing entity on which the change was detected when available,
   optional string entity_synq_path = 5;
 
   // Identifiers of entities directly affected by this change.
   repeated Identifier affected_entities = 4;
 
-  // SYNQ paths of entities directly affected by this change.
+  // Coalesce Quality paths of entities directly affected by this change.
   repeated string affected_entities_synq_paths = 6;
 
   // Internal identifier of the change event.
   string change_id = 2 [(buf.validate.field) = {required: true}];
 
-  // Timestamp when the change was detected by SYNQ.
+  // Timestamp when the change was detected by Coalesce Quality.
   google.protobuf.Timestamp change_detected_at = 3 [(buf.validate.field) = {required: true}];
 
   oneof change_type {

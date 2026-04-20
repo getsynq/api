@@ -10,8 +10,8 @@ import "synq/v1/scope_authorization.proto";
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
 // RelationshipsService allow management of relationships between entities. Relationships can
-// be created, updated, and deleted between 2 custom entities, or between a custom entity and Synq native entity.enum
-// There is no option to create relationships between 2 Synq native entities (dbt model, BI dashboard, etc.).
+// be created, updated, and deleted between 2 custom entities, or between a custom entity and Coalesce Quality native entity.enum
+// There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
 service RelationshipsService {
   // Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
   rpc UpsertRelationships(UpsertRelationshipsRequest) returns (UpsertRelationshipsResponse) {

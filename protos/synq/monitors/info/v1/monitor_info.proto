@@ -12,7 +12,7 @@ message MonitorInfo {
   synq.entities.v1.MonitorIdentifier id = 1 [deprecated = true];
   // Identifier of the monitor
   synq.entities.v1.Identifier monitor_id = 8;
-  // SYNQ Path to the entity.
+  // Coalesce Quality Path to the entity.
   string monitor_synq_path = 9;
   // Name of the monitor
   string name = 2;
@@ -31,7 +31,7 @@ message MonitorInfo {
 message Monitored {
   // Identifier of the monitored entity.
   synq.entities.v1.Identifier id = 1;
-  // SYNQ Path to the monitored entity.
+  // Coalesce Quality Path to the monitored entity.
   string synq_path = 7;
   // Name of the monitored entity
   string name = 2;

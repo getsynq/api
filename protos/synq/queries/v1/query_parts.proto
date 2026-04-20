@@ -24,7 +24,7 @@ message WithNameSearch {
 message WithType {
   message Type {
     oneof entity_type {
-      // Default SYNQ types
+      // Default Coalesce Quality types
       synq.entities.v1.EntityType default = 1;
       // Custom types as defined through synq.entities.custom.v1.TypesService
       int32 custom = 2;

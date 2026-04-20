@@ -38,7 +38,7 @@ message Type {
     }
   }];
 
-  // SYNQ identifier used for CDN purposes, read-only.
+  // Coalesce Quality identifier used for CDN purposes, read-only.
   string svg_icon_id = 5;
 
   // Timestamp when the custom entity type was created.

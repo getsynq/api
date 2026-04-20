@@ -14,7 +14,7 @@ message Annotation {
     required: true
     string: {
       min_len: 1
-      max_len: 100
+      max_len: 50
     }
   }];
 
@@ -26,7 +26,7 @@ message Annotation {
       items: {
         string: {
           min_len: 1
-          max_len: 100
+          max_len: 50
         }
       }
     }

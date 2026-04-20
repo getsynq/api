@@ -11,7 +11,7 @@ option go_package = "github.com/getsynq/api/ingest/dwh/v1";
 
 // SqlObfuscationMode represents the level of SQL obfuscation applied to query logs.
 // This is critical for on-premise deployments where customers want to prevent
-// sensitive data in SQL queries from being sent to SYNQ backend.
+// sensitive data in SQL queries from being sent to Coalesce Quality backend.
 enum SqlObfuscationMode {
   // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
   // No obfuscation was applied

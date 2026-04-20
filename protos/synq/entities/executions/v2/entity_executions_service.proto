@@ -115,21 +115,21 @@ message EntityExecution {
   // These are the main entities this execution ran on or modified.
   repeated synq.entities.v1.Identifier entities = 3;
 
-  // SYNQ paths of primary entities affected by this execution.
+  // Coalesce Quality paths of primary entities affected by this execution.
   repeated string entities_synq_paths = 15;
 
   // Target entities referenced by this execution.
   // These are secondary entities that were targets of the execution.
   repeated synq.entities.v1.Identifier targets = 4;
 
-  // SYNQ paths of target entities referenced by this execution.
+  // Coalesce Quality paths of target entities referenced by this execution.
   repeated string targets_synq_paths = 16;
 
   // Additional entity references.
   // These are other entities referenced during the execution.
   repeated synq.entities.v1.Identifier extra_references = 5;
 
-  // SYNQ paths of additional entity references.
+  // Coalesce Quality paths of additional entity references.
   repeated string extra_references_synq_paths = 17;
 
   // Type of execution (e.g., query, job, test run).
@@ -145,7 +145,7 @@ message EntityExecution {
   // This typically contains error messages, warnings, or success information.
   string message = 9;
 
-  // When the execution record was created in SYNQ.
+  // When the execution record was created in Coalesce Quality.
   google.protobuf.Timestamp created_at = 10;
 
   // When the execution actually started.

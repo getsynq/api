@@ -17,7 +17,7 @@ option go_package = "github.com/getsynq/api/entities/changes/v1";
 // This unified service returns ALL change types for an entity:
 // - Git commits: Changes to code files (dbt models, SQL files) tracked in version control
 // - Schema changes: Database schema modifications (columns added/removed/changed)
-// - SQL definition changes: View/materialized view definition updates detected by SYNQ
+// - SQL definition changes: View/materialized view definition updates detected by Coalesce Quality
 //
 // Changes are returned with structured metadata including:
 // - For git commits: structured statistics (directories, file types, top changes)
@@ -27,7 +27,7 @@ option go_package = "github.com/getsynq/api/entities/changes/v1";
 // Use cases:
 // - "What changed in the last week for table X?" → Returns git commits, schema changes, SQL changes
 // - "Show me all commits affecting this dbt model" → Returns git commits with lineage context
-// - "What schema changes happened to this table?" → Returns schema changes detected by SYNQ
+// - "What schema changes happened to this table?" → Returns schema changes detected by Coalesce Quality
 service ChangesService {
   // Retrieves the complete change history for specified entities.
   // Returns all change types (git commits, schema changes, SQL changes) in chronological order (newest first).

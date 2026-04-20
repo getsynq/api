@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 
 // custom.EntitiesService is a service for managing custom entities. Entities can represent
 // various data platform concepts such as services, consumers, applications or data pipelines
-// that are not natively available in Synq.
+// that are not natively available in Coalesce Quality.
 //
 // Entities are identified by a unique identifier and can be created, updated, read and deleted.
 //

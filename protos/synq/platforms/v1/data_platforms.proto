@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/platforms/v1";
 
-// DataPlatformIdentifier is a unique reference to a data platform integrated with Synq.
+// DataPlatformIdentifier is a unique reference to a data platform integrated with Coalesce Quality.
 message DataPlatformIdentifier {
   oneof id {
     option (buf.validate.oneof).required = true;
@@ -25,7 +25,7 @@ message DataPlatformIdentifier {
     MssqlIdentifier mssql = 13;
     OracleIdentifier oracle = 14;
 
-    // SYNQ integration ID maps to the created integration on the SYNQ platform.
+    // Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
     string synq_integration_id = 101;
   }
 }

@@ -41,6 +41,6 @@ message OrchestrationGroup {
   // - For an Airflow task: [Airflow task]
   repeated synq.entities.v1.Identifier entities = 1;
 
-  // SYNQ paths of the entities for easier reference, in the same order as entities
+  // Coalesce Quality paths of the entities for easier reference, in the same order as entities
   repeated string synq_paths = 2;
 }

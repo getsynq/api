@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/agent/sre/v1";
 // missing capabilities. This is a last-resort service — it should only be used when no
 // existing tool can fulfill the user's request.
 service FeatureRequestService {
-  // SubmitFeatureRequest submits a feature request to the SYNQ product team.
+  // SubmitFeatureRequest submits a feature request to the Coalesce Quality product team.
   // This method should only be called as a last resort when the user's request cannot be
   // fulfilled by any existing tool. It logs the request for product team review.
   rpc SubmitFeatureRequest(SubmitFeatureRequestRequest) returns (SubmitFeatureRequestResponse) {

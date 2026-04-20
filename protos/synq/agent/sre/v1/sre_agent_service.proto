@@ -104,7 +104,7 @@ message DwhConnection {
   repeated string databases = 4;
   // Extra parameters present on the connection
   map<string, string> parameters = 5;
-  // Indicates that SYNQ managed agent can access this connection
+  // Indicates that Coalesce Quality managed agent can access this connection
   bool agent_access_enabled = 6;
 }
 
@@ -117,7 +117,7 @@ message GetConfigResponse {
   string tester_system_prompt = 3;
   // Extra instructions describing workspace to which agent is connected.
   string workspace_system_prompt = 4;
-  // Description of all DWH connections/integrations configured in SYNQ. Will indicate to the agent
+  // Description of all DWH connections/integrations configured in Coalesce Quality. Will indicate to the agent
   // that it can't access all the data sources if agent has no connections enabled.
   repeated DwhConnection synq_dwh_connections = 5;
   // Extra instructions describing how issues should be grouped

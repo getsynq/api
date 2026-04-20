@@ -11,7 +11,7 @@ option go_package = "github.com/getsynq/api/agent/sre/v1";
 
 // Config represents the main configuration for the SRE agent
 message Config {
-  // SYNQ platform configuration
+  // Coalesce Quality platform configuration
   synq.agent.v1.SYNQ synq = 2;
 
   // Map of connection configurations

@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/agent/v1";
 
-// SYNQ contains authentication and connection details for the SYNQ platform
+// SYNQ contains authentication and connection details for the Coalesce Quality platform
 message SYNQ {
   // Client ID for OAuth authentication
   string client_id = 1 [(buf.validate.field) = {
@@ -20,12 +20,12 @@ message SYNQ {
     string: {}
   }];
 
-  // SYNQ API agent endpoint (host:port)
+  // Coalesce Quality API agent endpoint (host:port)
   string endpoint = 3 [(buf.validate.field) = {
     required: true
     string: {host_and_port: true}
   }];
-  // SYNQ API ingest endpoint (host:port)
+  // Coalesce Quality API ingest endpoint (host:port)
   string ingest_endpoint = 4 [(buf.validate.field) = {
     required: true
     string: {host_and_port: true}

@@ -8,7 +8,7 @@ package synq.entities.v1;
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
-// CodeType enum represents different types of code that can be processed in the SYNQ platform
+// CodeType enum represents different types of code that can be processed in the Coalesce Quality platform
 enum CodeType {
   CODE_TYPE_UNSPECIFIED = 0;
   // SQL code (e.g., SELECT, INSERT, UPDATE statements)

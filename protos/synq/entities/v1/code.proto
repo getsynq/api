@@ -11,7 +11,7 @@ import "synq/entities/v1/sql_dialect.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
-// Code represents a piece of code or configuration that can be processed by SYNQ.
+// Code represents a piece of code or configuration that can be processed by Coalesce Quality.
 // This message is used to store and manage various types of code artifacts, such as SQL queries,
 // Python scripts, dbt models, and other code configurations. Each code piece is associated with
 // a specific entity that defines or owns it, and includes metadata about its type and state.
@@ -20,7 +20,7 @@ message Code {
   // SQLMesh model, or any other entity type that contains code.
   synq.entities.v1.Identifier definer_identifier = 1 [(buf.validate.field) = {required: true}];
 
-  // Synq Path to the entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  // Coalesce Quality Path to the entity. This is a unique path that can be used to access the entity in the Coalesce Quality UI.
   string definer_synq_path = 7;
 
   // Information about entity type of the entity defining code
@@ -30,11 +30,11 @@ message Code {
   // This helps track the evolution of code over time.
   google.protobuf.Timestamp state_at = 2 [(buf.validate.field) = {required: true}];
 
-  // Type of code being stored, which determines how SYNQ will process and analyze it.
+  // Type of code being stored, which determines how Coalesce Quality will process and analyze it.
   // This can be SQL, Python, dbt, SQLMesh, or other supported code types.
   synq.entities.v1.CodeType code_type = 3;
 
-  // SQL dialect used in the code, if the code_type is SQL. This helps SYNQ understand
+  // SQL dialect used in the code, if the code_type is SQL. This helps Coalesce Quality understand
   // the specific SQL syntax and features being used.
   optional synq.entities.v1.SqlDialect sql_dialect = 4;
 

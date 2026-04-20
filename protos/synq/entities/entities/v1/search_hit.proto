@@ -14,7 +14,7 @@ message SearchHit {
   string description = 3;
   // Identifier of the entity
   optional synq.entities.v1.Identifier entity_id = 4;
-  // SYNQ path, as used in frontend
+  // Coalesce Quality path, as used in frontend
   optional string synq_path = 5;
   // Information about entity type
   optional synq.entities.v1.EntityType entity_type = 6;

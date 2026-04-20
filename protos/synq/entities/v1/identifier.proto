@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
-// Identifier is a unique reference to an entity in SYNQ system. Entity identifiers
+// Identifier is a unique reference to an entity in Coalesce Quality system. Entity identifiers
 // are designed to closely mimic identifiers used by data platforms and tools. To construct
 // an identifier, you need to know the kind of the entity and the ids that you would normally
 // use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
@@ -75,7 +75,7 @@ message Identifier {
 //
 
 message DbtCoreNodeIdentifier {
-  // SYNQ integration_id that identifies the dbt Core project
+  // Coalesce Quality integration_id that identifies the dbt Core project
   string integration_id = 1 [
     (buf.validate.field).required = true,
     (buf.validate.field).string.uuid = true
@@ -99,7 +99,7 @@ message DbtCloudNodeIdentifier {
 // SQLMesh
 
 message SqlMeshModelIdentifier {
-  // SYNQ integration_id that identifies the dbt Core project
+  // Coalesce Quality integration_id that identifies the dbt Core project
   string integration_id = 1 [
     (buf.validate.field).required = true,
     (buf.validate.field).string.uuid = true
@@ -110,7 +110,7 @@ message SqlMeshModelIdentifier {
 }
 
 message SqlMeshAuditIdentifier {
-  // SYNQ integration_id that identifies the dbt Core project
+  // Coalesce Quality integration_id that identifies the dbt Core project
   string integration_id = 1 [
     (buf.validate.field).required = true,
     (buf.validate.field).string.uuid = true
@@ -231,7 +231,7 @@ message TrinoTableIdentifier {
 }
 
 message AirflowDagIdentifier {
-  // SYNQ integration_id that identifies the Airflow instance
+  // Coalesce Quality integration_id that identifies the Airflow instance
   string integration_id = 1 [(buf.validate.field).required = true];
 
   // Airflow dag_id that identifies the DAG
@@ -239,7 +239,7 @@ message AirflowDagIdentifier {
 }
 
 message AirflowTaskIdentifier {
-  // SYNQ integration_id that identifies the Airflow instance
+  // Coalesce Quality integration_id that identifies the Airflow instance
   string integration_id = 1 [(buf.validate.field).required = true];
 
   // Airflow dag_id that identifies the DAG
@@ -295,7 +295,7 @@ message MonitorIdentifier {
   // Optional monitor segmentation identifier
   optional string segment = 3;
 
-  // SYNQ integration_id of the monitored identifier
+  // Coalesce Quality integration_id of the monitored identifier
   optional string integration_id = 100 [deprecated = true];
 }
 
@@ -304,6 +304,6 @@ message MonitorIdentifier {
 //
 
 message SynqPathIdentifier {
-  // SYNQ path that identifies the SYNQ entity, needs to be one of supported paths
+  // Coalesce Quality path that identifies the Coalesce Quality entity, needs to be one of supported paths
   string path = 1 [(buf.validate.field).required = true];
 }

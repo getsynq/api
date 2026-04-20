@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/entities/code/v1";
 
 // CodeService is a service for retrieving code associated with entities in the system.
 // It provides functionality to access and manage code artifacts such as SQL queries,
-// Python scripts, dbt models, and other code configurations that are part of SYNQ entities.
+// Python scripts, dbt models, and other code configurations that are part of Coalesce Quality entities.
 service CodeService {
   // ListCode retrieves all code artifacts associated with a specific entity.
   // This includes SQL queries, Python scripts, dbt models, and other code configurations

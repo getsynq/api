@@ -1,17 +1,17 @@
 ---
 title: "Getting Started"
-description: "Getting started with developer API at Synq"
+description: "Getting started with developer API at Coalesce Quality"
 ---
 
 # Overview
 
-The Synq API is available for developers to manage certain functionalities using custom workflows. Synq exposes its API as [gRPC](https://grpc.io/) services. This means that the API are as easy to use as calling functions from your code.
+The Coalesce Quality API is available for developers to manage certain functionalities using custom workflows. Coalesce Quality exposes its API as [gRPC](https://grpc.io/) services. This means that the API are as easy to use as calling functions from your code.
 
 To use the API, you need to do the following.
 
 1. Clone protos from our github repository and generate the client code in the language of your choice.
 
-2. Generate an access token and use it to connect to Synq API.
+2. Generate an access token and use it to connect to Coalesce Quality API.
 
 3. Initialize clients and call functions in your code.
 
@@ -19,7 +19,7 @@ You can find language specific examples [here](https://github.com/getsynq/api/tr
 
 # Client Code
 
-The simplest way to use Synq API is to use the SDKs from our [`buf` repository](https://buf.build/getsynq/api/sdks). Use select the language of your choice and follow the instructions to add the Synq API to your project.
+The simplest way to use Coalesce Quality API is to use the SDKs from our [`buf` repository](https://buf.build/getsynq/api/sdks). Use select the language of your choice and follow the instructions to add the Coalesce Quality API to your project.
 
 ## Generating client code
 
@@ -29,7 +29,7 @@ If you prefer to, the client code can be generated from the protos available at 
 $ git clone git@github.com:getsynq/api.git <synq_api_codebase>
 ```
 
-[gRPC](https://grpc.io/) supports a wide choice of languages and you can find the necessary guides on how to get started in a language of your choice [here](https://grpc.io/docs/languages/). You don't need to understand it all to get started with Synq API. You just need to find the right tools to build the client code in your language of choice.
+[gRPC](https://grpc.io/) supports a wide choice of languages and you can find the necessary guides on how to get started in a language of your choice [here](https://grpc.io/docs/languages/). You don't need to understand it all to get started with Coalesce Quality API. You just need to find the right tools to build the client code in your language of choice.
 
 Additionally, you will need to install [protovalidate](https://github.com/bufbuild/protovalidate) in the language of your choice.
 
@@ -75,9 +75,9 @@ The generated code is added to the `./gen` folder. You can change the location t
 
 # Fetching Access Token
 
-You need a valid access token to communicate with the Synq servers. To generate the access token, you need client credentials.
+You need a valid access token to communicate with the Coalesce Quality servers. To generate the access token, you need client credentials.
 
-You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from the [Synq application](https://app.synq.io/settings/api). The credentials are scoped so make sure to select the one best suited to execute the RPCs that you wish to.
+You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from the [Coalesce Quality application](https://app.synq.io/settings/api). The credentials are scoped so make sure to select the one best suited to execute the RPCs that you wish to.
 
 You can now fetch the token source by making the following `POST` call to our OAuth2 server.
 
@@ -96,11 +96,11 @@ The response will have the following structure.
 }
 ```
 
-The `<access_token>` thus fetched is a valid JWT token which should be passed on to the calls made to Synq API.
+The `<access_token>` thus fetched is a valid JWT token which should be passed on to the calls made to Coalesce Quality API.
 
 # Examples
 
-The language specific examples to use Synq APIs can be found [here](https://docs.synq.io/api-reference/examples).
+The language specific examples to use Coalesce Quality APIs can be found [here](https://docs.synq.io/api-reference/examples).
 
 # Troubleshooting
 

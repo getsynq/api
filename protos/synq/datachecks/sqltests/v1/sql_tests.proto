@@ -11,7 +11,7 @@ import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
 
-// The SqlTest is a SQL test that is executed on a synq entity.
+// The SqlTest is a SQL test that is executed on a Coalesce Quality entity.
 message SqlTest {
   option (buf.validate.message).cel = {
     id: "sql_test_requires_expression_or_suggestion"
@@ -97,7 +97,7 @@ message SqlValue {
 }
 
 message Template {
-  // Read-only path of matched entity. This is a unique path that can be used to access the entity in the Synq's UI.
+  // Read-only path of matched entity. This is a unique path that can be used to access the entity in the Coalesce Quality UI.
   synq.entities.v1.Identifier identifier = 1 [(buf.validate.field).required = true];
   oneof test {
     // Checks if specified columns contain no NULL values (e.g., user_id should never be null)

@@ -34,7 +34,7 @@ message Config {
   // Agent configuration
   Agent agent = 1;
 
-  // SYNQ platform configuration
+  // Coalesce Quality platform configuration
   synq.agent.v1.SYNQ synq = 2;
 
   // Map of connection configurations

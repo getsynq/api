@@ -9,9 +9,9 @@ import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/resolve/v1";
 
-// IdentifierResolveService resolves identifiers to their SYNQ paths and identities.
+// IdentifierResolveService resolves identifiers to their Coalesce Quality paths and identities.
 service IdentifierResolveService {
-  // Resolve multiple identifiers, returning their SYNQ paths and identity groups.
+  // Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups.
   rpc BatchResolveIdentifiers(BatchResolveIdentifiersRequest) returns (BatchResolveIdentifiersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -49,13 +49,13 @@ message ResolvedIdentifier {
   // The original input identifier.
   synq.entities.v1.Identifier id = 1;
 
-  // The SYNQ path for this identifier.
+  // The Coalesce Quality path for this identifier.
   string synq_path = 2;
 
   // All identifiers that are part of the same identity group (including the input identifier).
   repeated synq.entities.v1.Identifier identities = 3;
 
-  // All SYNQ paths in the identity group.
+  // All Coalesce Quality paths in the identity group.
   repeated string identity_synq_paths = 4;
 
   // Whether the entity exists in the system. Only populated when check_existence is true in the request.

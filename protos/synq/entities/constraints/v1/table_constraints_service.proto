@@ -36,7 +36,7 @@ message GetTableConstraintsResponse {
   // May differ from the requested identifier if identity resolution mapped
   // the request to an underlying table (e.g. dbt model → warehouse table).
   synq.entities.v1.Identifier id = 1;
-  // Synq path of the resolved entity.
+  // Coalesce Quality path of the resolved entity.
   string synq_path = 2;
   // Constraints and indexes defined on the table.
   repeated synq.entities.v1.TableConstraint constraints = 3;
