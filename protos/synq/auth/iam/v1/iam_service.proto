@@ -31,4 +31,8 @@ message IamResponse {
   optional string synq_user_id = 6;
   // Indicates the client type through which the request was made
   optional string client_type = 7;
+  // Human-readable name of the authenticated user. Populated only when the
+  // token is tied to a Coalesce Quality user (i.e. `synq_user_id` is set);
+  // empty for workspace-level or third-party tokens.
+  optional string user_name = 8;
 }
