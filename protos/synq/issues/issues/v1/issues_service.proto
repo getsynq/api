@@ -121,19 +121,13 @@ message BatchGetIssuesResponse {
 message ListIssuesRequest {
   // Filter by time range.
   google.protobuf.Timestamp from = 1 [(buf.validate.field) = {
-    timestamp: {
-      lt_now: true
-      gt: {seconds: 1640995200}
-    }
+    timestamp: {gt: {seconds: 1640995200}}
     required: true
   }];
 
   // Filter by time range.
   google.protobuf.Timestamp to = 2 [(buf.validate.field) = {
-    timestamp: {
-      lt_now: true
-      gt: {seconds: 1640995200}
-    }
+    timestamp: {gt: {seconds: 1640995200}}
     required: true
   }];
 

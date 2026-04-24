@@ -74,6 +74,21 @@ enum Severity {
   SEVERITY_INFO = 3;
 }
 
+// Evaluator is a named condition attached to a SqlTest that produces
+// an independent pass/fail signal. A single SqlTest may carry multiple
+// evaluators, each targeting a different concern (nullability, value
+// ranges, row counts, etc.).
+message Evaluator {
+  // Stable identifier for the evaluator, unique within the parent SqlTest.
+  string id = 1 [(buf.validate.field).required = true];
+  // Human friendly name.
+  string name = 2 [(buf.validate.field).required = true];
+  // SQL expression evaluated against the test rows.
+  string sql_expression = 3 [(buf.validate.field).required = true];
+  // Severity routed to alerting when this evaluator fails.
+  Severity severity = 4;
+}
+
 message SqlTestAudit {
   string execution_id = 1;
   int32 rows_count = 2;

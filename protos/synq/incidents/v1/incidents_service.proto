@@ -454,16 +454,10 @@ message ListIncidentsRequest {
   message Time {
     Field field = 1;
     google.protobuf.Timestamp from = 2 [(buf.validate.field) = {
-      timestamp: {
-        lt_now: true
-        gt: {seconds: 1640995200}
-      }
+      timestamp: {gt: {seconds: 1640995200}}
     }];
     google.protobuf.Timestamp to = 3 [(buf.validate.field) = {
-      timestamp: {
-        lt_now: true
-        gt: {seconds: 1640995200}
-      }
+      timestamp: {gt: {seconds: 1640995200}}
     }];
   }
 

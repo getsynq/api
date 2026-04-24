@@ -1,0 +1,367 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_suite.proto";
+import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// SuiteDeploymentService is the platform plane of reconciliation.
+//
+// SuiteConfigService is the developer/authoring sandbox (edit, version, run
+// ad-hoc with your own credentials — preview-only, no Entity, no Run, no
+// Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
+// a frozen snapshot of a suite config, mapped to workspace-level SYNQ
+// integrations, optionally scheduled or triggerable by API.
+//
+// Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
+// first promote. It survives re-promotes, schedule/mapping changes, and
+// pause/resume. Downstream AssetCommand / RunCommand publication keys off
+// deployment_id so Entity identity does not fragment on promote churn.
+service SuiteDeploymentService {
+  // Promote a suite config into production. Freezes a snapshot of the config
+  // and stores the connection → integration mapping. Creates a new deployment
+  // on first call; re-promotes the same suite_id (reusing its deployment_id)
+  // on subsequent calls.
+  rpc PromoteSuite(PromoteSuiteRequest) returns (PromoteSuiteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Unpromote a deployment. Marks it inactive; scheduler and API triggers
+  // stop. Deployment history is preserved; re-promoting the same suite_id
+  // reuses the original deployment_id.
+  rpc UnpromoteSuite(UnpromoteSuiteRequest) returns (UnpromoteSuiteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Change schedule and/or triggerable_by_api on an existing deployment
+  // without re-promoting the config snapshot or touching mappings.
+  rpc UpdateDeploymentSchedule(UpdateDeploymentScheduleRequest) returns (UpdateDeploymentScheduleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Rewire connection → integration mappings on an existing deployment
+  // without re-promoting the config snapshot.
+  rpc UpdateDeploymentMappings(UpdateDeploymentMappingsRequest) returns (UpdateDeploymentMappingsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Pause a deployment. Scheduled and API-triggered runs are suppressed until
+  // `until` is reached, or indefinitely when `until` is absent.
+  rpc PauseDeployment(PauseDeploymentRequest) returns (PauseDeploymentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Resume a paused deployment.
+  rpc ResumeDeployment(ResumeDeploymentRequest) returns (ResumeDeploymentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Fetch a deployment by suite_id or deployment_id.
+  rpc GetSuiteDeployment(GetSuiteDeploymentRequest) returns (GetSuiteDeploymentResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // List deployments for the caller's workspace. Filters support answering
+  // "what is SYNQ running on behalf of this workspace?" and "which
+  // deployments use this SYNQ integration?".
+  rpc ListSuiteDeployments(ListSuiteDeploymentsRequest) returns (ListSuiteDeploymentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // List the append-only history of a deployment (every promote,
+  // re-promote, schedule/mapping change, pause/resume, unpromote).
+  rpc ListSuiteDeploymentHistory(ListSuiteDeploymentHistoryRequest) returns (ListSuiteDeploymentHistoryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+}
+
+// Maps a reconciliation-connection name (as referenced in the suite config)
+// to a concrete SYNQ integration. Used at execution time to resolve DWH
+// credentials — execution runs with platform integration creds, not the
+// promoter's personal creds.
+message ConnectionMapping {
+  // Connection name as it appears in the suite config
+  // (e.g. ReconcilationSuite.reconciliations[].source.connection).
+  string connection_name = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // SYNQ integration ID in this workspace.
+  string integration_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+enum DeploymentAction {
+  DEPLOYMENT_ACTION_UNSPECIFIED = 0;
+  DEPLOYMENT_ACTION_PROMOTED = 1;
+  DEPLOYMENT_ACTION_REPROMOTED = 2;
+  DEPLOYMENT_ACTION_SCHEDULE_CHANGED = 3;
+  DEPLOYMENT_ACTION_MAPPINGS_CHANGED = 4;
+  DEPLOYMENT_ACTION_PAUSED = 5;
+  DEPLOYMENT_ACTION_RESUMED = 6;
+  DEPLOYMENT_ACTION_UNPROMOTED = 7;
+}
+
+// SuiteDeployment is the latest state of a deployment (current row).
+message SuiteDeployment {
+  // Stable platform identity (UUIDv7). Preserved across re-promotes,
+  // pause/resume, and unpromote → re-promote cycles. Downstream
+  // AssetCommand / RunCommand reference this.
+  string deployment_id = 1;
+
+  // Suite this deployment came from.
+  string suite_id = 2;
+  string suite_name = 3;
+  optional string suite_title = 4;
+  optional string suite_description = 5;
+
+  // False after UnpromoteSuite. Scheduler and triggers stop.
+  bool active = 6;
+
+  // When set and in the future, scheduled/triggered runs are suppressed.
+  // An indefinite pause uses a far-future sentinel timestamp.
+  optional google.protobuf.Timestamp paused_until = 7;
+  optional string paused_reason = 8;
+
+  // Frozen snapshot of the suite config at promote time.
+  ReconcilationSuite suite = 9;
+
+  // Mapping used at execution time to resolve DWH credentials.
+  repeated ConnectionMapping connection_mappings = 10;
+
+  // Schedule (if any). Absent = no cron; use triggerable_by_api.
+  optional SuiteSchedule schedule = 11;
+
+  // When true, a (future) TriggerDeployment RPC may execute this deployment.
+  bool triggerable_by_api = 12;
+
+  // Denormalized summaries so listing callers don't need to parse the snapshot.
+  repeated string connection_names = 13;
+  repeated string integration_ids = 14;
+  repeated ReconciliationConfigSummary reconciliation_summaries = 15;
+
+  // Where this deployment's snapshot came from.
+  string source_suite_type = 16;  // "managed" or "adhoc"
+  google.protobuf.Timestamp source_config_state_at = 17;
+
+  // Most recent event timestamp.
+  google.protobuf.Timestamp state_at = 18;
+  DeploymentAction last_action = 19;
+  optional SuiteConfigActor last_actor = 20;
+  optional string last_change_summary = 21;
+}
+
+// SuiteDeploymentHistoryEntry is a single event in the deployment's history.
+message SuiteDeploymentHistoryEntry {
+  string deployment_id = 1;
+  string suite_id = 2;
+  google.protobuf.Timestamp state_at = 3;
+  DeploymentAction action = 4;
+
+  // State of the deployment at the moment of this event.
+  bool active = 5;
+  optional google.protobuf.Timestamp paused_until = 6;
+  optional string paused_reason = 7;
+  optional SuiteSchedule schedule = 8;
+  bool triggerable_by_api = 9;
+  repeated ConnectionMapping connection_mappings = 10;
+
+  // Only filled for PROMOTED / REPROMOTED events (snapshot changes).
+  optional ReconcilationSuite suite = 11;
+  optional google.protobuf.Timestamp source_config_state_at = 12;
+
+  optional SuiteConfigActor actor = 13;
+  optional string change_summary = 14;
+}
+
+// --- Requests / responses ---
+
+message PromoteSuiteRequest {
+  // Suite to promote. For managed suites pass the suite name; for ad-hoc
+  // pass the UUID suite_id.
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Specific version to promote. Absent = latest.
+  optional google.protobuf.Timestamp state_at = 2;
+
+  // Mapping for every connection referenced in the suite config.
+  // Promote fails if any connection is missing.
+  repeated ConnectionMapping connection_mappings = 3 [(buf.validate.field).repeated.min_items = 1];
+
+  // Optional cron/iCal schedule.
+  optional SuiteSchedule schedule = 4;
+
+  // When true, a TriggerDeployment RPC may execute this deployment on demand.
+  bool triggerable_by_api = 5;
+
+  optional string change_summary = 6;
+}
+
+message PromoteSuiteResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UnpromoteSuiteRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  optional string reason = 2;
+}
+
+message UnpromoteSuiteResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UpdateDeploymentScheduleRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Absent = clear the schedule.
+  optional SuiteSchedule schedule = 2;
+  optional bool triggerable_by_api = 3;
+  optional string change_summary = 4;
+}
+
+message UpdateDeploymentScheduleResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UpdateDeploymentMappingsRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  repeated ConnectionMapping connection_mappings = 2 [(buf.validate.field).repeated.min_items = 1];
+  optional string change_summary = 3;
+}
+
+message UpdateDeploymentMappingsResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message PauseDeploymentRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Absent = pause indefinitely.
+  optional google.protobuf.Timestamp until = 2;
+  optional string reason = 3;
+}
+
+message PauseDeploymentResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message ResumeDeploymentRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message ResumeDeploymentResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message GetSuiteDeploymentRequest {
+  // Exactly one of the two must be set.
+  oneof lookup {
+    string suite_id = 1;
+    string deployment_id = 2;
+  }
+}
+
+message GetSuiteDeploymentResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message ListSuiteDeploymentsRequest {
+  optional synq.v1.Pagination pagination = 1;
+
+  // Return only deployments wired to this SYNQ integration (match against
+  // the deployment's connection_mappings).
+  optional string integration_id = 2;
+
+  // Filter by triggerable_by_api flag.
+  optional bool triggerable_by_api = 3;
+
+  // When true (default), only active deployments are returned.
+  bool active_only = 4;
+
+  // When false (default), paused deployments are excluded.
+  bool include_paused = 5;
+}
+
+message ListSuiteDeploymentsResponse {
+  repeated SuiteDeployment deployments = 1;
+  synq.v1.PageInfo page_info = 2;
+}
+
+message ListSuiteDeploymentHistoryRequest {
+  oneof lookup {
+    string suite_id = 1;
+    string deployment_id = 2;
+  }
+
+  optional synq.v1.Pagination pagination = 3;
+}
+
+message ListSuiteDeploymentHistoryResponse {
+  repeated SuiteDeploymentHistoryEntry entries = 1;
+  synq.v1.PageInfo page_info = 2;
+}
