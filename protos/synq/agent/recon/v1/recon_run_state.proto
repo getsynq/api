@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "google/protobuf/timestamp.proto";
+import "synq/agent/recon/v1/recon_suite_config.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// ReconciliationRunStatus is the lifecycle state of a single reconciliation run.
+enum ReconciliationRunStatus {
+  RECONCILIATION_RUN_STATUS_UNSPECIFIED = 0;
+  // Run has been queued but not yet picked up by the worker.
+  RECONCILIATION_RUN_STATUS_SCHEDULED = 1;
+  // Worker has started executing the run.
+  RECONCILIATION_RUN_STATUS_IN_PROGRESS = 2;
+  // Run completed successfully.
+  RECONCILIATION_RUN_STATUS_SUCCEEDED = 3;
+  // Run completed with a failure.
+  RECONCILIATION_RUN_STATUS_FAILED = 4;
+  // Run was skipped or cancelled before/during execution (e.g. suite deleted, deployment paused).
+  RECONCILIATION_RUN_STATUS_CANCELLED = 5;
+}
+
+// ReconciliationRunTrigger describes why a run was created.
+enum ReconciliationRunTrigger {
+  RECONCILIATION_RUN_TRIGGER_UNSPECIFIED = 0;
+  // User submitted an ad-hoc suite via SubmitAdhocSuite.
+  RECONCILIATION_RUN_TRIGGER_ADHOC = 1;
+  // Scheduler enqueued the run from a deployment / managed-suite cron.
+  RECONCILIATION_RUN_TRIGGER_SCHEDULED = 2;
+  // External API call triggered the run (e.g. CI hook, future TriggerDeployment RPC).
+  RECONCILIATION_RUN_TRIGGER_API = 3;
+}
+
+// ReconciliationRunFailureCategory classifies why a run ended in FAILED.
+// Clients use this to render appropriate user-facing messages.
+enum ReconciliationRunFailureCategory {
+  RECONCILIATION_RUN_FAILURE_CATEGORY_UNSPECIFIED = 0;
+  // Could not connect to source/target warehouse or other upstream.
+  RECONCILIATION_RUN_FAILURE_CATEGORY_CONNECTIVITY = 1;
+  // Suite config or environment was rejected at execution time.
+  RECONCILIATION_RUN_FAILURE_CATEGORY_CONFIG_INVALID = 2;
+  // Reconciliation execution itself returned an error.
+  RECONCILIATION_RUN_FAILURE_CATEGORY_EXECUTION_ERROR = 3;
+  // Unexpected internal error.
+  RECONCILIATION_RUN_FAILURE_CATEGORY_INTERNAL = 4;
+}
+
+// ReconciliationRunState describes the lifecycle of a single reconciliation
+// run. Returned by RunStateService.
+message ReconciliationRunState {
+  // Suite identifier this run belongs to. For managed suites this is the suite_name;
+  // for ad-hoc suites this is the generated UUID.
+  string suite_id = 1;
+  // Deployment identifier (UUIDv7) if the run belongs to a promoted deployment.
+  // Empty for ad-hoc and legacy managed-suite runs.
+  string deployment_id = 2;
+  // Stable opaque identifier of this specific run occurrence (UUIDv7).
+  string run_id = 3;
+  ReconciliationRunStatus status = 4;
+  ReconciliationRunTrigger trigger = 5;
+  // When this run was scheduled to start (cron occurrence time, or now() for ad-hoc).
+  google.protobuf.Timestamp scheduled_at = 6;
+  // When the worker actually picked up the run.
+  optional google.protobuf.Timestamp started_at = 7;
+  // When the run reached a terminal status (SUCCEEDED / FAILED / CANCELLED).
+  optional google.protobuf.Timestamp finished_at = 8;
+  // Last time this row was updated.
+  google.protobuf.Timestamp last_updated_at = 9;
+  // Actor that initiated the run (user or system). Populated for ADHOC and API triggers.
+  optional SuiteConfigActor actor = 10;
+  // Set only when status is FAILED.
+  ReconciliationRunFailureCategory failure_category = 11;
+  // Raw failure detail string. Set only when status is FAILED.
+  optional string failure_details = 12;
+}

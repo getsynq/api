@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+import "buf/validate/validate.proto";
+import "synq/agent/recon/v1/recon_run_state.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// RunStateService exposes lifecycle status of reconciliation runs.
+// Polling-based read API — clients fetch the current state for one or more
+// suites and display progress. No notifications are emitted; clients re-poll
+// to observe transitions.
+service RunStateService {
+  // BatchReconciliationRunState returns the latest concluded run and any ongoing
+  // (SCHEDULED or IN_PROGRESS) run for each suite_id. Returned map is keyed by suite_id.
+  // Suites with no recorded runs are omitted from the response map.
+  rpc BatchReconciliationRunState(BatchReconciliationRunStateRequest) returns (BatchReconciliationRunStateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // ListReconciliationRunState returns runs filtered by status and/or suite_id.
+  // Sorted newest-first by scheduled_at.
+  rpc ListReconciliationRunState(ListReconciliationRunStateRequest) returns (ListReconciliationRunStateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+}
+
+message BatchReconciliationRunStateRequest {
+  repeated string suite_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      items: {
+        string: {min_len: 1}
+      }
+    }
+  }];
+}
+
+// SuiteRunStates groups the most relevant run rows for a single suite.
+message SuiteRunStates {
+  // Most recent run that has reached a terminal status (SUCCEEDED, FAILED, CANCELLED).
+  optional ReconciliationRunState latest_concluded = 1;
+  // Most recent run still SCHEDULED or IN_PROGRESS, if any.
+  optional ReconciliationRunState ongoing = 2;
+}
+
+message BatchReconciliationRunStateResponse {
+  // Map keyed by suite_id; suites with no recorded runs are omitted.
+  map<string, SuiteRunStates> states = 1;
+}
+
+message ListReconciliationRunStateRequest {
+  // Optional filter: limit to these suite_ids.
+  repeated string suite_ids = 1;
+  // Optional filter: only return runs in these statuses. Empty = no status filter.
+  repeated ReconciliationRunStatus statuses = 2;
+}
+
+message ListReconciliationRunStateResponse {
+  // Sorted newest-first by scheduled_at.
+  repeated ReconciliationRunState states = 1;
+}
