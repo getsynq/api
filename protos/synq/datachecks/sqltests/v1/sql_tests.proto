@@ -23,6 +23,11 @@ message SqlTest {
     expression: "has(this.platform) || has(this.template.identifier)"
     message: "at least one of platform or template identifier must be provided"
   };
+  option (buf.validate.message).cel = {
+    id: "sql_test_evaluator_ids_unique"
+    expression: "this.evaluators.all(e, this.evaluators.filter(x, x.id == e.id).size() == 1)"
+    message: "evaluator ids must be unique within a SqlTest"
+  };
 
   // Identifier for the data platform which the SqlTest would be executed on.
   platforms.v1.DataPlatformIdentifier platform = 1;
@@ -65,6 +70,12 @@ message SqlTest {
   // Used to interpret the recurrence_rule in the given timezone.
   // If empty, defaults to UTC.
   string timezone = 13;
+
+  // Named evaluators attached to this test. Each evaluator has its own SQL
+  // boolean expression and severity. When present, the test outcome is
+  // determined by the worst severity among failing evaluators; tests with no
+  // evaluators fall back to the single-expression pass/fail rule.
+  repeated Evaluator evaluators = 14;
 }
 
 enum Severity {
@@ -80,12 +91,19 @@ enum Severity {
 // ranges, row counts, etc.).
 message Evaluator {
   // Stable identifier for the evaluator, unique within the parent SqlTest.
-  string id = 1 [(buf.validate.field).required = true];
+  // Must contain only ASCII letters, digits, hyphens, or underscores.
+  string id = 1 [(buf.validate.field) = {
+    required: true,
+    string: {pattern: "^[A-Za-z0-9_-]+$"}
+  }];
   // Human friendly name.
   string name = 2 [(buf.validate.field).required = true];
-  // SQL expression evaluated against the test rows.
+  // SQL expression evaluated against the test rows. The expression is a FAIL
+  // condition: a row is flagged when the expression evaluates to TRUE. NULL
+  // evaluates as pass (equivalent to FALSE).
   string sql_expression = 3 [(buf.validate.field).required = true];
-  // Severity routed to alerting when this evaluator fails.
+  // Severity routed to alerting when this evaluator fails. Defaults to the
+  // parent SqlTest severity when left unspecified.
   Severity severity = 4;
 }
 
