@@ -6,6 +6,43 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/issues/actor/v1";
 
+// Actor identifies who performed a write — set by the calling client and
+// carried end-to-end through the public API into stored audit trails (issue
+// status changes, comments, incident assignments) and rendered downstream
+// (Slack/MSTeams/email alerts, fe-app actor-chip).
+//
+// Producers (CANONICAL ORDERING — what writers MUST populate)
+// ----------------------------------------------------------
+// 1. `name` — human-readable display label. Writers should derive this from
+//    `synq.auth.iam.v1.IamResponse.user_name` when available, falling back to
+//    `user_email`. Avoid generic placeholders ("MCP", "API") because readers
+//    treat those as "no identity resolved" and fall back to impersonal copy.
+// 2. `user` — the strongest identifier the caller can prove. For human MCP /
+//    API callers, set `email` from `IamResponse.user_email` so the backend
+//    can lower it to a Synq user identity. The backend additionally stamps
+//    `users.v1.Actor.authenticated_synq_user_id` from the JWT during the
+//    public→internal conversion (see `kernel-incidentsv2/api_public/helpers.go
+//    toInternalActor` + `lib/identifiers/actoridentities EnrichActorFromContext`).
+// 3. `via` — entry point label. Always set to the channel through which the
+//    request arrived (e.g. VIA_MCP for the MCP server) regardless of who the
+//    caller is.
+//
+// Reference writer: `synq-scout/agent/tools/helpers/mcp_actor.go ActorResolver`.
+//
+// Consumers (CANONICAL RESOLUTION ORDERING — how readers display the actor)
+// -------------------------------------------------------------------------
+// Servers and renderers SHOULD resolve the actor's display name in this order
+// before falling back to `name`:
+//   a) `users.v1.Actor.authenticated_synq_user_id` (server-set from JWT, most
+//      trustworthy) → look up the workspace user by id.
+//   b) Inline Synq email — `users.v1.Actor.synq.user_email` or
+//      `users.v1.Actor.api.claimed_user.synq.user_email` (the
+//      `toInternalActor` lowering of `EmailUser` here) → look up by email.
+//   c) `name` — caller-provided label, used as last resort.
+//
+// Reference readers (kept in sync):
+//   - `kernel-alertsv2/alert_types/incident_owner/actor_resolver.go`
+//   - `fe-app/app/components/actor-chip/actor-chip.tsx resolveFromCache`
 message Actor {
   string name = 1 [(buf.validate.field) = {
     string: {min_len: 1}

@@ -34,5 +34,17 @@ message IamResponse {
   // Human-readable name of the authenticated user. Populated only when the
   // token is tied to a Coalesce Quality user (i.e. `synq_user_id` is set);
   // empty for workspace-level or third-party tokens.
+  //
+  // Writers building a `synq.issues.actor.v1.Actor` from this response should
+  // copy this into `Actor.name` — see that proto's "Producers" section for
+  // the full canonical ordering.
   optional string user_name = 8;
+  // Email address of the authenticated user. Populated only when the token is
+  // tied to a Coalesce Quality user (i.e. `synq_user_id` is set); empty for
+  // workspace-level or third-party tokens.
+  //
+  // Writers should also stamp this onto `synq.issues.actor.v1.Actor.email` so
+  // the backend has a stable identity to resolve back to a workspace user
+  // when readers (alert composers, fe-app actor-chip) render the actor.
+  optional string user_email = 9;
 }
