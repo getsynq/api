@@ -49,9 +49,17 @@ message GetDiffByChangeIdResponse {
 }
 
 message GetDiffByCommitRequest {
+  // Commit SHA. Accepts either the full 40-char hex hash or any unique
+  // hex prefix of at least 7 characters (server resolves the prefix
+  // against stored commits, like `git rev-parse <prefix>`). Ambiguous or
+  // unmatched prefixes return an empty diff rather than an error.
   string commit_sha = 1 [(buf.validate.field) = {
     required: true
-    string: {len: 40}
+    string: {
+      min_len: 7
+      max_len: 40
+      pattern: "^[0-9a-fA-F]+$"
+    }
   }];
   repeated string limit_to_files = 2 [(buf.validate.field) = {
     repeated: {

@@ -59,18 +59,15 @@ message Alert {
 // AlertSettings defines the properties that affect the trigger and presentation of an alert.
 // It specifies the conditions under which an alert should be fired and how it should behave.
 message AlertSettings {
+  reserved 1, 3;
+  reserved "entity_failure", "issue_lifecycle";
+
   // The specific type of alert settings. Exactly one must be specified.
   oneof settings {
     option (buf.validate.oneof).required = true;
 
-    // Alert triggered by entity failures (e.g., table failures, test failures).
-    // Deprecated: use issue instead.
-    EntityFailureAlertSettings entity_failure = 1 [deprecated = true];
     // Alert triggered by schema changes.
     SchemaChangeAlertSettings schema_change = 2;
-    // Alert triggered for issue lifecycle events (e.g., issue created, updated, closed).
-    // Deprecated: use issue instead.
-    IssueLifecycleAlertSettings issue_lifecycle = 3 [deprecated = true];
     // Unified issue alert settings (replaces entity_failure and issue_lifecycle).
     IssueAlertSettings issue = 4;
   }
@@ -111,43 +108,11 @@ message IssueGroupingStrategy {
   }
 }
 
-// EntityFailureAlertSettings configures alerts for entity failures.
-// Deprecated: Use IssueAlertSettings instead.
-message EntityFailureAlertSettings {
-  option deprecated = true;
-  // Severity levels that define the criticality of failures.
-  enum Severity {
-    SEVERITY_UNSPECIFIED = 0; // Invalid/unspecified severity
-    SEVERITY_WARN = 1; // Warning level failures
-    SEVERITY_ERROR = 2; // Error level failures
-    SEVERITY_FATAL = 3; // Fatal/critical failures
-  }
-  // The severity levels that should trigger this alert.
-  repeated Severity severities = 2 [(buf.validate.field).repeated = {min_items: 1}];
-
-  // Whether to notify upstream dependencies when this alert triggers.
-  bool notify_upstream = 3;
-
-  // Whether to allow SQL test audit links in alert notifications.
-  bool allow_sql_test_audit_link = 4;
-
-  // Strategy for handling ongoing/repeated alerts.
-  OngoingAlertsStrategy ongoing = 5 [(buf.validate.field).required = true];
-}
-
 // SchemaChangeAlertSettings configures alerts for schema changes.
 // This alert triggers when the schema of monitored entities changes.
 message SchemaChangeAlertSettings {
   // Whether to notify upstream dependencies when schema changes occur.
   bool notify_upstream = 2;
-}
-
-// IssueLifecycleAlertSettings configures alerts for issue lifecycle events.
-// Deprecated: Use IssueAlertSettings instead.
-message IssueLifecycleAlertSettings {
-  option deprecated = true;
-  // The severity levels that should trigger this alert.
-  repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
 }
 
 // OngoingAlertsStrategy defines how to handle ongoing/repeated alerts.

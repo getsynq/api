@@ -92,6 +92,10 @@ message IssueSummary {
   // Entities directly affected by the issue, not considering downstream ones.
   repeated IssueEntity directly_affected_entities = 7;
 
+  // The primary entities being monitored that are associated with this issue,
+  // for example the dbt model or dbt Cloud job that a failing test is attached to.
+  repeated IssueEntity monitored_entities = 15;
+
   // Time when the issue was triggered.
   google.protobuf.Timestamp started_at = 8;
   // Time when the issue was closed.

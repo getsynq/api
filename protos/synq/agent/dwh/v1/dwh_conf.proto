@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.agent.dwh.v1;
 
 import "buf/validate/validate.proto";
+import "synq/common/v1/scope.proto";
 
 option go_package = "github.com/getsynq/api/agent/dwh/v1";
 
@@ -293,6 +294,107 @@ message DuckDBConf {
   string motherduck_account = 2;
   // MotherDuck authentication token. Required when motherduck_account is set.
   string motherduck_token = 3;
+}
+
+// Amazon Athena specific configuration.
+//
+// Athena is serverless: there is no host/port — the endpoint is implied by
+// the AWS region. Queries run inside a workgroup that owns the per-query
+// data-scan cap and the S3 query result location. The configured workgroup
+// MUST have ResultConfiguration.OutputLocation set, otherwise every Athena
+// query fails. Setting EnforceWorkGroupConfiguration=true on the workgroup
+// is strongly recommended so per-query overrides cannot escape the cap.
+//
+// Authentication
+//
+// AthenaConf carries an AWS credential source in one of three ways:
+//
+//   1. Static IAM access key — set access_key_id and secret_access_key
+//      (and optionally session_token if those keys are short-lived STS
+//      credentials).
+//   2. Shared-config profile — set aws_profile to a named profile from
+//      ~/.aws/credentials or ~/.aws/config. Useful when the agent host
+//      already has AWS CLI configured.
+//   3. AWS default credential chain — leave all of the above empty. The
+//      AWS SDK then uses environment variables (AWS_ACCESS_KEY_ID /
+//      AWS_SECRET_ACCESS_KEY / AWS_PROFILE), shared config, or the EC2 /
+//      ECS / EKS instance role attached to the agent host.
+//
+// If more than one source is provided, they resolve in the order above —
+// explicit static keys win over a profile, profile wins over the chain.
+//
+// role_arn is independent of the source choice. When set, the executor
+// uses one of the three sources as the calling identity and assumes
+// role_arn via STS for every Athena/Glue API call. external_id is
+// included in the AssumeRole request when set; required by trust policies
+// that mandate it.
+//
+// Validation: access_key_id and secret_access_key must be set as a pair
+// (one without the other is rejected); session_token may only be set when
+// both keys are also set.
+message AthenaConf {
+  option (buf.validate.message).cel = {
+    id: "athena_auth"
+    message: "access_key_id and secret_access_key must be set together; session_token requires both"
+    expression: "(this.access_key_id != '' && this.secret_access_key != '') || (this.access_key_id == '' && this.secret_access_key == '' && this.session_token == '')"
+  };
+
+  // AWS region hosting the Athena service and Glue Data Catalog.
+  string region = 1 [(buf.validate.field) = {required: true}];
+  // Athena workgroup. Defaults to "primary" when empty. Must have a
+  // ResultConfiguration.OutputLocation configured.
+  string workgroup = 2;
+  // Glue Data Catalog name. Defaults to "AwsDataCatalog" when empty.
+  // Override only when using federated catalogs backed by Lambda connectors.
+  string catalog = 3;
+
+  // AWS access key ID for static IAM credentials. Required together with
+  // secret_access_key.
+  string access_key_id = 4;
+  // AWS secret access key. Required together with access_key_id.
+  string secret_access_key = 5;
+  // STS session token, set only when access_key_id and secret_access_key are
+  // short-lived STS credentials. Ignored otherwise.
+  string session_token = 6;
+
+  // Named profile from the AWS shared credentials / config files
+  // (~/.aws/credentials, ~/.aws/config). Useful when the agent host already
+  // has AWS CLI configured.
+  string aws_profile = 7;
+
+  // IAM role to assume via STS for every Athena / Glue API call. The calling
+  // identity comes from access_key_id, aws_profile, or the default credential
+  // chain — whichever is configured.
+  string role_arn = 8;
+  // ExternalId included in the AssumeRole request. Set when the role's trust
+  // policy requires it.
+  string external_id = 9;
+  // Session name attached to the AssumeRole request. Defaults to "synq-athena-agent".
+  string role_session_name = 10;
+
+  // Scope filter for include/exclude filtering by Glue catalog, Glue database,
+  // and table. Mapping (mirrors BigQuery's project/dataset shape):
+  //   ScopeRule.database = Glue Data Catalog name (almost always 'AwsDataCatalog')
+  //   ScopeRule.schema   = Glue database — what users typically filter on
+  //   ScopeRule.table    = Glue table / view name
+  // When include rules constrain schemas, the IAM principal does not need
+  // catalog-wide glue:GetDatabases — only glue:GetDatabase on the listed names.
+  synq.common.v1.ScopeFilter scope = 11;
+
+  // Use SHOW CREATE TABLE to retrieve full table DDL (CTAS bodies, Iceberg
+  // TBLPROPERTIES, Hive external LOCATION/SerDe). One Athena query per
+  // table — billed at the 10MB scan minimum each.
+  bool use_show_create_table = 12;
+  // Use SHOW CREATE VIEW to retrieve full view DDL instead of the rewritten
+  // body from information_schema.views.view_definition.
+  bool use_show_create_view = 13;
+  // For Iceberg tables, fan out one Athena query per table to read row counts
+  // and total file size from the table's `$files` / `$snapshots` / `$partitions`
+  // metadata tables. Without this, Iceberg tables only have metrics when the
+  // customer has run ANALYZE TABLE COMPUTE STATISTICS (Glue parameters).
+  // Hive external tables are unaffected. Each call is one Athena query
+  // (~$0.00005 at the 10MB scan minimum).
+  bool use_iceberg_metrics_scan = 14;
 }
 
 // Oracle Database specific configuration.

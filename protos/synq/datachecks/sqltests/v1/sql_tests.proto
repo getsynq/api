@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/platforms/v1/data_platforms.proto";
+import "synq/entities/executions/v2/entity_executions_service.proto";
 import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
@@ -83,6 +84,26 @@ enum Severity {
   SEVERITY_WARNING = 1;
   SEVERITY_ERROR = 2;
   SEVERITY_INFO = 3;
+}
+
+// EvaluatorResult is the execution outcome of a single Evaluator within a SqlTest run.
+// Fields id/name/sql_expression/severity are a snapshot of the evaluator definition
+// at execution time so historical results survive later edits to the test.
+message EvaluatorResult {
+  // Evaluator id, matching Evaluator.id on the parent SqlTest.
+  string id = 1;
+  // Human-friendly evaluator name at time of execution.
+  string name = 2;
+  // SQL expression that was evaluated.
+  string sql_expression = 3;
+  // Severity of this evaluator as configured at execution time.
+  Severity severity = 4;
+  // Number of rows that failed this evaluator's condition.
+  int64 fail_count = 5;
+  // Execution outcome for this evaluator.
+  synq.entities.executions.v2.ExecutionStatus status = 6;
+  // Human-readable result message (e.g. "OK" or "Got 3 failure(s)").
+  string message = 7;
 }
 
 // Evaluator is a named condition attached to a SqlTest that produces

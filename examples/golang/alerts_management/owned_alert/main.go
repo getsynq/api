@@ -11,6 +11,7 @@ import (
 	alertsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	queriesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/queries/v1"
+	synqv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/v1"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
@@ -100,16 +101,21 @@ func main() {
 
 		// Configure alert for FATAL severity failures
 		alertSettings := &alertsv1.AlertSettings{
-			Settings: &alertsv1.AlertSettings_EntityFailure{
-				EntityFailure: &alertsv1.EntityFailureAlertSettings{
-					Severities: []alertsv1.EntityFailureAlertSettings_Severity{
-						alertsv1.EntityFailureAlertSettings_SEVERITY_FATAL,
+			Settings: &alertsv1.AlertSettings_Issue{
+				Issue: &alertsv1.IssueAlertSettings{
+					Severities: []synqv1.Severity{
+						synqv1.Severity_SEVERITY_FATAL,
 					},
 					NotifyUpstream:        false,
 					AllowSqlTestAuditLink: true,
 					Ongoing: &alertsv1.OngoingAlertsStrategy{
 						Strategy: &alertsv1.OngoingAlertsStrategy_Disabled_{
 							Disabled: &alertsv1.OngoingAlertsStrategy_Disabled{},
+						},
+					},
+					Grouping: &alertsv1.IssueGroupingStrategy{
+						Strategy: &alertsv1.IssueGroupingStrategy_SystemDetected_{
+							SystemDetected: &alertsv1.IssueGroupingStrategy_SystemDetected{},
 						},
 					},
 				},

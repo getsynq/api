@@ -12,6 +12,7 @@ import (
 	alertsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	queriesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/queries/v1"
+	synqv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -98,16 +99,21 @@ func main() {
 
 		// Configure alert for FATAL severity failures only
 		alertSettings := &alertsv1.AlertSettings{
-			Settings: &alertsv1.AlertSettings_EntityFailure{
-				EntityFailure: &alertsv1.EntityFailureAlertSettings{
-					Severities: []alertsv1.EntityFailureAlertSettings_Severity{
-						alertsv1.EntityFailureAlertSettings_SEVERITY_FATAL,
+			Settings: &alertsv1.AlertSettings_Issue{
+				Issue: &alertsv1.IssueAlertSettings{
+					Severities: []synqv1.Severity{
+						synqv1.Severity_SEVERITY_FATAL,
 					},
 					NotifyUpstream:        false,
 					AllowSqlTestAuditLink: true,
 					Ongoing: &alertsv1.OngoingAlertsStrategy{
 						Strategy: &alertsv1.OngoingAlertsStrategy_Disabled_{
 							Disabled: &alertsv1.OngoingAlertsStrategy_Disabled{},
+						},
+					},
+					Grouping: &alertsv1.IssueGroupingStrategy{
+						Strategy: &alertsv1.IssueGroupingStrategy_SystemDetected_{
+							SystemDetected: &alertsv1.IssueGroupingStrategy_SystemDetected{},
 						},
 					},
 				},
@@ -181,11 +187,11 @@ func main() {
 		fmt.Printf("✓ Retrieved alert: %s\n", originalAlert.Id)
 
 		// Update to include both FATAL and ERROR severities
-		updatedSettings := originalAlert.Settings.GetEntityFailure()
+		updatedSettings := originalAlert.Settings.GetIssue()
 		if updatedSettings == nil {
-			panic("Alert is not an Entity Failure alert")
+			panic("Alert is not an Issue alert")
 		}
-		updatedSettings.Severities = append(updatedSettings.Severities, alertsv1.EntityFailureAlertSettings_SEVERITY_ERROR)
+		updatedSettings.Severities = append(updatedSettings.Severities, synqv1.Severity_SEVERITY_ERROR)
 
 		// Update with new name to reflect both severities
 		updatedName := "Critical and Error Failures Alert"
@@ -198,8 +204,8 @@ func main() {
 			},
 			Name: &updatedName,
 			Settings: &alertsv1.AlertSettings{
-				Settings: &alertsv1.AlertSettings_EntityFailure{
-					EntityFailure: updatedSettings,
+				Settings: &alertsv1.AlertSettings_Issue{
+					Issue: updatedSettings,
 				},
 			},
 		})
@@ -210,17 +216,17 @@ func main() {
 		fmt.Printf("✓ Updated alert: %s\n", updatedAlert.Id)
 
 		// Validate that updated alert has both severities
-		entityFailureSettings := updatedAlert.Settings.GetEntityFailure()
-		if entityFailureSettings == nil {
-			panic("Updated alert is not an Entity Failure alert")
+		issueSettings := updatedAlert.Settings.GetIssue()
+		if issueSettings == nil {
+			panic("Updated alert is not an Issue alert")
 		}
 		hasFatal := false
 		hasError := false
-		for _, severity := range entityFailureSettings.Severities {
-			if severity == alertsv1.EntityFailureAlertSettings_SEVERITY_FATAL {
+		for _, severity := range issueSettings.Severities {
+			if severity == synqv1.Severity_SEVERITY_FATAL {
 				hasFatal = true
 			}
-			if severity == alertsv1.EntityFailureAlertSettings_SEVERITY_ERROR {
+			if severity == synqv1.Severity_SEVERITY_ERROR {
 				hasError = true
 			}
 		}
