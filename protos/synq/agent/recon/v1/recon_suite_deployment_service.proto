@@ -200,7 +200,7 @@ message SuiteDeployment {
   repeated ReconciliationConfigSummary reconciliation_summaries = 15;
 
   // Where this deployment's snapshot came from.
-  string source_suite_type = 16;  // "managed" or "adhoc"
+  string source_suite_type = 16; // "managed" or "adhoc"
   google.protobuf.Timestamp source_config_state_at = 17;
 
   // Most recent event timestamp.

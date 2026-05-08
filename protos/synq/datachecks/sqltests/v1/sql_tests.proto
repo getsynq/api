@@ -4,10 +4,10 @@ package synq.datachecks.sqltests.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/executions/v2/entity_executions_service.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/platforms/v1/data_platforms.proto";
-import "synq/entities/executions/v2/entity_executions_service.proto";
 import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
@@ -114,7 +114,7 @@ message Evaluator {
   // Stable identifier for the evaluator, unique within the parent SqlTest.
   // Must contain only ASCII letters, digits, hyphens, or underscores.
   string id = 1 [(buf.validate.field) = {
-    required: true,
+    required: true
     string: {pattern: "^[A-Za-z0-9_-]+$"}
   }];
   // Human friendly name.
@@ -131,8 +131,21 @@ message Evaluator {
 message SqlTestAudit {
   string execution_id = 1;
   int32 rows_count = 2;
+  // JSON array of failing-row objects. Each object contains the original
+  // SELECT-list columns plus an `_failed_evaluators` array of evaluator IDs
+  // that flagged that row (only present when the SqlTest has evaluators).
   string result = 3;
   google.protobuf.Timestamp created_at = 4;
+  // Per-evaluator metadata for the run that produced this audit. Empty when
+  // the SqlTest has no evaluators. Use to resolve the evaluator IDs found in
+  // each row's `_failed_evaluators` array to their names and severities.
+  repeated EvaluatorResult evaluators = 5;
+  // Path of the SqlTest that produced this audit.
+  string sql_test_path = 6;
+  // Overall run status of the SqlTest execution that produced this audit.
+  synq.entities.executions.v2.ExecutionStatus status = 7;
+  // Short human-readable status message describing the overall run outcome.
+  string status_message = 8;
 }
 
 // Represents a value that can be either a literal (to be quoted in SQL) or a SQL expression (to be used as plain text).
