@@ -176,6 +176,11 @@ message ConnectionMapping {
     string: {min_len: 1}
   }];
 
+  // Source is required when the caller supplies a mapping — empty
+  // ConnectionMapping entries are nonsensical. The "no mapping at all"
+  // case (resolve connection_name as a workspace integration_id) is
+  // expressed by omitting the entry from the connection_mappings list,
+  // not by sending one with no source set.
   oneof source {
     option (buf.validate.oneof).required = true;
 
@@ -338,9 +343,12 @@ message PromoteSuiteRequest {
   // Specific version to promote. Absent = latest.
   optional google.protobuf.Timestamp state_at = 2;
 
-  // Mapping for every connection referenced in the suite config.
-  // Promote fails if any connection is missing.
-  repeated ConnectionMapping connection_mappings = 3 [(buf.validate.field).repeated.min_items = 1];
+  // Mappings for connections that don't resolve to a workspace
+  // integration by name. Connections whose name already matches a
+  // workspace integration id (the common FE-authored shape) can be
+  // omitted; the BindingResolver legacy fallback resolves them. Promote
+  // fails if any connection in the suite cannot be resolved.
+  repeated ConnectionMapping connection_mappings = 3;
 
   // Optional cron/iCal schedule.
   optional SuiteSchedule schedule = 4;
@@ -412,7 +420,9 @@ message UpdateDeploymentMappingsRequest {
     string: {min_len: 1}
   }];
 
-  repeated ConnectionMapping connection_mappings = 2 [(buf.validate.field).repeated.min_items = 1];
+  // Same shape as PromoteSuiteRequest.connection_mappings — entries are
+  // optional and apply only to connections that don't resolve by name.
+  repeated ConnectionMapping connection_mappings = 2;
   optional string change_summary = 3;
 }
 
