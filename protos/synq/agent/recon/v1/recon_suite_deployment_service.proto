@@ -116,6 +116,25 @@ service SuiteDeploymentService {
     };
   }
 
+  // Trigger an on-demand execution of a promoted deployment. Enqueues a run
+  // using the frozen suite snapshot and connection mappings stored on the
+  // deployment row — execution uses platform integration credentials, not the
+  // caller's. Returns the freshly-allocated `run_id` so callers can poll
+  // RunStateService for status.
+  //
+  // Preconditions:
+  //   - Deployment must exist and be `active`.
+  //   - Deployment must have `triggerable_by_api = true` (FAILED_PRECONDITION
+  //     otherwise).
+  //   - Deployment must not be paused (FAILED_PRECONDITION when
+  //     `paused_until` is set and in the future).
+  rpc TriggerDeployment(TriggerDeploymentRequest) returns (TriggerDeploymentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
   // Resolve a batch of promoted-recon asset paths (suite or case) into rich
   // asset descriptors. Used by kernel-resolver to render entity tiles for
   // recon-<deployment_id> and recon-<deployment_id>::<case> paths without
@@ -258,6 +277,13 @@ message SuiteDeployment {
   // When true, a (future) TriggerDeployment RPC may execute this deployment.
   bool triggerable_by_api = 12;
 
+  // When true (default), scheduled / triggered runs of this deployment
+  // drill into mismatched reconciliations via bisection after the
+  // quick check. Per-recon `bisection.enabled` still gates whether
+  // each recon is eligible for drill, so this is the deployment-level
+  // off switch on top.
+  optional bool run_bisection = 22;
+
   // Denormalized summaries so listing callers don't need to parse the snapshot.
   repeated string connection_names = 13;
   repeated string integration_ids = 14;
@@ -288,6 +314,8 @@ message SuiteDeploymentHistoryEntry {
   optional SuiteSchedule schedule = 8;
   bool triggerable_by_api = 9;
   repeated ConnectionMapping connection_mappings = 10;
+  // run_bisection setting at this point in time (default true).
+  optional bool run_bisection = 15;
 
   // Only filled for PROMOTED / REPROMOTED events (snapshot changes).
   optional ReconcilationSuite suite = 11;
@@ -319,6 +347,12 @@ message PromoteSuiteRequest {
 
   // When true, a TriggerDeployment RPC may execute this deployment on demand.
   bool triggerable_by_api = 5;
+
+  // When unset (default), the deployment runs with bisection enabled
+  // — mismatched recons drill after the quick check. Set to false for
+  // cheap quick-check-only deployments. Per-recon `bisection.enabled`
+  // still gates which recons are eligible for drill.
+  optional bool run_bisection = 8;
 
   optional string change_summary = 6;
 
@@ -363,6 +397,9 @@ message UpdateDeploymentScheduleRequest {
   optional SuiteSchedule schedule = 2;
   optional bool triggerable_by_api = 3;
   optional string change_summary = 4;
+  // Absent = preserve current setting. Otherwise update the
+  // deployment's run_bisection flag.
+  optional bool run_bisection = 5;
 }
 
 message UpdateDeploymentScheduleResponse {
@@ -524,6 +561,28 @@ message SuiteDeploymentAsset {
 
   // Only populated for suite assets.
   repeated PromotedReconCaseMetadata cases = 6;
+}
+
+message TriggerDeploymentRequest {
+  // Exactly one of the two must be set.
+  oneof lookup {
+    string suite_id = 1;
+    string deployment_id = 2;
+  }
+}
+
+message TriggerDeploymentResponse {
+  // Identity of the deployment that was triggered (canonical form even when
+  // the request used `suite_id`).
+  string deployment_id = 1;
+
+  // Stable opaque identifier of the enqueued run. Pass this to
+  // RunStateService to track lifecycle.
+  string run_id = 2;
+
+  // When the run is scheduled to start. For TriggerDeployment this is
+  // ~now(); the worker will pick it up shortly.
+  google.protobuf.Timestamp scheduled_at = 3;
 }
 
 message BatchGetSuiteDeploymentAssetsRequest {

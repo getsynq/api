@@ -181,6 +181,16 @@ message SubmitAdhocSuiteRequest {
   //     context and the integration's allow_reconciliation_adhoc gate
   //     enabled.
   repeated ConnectionMapping connection_mappings = 5;
+
+  // When true (default), the runner drills into each mismatched
+  // reconciliation via bisection after the quick check fails. Set to
+  // false to stop after the quick check — useful for cheap smoke
+  // runs, or when the caller plans to trigger a manual drill later.
+  //
+  // Per-reconciliation `bisection.enabled` still gates whether a given
+  // recon is eligible for drill, so this flag is the run-level off
+  // switch layered on top.
+  optional bool run_bisection = 6;
 }
 
 message SubmitAdhocSuiteResponse {
