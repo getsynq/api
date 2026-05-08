@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/agent/recon/v1/recon_suite_deployment_service.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -161,6 +162,25 @@ message SubmitAdhocSuiteRequest {
   // Optional environment to apply before execution.
   // Overrides connection mappings, table paths, and variables.
   optional string environment_name = 4 [(buf.validate.field).string.min_len = 1];
+
+  // Maps each connection name referenced by the suite to the
+  // integration that should provide credentials at execution time.
+  //
+  // When omitted, the server attempts to resolve each connection name
+  // against a workspace integration of the same name (legacy behaviour).
+  // When the suite references connection names that the server cannot
+  // resolve, the call fails with FAILED_PRECONDITION + a
+  // ConnectionResolutionFailure detail listing every unresolved name and
+  // candidate integrations, so the caller can prompt the user to bind
+  // them.
+  //
+  // Both workspace-level (integration_id) and user-level
+  // (user_integration_id) credentials are accepted here:
+  //   - integration_id requires SCOPE_INTEGRATION_EDIT on the caller.
+  //   - user_integration_id requires a user identity in the calling
+  //     context and the integration's allow_reconciliation_adhoc gate
+  //     enabled.
+  repeated ConnectionMapping connection_mappings = 5;
 }
 
 message SubmitAdhocSuiteResponse {

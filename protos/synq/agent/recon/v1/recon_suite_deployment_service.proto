@@ -133,8 +133,22 @@ service SuiteDeploymentService {
 
 // Maps a reconciliation-connection name (as referenced in the suite config)
 // to a concrete SYNQ integration. Used at execution time to resolve DWH
-// credentials — execution runs with platform integration creds, not the
-// promoter's personal creds.
+// credentials.
+//
+// Two credential planes are defined on the wire:
+//   - integration_id: workspace-level integration. Required for deployment
+//     paths and acceptable for adhoc submission when the caller has
+//     SCOPE_INTEGRATION_EDIT.
+//   - user_integration_id: per-user OAuth-backed integration. Accepted
+//     only on adhoc submission, and only when a user identity is present
+//     in the calling context. Deployment paths reject this branch
+//     unconditionally — scheduled runs must be able to fire without any
+//     particular user being available, so they always run with workspace
+//     credentials.
+//
+// Wire-compatible with the previous shape: the original `integration_id`
+// (field 2) is preserved as one branch of the oneof so existing serialized
+// rows decode unchanged.
 message ConnectionMapping {
   // Connection name as it appears in the suite config
   // (e.g. ReconcilationSuite.reconciliations[].source.connection).
@@ -143,11 +157,61 @@ message ConnectionMapping {
     string: {min_len: 1}
   }];
 
-  // SYNQ integration ID in this workspace.
-  string integration_id = 2 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
+  oneof source {
+    option (buf.validate.oneof).required = true;
+
+    // Workspace-level integration (credentials owned by the workspace).
+    string integration_id = 2 [(buf.validate.field).string.min_len = 1];
+
+    // Per-user integration ID (user-level credentials). Server requires a
+    // user identity in the calling context to accept this branch.
+    string user_integration_id = 3 [(buf.validate.field).string.min_len = 1];
+  }
+}
+
+// Reason why a single connection could not be resolved.
+enum ConnectionResolutionReason {
+  CONNECTION_RESOLUTION_REASON_UNSPECIFIED = 0;
+  // No mapping was supplied and no workspace integration matches the
+  // connection name.
+  CONNECTION_RESOLUTION_REASON_NOT_PROVIDED = 1;
+  // Mapping references an integration that does not exist or the caller
+  // cannot see it.
+  CONNECTION_RESOLUTION_REASON_INTEGRATION_NOT_FOUND = 2;
+  // Mapping uses a credential plane the caller is not allowed to use
+  // (e.g. user_integration_id without a user identity, or
+  // workspace integration_id without SCOPE_INTEGRATION_EDIT).
+  CONNECTION_RESOLUTION_REASON_CREDENTIAL_NOT_ALLOWED = 3;
+  // Integration exists but the allow_reconciliation_adhoc /
+  // allow_reconciliation_deploy capability gate is disabled for it.
+  CONNECTION_RESOLUTION_REASON_CAPABILITY_DISABLED = 4;
+}
+
+// One entry per connection name the server failed to resolve. Returned
+// inside ConnectionResolutionFailure as the structured error detail of a
+// FAILED_PRECONDITION on adhoc submission or deployment promote/update.
+message UnresolvedConnection {
+  // Connection name as referenced by the suite config.
+  string connection_name = 1;
+  // Why the server could not satisfy the mapping.
+  ConnectionResolutionReason reason = 2;
+  // Optional human-readable elaboration ("integration X has reconciliation
+  // adhoc disabled by workspace admin", etc.). Already includes workspace
+  // / suite context — safe to surface verbatim.
+  string message = 3;
+  // Suggested integration ids the caller could pick from. Filtered by the
+  // capability the failing call needs (RECONCILIATION_ADHOC for adhoc,
+  // RECONCILIATION_DEPLOY for deployment) so the UI can render a picker
+  // directly without re-querying.
+  repeated string candidate_integration_ids = 4;
+}
+
+// Error-details payload attached to FAILED_PRECONDITION when a recon
+// request cannot be honoured because one or more suite connection names
+// have no usable mapping. The caller should prompt the user to bind every
+// listed connection and retry.
+message ConnectionResolutionFailure {
+  repeated UnresolvedConnection unresolved = 1;
 }
 
 enum DeploymentAction {
