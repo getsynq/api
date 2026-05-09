@@ -67,6 +67,15 @@ message Identifier {
 
     // Monitor identifier
     MonitorIdentifier monitor = 16;
+
+    // SQL Server table identifier
+    MssqlTableIdentifier mssql_table = 19;
+
+    // Oracle table identifier
+    OracleTableIdentifier oracle_table = 20;
+
+    // Amazon Athena (Glue) table identifier
+    AthenaTableIdentifier athena_table = 21;
   }
 }
 
@@ -227,6 +236,51 @@ message TrinoTableIdentifier {
   string schema = 3 [(buf.validate.field).required = true];
 
   // Trino table or view
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message MssqlTableIdentifier {
+  // Hostname of the SQL Server instance
+  string host = 1 [(buf.validate.field).required = true];
+
+  // SQL Server database
+  string database = 2 [(buf.validate.field).required = true];
+
+  // SQL Server schema (e.g. "dbo")
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // SQL Server table or view
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message OracleTableIdentifier {
+  // Hostname of the Oracle instance
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Oracle service name (PDB)
+  string service_name = 2 [(buf.validate.field).required = true];
+
+  // Oracle schema (= owning user)
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Oracle table or view
+  string table = 4 [(buf.validate.field).required = true];
+}
+
+message AthenaTableIdentifier {
+  // AWS account and region the Athena workgroup runs in, formatted as
+  // "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
+  // from sts:GetCallerIdentity at integration setup time.
+  string instance = 1 [(buf.validate.field).required = true];
+
+  // Glue Data Catalog name. Almost always "AwsDataCatalog" — the default
+  // catalog for Athena unless the customer registered a federated catalog.
+  string catalog = 2 [(buf.validate.field).required = true];
+
+  // Glue database (the namespace users typically filter on).
+  string database = 3 [(buf.validate.field).required = true];
+
+  // Glue table or view name.
   string table = 4 [(buf.validate.field).required = true];
 }
 

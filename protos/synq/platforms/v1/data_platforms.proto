@@ -24,6 +24,7 @@ message DataPlatformIdentifier {
     TrinoIdentifier trino = 12;
     MssqlIdentifier mssql = 13;
     OracleIdentifier oracle = 14;
+    AthenaIdentifier athena = 15;
 
     // Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
     string synq_integration_id = 101;
@@ -113,4 +114,14 @@ message OracleIdentifier {
   string host = 1 [(buf.validate.field).required = true];
   // Oracle service name (PDB)
   string service_name = 2 [(buf.validate.field).required = true];
+}
+
+message AthenaIdentifier {
+  // AWS account and region the Athena workgroup runs in, formatted as
+  // "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
+  // by SYNQ from sts:GetCallerIdentity at integration setup time.
+  string instance = 1 [(buf.validate.field).required = true];
+  // Glue Data Catalog name. Almost always "AwsDataCatalog" — the default
+  // catalog for Athena unless the customer registered a federated catalog.
+  string catalog = 2 [(buf.validate.field).required = true];
 }
