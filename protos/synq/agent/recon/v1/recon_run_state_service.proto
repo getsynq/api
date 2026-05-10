@@ -3,7 +3,9 @@ syntax = "proto3";
 package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_run_state.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
@@ -37,6 +39,23 @@ service RunStateService {
       ]
     };
   }
+
+  // CancelReconciliationRun marks a SCHEDULED or IN_PROGRESS run as
+  // CANCELLED so the suite is no longer "occupied" by a stuck occurrence
+  // — used to recover from local-dev / executor outages where a run was
+  // queued but never executed. Already-terminal runs are returned
+  // unchanged. Idempotent: calling on an already-cancelled run is a
+  // no-op.
+  //
+  // Note: this only updates the run-state row. The corresponding
+  // execution-job row is independent — when an executor eventually
+  // wakes up to that job it will see the run is CANCELLED and skip.
+  rpc CancelReconciliationRun(CancelReconciliationRunRequest) returns (CancelReconciliationRunResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_EDIT]
+    };
+  }
 }
 
 message BatchReconciliationRunStateRequest {
@@ -48,6 +67,12 @@ message BatchReconciliationRunStateRequest {
       }
     }
   }];
+  // When true, the response also includes adhoc test runs spawned
+  // from the queried suites — i.e. rows whose parent_suite_id matches.
+  // Use this for the "development" view where adhoc activity is part
+  // of the iteration loop. Production / deployment-centric views
+  // leave it false to see only deployment-driven runs.
+  bool include_adhoc_children = 2;
 }
 
 // SuiteRunStates groups the most relevant run rows for a single suite.
@@ -64,13 +89,58 @@ message BatchReconciliationRunStateResponse {
 }
 
 message ListReconciliationRunStateRequest {
-  // Optional filter: limit to these suite_ids.
+  // Optional filter: limit to these suite_ids. Combined with deployment_ids
+  // via OR — a row matches if either list contains it (both empty = no
+  // suite/deployment filter).
   repeated string suite_ids = 1;
   // Optional filter: only return runs in these statuses. Empty = no status filter.
   repeated ReconciliationRunStatus statuses = 2;
+  // Optional filter: limit to runs belonging to these deployment_ids. Use
+  // this to scope the listing to a single promoted deployment cycle —
+  // suite_id alone may overlap multiple deployment_ids when a suite has
+  // been promoted, unpromoted, and re-promoted.
+  repeated string deployment_ids = 3;
+  // Only return runs scheduled at or after this timestamp (inclusive).
+  optional google.protobuf.Timestamp scheduled_after = 4;
+  // Only return runs scheduled before this timestamp (exclusive).
+  optional google.protobuf.Timestamp scheduled_before = 5;
+  // Pagination parameters. The cursor encodes (scheduled_at, run_id) and
+  // is opaque to clients — pass page_info.next_cursor verbatim.
+  optional synq.v1.Pagination pagination = 6;
+  // Optional filter: only return runs created via these triggers. Empty
+  // = no trigger filter. Use this to separate API-triggered runs from
+  // cron-scheduled occurrences from ad-hoc submissions in the listing.
+  repeated ReconciliationRunTrigger triggers = 7;
+  // Optional filter: limit to runs initiated by these actor identities.
+  // Identities use the canonical actor-identity string format defined
+  // alongside the public Actor type (e.g. `email:foo@example.com`,
+  // `slack:U12345`, `client_id:<id>`). Empty list = no actor filter.
+  // Useful for "show only my ad-hoc runs" views — clients construct
+  // their own identity from the authenticated user (typically
+  // `email:<user-email>`) and pass it here.
+  repeated string actor_identities = 8;
 }
 
 message ListReconciliationRunStateResponse {
-  // Sorted newest-first by scheduled_at.
+  // Sorted newest-first by scheduled_at, then by run_id desc as a stable tiebreaker.
   repeated ReconciliationRunState states = 1;
+  // Pagination info for fetching the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message CancelReconciliationRunRequest {
+  // The suite the run belongs to. Required because run rows are keyed
+  // by (workspace, suite_id, run_id) — clients pass the suite_id they
+  // already know from the run state listing alongside the run_id.
+  string suite_id = 1 [(buf.validate.field) = {string: {min_len: 1}}];
+  // Run identifier. UUIDv7 returned by BatchReconciliationRunState /
+  // ListReconciliationRunState.
+  string run_id = 2 [(buf.validate.field) = {string: {min_len: 1}}];
+}
+
+message CancelReconciliationRunResponse {
+  // The current state of the run after the cancel attempt. Status will
+  // be CANCELLED if the run was SCHEDULED/IN_PROGRESS at call time, or
+  // unchanged if it had already reached a terminal status.
+  ReconciliationRunState state = 1;
 }

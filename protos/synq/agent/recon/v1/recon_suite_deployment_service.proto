@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -301,7 +302,7 @@ message SuiteDeployment {
   // Most recent event timestamp.
   google.protobuf.Timestamp state_at = 18;
   DeploymentAction last_action = 19;
-  optional SuiteConfigActor last_actor = 20;
+  optional synq.issues.actor.v1.Actor last_actor = 20;
   optional string last_change_summary = 21;
 }
 
@@ -326,7 +327,7 @@ message SuiteDeploymentHistoryEntry {
   optional ReconcilationSuite suite = 11;
   optional google.protobuf.Timestamp source_config_state_at = 12;
 
-  optional SuiteConfigActor actor = 13;
+  optional synq.issues.actor.v1.Actor actor = 13;
   optional string change_summary = 14;
 }
 
@@ -376,6 +377,9 @@ message PromoteSuiteRequest {
   //   - present, row exists with same suite_id                : idempotent retry
   //   - present, row exists with different suite_id           : ALREADY_EXISTS
   optional string deployment_id = 7 [(buf.validate.field).string.min_len = 1];
+
+  // Actor performing the promotion. Required.
+  synq.issues.actor.v1.Actor actor = 9 [(buf.validate.field) = {required: true}];
 }
 
 message PromoteSuiteResponse {
@@ -389,6 +393,9 @@ message UnpromoteSuiteRequest {
   }];
 
   optional string reason = 2;
+
+  // Actor performing the unpromote. Required.
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
 }
 
 message UnpromoteSuiteResponse {
@@ -408,6 +415,9 @@ message UpdateDeploymentScheduleRequest {
   // Absent = preserve current setting. Otherwise update the
   // deployment's run_bisection flag.
   optional bool run_bisection = 5;
+
+  // Actor performing the schedule update. Required.
+  synq.issues.actor.v1.Actor actor = 6 [(buf.validate.field) = {required: true}];
 }
 
 message UpdateDeploymentScheduleResponse {
@@ -424,6 +434,9 @@ message UpdateDeploymentMappingsRequest {
   // optional and apply only to connections that don't resolve by name.
   repeated ConnectionMapping connection_mappings = 2;
   optional string change_summary = 3;
+
+  // Actor performing the mapping update. Required.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
 }
 
 message UpdateDeploymentMappingsResponse {
@@ -439,6 +452,9 @@ message PauseDeploymentRequest {
   // Absent = pause indefinitely.
   optional google.protobuf.Timestamp until = 2;
   optional string reason = 3;
+
+  // Actor performing the pause. Required.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
 }
 
 message PauseDeploymentResponse {
@@ -450,6 +466,9 @@ message ResumeDeploymentRequest {
     required: true
     string: {min_len: 1}
   }];
+
+  // Actor performing the resume. Required.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
 }
 
 message ResumeDeploymentResponse {
@@ -579,6 +598,9 @@ message TriggerDeploymentRequest {
     string suite_id = 1;
     string deployment_id = 2;
   }
+
+  // Actor triggering the run. Required.
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
 }
 
 message TriggerDeploymentResponse {

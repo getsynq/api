@@ -90,6 +90,19 @@ message AuditLogEntry {
   AuditStatus status = 8;
   AuditSummary summary = 9;
   repeated ReconciliationSummary reconciliations = 10;
+
+  // Stable suite identifier assigned by the platform — same value as the
+  // suite_id on RunStateService.ReconciliationRunState, suitable for
+  // joining a run row to its audit log. Empty for legacy logs ingested
+  // before run-state correlation was added.
+  optional string suite_id = 11;
+  // Deployment identifier this run belongs to (UUIDv7). Empty for adhoc
+  // submissions and for legacy logs ingested before run-state correlation.
+  optional string deployment_id = 12;
+  // Stable run identifier (UUIDv7) assigned at scheduling time. Empty for
+  // legacy logs / direct agent submissions made outside the platform job
+  // queue.
+  optional string run_id = 13;
 }
 
 // ReconciliationSummary is a compact summary of a single reconciliation within an audit log entry.

@@ -3,7 +3,7 @@ syntax = "proto3";
 package synq.agent.recon.v1;
 
 import "google/protobuf/timestamp.proto";
-import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/issues/actor/v1/actor.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
@@ -69,9 +69,15 @@ message ReconciliationRunState {
   // Last time this row was updated.
   google.protobuf.Timestamp last_updated_at = 9;
   // Actor that initiated the run (user or system). Populated for ADHOC and API triggers.
-  optional SuiteConfigActor actor = 10;
+  optional synq.issues.actor.v1.Actor actor = 10;
   // Set only when status is FAILED.
   ReconciliationRunFailureCategory failure_category = 11;
   // Raw failure detail string. Set only when status is FAILED.
   optional string failure_details = 12;
+  // Identifier of the audit log this run produced. Empty when the run
+  // failed before the worker emitted an audit log (e.g. binding-resolution
+  // failure on a misconfigured deployment, or the run was cancelled).
+  // When set, pass to AuditLogService.GetAuditLog to retrieve the full
+  // per-reconciliation results for this run.
+  optional string invocation_id = 13;
 }

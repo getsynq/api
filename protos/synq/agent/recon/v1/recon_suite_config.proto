@@ -54,19 +54,3 @@ message ReconciliationConfigSummary {
   ReconcilationMode mode = 6;
 }
 
-// Actor identity for tracking who made changes.
-// Extracted from gRPC context: GetSubject(ctx) provides the subject ID,
-// GrantType distinguishes user vs M2M (API key) auth.
-message SuiteConfigActor {
-  // JWT subject (user ID or API client ID).
-  string subject = 1;
-
-  oneof identity {
-    // Frontend/OAuth user (from SynqUser).
-    string user_email = 2;
-    // M2M API client (from GrantType=client-credentials).
-    string api_client_id = 3;
-    // synq-recon agent (from integration_id).
-    string agent_id = 4;
-  }
-}

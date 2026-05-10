@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/agent/recon/v1/recon_suite_deployment_service.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -99,23 +100,6 @@ service SuiteConfigService {
     };
   }
 
-  // Set or remove the schedule and optional environment for a managed suite.
-  // This is a focused API for promoting/scheduling a suite without re-submitting the full config.
-  rpc SetSuiteSchedule(SetSuiteScheduleRequest) returns (SetSuiteScheduleResponse) {
-    option idempotency_level = IDEMPOTENT;
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_EDIT]
-    };
-  }
-
-  // Preview what a suite would look like after environment overrides.
-  // Returns the transformed suite without executing it.
-  rpc PreviewSuiteInEnvironment(PreviewSuiteInEnvironmentRequest) returns (PreviewSuiteInEnvironmentResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-    option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECON_READ]
-    };
-  }
 }
 
 // --- Managed suite requests ---
@@ -124,11 +108,11 @@ message UpsertSuiteConfigRequest {
   // The suite configuration to store. suite_id will equal suite.name.
   ReconcilationSuite suite = 1 [(buf.validate.field).required = true];
 
-  // Optional schedule for the managed suite.
-  optional SuiteSchedule schedule = 2;
-
   // Human-readable summary of what changed in this version.
   optional string change_summary = 3;
+
+  // Actor performing the upsert. Required.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
 }
 
 message UpsertSuiteConfigResponse {
@@ -159,10 +143,6 @@ message SubmitAdhocSuiteRequest {
   // When set, the suite config is loaded from the database.
   optional string suite_id = 3 [(buf.validate.field).string.min_len = 1];
 
-  // Optional environment to apply before execution.
-  // Overrides connection mappings, table paths, and variables.
-  optional string environment_name = 4 [(buf.validate.field).string.min_len = 1];
-
   // Maps each connection name referenced by the suite to the
   // integration that should provide credentials at execution time.
   //
@@ -191,6 +171,9 @@ message SubmitAdhocSuiteRequest {
   // recon is eligible for drill, so this flag is the run-level off
   // switch layered on top.
   optional bool run_bisection = 6;
+
+  // Actor submitting the run. Required.
+  synq.issues.actor.v1.Actor actor = 7 [(buf.validate.field) = {required: true}];
 }
 
 message SubmitAdhocSuiteResponse {
@@ -238,6 +221,9 @@ message DeleteSuiteConfigRequest {
     required: true
     string: {min_len: 1}
   }];
+
+  // Actor performing the delete. Required.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
 }
 
 message DeleteSuiteConfigResponse {}
@@ -275,26 +261,6 @@ message GetSuiteConfigVersionResponse {
   SuiteConfigVersion version = 1;
 }
 
-message SetSuiteScheduleRequest {
-  // Suite ID of the managed suite to update.
-  string suite_id = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-
-  // Schedule to set. When absent, removes the schedule.
-  optional SuiteSchedule schedule = 2;
-
-  // Optional environment name to associate with scheduled runs.
-  // Empty string clears the environment association.
-  optional string environment_name = 3;
-}
-
-message SetSuiteScheduleResponse {
-  // The updated suite config.
-  SuiteConfig suite_config = 1;
-}
-
 // --- Response messages ---
 
 // SuiteConfig represents the latest version of a reconciliation suite configuration.
@@ -314,9 +280,6 @@ message SuiteConfig {
   // The full suite configuration.
   ReconcilationSuite suite = 6;
 
-  // Schedule (only present for managed suites).
-  optional SuiteSchedule schedule = 7;
-
   // Deduplicated connection names referenced by this suite.
   repeated string connection_names = 8;
 
@@ -324,13 +287,10 @@ message SuiteConfig {
   repeated ReconciliationConfigSummary reconciliation_summaries = 9;
 
   // Who last updated this config.
-  optional SuiteConfigActor updated_by = 10;
+  optional synq.issues.actor.v1.Actor updated_by = 10;
 
   // When this version was created.
   google.protobuf.Timestamp state_at = 11;
-
-  // Environment name associated with scheduled runs (empty = no environment).
-  optional string environment_name = 12;
 }
 
 // SuiteConfigVersion represents a historical version of a suite config.
@@ -344,9 +304,6 @@ message SuiteConfigVersion {
   // The full suite configuration at this version.
   ReconcilationSuite suite = 6;
 
-  // Schedule at this version.
-  optional SuiteSchedule schedule = 7;
-
   // Connection names at this version.
   repeated string connection_names = 8;
 
@@ -354,7 +311,7 @@ message SuiteConfigVersion {
   repeated ReconciliationConfigSummary reconciliation_summaries = 9;
 
   // Who made this change.
-  optional SuiteConfigActor updated_by = 10;
+  optional synq.issues.actor.v1.Actor updated_by = 10;
 
   // When this version was created.
   google.protobuf.Timestamp state_at = 11;
@@ -364,32 +321,4 @@ message SuiteConfigVersion {
 
   // Human-readable summary of what changed.
   optional string change_summary = 13;
-
-  // Environment name associated with scheduled runs at this version.
-  optional string environment_name = 14;
-}
-
-message PreviewSuiteInEnvironmentRequest {
-  // Suite to preview.
-  string suite_id = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-
-  // Environment to apply.
-  string environment_name = 2 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
-}
-
-message PreviewSuiteInEnvironmentResponse {
-  // The suite after environment overrides are applied.
-  ReconcilationSuite transformed_suite = 1;
-
-  // Map of "recon_name.side" -> resolved FQN string.
-  map<string, string> resolved_table_references = 2;
-
-  // Variables after merging environment overrides.
-  map<string, string> merged_variables = 3;
 }
