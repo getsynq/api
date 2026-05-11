@@ -79,7 +79,10 @@ message BatchReconciliationRunStateRequest {
 message SuiteRunStates {
   // Most recent run that has reached a terminal status (SUCCEEDED, FAILED, CANCELLED).
   optional ReconciliationRunState latest_concluded = 1;
-  // Most recent run still SCHEDULED or IN_PROGRESS, if any.
+  // Most recent run whose target tick has arrived (scheduled_at <= now)
+  // and that is still SCHEDULED or IN_PROGRESS. Pre-scheduled future
+  // rows are not surfaced here — see `next_run_at` on SuiteDeployment
+  // for the upcoming cron occurrence.
   optional ReconciliationRunState ongoing = 2;
 }
 

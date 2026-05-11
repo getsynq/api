@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
@@ -133,6 +134,16 @@ service SuiteDeploymentService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_RECON_PROMOTE]
+    };
+    // REST: POST /api/recon/v1/deployments/trigger
+    // body: {"deployment_id":"<uuid>"} or {"suite_id":"<name>"} plus the
+    // standard actor. Action-as-last-segment matches the path convention
+    // used elsewhere (see monitors/custom-monitors/v1/delete,
+    // monitors/automated/v1/deployment-rules/deployed). The lookup is a
+    // oneof so we can't bind a single ID to a path segment.
+    option (google.api.http) = {
+      post: "/api/recon/v1/deployments/trigger"
+      body: "*"
     };
   }
 
@@ -304,6 +315,15 @@ message SuiteDeployment {
   DeploymentAction last_action = 19;
   optional synq.issues.actor.v1.Actor last_actor = 20;
   optional string last_change_summary = 21;
+
+  // Next cron occurrence computed live from `schedule` at response
+  // time. Absent when there's no schedule, when the deployment is
+  // inactive/paused, or when the schedule expression no longer yields
+  // an upcoming occurrence (e.g. an iCal RRULE that has finished).
+  // Use this for "Next run: …" UI hints — it's the authoritative
+  // upcoming-tick source, independent of any pre-materialised
+  // execution_jobs / run_state rows.
+  optional google.protobuf.Timestamp next_run_at = 23;
 }
 
 // SuiteDeploymentHistoryEntry is a single event in the deployment's history.
