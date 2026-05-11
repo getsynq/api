@@ -183,7 +183,8 @@ message Template {
     MinMaxTest min_max_test = 17;
     // Compares time-based columns for logical order (e.g., start_date before end_date)
     RelativeTimeTest relative_time_test = 18;
-    // Custom SQL-based business logic validation (e.g., total_amount = subtotal + tax)
+    // Per-row boolean predicate; rows matching are reported as failures
+    // (e.g., total_amount != subtotal + tax)
     BusinessRuleTest business_rule_test = 19;
     // Validates numeric values are greater than or equal to a minimum value (e.g., price &gt;= 0)
     MinValueTest min_value_test = 20;
@@ -191,6 +192,9 @@ message Template {
     MaxValueTest max_value_test = 21;
     // Validates referential integrity between source and reference tables
     RelationshipsTest relationships_test = 22;
+    // Full SELECT whose result rows are reported as failures; supports
+    // GROUP BY, JOINs, etc.
+    BusinessQueryTest business_query_test = 23;
   }
 }
 
@@ -297,8 +301,37 @@ message RelativeTimeTest {
 }
 
 message BusinessRuleTest {
-  // SQL expression that should evaluate to TRUE for valid records
+  // Boolean SQL predicate evaluated per row of the anchor table
+  // (Template.identifier); rows where the predicate is TRUE are reported as
+  // failures.
+  //
+  // Format: a single boolean expression — no SELECT, WITH, or semicolons.
+  // References columns on the anchor table. The engine executes it as
+  // `SELECT * FROM <anchor_table> WHERE <sql_expression>`.
+  //
+  // Example: "total_amount != subtotal + tax" reports rows where totals
+  // disagree. Use BusinessQueryTest for SELECT / GROUP BY / multi-table logic.
   string sql_expression = 1 [(buf.validate.field).required = true];
+}
+
+message BusinessQueryTest {
+  // Full SELECT statement. Result rows are reported as failures.
+  //
+  // Format: a single SELECT (CTEs allowed); no semicolon. May read any tables
+  // the integration has access to. The engine wraps it as
+  // `WITH raw_query AS (<sql_query>) SELECT * FROM raw_query`.
+  //
+  // Use this when the failure set requires GROUP BY, JOINs, window functions,
+  // or other shape that a per-row predicate (BusinessRuleTest) cannot express.
+  //
+  // Example:
+  //   SELECT customer_id, SUM(amount) AS total
+  //   FROM orders WHERE status = 'paid'
+  //   GROUP BY customer_id HAVING SUM(amount) < 0
+  //
+  // Template.identifier still anchors the test to a primary table for
+  // ownership, alerts, and UI grouping.
+  string sql_query = 1 [(buf.validate.field).required = true];
 }
 
 message RelationshipsTest {

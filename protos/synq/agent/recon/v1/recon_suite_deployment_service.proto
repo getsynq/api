@@ -147,19 +147,6 @@ service SuiteDeploymentService {
     };
   }
 
-  // Resolve a batch of promoted-recon asset paths (suite or case) into rich
-  // asset descriptors. Used by kernel-resolver to render entity tiles for
-  // recon-<deployment_id> and recon-<deployment_id>::<case> paths without
-  // forcing callers to parse the frozen suite config.
-  rpc BatchGetSuiteDeploymentAssets(BatchGetSuiteDeploymentAssetsRequest) returns (BatchGetSuiteDeploymentAssetsResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-    option (synq.v1.scope_authorization) = {
-      scopes: [
-        SCOPE_RECON_READ,
-        SCOPE_MCP_READ
-      ]
-    };
-  }
 }
 
 // Maps a reconciliation-connection name (as referenced in the suite config)
@@ -543,75 +530,6 @@ message ListSuiteDeploymentHistoryResponse {
   synq.v1.PageInfo page_info = 2;
 }
 
-// --- Promoted-recon asset descriptors ---
-//
-// Computed at promote / re-promote / mappings-changed time and stored
-// protojson-encoded on the deployment row (column `assets`). Reused as the
-// response shape of BatchGetSuiteDeploymentAssets so consumers (kernel-resolver,
-// FE) never have to parse the frozen suite config.
-
-// PromotedReconAssets bundles the suite descriptor and one descriptor per
-// reconciliation case for a single deployment.
-message PromotedReconAssets {
-  PromotedReconSuiteMetadata suite = 1;
-  repeated PromotedReconCaseMetadata cases = 2;
-}
-
-// PromotedReconSuiteMetadata describes the deployed suite as a SYNQ asset.
-// asset_path is `recon-<deployment_id>`.
-message PromotedReconSuiteMetadata {
-  string deployment_id = 1;
-  string asset_path = 2;
-  string suite_name = 3;
-  string suite_title = 4;
-  string suite_description = 5;
-}
-
-// PromotedReconCaseMetadata describes a single reconciliation case as a SYNQ
-// asset. asset_path is `recon-<deployment_id>::<case_name>`.
-message PromotedReconCaseMetadata {
-  string deployment_id = 1;
-  string asset_path = 2;
-  string case_name = 3;
-  string case_title = 4;
-  string case_description = 5;
-  ReconcilationMode mode = 6;
-  PromotedReconEndpoint source = 7;
-  PromotedReconEndpoint target = 8;
-}
-
-// PromotedReconEndpoint captures one side (source or target) of a case in a
-// form ready for rendering: the recon connection name, the SYNQ integration
-// it was mapped to, the resolved SYNQ asset path of the underlying table
-// (best-effort — empty if the dataset is a raw query or the platform/instance
-// could not be resolved at promote time), and the literal FQN copied from the
-// frozen suite config.
-message PromotedReconEndpoint {
-  string connection = 1;
-  string integration_id = 2;
-  string asset_path = 3;
-  string fqn = 4;
-}
-
-// SuiteDeploymentAsset is the rich descriptor returned for a single asset
-// path. For suite paths, `cases` is populated with one entry per
-// reconciliation. For case paths, `case_metadata` is set and `cases` is empty.
-message SuiteDeploymentAsset {
-  string asset_path = 1;
-  string deployment_id = 2;
-
-  // Set when the underlying deployment has been unpromoted.
-  optional google.protobuf.Timestamp deleted_at = 3;
-
-  oneof metadata {
-    PromotedReconSuiteMetadata suite_metadata = 4;
-    PromotedReconCaseMetadata case_metadata = 5;
-  }
-
-  // Only populated for suite assets.
-  repeated PromotedReconCaseMetadata cases = 6;
-}
-
 message TriggerDeploymentRequest {
   // Exactly one of the two must be set.
   oneof lookup {
@@ -635,16 +553,4 @@ message TriggerDeploymentResponse {
   // When the run is scheduled to start. For TriggerDeployment this is
   // ~now(); the worker will pick it up shortly.
   google.protobuf.Timestamp scheduled_at = 3;
-}
-
-message BatchGetSuiteDeploymentAssetsRequest {
-  // Mix of suite paths (`recon-<id>`) and case paths
-  // (`recon-<id>::<case>`). Unknown / unrelated paths are dropped.
-  repeated string asset_paths = 1 [(buf.validate.field).repeated.min_items = 1];
-}
-
-message BatchGetSuiteDeploymentAssetsResponse {
-  // Keyed by asset_path. Paths that don't resolve (unknown deployment,
-  // unknown case name) are omitted from the map.
-  map<string, SuiteDeploymentAsset> assets = 1;
 }
