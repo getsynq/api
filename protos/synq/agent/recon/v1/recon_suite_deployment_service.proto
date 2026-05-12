@@ -591,6 +591,12 @@ message TriggerDeploymentRequest {
 
   // Actor triggering the run. Required.
   synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+
+  // Per-trigger override for the deployment's stored run_bisection flag.
+  // Unset (default) inherits the deployment's value so a "Run now" click
+  // matches what the cron schedule would have done. Set explicitly to
+  // false for a cheap quick-check-only run without bisection drill-down.
+  optional bool run_bisection = 4;
 }
 
 message TriggerDeploymentResponse {
