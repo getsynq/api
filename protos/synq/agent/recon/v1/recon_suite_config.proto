@@ -5,6 +5,7 @@ package synq.agent.recon.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
+import "synq/entities/v1/annotation.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
@@ -52,5 +53,11 @@ message ReconciliationConfigSummary {
   string source_connection = 4;
   string target_connection = 5;
   ReconcilationMode mode = 6;
+
+  // Resolved annotation list for this case. For suite-config summaries this
+  // is suite-level annotations + case-level annotations (deduped). For
+  // deployment summaries the deployment-level overlay is also merged in.
+  // Already deduplicated by (name, value); ready for direct display.
+  repeated synq.entities.v1.Annotation annotations = 7;
 }
 

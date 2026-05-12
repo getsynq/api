@@ -7,6 +7,7 @@ import "google/protobuf/duration.proto";
 import "synq/agent/recon/v1/recon_cutoff.proto";
 import "synq/agent/recon/v1/recon_dataset.proto";
 import "synq/agent/recon/v1/recon_measure.proto";
+import "synq/entities/v1/annotation.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
@@ -69,6 +70,14 @@ message ReconcilationSuite {
   // in queries) returns an error instead of a warning. Prevents non-deterministic
   // queries that produce different results on each run.
   bool strict_time_references = 10;
+
+  // Suite-level annotations. Each annotation is a name with zero or more
+  // string values. Applied to the deployed suite asset and inherited by every
+  // reconciliation case under the suite. Merged with per-case annotations and
+  // deployment-level annotations at promote time — the final, deduplicated
+  // list is exposed on PromotedReconSuiteMetadata / PromotedReconCaseMetadata
+  // and surfaced to the rest of the SYNQ platform via EntityAnnotations.
+  repeated synq.entities.v1.Annotation annotations = 11;
 }
 
 // ConnectionQueries associates SQL queries with a specific connection.
@@ -189,6 +198,11 @@ message Reconcilation {
   // Derives a watermark from actual data to exclude rows not yet synced.
   // Applied as WHERE filter to both source and target queries at runtime.
   optional CutoffConfig cutoff = 20;
+
+  // Case-level annotations. Merged with suite-level annotations and
+  // deployment-level annotations at promote time, then exposed on the
+  // case asset (PromotedReconCaseMetadata).
+  repeated synq.entities.v1.Annotation annotations = 21;
 }
 
 // ReconcilationMode defines the comparison strategy for a reconciliation.

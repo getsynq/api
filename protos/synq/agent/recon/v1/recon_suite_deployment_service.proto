@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
+import "synq/entities/v1/annotation.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -59,6 +60,18 @@ service SuiteDeploymentService {
   // Rewire connection → integration mappings on an existing deployment
   // without re-promoting the config snapshot.
   rpc UpdateDeploymentMappings(UpdateDeploymentMappingsRequest) returns (UpdateDeploymentMappingsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
+  // Replace the deployment-level annotation overlay on an existing
+  // deployment. Annotations are merged with suite-level and case-level
+  // annotations from the frozen suite snapshot at promote/update time, then
+  // surfaced on PromotedReconSuiteMetadata / PromotedReconCaseMetadata for
+  // every asset under the deployment.
+  rpc UpdateDeploymentAnnotations(UpdateDeploymentAnnotationsRequest) returns (UpdateDeploymentAnnotationsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_RECON_PROMOTE]
@@ -246,6 +259,7 @@ enum DeploymentAction {
   DEPLOYMENT_ACTION_PAUSED = 5;
   DEPLOYMENT_ACTION_RESUMED = 6;
   DEPLOYMENT_ACTION_UNPROMOTED = 7;
+  DEPLOYMENT_ACTION_ANNOTATIONS_CHANGED = 8;
 }
 
 // SuiteDeployment is the latest state of a deployment (current row).
@@ -311,6 +325,13 @@ message SuiteDeployment {
   // upcoming-tick source, independent of any pre-materialised
   // execution_jobs / run_state rows.
   optional google.protobuf.Timestamp next_run_at = 23;
+
+  // Deployment-level annotation overlay. Applied on top of the suite-level
+  // and case-level annotations baked into the frozen suite snapshot. The
+  // merged, deduplicated list lives on PromotedReconSuiteMetadata /
+  // PromotedReconCaseMetadata — this field exposes only the deployment's
+  // own overlay so callers can render and edit it independently.
+  repeated synq.entities.v1.Annotation deployment_annotations = 24;
 }
 
 // SuiteDeploymentHistoryEntry is a single event in the deployment's history.
@@ -336,6 +357,11 @@ message SuiteDeploymentHistoryEntry {
 
   optional synq.issues.actor.v1.Actor actor = 13;
   optional string change_summary = 14;
+
+  // Deployment-level annotation overlay at this point in time. Filled on
+  // every history entry (annotation changes carry the full new list, other
+  // events carry the snapshot at the time of the event).
+  repeated synq.entities.v1.Annotation deployment_annotations = 16;
 }
 
 // --- Requests / responses ---
@@ -387,6 +413,11 @@ message PromoteSuiteRequest {
 
   // Actor performing the promotion. Required.
   synq.issues.actor.v1.Actor actor = 9 [(buf.validate.field) = {required: true}];
+
+  // Initial deployment-level annotation overlay. Merged with suite-level
+  // and case-level annotations from the frozen suite snapshot. Use
+  // UpdateDeploymentAnnotations to mutate later without re-promoting.
+  repeated synq.entities.v1.Annotation deployment_annotations = 10;
 }
 
 message PromoteSuiteResponse {
@@ -447,6 +478,27 @@ message UpdateDeploymentMappingsRequest {
 }
 
 message UpdateDeploymentMappingsResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UpdateDeploymentAnnotationsRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Full replacement for the deployment-level annotation overlay. Pass an
+  // empty list to clear all deployment-level annotations (suite/case
+  // annotations from the frozen snapshot still apply).
+  repeated synq.entities.v1.Annotation deployment_annotations = 2;
+
+  optional string change_summary = 3;
+
+  // Actor performing the annotation update. Required.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
+}
+
+message UpdateDeploymentAnnotationsResponse {
   SuiteDeployment deployment = 1;
 }
 
