@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "synq/entities/executions/v2/entity_executions_service.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/ingest/dwh/v1/dwh.proto";
 import "synq/platforms/v1/data_platforms.proto";
 import "synq/v1/source.proto";
 
@@ -77,6 +78,17 @@ message SqlTest {
   // determined by the worst severity among failing evaluators; tests with no
   // evaluators fall back to the single-expression pass/fail rule.
   repeated Evaluator evaluators = 14;
+
+  // Tables referenced by the SQL expression, resolved at upsert time.
+  repeated InputTable input_tables = 15;
+}
+
+// InputTable is a table reference resolved from the SQL expression of a SqlTest.
+message InputTable {
+  // Fully-qualified name of the referenced table.
+  ingest.dwh.v1.Fqn fqn = 1;
+  // Synq-internal path for the table asset (e.g. "bq-prod::project::dataset::table").
+  string table_path = 2;
 }
 
 enum Severity {

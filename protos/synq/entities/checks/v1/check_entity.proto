@@ -24,6 +24,8 @@ message CheckEntity {
   // Whether the check is platform native
   bool is_platform_native = 4;
 
-  // Explicit name of the category to use for this check
+  // Explicit name of the structural category to use for this check
   optional string category = 5;
+  // Explicit name of the governance category to use for this check
+  optional string governance_category = 6;
 }

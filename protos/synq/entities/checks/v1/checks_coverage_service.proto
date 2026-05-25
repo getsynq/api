@@ -3,7 +3,7 @@ syntax = "proto3";
 package synq.entities.checks.v1;
 
 import "buf/validate/validate.proto";
-import "synq/entities/checks/v1/checks.proto";
+import "synq/entities/checks/v1/check_entity.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 

@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package synq.entities.checks.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v1";
+
+// ChecksCategoriesService lets workspace admins set explicit category
+// overrides on individual checks. An explicit category is the
+// authoritative category for a check — it takes precedence over the
+// categories computed by the workspace's categorisation rules.
+//
+// It is a public API so customers can manage check categories
+// programmatically; the same service is also mounted on the internal
+// API. The workspace and the acting identity are always taken from the
+// request context, never from the payload.
+service ChecksCategoriesService {
+  // UpsertCheckCategories sets (or replaces) the explicit category for
+  // one or more checks. Each entry is the complete state for its check —
+  // both dimensions — so an empty `category` / `governance_category` means
+  // "no explicit value for that dimension".
+  rpc UpsertCheckCategories(UpsertCheckCategoriesRequest) returns (UpsertCheckCategoriesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_POLICIES_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/checks/v1/categories:upsert"
+      body: "*"
+    };
+  }
+
+  // DeleteCheckCategories clears the explicit category (both dimensions)
+  // for the given checks. Checks fall back to their rule-computed
+  // categories afterwards.
+  rpc DeleteCheckCategories(DeleteCheckCategoriesRequest) returns (DeleteCheckCategoriesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_POLICIES_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/checks/v1/categories:delete"
+      body: "*"
+    };
+  }
+
+  // ListCheckCategories returns every explicit check category in the
+  // caller's workspace.
+  rpc ListCheckCategories(ListCheckCategoriesRequest) returns (ListCheckCategoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT
+      ]
+    };
+    option (google.api.http) = {
+      get: "/api/entities/checks/v1/categories"
+    };
+  }
+}
+
+// CheckCategory is the complete explicit category state for one check,
+// carrying both dimensions. It overrides the categories the
+// categorisation rules would otherwise compute for the check.
+message CheckCategory {
+  // check_path of the check this applies to (matches the check's
+  // identifier in the catalogue).
+  string check_path = 1 [(buf.validate.field).string.min_len = 1];
+
+  // Explicit structural category (empty = no explicit structural
+  // category; the rule-computed one is used instead).
+  string category = 2;
+
+  // Explicit governance category (empty = no explicit governance category;
+  // the rule-computed one is used instead).
+  string governance_category = 3;
+
+  // Identity of the actor that last set this category. Server-derived
+  // from the request context; ignored on input.
+  string actor_identity = 4;
+
+  // When this category was last updated. Server-set; ignored on input.
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message UpsertCheckCategoriesRequest {
+  repeated CheckCategory categories = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message UpsertCheckCategoriesResponse {
+  // Echoed categories with server-set actor_identity / updated_at.
+  repeated CheckCategory categories = 1;
+}
+
+message DeleteCheckCategoriesRequest {
+  // check_paths whose explicit categories (both dimensions) should be
+  // cleared.
+  repeated string check_paths = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message DeleteCheckCategoriesResponse {}
+
+message ListCheckCategoriesRequest {}
+
+message ListCheckCategoriesResponse {
+  repeated CheckCategory categories = 1;
+}
