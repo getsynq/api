@@ -12,7 +12,10 @@ service UsersService {
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_USER_READ]
+      scopes: [
+        SCOPE_USER_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -33,7 +36,10 @@ service UsersService {
   rpc GetByEmail(GetByEmailRequest) returns (GetByEmailResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_USER_READ]
+      scopes: [
+        SCOPE_USER_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
