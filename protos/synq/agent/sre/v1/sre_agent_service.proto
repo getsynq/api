@@ -25,6 +25,46 @@ service SreAgentService {
       scopes: [SCOPE_SRE_AGENT]
     };
   }
+
+  // ListPromptSuggestions returns prompt-improvement suggestions recorded for the
+  // caller's workspace. Default scope is pending suggestions only; set statuses to
+  // include accepted / dismissed / superseded rows. Sorted newest first.
+  rpc ListPromptSuggestions(ListPromptSuggestionsRequest) returns (ListPromptSuggestionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_READ]
+    };
+  }
+
+  // AcceptPromptSuggestion applies a pending suggestion to the matching SRE agent
+  // prompt field. The applied value is `suggested_value` unless `edited_value` is set.
+  // Returns FAILED_PRECONDITION when the live prompt has drifted from the suggestion's
+  // `baseline_value` since it was produced — the client should re-fetch and re-render.
+  rpc AcceptPromptSuggestion(AcceptPromptSuggestionRequest) returns (AcceptPromptSuggestionResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // DismissPromptSuggestion marks a pending suggestion as dismissed with an optional
+  // free-text reason. The SRE agent configuration is left untouched.
+  rpc DismissPromptSuggestion(DismissPromptSuggestionRequest) returns (DismissPromptSuggestionResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // RecordPromptSuggestion is the producer-side endpoint used by the offline analyser
+  // to register a new suggestion for a workspace. The server snapshots the current
+  // value of the targeted prompt field as `baseline_value`. Any pending suggestion
+  // for the same `(workspace, field)` pair is marked as superseded before the new
+  // row is inserted. Returns the recorded suggestion, or an empty response when the
+  // baseline already matches `suggested_value` (no-op).
+  rpc RecordPromptSuggestion(RecordPromptSuggestionRequest) returns (RecordPromptSuggestionResponse) {
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_SRE_AGENT]
+    };
+  }
 }
 
 message ConnectRequest {
@@ -124,4 +164,118 @@ message GetConfigResponse {
   string issue_grouping_system_prompt = 6;
   // Indicates that SRE shouldn't group any issues
   bool issue_grouping_disabled = 7;
+}
+
+// PromptField identifies which SRE agent system-prompt a suggestion targets.
+// Mirrors the four `*_system_prompt` fields returned by `GetConfig`.
+enum PromptField {
+  PROMPT_FIELD_UNSPECIFIED = 0;
+  PROMPT_FIELD_TRIAGE = 1;
+  PROMPT_FIELD_TESTER = 2;
+  PROMPT_FIELD_WORKSPACE = 3;
+  PROMPT_FIELD_ISSUE_GROUPING = 4;
+}
+
+// PromptSuggestionStatus is the review lifecycle of a single prompt suggestion.
+// `SUPERSEDED` indicates a newer pending suggestion for the same field replaced
+// this one before it was reviewed.
+enum PromptSuggestionStatus {
+  PROMPT_SUGGESTION_STATUS_UNSPECIFIED = 0;
+  PROMPT_SUGGESTION_STATUS_PENDING = 1;
+  PROMPT_SUGGESTION_STATUS_ACCEPTED = 2;
+  PROMPT_SUGGESTION_STATUS_DISMISSED = 3;
+  PROMPT_SUGGESTION_STATUS_SUPERSEDED = 4;
+}
+
+message PromptSuggestion {
+  // Server-assigned UUID.
+  string id = 1;
+  // Workspace the suggestion belongs to. Always populated, always matches the
+  // caller's workspace for customer-facing reads.
+  string workspace = 2;
+  PromptField field = 3;
+  PromptSuggestionStatus status = 4;
+  // Value of the targeted prompt field as it was at the moment the suggestion
+  // was produced. Used to detect drift on Accept.
+  string baseline_value = 5;
+  // Value proposed by the analyser.
+  string suggested_value = 6;
+  // Human-readable markdown explanation produced by the analyser.
+  string rationale = 7;
+  // Opaque JSON encoded by the producer (e.g. references to source entities
+  // and incidents). Returned only to producer-scoped callers; customer reads
+  // see an empty value.
+  bytes evidence_json = 8;
+  // Producer identifier + version, e.g. `"offline_audit_v1"`.
+  string source = 9;
+  google.protobuf.Timestamp produced_at = 10;
+  // Identity of whoever reviewed the suggestion (derived from the JWT actor).
+  // Empty while the suggestion is pending.
+  string reviewed_by = 11;
+  google.protobuf.Timestamp reviewed_at = 12;
+  // Optional reason on dismiss, or note on accept.
+  string decision_note = 13;
+  // Value actually written to the prompt field. Differs from `suggested_value`
+  // when the user edited before accepting.
+  string applied_value = 14;
+}
+
+message ListPromptSuggestionsRequest {
+  // Empty = include all fields.
+  repeated PromptField fields = 1;
+  // Empty = pending only.
+  repeated PromptSuggestionStatus statuses = 2;
+}
+
+message ListPromptSuggestionsResponse {
+  repeated PromptSuggestion suggestions = 1;
+}
+
+message AcceptPromptSuggestionRequest {
+  string id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // If set, the user edited the suggestion before accepting. The server records
+  // both `suggested_value` (unchanged) and `applied_value` (= `edited_value`).
+  optional string edited_value = 2;
+  // Optional free-text note recorded with the decision.
+  optional string note = 3;
+}
+
+message AcceptPromptSuggestionResponse {
+  PromptSuggestion suggestion = 1;
+}
+
+message DismissPromptSuggestionRequest {
+  string id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // Optional free-text reason recorded with the decision.
+  optional string reason = 2;
+}
+
+message DismissPromptSuggestionResponse {
+  PromptSuggestion suggestion = 1;
+}
+
+message RecordPromptSuggestionRequest {
+  // Workspace the suggestion targets. Supplied explicitly because the producer
+  // is typically a back-office tool authenticated for cross-workspace use.
+  string workspace = 1 [(buf.validate.field).required = true];
+  PromptField field = 2 [(buf.validate.field).required = true];
+  string suggested_value = 3 [(buf.validate.field).required = true];
+  // Human-readable markdown explanation describing why the change is proposed.
+  string rationale = 4;
+  // Opaque JSON: structured pointers the analyser used to produce the suggestion
+  // (top entities, sample issues, etc.). Stored verbatim for traceability.
+  bytes evidence_json = 5;
+  // Producer identifier + version, e.g. `"offline_audit_v1"`.
+  string source = 6 [(buf.validate.field).required = true];
+}
+
+message RecordPromptSuggestionResponse {
+  // Empty when the live baseline already matches `suggested_value` (no-op).
+  PromptSuggestion suggestion = 1;
 }
