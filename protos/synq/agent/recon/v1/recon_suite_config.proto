@@ -60,4 +60,3 @@ message ReconciliationConfigSummary {
   // Already deduplicated by (name, value); ready for direct display.
   repeated synq.entities.v1.Annotation annotations = 7;
 }
-

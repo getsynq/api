@@ -19,10 +19,20 @@ service SreAgentService {
     };
   }
 
+  // GetConfig returns the Scout configuration (system prompts + DWH connection
+  // summary) for the caller's workspace. Authorized for the agent itself
+  // (SCOPE_SRE_AGENT), for any caller with workspace integration-read access
+  // (SCOPE_INTEGRATION_READ) so admins / owners can inspect the live prompts
+  // via synqctl / fe-app without an agent token, and for MCP read tokens
+  // (SCOPE_MCP_READ) — matches the sibling DWH ConnectionsService scope shape.
   rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_SRE_AGENT]
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_INTEGRATION_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -32,7 +42,10 @@ service SreAgentService {
   rpc ListPromptSuggestions(ListPromptSuggestionsRequest) returns (ListPromptSuggestionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INTEGRATION_READ]
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -54,15 +67,25 @@ service SreAgentService {
     };
   }
 
-  // RecordPromptSuggestion is the producer-side endpoint used by the offline analyser
-  // to register a new suggestion for a workspace. The server snapshots the current
-  // value of the targeted prompt field as `baseline_value`. Any pending suggestion
-  // for the same `(workspace, field)` pair is marked as superseded before the new
-  // row is inserted. Returns the recorded suggestion, or an empty response when the
-  // baseline already matches `suggested_value` (no-op).
+  // RecordPromptSuggestion is the producer-side endpoint used by the offline
+  // analyser to register a new suggestion for a workspace. The server snapshots
+  // the current value of the targeted prompt field as `baseline_value`. Any
+  // pending suggestion for the same `(workspace, field)` pair is marked as
+  // superseded before the new row is inserted. Returns the recorded suggestion,
+  // or an empty response when the baseline already matches `suggested_value`
+  // (no-op).
+  //
+  // Authorized for the agent / offline analyser (SCOPE_SRE_AGENT) and for
+  // admins / owners with workspace integration-edit access
+  // (SCOPE_INTEGRATION_EDIT), so an admin running synqctl can publish a
+  // suggestion against a customer workspace via x-synq-workspace-override
+  // without minting an agent token.
   rpc RecordPromptSuggestion(RecordPromptSuggestionRequest) returns (RecordPromptSuggestionResponse) {
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_SRE_AGENT]
+      scopes: [
+        SCOPE_SRE_AGENT,
+        SCOPE_INTEGRATION_EDIT
+      ]
     };
   }
 }
@@ -198,9 +221,12 @@ message PromptSuggestion {
   // Value of the targeted prompt field as it was at the moment the suggestion
   // was produced. Used to detect drift on Accept.
   string baseline_value = 5;
-  // Value proposed by the analyser.
+  // Value proposed by the analyser. A full replacement for the targeted prompt;
+  // diffed against `baseline_value` in the review UI (see the producer guidance
+  // on `RecordPromptSuggestionRequest.suggested_value`).
   string suggested_value = 6;
-  // Human-readable markdown explanation produced by the analyser.
+  // Short markdown explanation produced by the analyser (<= 2048 bytes),
+  // rendered as a "why" callout above the diff in the review UI.
   string rationale = 7;
   // Opaque JSON encoded by the producer (e.g. references to source entities
   // and incidents). Returned only to producer-scoped callers; customer reads
@@ -213,7 +239,8 @@ message PromptSuggestion {
   // Empty while the suggestion is pending.
   string reviewed_by = 11;
   google.protobuf.Timestamp reviewed_at = 12;
-  // Optional reason on dismiss, or note on accept.
+  // Optional short reason on dismiss, or note on accept (<= 512 bytes). A
+  // one-line annotation captured for the audit trail.
   string decision_note = 13;
   // Value actually written to the prompt field. Differs from `suggested_value`
   // when the user edited before accepting.
@@ -238,9 +265,12 @@ message AcceptPromptSuggestionRequest {
   }];
   // If set, the user edited the suggestion before accepting. The server records
   // both `suggested_value` (unchanged) and `applied_value` (= `edited_value`).
-  optional string edited_value = 2;
-  // Optional free-text note recorded with the decision.
-  optional string note = 3;
+  // Hard-capped at 16384 bytes to match the SRE agent prompt field limits.
+  optional string edited_value = 2 [(buf.validate.field).string.max_bytes = 16384];
+  // Optional short free-text note recorded with the decision. Capped at 512
+  // bytes — it is a one-line annotation for the audit trail, not a place to
+  // restate the prompt.
+  optional string note = 3 [(buf.validate.field).string.max_bytes = 512];
 }
 
 message AcceptPromptSuggestionResponse {
@@ -252,8 +282,9 @@ message DismissPromptSuggestionRequest {
     required: true
     string: {uuid: true}
   }];
-  // Optional free-text reason recorded with the decision.
-  optional string reason = 2;
+  // Optional short free-text reason recorded with the decision. Capped at 512
+  // bytes — a one-line justification for the audit trail.
+  optional string reason = 2 [(buf.validate.field).string.max_bytes = 512];
 }
 
 message DismissPromptSuggestionResponse {
@@ -261,18 +292,41 @@ message DismissPromptSuggestionResponse {
 }
 
 message RecordPromptSuggestionRequest {
-  // Workspace the suggestion targets. Supplied explicitly because the producer
-  // is typically a back-office tool authenticated for cross-workspace use.
-  string workspace = 1 [(buf.validate.field).required = true];
+  // Targets the workspace from the JWT (back-office producers select the
+  // workspace via the standard x-synq-workspace-override header).
   PromptField field = 2 [(buf.validate.field).required = true];
-  string suggested_value = 3 [(buf.validate.field).required = true];
-  // Human-readable markdown explanation describing why the change is proposed.
-  string rationale = 4;
+  // Full replacement value for the targeted prompt field, hard-capped at 16384
+  // bytes to match the SRE agent prompt field limit.
+  //
+  // Producer guidance — propose the *smallest* change that achieves the goal.
+  // Start from the current prompt value and append, delete, or rewrite only the
+  // relevant section; do not regenerate the whole prompt from scratch. The
+  // reviewer is shown a Current-vs-Suggested diff, so a surgical edit is far
+  // easier to approve than a wholesale rewrite that rewords every line.
+  //
+  // Keep individual lines short and break content into paragraphs separated by
+  // newlines instead of collapsing everything onto one long line. The review UI
+  // diffs line by line, so well-broken text produces a readable, minimal diff;
+  // a single monster line shows up as one giant replaced block.
+  string suggested_value = 3 [(buf.validate.field) = {
+    required: true
+    string: {max_bytes: 16384}
+  }];
+  // Short markdown explanation of why the change is proposed, capped at 2048
+  // bytes. Shown to the reviewer as a "why" callout above the diff, so keep it
+  // to a few tight sentences or bullet points — it justifies the change, it does
+  // not restate the prompt. As with `suggested_value`, prefer short lines /
+  // paragraphs over one long line.
+  string rationale = 4 [(buf.validate.field).string.max_bytes = 2048];
   // Opaque JSON: structured pointers the analyser used to produce the suggestion
   // (top entities, sample issues, etc.). Stored verbatim for traceability.
   bytes evidence_json = 5;
-  // Producer identifier + version, e.g. `"offline_audit_v1"`.
-  string source = 6 [(buf.validate.field).required = true];
+  // Producer identifier + version, e.g. `"offline_audit_v1"`. A short slug, not
+  // free text — capped at 128 bytes.
+  string source = 6 [(buf.validate.field) = {
+    required: true
+    string: {max_bytes: 128}
+  }];
 }
 
 message RecordPromptSuggestionResponse {

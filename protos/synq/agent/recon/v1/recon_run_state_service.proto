@@ -135,10 +135,14 @@ message CancelReconciliationRunRequest {
   // The suite the run belongs to. Required because run rows are keyed
   // by (workspace, suite_id, run_id) — clients pass the suite_id they
   // already know from the run state listing alongside the run_id.
-  string suite_id = 1 [(buf.validate.field) = {string: {min_len: 1}}];
+  string suite_id = 1 [(buf.validate.field) = {
+    string: {min_len: 1}
+  }];
   // Run identifier. UUIDv7 returned by BatchReconciliationRunState /
   // ListReconciliationRunState.
-  string run_id = 2 [(buf.validate.field) = {string: {min_len: 1}}];
+  string run_id = 2 [(buf.validate.field) = {
+    string: {min_len: 1}
+  }];
 }
 
 message CancelReconciliationRunResponse {

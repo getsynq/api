@@ -58,9 +58,7 @@ service ChecksCategoriesService {
         SCOPE_POLICIES_EDIT
       ]
     };
-    option (google.api.http) = {
-      get: "/api/entities/checks/v1/categories"
-    };
+    option (google.api.http) = {get: "/api/entities/checks/v1/categories"};
   }
 }
 

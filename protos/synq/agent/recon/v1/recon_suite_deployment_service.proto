@@ -159,7 +159,6 @@ service SuiteDeploymentService {
       body: "*"
     };
   }
-
 }
 
 // Maps a reconciliation-connection name (as referenced in the suite config)

@@ -6,8 +6,8 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
-import "synq/issues/actor/v1/actor.proto";
 import "synq/agent/recon/v1/recon_suite_deployment_service.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -99,7 +99,6 @@ service SuiteConfigService {
       ]
     };
   }
-
 }
 
 // --- Managed suite requests ---
