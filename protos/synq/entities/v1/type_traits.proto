@@ -11,20 +11,29 @@ option go_package = "github.com/getsynq/api/entities/v1";
 // TypeTraits are the behavioral traits a custom entity Type can declare.
 // Declaring a trait makes every entity of that type behave platform-wide as if
 // it carried the trait natively (e.g. is_model => transformation-model ranking,
-// monitorability and lineage). All-false is the default (no declared traits).
+// monitorability and lineage).
+//
+// Every field is `optional` so an unset trait means "not declared, fall through
+// to the trait default" — distinct from an explicit `false`. An unset/nil message
+// means no declared traits (every trait at its default).
 message TypeTraits {
   // model-like: the dbt-model / Coalesce-node / SQLMesh-model analog.
-  bool is_model = 1;
+  // Default when unset: false.
+  optional bool is_model = 1;
 
   // source-like: an external/raw input to the transformation graph.
-  bool is_source = 2;
+  // Default when unset: false.
+  optional bool is_source = 2;
 
   // BI-like: a dashboard, report or other business-intelligence artifact.
-  bool is_bi_like = 3;
+  // Default when unset: false.
+  optional bool is_bi_like = 3;
 
   // check-like: pairs with declarative checks.
-  bool is_test_type = 4;
+  // Default when unset: false.
+  optional bool is_test_type = 4;
 
   // excluded from lineage rendering.
-  bool is_ignored_in_lineage = 5;
+  // Default when unset: false.
+  optional bool is_ignored_in_lineage = 5;
 }
