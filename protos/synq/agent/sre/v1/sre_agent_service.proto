@@ -54,6 +54,9 @@ service SreAgentService {
   // Returns FAILED_PRECONDITION when the live prompt has drifted from the suggestion's
   // `baseline_value` since it was produced — the client should re-fetch and re-render.
   rpc AcceptPromptSuggestion(AcceptPromptSuggestionRequest) returns (AcceptPromptSuggestionResponse) {
+    // Targets a specific suggestion by id and is safe to retry: the config patch
+    // is guarded so it is not re-applied, and a repeat after success is a no-op.
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INTEGRATION_EDIT]
     };
@@ -62,6 +65,9 @@ service SreAgentService {
   // DismissPromptSuggestion marks a pending suggestion as dismissed with an optional
   // free-text reason. The SRE agent configuration is left untouched.
   rpc DismissPromptSuggestion(DismissPromptSuggestionRequest) returns (DismissPromptSuggestionResponse) {
+    // Targets a specific suggestion by id and converges to a terminal dismissed
+    // state, so retries are safe.
+    option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_INTEGRATION_EDIT]
     };
@@ -81,6 +87,9 @@ service SreAgentService {
   // suggestion against a customer workspace via x-synq-workspace-override
   // without minting an agent token.
   rpc RecordPromptSuggestion(RecordPromptSuggestionRequest) returns (RecordPromptSuggestionResponse) {
+    // Not idempotent: each call inserts a new suggestion with a server-generated
+    // id and supersedes the prior pending one, so a retry creates a duplicate.
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,

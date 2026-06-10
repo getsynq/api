@@ -4,6 +4,7 @@ package synq.entities.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/type_traits.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -49,4 +50,10 @@ message Type {
 
   // Timestamp when the custom entity type was deleted. If this is set, the custom entity type is considered deleted.
   google.protobuf.Timestamp deleted_at = 8;
+
+  // Behavioral traits declared on this type. Every entity of the type inherits
+  // them: declaring is_model, for example, makes its entities rank and behave as
+  // transformation models (canonical-entity ranking, monitorability, lineage),
+  // the same way a dbt model does. Unset means no declared traits (all false).
+  TypeTraits traits = 9;
 }

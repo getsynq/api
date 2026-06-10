@@ -78,6 +78,27 @@ service SuiteDeploymentService {
     };
   }
 
+  // Patch the per-case CaseFailureImpact map on an existing deployment
+  // without re-promoting the suite snapshot. Useful for "apply to all"
+  // FE actions and one-off toggles between RAISE_ISSUE_ON_TABLES and
+  // SHOW_ON_TABLES. Re-renders PromotedReconCaseMetadata so the
+  // error_tables / shown_tables split reflects the new policy
+  // immediately.
+  //
+  // Merge semantics: keys present in the request overwrite the stored
+  // value for that case. Keys absent from the request are left
+  // untouched (no implicit reset). Sending CASE_FAILURE_IMPACT_UNSPECIFIED
+  // clears the override for that case (falls back to the default
+  // RAISE_ISSUE_ON_TABLES). Unknown case names are rejected with
+  // INVALID_ARGUMENT so the FE catches typos before the deployment is
+  // mutated.
+  rpc UpdateDeploymentCaseImpacts(UpdateDeploymentCaseImpactsRequest) returns (UpdateDeploymentCaseImpactsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
   // Pause a deployment. Scheduled and API-triggered runs are suppressed until
   // `until` is reached, or indefinitely when `until` is absent.
   rpc PauseDeployment(PauseDeploymentRequest) returns (PauseDeploymentResponse) {
@@ -259,6 +280,7 @@ enum DeploymentAction {
   DEPLOYMENT_ACTION_RESUMED = 6;
   DEPLOYMENT_ACTION_UNPROMOTED = 7;
   DEPLOYMENT_ACTION_ANNOTATIONS_CHANGED = 8;
+  DEPLOYMENT_ACTION_CASE_IMPACTS_CHANGED = 9;
 }
 
 // SuiteDeployment is the latest state of a deployment (current row).
@@ -331,6 +353,15 @@ message SuiteDeployment {
   // PromotedReconCaseMetadata — this field exposes only the deployment's
   // own overlay so callers can render and edit it independently.
   repeated synq.entities.v1.Annotation deployment_annotations = 24;
+
+  // Effective per-case CaseFailureImpact map currently in force for this
+  // deployment. Keyed by case `name`. Cases without an entry behave as
+  // RAISE_ISSUE_ON_TABLES. Drives whether the runner attaches each
+  // case's referenced tables to Run.target (issue-raising) or
+  // Run.extra_references (visibility only) — see
+  // PromotedReconCaseMetadata.error_tables / shown_tables for the
+  // resolved table lists.
+  map<string, CaseFailureImpact> case_failure_impacts = 25;
 }
 
 // SuiteDeploymentHistoryEntry is a single event in the deployment's history.
@@ -361,6 +392,11 @@ message SuiteDeploymentHistoryEntry {
   // every history entry (annotation changes carry the full new list, other
   // events carry the snapshot at the time of the event).
   repeated synq.entities.v1.Annotation deployment_annotations = 16;
+
+  // Effective per-case CaseFailureImpact map at this point in time.
+  // Snapshot semantics — every history entry carries the full map in
+  // force right after the event was recorded.
+  map<string, CaseFailureImpact> case_failure_impacts = 17;
 }
 
 // --- Requests / responses ---
@@ -417,6 +453,20 @@ message PromoteSuiteRequest {
   // and case-level annotations from the frozen suite snapshot. Use
   // UpdateDeploymentAnnotations to mutate later without re-promoting.
   repeated synq.entities.v1.Annotation deployment_annotations = 10;
+
+  // Per-case override controlling how the tables referenced by each
+  // reconciliation case propagate onto runs. Keyed by case `name` from
+  // the suite config. When a key is omitted on re-promote, the prior
+  // deployment's value is retained — operators only set keys they want
+  // to change, and the FE can offer an "apply to all" action by sending
+  // the same value under every case name. New cases (not present in any
+  // previous deployment of this suite_id) default to
+  // RAISE_ISSUE_ON_TABLES when unset.
+  //
+  // Sending CASE_FAILURE_IMPACT_UNSPECIFIED for a known case is treated
+  // as "no opinion, keep current"; to actively reset to the default,
+  // either omit the case or send RAISE_ISSUE_ON_TABLES.
+  map<string, CaseFailureImpact> case_failure_impacts = 11;
 }
 
 message PromoteSuiteResponse {
@@ -498,6 +548,26 @@ message UpdateDeploymentAnnotationsRequest {
 }
 
 message UpdateDeploymentAnnotationsResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UpdateDeploymentCaseImpactsRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Partial patch of the per-case impact map. See
+  // UpdateDeploymentCaseImpacts RPC docs for merge / clear semantics.
+  map<string, CaseFailureImpact> case_failure_impacts = 2;
+
+  optional string change_summary = 3;
+
+  // Actor performing the update. Required.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
+}
+
+message UpdateDeploymentCaseImpactsResponse {
   SuiteDeployment deployment = 1;
 }
 

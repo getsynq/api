@@ -205,6 +205,31 @@ message Reconcilation {
   repeated synq.entities.v1.Annotation annotations = 21;
 }
 
+// CaseFailureImpact controls whether a reconciliation case's referenced
+// tables (resolved from the source/target SQL at deploy time) inherit the
+// case's failure status, or are only attached to the run for visibility.
+// This is a deployment-time policy, not part of the suite YAML — it is
+// set on PromoteSuite / UpdateDeploymentCaseImpacts and stored on the
+// promoted deployment, not on the authored config. Letting operators
+// flip impact without editing the suite keeps configuration declarative
+// and lets the FE offer "apply to all" without round-tripping YAML.
+enum CaseFailureImpact {
+  // Defaults to RAISE_ISSUE_ON_TABLES.
+  CASE_FAILURE_IMPACT_UNSPECIFIED = 0;
+
+  // The referenced tables are treated as outcomes of the run: a failed
+  // case opens issues on each table, and the table's overall health
+  // reflects the reconciliation result. Use this when the reconciliation
+  // authoritatively validates the tables it references.
+  CASE_FAILURE_IMPACT_RAISE_ISSUE_ON_TABLES = 1;
+
+  // The referenced tables appear on the run for visibility only. The
+  // run is listed in each table's run history but never raises an issue
+  // on them. Use this for advisory checks that should not impact the
+  // table's published health.
+  CASE_FAILURE_IMPACT_SHOW_ON_TABLES = 2;
+}
+
 // ReconcilationMode defines the comparison strategy for a reconciliation.
 // Modes are ordered by depth of comparison: ROW_COUNT < ROW_CHECKSUM < AGGREGATE.
 enum ReconcilationMode {

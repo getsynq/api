@@ -97,6 +97,13 @@ message MonitorTableStats {
   }
 }
 
+message MonitorCategoryDistribution {
+  // Categorical column whose value distribution is monitored.
+  string field = 1 [(buf.validate.field).required = true];
+  // Max categories to track; the rest are aggregated into "other". 0 = use default.
+  int32 top_k_limit = 2 [(buf.validate.field).int32.gte = 0];
+}
+
 enum Severity {
   SEVERITY_UNSPECIFIED = 0;
   SEVERITY_WARNING = 1;
@@ -176,6 +183,7 @@ message MonitorDefinition {
     MonitorCustomNumeric custom_numeric = 22;
     MonitorFieldStats field_stats = 23;
     MonitorTableStats table_stats = 24;
+    MonitorCategoryDistribution category_distribution = 25;
   }
 
   oneof mode {
