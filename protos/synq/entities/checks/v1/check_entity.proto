@@ -4,6 +4,8 @@ package synq.entities.checks.v1;
 
 import "buf/validate/validate.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/entities/v1/entity_types.proto";
+import "synq/platforms/v1/data_platform_types.proto";
 
 option go_package = "github.com/getsynq/api/entities/checks/v1";
 
@@ -21,6 +23,15 @@ message CheckEntity {
   optional string package = 3;
   // General kind of the test, e.g. "not_null", "unique", "foreign_key"
   string kind = 11;
+
+  // Entity type of the check itself, e.g. ENTITY_TYPE_DBT_TEST.
+  // ENTITY_TYPE_UNSPECIFIED when the type is unknown.
+  synq.entities.v1.EntityType entity_type = 12;
+
+  // Platform the check runs on, e.g. DATA_PLATFORM_TYPE_DBT.
+  // DATA_PLATFORM_TYPE_UNSPECIFIED when the platform is unknown.
+  synq.platforms.v1.DataPlatformType data_platform_type = 13;
+
   // Whether the check is platform native
   bool is_platform_native = 4;
 

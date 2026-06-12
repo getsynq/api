@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Oracle Database cloud-managed connection. Oracle connections are scoped to a
+// Pluggable Database (PDB) via the service name.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message OracleCloudConf {
+  // Host address or IP (OCI Autonomous DB e.g. "adb.eu-frankfurt-1.oraclecloud.com").
+  optional string host = 1 [(buf.validate.field).string.min_len = 1];
+  // Listener port (typically 1521; OCI Autonomous DB with mTLS uses 1522).
+  optional int32 port = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // Service name / PDB name (OCI Autonomous DB e.g. "mydb_high").
+  optional string service_name = 3;
+  // Username.
+  optional string username = 4;
+  // Password. Write-only — masked on reads.
+  optional string password = 5;
+  // Enable TLS/SSL (TCPS). Required for OCI Autonomous Database.
+  optional bool ssl = 6;
+  // Verify the server certificate when SSL is enabled.
+  optional bool ssl_verify = 7;
+  // Ingest query logs (V$SQL by default, DBA_HIST with the Diagnostics Pack).
+  optional bool fetch_query_logs = 8;
+  // Use the Oracle Diagnostics Pack (AWR) for persistent query-log history
+  // (requires a license; included with OCI Autonomous Database).
+  optional bool use_diagnostics_pack = 9;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 10;
+}

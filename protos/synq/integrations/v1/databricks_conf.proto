@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Databricks cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message DatabricksCloudConf {
+  // Workspace URL (e.g. "https://your-workspace.cloud.databricks.com").
+  optional string workspace_url = 1 [(buf.validate.field).string.min_len = 1];
+  // Authentication method.
+  oneof authentication {
+    // Personal access token. Write-only — masked on reads.
+    string token = 2;
+    // OAuth 2.0 machine-to-machine (service principal) auth.
+    DatabricksOAuthM2M oauth_m2m = 3;
+  }
+  // SQL warehouse id (or cluster id) used to execute queries.
+  optional string warehouse_id = 4;
+  // Ingest query logs from system tables.
+  optional bool fetch_query_logs = 5;
+  // Run ANALYZE TABLE to refresh and collect statistics.
+  optional bool fetch_table_metrics = 6;
+  // Run ANALYZE TABLE ... SCAN for detailed metrics incl. row counts
+  // (more resource-intensive).
+  optional bool fetch_table_metrics_scan = 7;
+  // Catalog name patterns to exclude from ingestion.
+  repeated string catalog_blocklist = 8;
+  // Retrieve Unity Catalog table tags.
+  optional bool fetch_table_tags = 9;
+  // Use SHOW CREATE TABLE for table DDL (otherwise extracted from query logs).
+  optional bool use_show_create_table = 10;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 11;
+}
+
+// Databricks OAuth 2.0 machine-to-machine (service principal) credentials.
+message DatabricksOAuthM2M {
+  // OAuth client id of the service principal.
+  optional string client_id = 1;
+  // OAuth client secret. Write-only — masked on reads.
+  optional string client_secret = 2;
+}

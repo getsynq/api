@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package synq.entities.identities.v2;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/identities/v2";
+
+// IdentityRule declares how entities are recognized as the same logical entity.
+// A rule is evaluated against the current set of entities, so it automatically
+// applies to entities that appear after the rule is created. The `kind` field
+// selects the matching strategy and must be set to a supported rule type.
+message IdentityRule {
+  oneof kind {
+    option (buf.validate.oneof).required = true;
+
+    PrefixRewriteIdentityRule prefix_rewrite_identity_rule = 1;
+  }
+}
+
+// PrefixRewriteIdentityRule treats two identifier prefixes as the same instance:
+// any entity whose identifier begins with source_prefix is considered identical
+// to the entity with the same identifier under target_prefix. The relationship
+// is bidirectional.
+message PrefixRewriteIdentityRule {
+  // Identifier prefix to match (for example, an instance or account prefix).
+  string source_prefix = 1 [(buf.validate.field).string = {min_len: 1, max_len: 1024}];
+  // Identifier prefix that matched entities are unified with.
+  string target_prefix = 2 [(buf.validate.field).string = {min_len: 1, max_len: 1024}];
+}

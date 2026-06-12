@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// dbt Cloud transformation orchestration cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message DbtCloudConf {
+  // dbt Cloud account id (the numeric id from your dbt Cloud URL).
+  optional string account_id = 1 [(buf.validate.field).string.min_len = 1];
+  // dbt Cloud jobs to track, by job id. Provide the full set on every update
+  // (the list is replaced, not merged). When empty, all jobs visible to the API
+  // token are tracked.
+  repeated string job_ids = 2;
+  // dbt Cloud API token (service token recommended). Write-only — masked on
+  // reads; omit to keep the stored token, send a new value to rotate it.
+  optional string token = 3;
+  // Project id used to generate asset identifiers. Use the same id for multiple
+  // projects that should be merged.
+  optional string project_id = 4;
+  // dbt Cloud API hostname without scheme (e.g. "cloud.getdbt.com",
+  // "emea.dbt.com"). Empty uses the multi-tenant default.
+  optional string api_endpoint = 5;
+  // Database instance identifier, required where database names are not globally
+  // unique (e.g. a Snowflake account).
+  optional string default_database_instance = 6;
+}

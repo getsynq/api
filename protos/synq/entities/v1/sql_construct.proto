@@ -13,4 +13,68 @@ option go_package = "github.com/getsynq/api/entities/v1";
 // CTE and an INNER JOIN carries HAS_CTE, HAS_ANY_JOIN and INNER_JOIN).
 enum SqlConstruct {
   SQL_CONSTRUCT_UNSPECIFIED = 0;
+  //Aggregate flag: the query contains at least one join of any kind. Always
+  //emitted alongside the specific JOIN variant for that join.
+  SQL_CONSTRUCT_HAS_ANY_JOIN = 1;
+  //Aggregate flag: the query contains at least one UNION / INTERSECT /
+  //EXCEPT at any nesting level. Always emitted alongside the specific SET
+  //variant.
+  SQL_CONSTRUCT_HAS_ANY_SET_OPERATION = 2;
+  //The query has a GROUP BY (including GROUP BY ALL).
+  SQL_CONSTRUCT_HAS_GROUP_BY = 3;
+  //The query has a WITH clause (CTEs, recursive or not).
+  SQL_CONSTRUCT_HAS_CTE = 4;
+  //UNION / UNION ALL set operation. Emitted alongside HAS_ANY_SET_OPERATION.
+  SQL_CONSTRUCT_SET_UNION = 10;
+  //INTERSECT set operation. Emitted alongside HAS_ANY_SET_OPERATION.
+  SQL_CONSTRUCT_SET_INTERSECT = 11;
+  //EXCEPT / MINUS set operation. Emitted alongside HAS_ANY_SET_OPERATION.
+  SQL_CONSTRUCT_SET_EXCEPT = 12;
+  //INNER JOIN. Also emitted for an unqualified `JOIN`, which defaults to
+  //INNER. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_INNER_JOIN = 20;
+  //T-SQL `CROSS APPLY`. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_CROSS_APPLY_JOIN = 21;
+  //T-SQL `OUTER APPLY`. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_OUTER_APPLY_JOIN = 22;
+  //ClickHouse `ARRAY JOIN` / `LEFT ARRAY JOIN`. Emitted alongside
+  //HAS_ANY_JOIN.
+  SQL_CONSTRUCT_ARRAY_JOIN = 23;
+  //Explicit CROSS JOIN (cartesian product). Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_CROSS_JOIN = 24;
+  //LEFT SEMI JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_LEFT_SEMI_JOIN = 25;
+  //RIGHT SEMI JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_RIGHT_SEMI_JOIN = 26;
+  //LEFT ANTI JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_LEFT_ANTI_JOIN = 27;
+  //RIGHT ANTI JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_RIGHT_ANTI_JOIN = 28;
+  //LEFT [OUTER] JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_LEFT_OUTER_JOIN = 29;
+  //RIGHT [OUTER] JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_RIGHT_OUTER_JOIN = 30;
+  //FULL [OUTER] JOIN. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_FULL_OUTER_JOIN = 31;
+  //Snowflake / Databricks `ASOF JOIN`. Emitted alongside HAS_ANY_JOIN.
+  SQL_CONSTRUCT_ASOF_JOIN = 32;
+  //Query reads a Snowflake semantic view via the `SEMANTIC_VIEW(...)`
+  //table-valued function. One occurrence is recorded per semantic-view
+  //reference. The companion CREATE SEMANTIC VIEW DDL is classified
+  //separately, not via this construct.
+  SQL_CONSTRUCT_READS_SEMANTIC_VIEW = 33;
+  //The query invokes at least one aggregate function (SUM, COUNT, AVG, ...)
+  //used as a grouping aggregate. A windowed aggregate (`SUM(x) OVER (...)`)
+  //does NOT set this flag — it sets HAS_WINDOW_FUNCTION instead, because it
+  //produces one row per input row rather than collapsing groups. Aggregate
+  //names are recognised per-dialect, including user-defined aggregates.
+  SQL_CONSTRUCT_HAS_AGGREGATE_FUNCTION = 34;
+  //The query invokes at least one window function — any function call
+  //carrying an `OVER (...)` clause, whether the base is an aggregate
+  //(`SUM(x) OVER (...)`) or a dedicated window function (`ROW_NUMBER()
+  //OVER (...)`). The window-ness is the `OVER` clause, not the base name.
+  SQL_CONSTRUCT_HAS_WINDOW_FUNCTION = 35;
+  //Set when the SQL could not be parsed. Lets unparseable entities be
+  //filtered without inspecting the underlying parse error.
+  SQL_CONSTRUCT_UNSUPPORTED_SQL_SYNTAX = 100;
 }

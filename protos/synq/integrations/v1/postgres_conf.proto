@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// PostgreSQL cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message PostgresCloudConf {
+  // Username.
+  optional string user = 1;
+  // Password. Write-only — masked on reads.
+  optional string password = 2;
+  // Host address or IP.
+  optional string host = 3 [(buf.validate.field).string.min_len = 1];
+  // Port (typically 5432).
+  optional int32 port = 4 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // Database to connect to and ingest metadata from.
+  optional string database = 5;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 6;
+}

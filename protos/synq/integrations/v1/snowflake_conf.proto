@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Snowflake cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message SnowflakeCloudConf {
+  // Snowflake username.
+  optional string user = 1;
+  // Authentication method.
+  oneof authentication {
+    // Password. Write-only — masked on reads.
+    string password = 2;
+    // Key-pair authentication.
+    SnowflakeKeyPairAuth key_pair = 3;
+  }
+  // Account identifier (e.g. "xy12345.us-east-1") without scheme or trailing slash.
+  optional string account = 4;
+  // Warehouse to run queries on.
+  optional string warehouse = 5;
+  // Databases to monitor and ingest metadata from.
+  repeated string databases = 6;
+  // Role to use for metadata access and queries.
+  optional string role = 7;
+  // Ingest query logs from the ACCOUNT_USAGE schema.
+  optional bool fetch_query_logs = 8;
+  // Databases to fetch query logs from (defaults to all configured databases).
+  repeated string fetch_query_logs_databases = 9;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 10;
+  // Skip GET_DDL for table definitions (use query logs instead).
+  optional bool no_get_ddl = 11;
+  // Ingest Snowflake Tasks metadata.
+  optional bool fetch_tasks = 12;
+  // Databases to retrieve tasks from (defaults to all configured databases).
+  repeated string fetch_tasks_databases = 13;
+  // Use ACCOUNT_USAGE.TASK_HISTORY for task execution history.
+  optional bool fetch_tasks_executions_from_account_usage = 14;
+  // Time range for fetching task execution history (minimum 5 minutes).
+  optional google.protobuf.Duration fetch_tasks_executions_duration = 15;
+  // Produce table-level lineage via GET_LINEAGE (Enterprise edition or higher).
+  optional bool fetch_table_lineage = 16;
+  // Databases to fetch upstream lineage from (defaults to `databases`).
+  repeated string fetch_table_lineage_databases = 17;
+  // Database where the ACCOUNT_USAGE schema lives (defaults to "SNOWFLAKE").
+  optional string account_usage_db = 18;
+}
+
+// Snowflake key-pair authentication.
+message SnowflakeKeyPairAuth {
+  // PEM-encoded private key (PKCS#8). Write-only — masked on reads. Required
+  // when using key-pair auth.
+  optional string private_key_secret = 1;
+  // Public key corresponding to the private key. For a Coalesce Quality–managed
+  // key pair this is returned so you can register it on the Snowflake user; when
+  // you supply your own key it is optional.
+  optional string public_key = 2;
+  // Optional passphrase for an encrypted private key. Write-only — masked on
+  // reads.
+  optional string private_key_passphrase = 3;
+}

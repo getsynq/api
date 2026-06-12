@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+import "synq/common/v1/scope.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Microsoft SQL Server / Azure SQL Database cloud-managed connection. SQL Server
+// connections are scoped to a single database; create one integration per
+// database.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message MSSQLCloudConf {
+  // Hostname or IP (Azure SQL e.g. "yourserver.database.windows.net").
+  optional string host = 1 [(buf.validate.field).string.min_len = 1];
+  // Port (typically 1433).
+  optional int32 port = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // Database to connect to and ingest metadata from.
+  optional string database = 3;
+  // Login username.
+  optional string username = 4;
+  // Login password. Write-only — masked on reads.
+  optional string password = 5;
+  // Skip TLS server certificate verification (not recommended for Azure SQL).
+  optional bool trust_cert = 6;
+  // Encryption mode: "true" (default, required for Azure SQL), "false",
+  // "disable".
+  optional string encrypt = 7;
+  // Ingest query logs from Query Store (must be enabled on the database; Azure
+  // SQL has it on by default).
+  optional bool fetch_query_logs = 8;
+  // Include/exclude scope filter (by schema and table; database-level filtering
+  // does not apply since the connection targets one database).
+  optional synq.common.v1.ScopeFilter scope = 9;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 10;
+}

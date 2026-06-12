@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Trino / Presto cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message TrinoCloudConf {
+  // Coordinator hostname or IP.
+  optional string host = 1 [(buf.validate.field).string.hostname = true];
+  // Port (leave unset for the driver default — typically 443 for HTTPS,
+  // 8080 for HTTP).
+  optional int32 port = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // Authentication method.
+  oneof authentication {
+    // Basic username/password auth.
+    TrinoBasicAuth basic = 3;
+  }
+  // Catalogs to ingest metadata from (e.g. ["hive", "postgresql"]).
+  repeated string catalogs = 4 [(buf.validate.field).repeated.items.string.min_len = 1];
+  // Ingest query logs from system tables.
+  optional bool fetch_query_logs = 5;
+  // Disable SHOW CREATE VIEW for view DDL.
+  optional bool no_show_create_view = 6;
+  // Disable SHOW CREATE TABLE for table DDL.
+  optional bool no_show_create_table = 7;
+  // Disable fetching materialized views from system.metadata.materialized_views.
+  optional bool no_materialized_views = 8;
+  // Fetch table comments from system.metadata.table_comments.
+  optional bool fetch_table_comments = 9;
+  // Use plaintext HTTP instead of HTTPS. Only enable when SSL is unsupported or
+  // the connection is otherwise secured (e.g. a VPN).
+  optional bool use_plaintext = 10;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 11;
+}
+
+// Trino basic (username / password) authentication.
+message TrinoBasicAuth {
+  // Trino username.
+  optional string user = 1;
+  // Trino password. Write-only — masked on reads.
+  optional string password = 2;
+}

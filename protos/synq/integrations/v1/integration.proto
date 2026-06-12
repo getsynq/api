@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/integrations/v1/athena_conf.proto";
+import "synq/integrations/v1/bigquery_conf.proto";
+import "synq/integrations/v1/clickhouse_conf.proto";
+import "synq/integrations/v1/databricks_conf.proto";
+import "synq/integrations/v1/dbt_cloud_conf.proto";
+import "synq/integrations/v1/duckdb_conf.proto";
+import "synq/integrations/v1/mssql_conf.proto";
+import "synq/integrations/v1/mysql_conf.proto";
+import "synq/integrations/v1/oracle_conf.proto";
+import "synq/integrations/v1/postgres_conf.proto";
+import "synq/integrations/v1/redshift_conf.proto";
+import "synq/integrations/v1/snowflake_conf.proto";
+import "synq/integrations/v1/trino_conf.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// IntegrationConfig is the connection configuration for an integration.
+//
+// Exactly one variant of the `config` oneof is set; the populated variant
+// determines the integration's type. The config holds the connection details
+// (host, credentials, scope) for the connected system.
+//
+// Secret fields (passwords, tokens, keys) follow write-only semantics: they are
+// masked (returned empty) on reads. See each `*Conf` message and
+// `IntegrationsService.UpdateIntegration` for preserve / rotate / clear rules.
+message IntegrationConfig {
+  oneof config {
+    option (buf.validate.oneof) = {required: true};
+
+    // Google BigQuery connection.
+    BigQueryCloudConf bigquery = 1;
+    // Snowflake connection.
+    SnowflakeCloudConf snowflake = 2;
+    // Amazon Redshift connection.
+    RedshiftCloudConf redshift = 3;
+    // PostgreSQL connection.
+    PostgresCloudConf postgres = 4;
+    // MySQL connection.
+    MySQLCloudConf mysql = 5;
+    // ClickHouse connection.
+    ClickhouseCloudConf clickhouse = 6;
+    // Databricks connection.
+    DatabricksCloudConf databricks = 7;
+    // Trino / Presto connection.
+    TrinoCloudConf trino = 8;
+    // Microsoft SQL Server / Azure SQL connection.
+    MSSQLCloudConf mssql = 9;
+    // Oracle Database connection.
+    OracleCloudConf oracle = 10;
+    // DuckDB / MotherDuck connection.
+    DuckDBCloudConf duckdb = 11;
+    // Amazon Athena connection.
+    AthenaCloudConf athena = 12;
+    // dbt Cloud connection.
+    DbtCloudConf dbt_cloud = 13;
+  }
+}
+
+// Generated, non-secret values produced by the server when an integration is
+// created (for example a service-account email to grant access to, or a public
+// key to install). Outputs are read-only and are never accepted on writes.
+//
+// At most one variant is set, matching the integration's type. Types that
+// produce no outputs leave this message empty.
+message IntegrationOutputs {
+  oneof outputs {
+    // BigQuery: the service-account identity to grant dataset access to.
+    BigQueryOutputs bigquery = 1;
+    // Snowflake: the public key to register when using key-pair auth.
+    SnowflakeOutputs snowflake = 2;
+    // Athena: the resolved AWS caller identity.
+    AthenaOutputs athena = 3;
+  }
+}
+
+// BigQuery generated outputs.
+message BigQueryOutputs {
+  // Email of the service account derived from the supplied credentials. Grant
+  // this principal access to the datasets you want Coalesce Quality to read.
+  string service_account_email = 1;
+}
+
+// Snowflake generated outputs.
+message SnowflakeOutputs {
+  // Public key (PEM) to register on the Snowflake user when authenticating with
+  // a Coalesce Quality–managed key pair. Empty when you supply your own
+  // credentials.
+  string public_key = 1;
+}
+
+// Athena generated outputs.
+message AthenaOutputs {
+  // AWS account id resolved from the supplied credentials.
+  string account_id = 1;
+  // ARN of the IAM principal Coalesce Quality authenticates as. Reference it in
+  // your Athena / Glue resource policies.
+  string principal_arn = 2;
+}
+
+// Capabilities advertise which actions are valid for an integration in its
+// current state, so a client can decide what to offer before calling.
+//
+// Capabilities are a hint computed from the integration's type and current
+// state; the server still enforces every action. A `false` flag means the
+// action would be rejected right now (unsupported for this type, or not
+// applicable in the current state — for example `can_enable` is false for an
+// already-enabled integration).
+message Capabilities {
+  // The configuration can be changed via `UpdateIntegration`. False for
+  // read-only / externally-owned integrations.
+  bool can_patch = 1;
+  // An ad-hoc refresh can be triggered via `RefreshIntegration`.
+  bool can_refresh = 2;
+  // The integration can be disabled via `DisableIntegration` (true only when
+  // currently enabled).
+  bool can_disable = 3;
+  // The integration can be enabled via `EnableIntegration` (true only when
+  // currently disabled).
+  bool can_enable = 4;
+  // The integration can be deleted via `DeleteIntegration`.
+  bool can_delete = 5;
+}
+
+// Integration is a connection from Coalesce Quality to one of your data
+// systems (a warehouse, database, or transformation tool).
+message Integration {
+  // Server-assigned unique identifier (UUID). Use it to address the integration
+  // in `GetIntegration`, `UpdateIntegration`, `DeleteIntegration`, and the
+  // enable / disable / refresh / health RPCs.
+  string id = 1;
+
+  // Human-friendly name shown in the Coalesce Quality UI. Set by you on create
+  // and editable via update.
+  string title = 2;
+
+  // Whether the integration is currently disabled. A disabled integration keeps
+  // its configuration but is not scheduled or refreshed. Toggle with
+  // `EnableIntegration` / `DisableIntegration`.
+  bool disabled = 3;
+
+  // When the integration was created.
+  google.protobuf.Timestamp created_at = 4;
+
+  // When the integration was last modified (configuration, title, or
+  // enabled / disabled state).
+  google.protobuf.Timestamp updated_at = 5;
+
+  // Opaque entity tag for optimistic concurrency. Pass it back as
+  // `UpdateIntegrationRequest.etag` / `DeleteIntegrationRequest.etag` to ensure
+  // you are modifying the version you last read; a mismatch is rejected with a
+  // 409 / ABORTED. The value is weak (prefixed `W/`) and opaque —
+  // do not parse it.
+  string etag = 6;
+
+  // Connection configuration. Secret fields are masked (empty) on reads.
+  IntegrationConfig config = 20;
+
+  // Server-generated outputs (read-only). Empty for types that produce none.
+  IntegrationOutputs outputs = 21;
+
+  // Actions valid for this integration in its current state (read-only hint).
+  Capabilities capabilities = 22;
+}

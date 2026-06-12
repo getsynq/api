@@ -1,0 +1,403 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/integrations/v1/integration.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// IntegrationsService manages connections from Coalesce Quality to your data
+// systems (warehouses, databases, and transformation tools).
+//
+// Concurrency: every integration carries an opaque `etag`. Read it from
+// `GetIntegration` / `ListIntegrations`, then pass it back on
+// `UpdateIntegration` / `DeleteIntegration` to ensure you modify the version you
+// last saw. A stale etag is rejected with ABORTED (HTTP 409). Omit
+// the etag for last-write-wins.
+//
+// Quota: each workspace has a limit on the number of integrations. Creating
+// beyond the limit is rejected with RESOURCE_EXHAUSTED.
+//
+// Secrets: credential fields (passwords, tokens, keys) are write-only. They are
+// masked (returned empty) on every read. On update, omit a secret to keep it,
+// send a new value to rotate it, or send an explicit empty string to clear it
+// (where the field is `optional`).
+service IntegrationsService {
+  // Create a new integration. The server assigns the id and returns the created
+  // integration including any generated outputs.
+  //
+  // The integration type is fixed by the populated `config` variant and cannot
+  // be changed later. Counts against the per-workspace quota.
+  //
+  // Not safe to blindly retry: the server mints a new id on each call, so a
+  // retried create produces a second integration. On a transport error, list /
+  // look up before retrying.
+  rpc CreateIntegration(CreateIntegrationRequest) returns (CreateIntegrationResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (google.api.http) = {
+      post: "/api/integrations/v1"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Fetch a single integration by id. Secret config fields are masked.
+  rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_INTEGRATION_EDIT
+      ]
+    };
+  }
+
+  // List all integrations in the workspace (optionally filtered by enabled
+  // state). Secret config fields are masked. The full set is returned in one
+  // response — a workspace has only a handful of integrations.
+  rpc ListIntegrations(ListIntegrationsRequest) returns (ListIntegrationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/integrations/v1"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_INTEGRATION_EDIT
+      ]
+    };
+  }
+
+  // Fetch multiple integrations by id in one call. Ids not found (or not in the
+  // workspace) are omitted from the response rather than erroring.
+  rpc BatchGetIntegrations(BatchGetIntegrationsRequest) returns (BatchGetIntegrationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/integrations/v1/by-id"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_INTEGRATION_EDIT
+      ]
+    };
+  }
+
+  // Update an integration. The `config` is replaced wholesale — send the
+  // complete desired config (omitted secrets are preserved; see the
+  // service-level secret semantics). `title` is patch-style: omit it to leave
+  // it unchanged.
+  //
+  // The `config` variant must match the existing integration's type; changing
+  // the type is rejected with FAILED_PRECONDITION.
+  //
+  // Safe to retry: addresses an existing id and converges to the same state.
+  // With an `etag` set, a retry after success returns ABORTED
+  // (the version moved) — treat that as "already applied".
+  rpc UpdateIntegration(UpdateIntegrationRequest) returns (UpdateIntegrationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      put: "/api/integrations/v1/{integration_id}"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Delete an integration. The integration stops being scheduled and is removed
+  // from listings. Safe to retry (deleting an already-deleted id is a no-op).
+  rpc DeleteIntegration(DeleteIntegrationRequest) returns (DeleteIntegrationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {delete: "/api/integrations/v1/{integration_id}"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Enable a previously disabled integration. No-op if already enabled.
+  rpc EnableIntegration(EnableIntegrationRequest) returns (EnableIntegrationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/integrations/v1/{integration_id}/enable"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Disable an integration without deleting it. The configuration is kept but
+  // the integration is no longer scheduled or refreshed. No-op if already
+  // disabled.
+  rpc DisableIntegration(DisableIntegrationRequest) returns (DisableIntegrationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/integrations/v1/{integration_id}/disable"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Trigger an immediate, ad-hoc refresh of an integration. Available only for
+  // types whose `Capabilities.can_refresh` is true; otherwise rejected with
+  // FAILED_PRECONDITION.
+  //
+  // Not idempotent: each call enqueues a new refresh.
+  rpc RefreshIntegration(RefreshIntegrationRequest) returns (RefreshIntegrationResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (google.api.http) = {
+      post: "/api/integrations/v1/{integration_id}/refresh"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INTEGRATION_EDIT]
+    };
+  }
+
+  // Return current health plus a paginated history of recent runs for an
+  // integration. When pagination is omitted, a bounded recent window is
+  // returned (the most recent runs from the last 7 days).
+  rpc GetIntegrationHealth(GetIntegrationHealthRequest) returns (GetIntegrationHealthResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_INTEGRATION_EDIT
+      ]
+    };
+  }
+}
+
+// Request to create an integration.
+message CreateIntegrationRequest {
+  // Human-friendly name for the integration.
+  string title = 1 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+    }
+  }];
+  // Connection configuration. Exactly one `config` variant must be set; it fixes
+  // the integration's type.
+  IntegrationConfig config = 2 [(buf.validate.field) = {required: true}];
+}
+
+// Response from creating an integration.
+message CreateIntegrationResponse {
+  // The created integration, including its assigned id, etag, and any generated
+  // outputs.
+  Integration integration = 1;
+}
+
+// Request to fetch a single integration.
+message GetIntegrationRequest {
+  // Integration id (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// Response with a single integration.
+message GetIntegrationResponse {
+  // The requested integration.
+  Integration integration = 1;
+}
+
+// Request to list integrations.
+message ListIntegrationsRequest {
+  // Optional filter: when set, return only enabled (false) or only disabled
+  // (true) integrations. Unset means both.
+  optional bool disabled = 1;
+}
+
+// Response with the workspace's integrations.
+message ListIntegrationsResponse {
+  // All integrations matching the request.
+  repeated Integration integrations = 1;
+}
+
+// Request to fetch multiple integrations by id.
+message BatchGetIntegrationsRequest {
+  // Integration ids (UUIDs). Unknown ids are omitted from the response.
+  repeated string integration_ids = 1 [(buf.validate.field) = {
+    repeated: {
+      items: {
+        string: {uuid: true}
+      }
+      min_items: 1
+      max_items: 500
+    }
+  }];
+}
+
+// Response with the requested integrations.
+message BatchGetIntegrationsResponse {
+  // The integrations that were found, keyed by integration id. Requested ids
+  // that do not exist are absent from the map.
+  map<string, Integration> integrations = 1;
+}
+
+// Request to update an integration. The `config` is replaced wholesale; `title`
+// is patch-style (omit to leave unchanged).
+message UpdateIntegrationRequest {
+  // Id of the integration to update (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // New human-friendly name. Omit to leave the title unchanged.
+  optional string title = 2 [(buf.validate.field) = {
+    string: {
+      min_len: 1
+      max_len: 255
+    }
+  }];
+  // New connection configuration. The populated `config` variant must match the
+  // existing integration's type.
+  IntegrationConfig config = 3 [(buf.validate.field) = {required: true}];
+  // Optional optimistic-concurrency guard. When set, the update is applied only
+  // if it matches the integration's current etag; otherwise ABORTED
+  // (HTTP 409). Omit for last-write-wins.
+  optional string etag = 4;
+}
+
+// Response from updating an integration.
+message UpdateIntegrationResponse {
+  // The updated integration with a new etag.
+  Integration integration = 1;
+}
+
+// Request to delete an integration.
+message DeleteIntegrationRequest {
+  // Id of the integration to delete (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // Optional optimistic-concurrency guard (see `UpdateIntegrationRequest.etag`).
+  optional string etag = 2;
+}
+
+// Response from deleting an integration.
+message DeleteIntegrationResponse {}
+
+// Request to enable an integration.
+message EnableIntegrationRequest {
+  // Id of the integration to enable (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// Response from enabling an integration.
+message EnableIntegrationResponse {
+  // The integration after enabling.
+  Integration integration = 1;
+}
+
+// Request to disable an integration.
+message DisableIntegrationRequest {
+  // Id of the integration to disable (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// Response from disabling an integration.
+message DisableIntegrationResponse {
+  // The integration after disabling.
+  Integration integration = 1;
+}
+
+// Request to trigger an ad-hoc refresh.
+message RefreshIntegrationRequest {
+  // Id of the integration to refresh (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// Response from triggering a refresh.
+message RefreshIntegrationResponse {}
+
+// Health status of an integration, derived from its most recent runs.
+enum HealthStatus {
+  // Unknown — no runs observed yet.
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  // Last run succeeded.
+  HEALTH_STATUS_OK = 1;
+  // Last run completed with warnings.
+  HEALTH_STATUS_WARN = 2;
+  // Last run failed.
+  HEALTH_STATUS_ERROR = 3;
+  // Last run failed critically (for example authentication or connectivity
+  // failure).
+  HEALTH_STATUS_CRITICAL = 4;
+}
+
+// Current health summary for an integration.
+message IntegrationHealth {
+  // Status derived from the most recent run.
+  HealthStatus status = 1;
+  // When the most recent run occurred. Unset when no runs are observed.
+  optional google.protobuf.Timestamp last_run_at = 2;
+  // When the most recent successful run occurred. Unset when none is observed.
+  optional google.protobuf.Timestamp last_success_at = 3;
+  // Human-readable message from the most recent run (for example an error
+  // summary). Empty when there is nothing to report.
+  string message = 4;
+  // Convenience flag: true when `status` is OK and the last run is recent
+  // relative to the integration's expected refresh cadence.
+  bool healthy = 5;
+}
+
+// A single observed run (refresh / sync) of an integration.
+message IntegrationRun {
+  // Run identifier.
+  string run_id = 1;
+  // Outcome of this run.
+  HealthStatus status = 2;
+  // When the run started.
+  google.protobuf.Timestamp started_at = 3;
+  // When the run finished. Unset while still running.
+  optional google.protobuf.Timestamp finished_at = 4;
+  // Human-readable message for this run (for example an error summary). Empty
+  // when there is nothing to report.
+  string message = 5;
+}
+
+// Request for an integration's health and run history.
+message GetIntegrationHealthRequest {
+  // Id of the integration (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // Cursor-based pagination over the run history. Omit for a bounded recent
+  // window (most recent runs from the last 7 days).
+  optional synq.v1.Pagination pagination = 2;
+}
+
+// Response with current health plus a page of recent runs.
+message GetIntegrationHealthResponse {
+  // Current health summary.
+  IntegrationHealth health = 1;
+  // Recent runs, most recent first.
+  repeated IntegrationRun runs = 2;
+  // Pagination metadata; pass `page_info.last_id` as the next cursor.
+  synq.v1.PageInfo page_info = 3;
+}

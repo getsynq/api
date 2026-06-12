@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package synq.entities.sql_insights.v1;
+
+import "google/api/annotations.proto";
+import "synq/entities/v1/sql_construct.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/sql_insights/v1";
+
+// SqlInsightsService exposes analytical information about the SQL used across a
+// workspace's entities. It answers questions such as "which SQL constructs are
+// used in my warehouse, and how often" and "what SQL constructs does this
+// specific entity use", without requiring the caller to re-parse any SQL.
+service SqlInsightsService {
+  // ListSqlConstructs returns the distribution of SQL constructs across all
+  // entities in the workspace, with an occurrence count per construct. The
+  // result is workspace-scoped (derived from the authenticated request) — no
+  // entity paths are supplied. Useful for building filter/autocomplete UIs and
+  // for high-level "shape of our SQL" analytics.
+  rpc ListSqlConstructs(ListSqlConstructsRequest) returns (ListSqlConstructsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/sql-insights/v1/constructs"};
+  }
+
+  // BatchSqlDetails returns the SQL details (currently the set of detected SQL
+  // constructs) for each of the requested entities, keyed by their synq path.
+  // Entities with no SQL details are omitted from the response map.
+  rpc BatchSqlDetails(BatchSqlDetailsRequest) returns (BatchSqlDetailsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/sql-insights/v1/details:batch"
+      body: "*"
+    };
+  }
+}
+
+// ListSqlConstructsRequest has no fields: the result is scoped to the workspace
+// of the authenticated request.
+message ListSqlConstructsRequest {}
+
+// ListSqlConstructsResponse carries the per-construct occurrence counts for the
+// workspace.
+message ListSqlConstructsResponse {
+  // SqlConstructCount pairs a SQL construct with the number of entities in the
+  // workspace whose SQL uses it.
+  message SqlConstructCount {
+    // The SQL construct being counted.
+    synq.entities.v1.SqlConstruct sql_construct = 1;
+    // How many entities in the workspace use this construct.
+    int32 count = 2;
+  }
+  // One entry per construct that appears at least once in the workspace.
+  repeated SqlConstructCount sql_constructs = 1;
+}
+
+// BatchSqlDetailsRequest requests SQL details for a set of entities.
+message BatchSqlDetailsRequest {
+  // The synq paths of the entities to fetch SQL details for. A synq path
+  // uniquely identifies an entity and can be obtained from the `synq_paths`
+  // field of other entity responses.
+  repeated string paths = 1;
+}
+
+// BatchSqlDetailsResponse maps each requested synq path to its SQL details.
+message BatchSqlDetailsResponse {
+  // SQL details keyed by synq path. Paths with no SQL details are omitted.
+  map<string, SqlDetails> sql_details = 1;
+}
+
+// SqlDetails describes the SQL used by a single entity.
+message SqlDetails {
+  // The synq path of the entity these details belong to.
+  string path = 1;
+  // The set of SQL constructs detected in the entity's SQL. Multiple constructs
+  // can be present on a single entity (e.g. a query with both a CTE and an
+  // INNER JOIN reports HAS_CTE, HAS_ANY_JOIN and INNER_JOIN).
+  repeated synq.entities.v1.SqlConstruct sql_constructs = 2;
+}

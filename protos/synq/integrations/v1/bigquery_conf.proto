@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Google BigQuery cloud-managed connection.
+//
+// All fields are optional so an update can carry only what changes: omit a field
+// to leave it unchanged, or send a new value to set it. Secret fields are
+// write-only (masked, returned empty, on reads); omit to keep the stored value
+// or send a new value to rotate it.
+message BigQueryCloudConf {
+  // Google Cloud project id containing the datasets to monitor.
+  optional string project_id = 1 [(buf.validate.field).string.min_len = 1];
+  // Dataset name patterns to exclude from ingestion. Mutually exclusive with
+  // `datasets` — when `datasets` is set, this is ignored.
+  repeated string blacklisted_datasets = 2;
+  // Service-account key JSON. Write-only — masked on reads.
+  optional string service_account_key = 3;
+  // Google Cloud region for the project (e.g. "us-central1", "EU").
+  optional string region = 4 [(buf.validate.field).string.min_len = 1];
+  // Ingest BigQuery query logs from INFORMATION_SCHEMA.
+  optional bool fetch_query_logs = 5;
+  // Fully-qualified table for storing SQL test audit logs
+  // (e.g. "project.dataset.table").
+  optional string audit_table_fqn = 6;
+  // Explicit list of datasets to scrape. When set, only these are queried (no
+  // project-level dataset listing needed). When empty, all visible datasets are
+  // discovered. Mutually exclusive with `blacklisted_datasets`.
+  repeated string datasets = 7;
+}

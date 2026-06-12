@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// ClickHouse cloud-managed connection.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message ClickhouseCloudConf {
+  // Host address or IP.
+  optional string host = 1 [(buf.validate.field).string.min_len = 1];
+  // Port (e.g. "8123" for HTTP, "9440" for HTTPS).
+  optional string port = 2;
+  // Username.
+  optional string username = 3;
+  // Password. Write-only — masked on reads.
+  optional string password = 4;
+  // Default database/schema used when not specified in a reference.
+  optional string default_dataset = 5;
+  // Additional connection parameters as key/value pairs (e.g.
+  // "max_execution_time": "30").
+  map<string, string> additional_parameters = 6;
+  // Enable SSL/TLS.
+  optional bool ssl = 7;
+  // Database to connect to and ingest metadata from.
+  optional string database_name = 8;
+  // Ingest query logs from system.query_log.
+  optional bool fetch_query_logs = 9;
+  // Fully-qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 10;
+}

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+import "synq/common/v1/scope.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Amazon Athena cloud-managed connection. Athena is serverless — there is no
+// host/port; the endpoint is implied by the AWS region.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message AthenaCloudConf {
+  // AWS region hosting Athena and the Glue Data Catalog (e.g. "eu-central-1").
+  optional string region = 1 [(buf.validate.field).string.min_len = 1];
+  // Workgroup to run queries under. Defaults to "primary" when empty; must have
+  // a query result location configured.
+  optional string workgroup = 2;
+  // Authentication method.
+  oneof authentication {
+    // Long-lived IAM user access key.
+    AthenaAccessKeyAuth access_key = 3;
+  }
+  // Use SHOW CREATE TABLE per object to retrieve full table DDL.
+  optional bool use_show_create_table = 4;
+  // Use SHOW CREATE VIEW per view to retrieve full view DDL.
+  optional bool use_show_create_view = 5;
+  // Fetch Athena query history (management API calls; no per-scan billing).
+  optional bool fetch_query_logs = 6;
+  // For Iceberg tables, scan metadata tables for row counts and file sizes (one
+  // Athena query per table).
+  optional bool use_iceberg_metrics_scan = 7;
+  // Include/exclude scope filter. ScopeRule.database = Glue catalog (usually
+  // "AwsDataCatalog"), ScopeRule.schema = Glue database, ScopeRule.table = table/view.
+  optional synq.common.v1.ScopeFilter scope = 8;
+}
+
+// Amazon Athena access-key authentication (long-lived IAM user credentials).
+message AthenaAccessKeyAuth {
+  // AWS access key id (e.g. "AKIA...").
+  optional string access_key_id = 1 [(buf.validate.field).string.min_len = 16];
+  // AWS secret access key. Write-only — masked on reads.
+  optional string secret_access_key = 2;
+}
