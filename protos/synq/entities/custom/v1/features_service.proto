@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/custom/features/v1/checks.proto";
 import "synq/entities/custom/features/v1/code.proto";
@@ -56,6 +57,10 @@ service FeaturesService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/features"
+      body: "*"
+    };
   }
 
   // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
@@ -63,6 +68,10 @@ service FeaturesService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
+    };
+    option (google.api.http) = {
+      delete: "/api/entities/custom/v1/features"
+      body: "*"
     };
   }
 
@@ -75,6 +84,10 @@ service FeaturesService {
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/features/list"
+      body: "*"
     };
   }
 }

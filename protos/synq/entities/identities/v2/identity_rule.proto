@@ -24,7 +24,13 @@ message IdentityRule {
 // is bidirectional.
 message PrefixRewriteIdentityRule {
   // Identifier prefix to match (for example, an instance or account prefix).
-  string source_prefix = 1 [(buf.validate.field).string = {min_len: 1, max_len: 1024}];
+  string source_prefix = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
   // Identifier prefix that matched entities are unified with.
-  string target_prefix = 2 [(buf.validate.field).string = {min_len: 1, max_len: 1024}];
+  string target_prefix = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
 }

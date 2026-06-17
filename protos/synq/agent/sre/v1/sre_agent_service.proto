@@ -307,6 +307,17 @@ message RecordPromptSuggestionRequest {
   // Full replacement value for the targeted prompt field, hard-capped at 16384
   // bytes to match the SRE agent prompt field limit.
   //
+  // Explicit-presence (`optional`) so the field can carry an empty string with
+  // meaning. An empty value is a deliberate proposal to REMOVE the prompt
+  // entirely (clear the override back to the built-in default), distinct from
+  // omitting the field. Use this when a customised prompt is judged
+  // counter-productive and the workspace is better off with no override at all.
+  //
+  // `required` is intentionally NOT set: that rule rejects the empty string,
+  // which would make a removal proposal un-expressible. Presence (the field must
+  // be set at all) is enforced by the handler via a nil check, so an omitted
+  // field is still rejected while an explicit "" is accepted.
+  //
   // Producer guidance — propose the *smallest* change that achieves the goal.
   // Start from the current prompt value and append, delete, or rewrite only the
   // relevant section; do not regenerate the whole prompt from scratch. The
@@ -317,10 +328,7 @@ message RecordPromptSuggestionRequest {
   // newlines instead of collapsing everything onto one long line. The review UI
   // diffs line by line, so well-broken text produces a readable, minimal diff;
   // a single monster line shows up as one giant replaced block.
-  string suggested_value = 3 [(buf.validate.field) = {
-    required: true
-    string: {max_bytes: 16384}
-  }];
+  optional string suggested_value = 3 [(buf.validate.field).string.max_bytes = 16384];
   // Short markdown explanation of why the change is proposed, capped at 2048
   // bytes. Shown to the reviewer as a "why" callout above the diff, so keep it
   // to a few tight sentences or bullet points — it justifies the change, it does

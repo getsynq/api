@@ -31,8 +31,10 @@ message ValueList {
 }
 
 message TimePartitioning {
-  // The expression to partition on (eg. "created_at", "meta['created_at']")
-  string expression = 1;
+  // The expression to partition on (eg. "created_at", "meta['created_at']").
+  // Required and must be non-empty whenever time partitioning is set (i.e. for every
+  // non-table-stats monitor); an empty expression produces a monitor that cannot run.
+  string expression = 1 [(buf.validate.field).string.min_len = 1];
   google.protobuf.Duration interval = 2 [(buf.validate.field).required = false];
 }
 

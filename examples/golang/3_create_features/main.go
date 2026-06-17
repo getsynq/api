@@ -61,7 +61,7 @@ func main() {
 			Feature: &entitiescustomv1.Feature_SqlDefinition{
 				SqlDefinition: &entitiescustomfeaturesv1.SqlDefinition{
 					StateAt: timestamppb.Now(),
-					Dialect: entitiescustomfeaturesv1.SqlDialect_SQL_DIALECT_CLICKHOUSE,
+					Dialect: entitiesv1.SqlDialect_SQL_DIALECT_CLICKHOUSE,
 					Sql:     "SELECT * FROM default.runs",
 				},
 			},
@@ -85,7 +85,7 @@ func main() {
 			Feature: &entitiescustomv1.Feature_Code{
 				Code: &entitiescustomfeaturesv1.Code{
 					Name:     "launcher",
-					CodeType: entitiescustomfeaturesv1.CodeType_CODE_TYPE_PYTHON,
+					CodeType: entitiesv1.CodeType_CODE_TYPE_PYTHON,
 					Content:  "from airflow.operators.python_operator import PythonOperator\n\nprint('Hello, world!')",
 				},
 			},

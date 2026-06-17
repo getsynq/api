@@ -26,6 +26,11 @@ message MonitorInfo {
   repeated Metric metrics = 6;
   // Entity which is monitored
   repeated Monitored monitored = 7;
+  // Whether this monitor is governed by a deployment rule. When true, the
+  // monitor's configuration is managed centrally by a rule and manual edits may
+  // be overwritten the next time the rule is applied. False for monitors that
+  // are configured individually.
+  bool managed_by_rule = 10;
 }
 
 message Monitored {
@@ -63,6 +68,15 @@ message Metric {
     MonitorVolume volume = 3;
     MonitorValue value = 4;
     MonitorFailedRows failed_rows = 5;
+    // A statistical profile of a single column (for example null counts,
+    // uniqueness, minimum/maximum, mean/standard deviation or byte size). The
+    // specific statistic is identified by metric_id; this variant carries the
+    // column the statistic is computed on.
+    MonitorFieldStats field_stats = 6;
+    // A shift in the distribution of the distinct values of a categorical
+    // column, scored against a learned baseline. This variant carries the
+    // column whose value distribution is monitored.
+    MonitorCategoryDistribution category_distribution = 7;
   }
 }
 
@@ -87,6 +101,18 @@ message MonitorVolume {
 
 message MonitorFailedRows {
   string sql = 1;
+}
+
+message MonitorFieldStats {
+  // Name of the column whose statistical profile is monitored, as it appears in
+  // the monitored object. Empty when the statistic is computed at the table
+  // level rather than on a specific column.
+  string column = 1;
+}
+
+message MonitorCategoryDistribution {
+  // Name of the categorical column whose value distribution is monitored.
+  string column = 1;
 }
 
 message Segmentation {

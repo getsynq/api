@@ -1,4 +1,4 @@
-module github.com/getsynq/api/examples/golang/atlan_integration
+module github.com/getsynq/api/examples/golang/integrations_management
 
 go 1.25.3
 
@@ -7,6 +7,7 @@ require (
 	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.11-20260616084327-c48cce8d4d51.1
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/grpc v1.81.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -17,5 +18,4 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 )

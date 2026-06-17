@@ -60,7 +60,7 @@ func main() {
 	dataproductIdentifier := resp.Identifier.Id
 	fmt.Printf("✅ Data product created: Dim Payment Types (%s)\n", dataproductIdentifier)
 
-	_, err = dataproductsapi.AddDefinitionPart(ctx, &dataproductsv1.AddDefinitionPartRequest{
+	_, err = dataproductsapi.UpsertDefinitionPart(ctx, &dataproductsv1.UpsertDefinitionPartRequest{
 		ProductIdentifier: &entitiesv1.DataproductIdentifier{
 			Id: dataproductIdentifier,
 		},
