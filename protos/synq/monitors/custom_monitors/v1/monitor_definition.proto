@@ -92,9 +92,20 @@ message MonitorFieldStats {
 message MonitorTableStats {
   // Metrics to monitor. If empty, all metrics are monitored.
   repeated synq.monitors.automated_monitors.v1.MetricOption metric_options = 1;
-  // Optional. When set, row count + last loaded time are read via SQL (sql = raw expression; field = column name).
+  // Source for the table's last-loaded timestamp, used by the delay and
+  // volume_change_delay metrics. The value is aggregated with max() across rows,
+  // so provide a row-level expression — not an aggregate.
+  //
+  // Optional on a plain TABLE: the warehouse metadata supplies the timestamp.
+  // REQUIRED on a VIEW for delay / volume_change_delay, because metadata has no
+  // last-loaded time for views; omitting it is rejected. Ignored when neither
+  // delay nor volume_change_delay is monitored.
   oneof freshness_source {
+    // Timestamp column name, e.g. "updated_at" (used as max(updated_at)).
     string field = 2 [(buf.validate.field).string.min_len = 1];
+    // Row-level SQL expression yielding a timestamp, e.g.
+    // "coalesce(updated_at, created_at)". Do NOT wrap it in an aggregate —
+    // max() is applied automatically.
     string sql = 3 [(buf.validate.field).string.min_len = 1];
   }
 }

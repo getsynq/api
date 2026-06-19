@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package synq.ingest.dwh.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "synq/ingest/dwh/v1/dwh.proto";
+
+option go_package = "github.com/getsynq/api/ingest/dwh/v1";
+
+// LineageObjectDomain classifies what KIND of warehouse object sits at one end
+// of a lineage edge. It lets the platform tell real table-to-table lineage
+// apart from edges that touch warehouse-internal or non-tabular objects (load
+// stages, streams, semantic views, ...), which are rendered differently (or
+// hidden) in the lineage graph. The values mirror the object domains a
+// warehouse's native lineage feature reports (for example the domains returned
+// by Snowflake's GET_LINEAGE) plus the common equivalents on other warehouses.
+// Set UNSPECIFIED when the producer cannot determine the domain — the edge is
+// still stored, just without the table-vs-builtin distinction.
+enum LineageObjectDomain {
+  LINEAGE_OBJECT_DOMAIN_UNSPECIFIED = 0;
+  // An ordinary table.
+  LINEAGE_OBJECT_DOMAIN_TABLE = 1;
+  // A non-materialized view.
+  LINEAGE_OBJECT_DOMAIN_VIEW = 2;
+  // A materialized view.
+  LINEAGE_OBJECT_DOMAIN_MATERIALIZED_VIEW = 3;
+  // A table backed by external storage (external/iceberg table, etc.).
+  LINEAGE_OBJECT_DOMAIN_EXTERNAL_TABLE = 4;
+  // A table refreshed by the warehouse from a query (Snowflake dynamic table,
+  // BigQuery materialized view with auto-refresh, ...).
+  LINEAGE_OBJECT_DOMAIN_DYNAMIC_TABLE = 5;
+  // A change-data-capture object over a table (Snowflake stream, ...).
+  LINEAGE_OBJECT_DOMAIN_STREAM = 6;
+  // A load/unload staging area — warehouse-internal, not a customer table.
+  LINEAGE_OBJECT_DOMAIN_STAGE = 7;
+  // A semantic/metrics layer object (Snowflake semantic view, ...).
+  LINEAGE_OBJECT_DOMAIN_SEMANTIC_VIEW = 8;
+  // A dataset/grouping object exposed by the warehouse's lineage feature.
+  LINEAGE_OBJECT_DOMAIN_DATASET = 9;
+  // A module/package object exposed by the warehouse's lineage feature.
+  LINEAGE_OBJECT_DOMAIN_MODULE = 10;
+  // A recognised object that does not fit any category above.
+  LINEAGE_OBJECT_DOMAIN_OTHER = 99;
+}
+
+// LineageSource records HOW the lineage was derived. The platform uses it both
+// to set the precedence of the resulting edges and to keep lineage of different
+// origins from silently overwriting one another: declared lineage is additive
+// to observed lineage, it never replaces it. Pick the single value that best
+// describes the whole batch.
+enum LineageSource {
+  LINEAGE_SOURCE_UNSPECIFIED = 0;
+  // Read from the warehouse's own lineage feature (for example Snowflake
+  // SNOWFLAKE.CORE.GET_LINEAGE). Authoritative, highest fidelity.
+  LINEAGE_SOURCE_DWH_NATIVE = 1;
+  // Derived by parsing query history / access history.
+  LINEAGE_SOURCE_QUERY_HISTORY = 2;
+  // Declared by the customer or a modelling tool (dbt refs, hand-authored
+  // edges, BI relationships) rather than observed in the warehouse.
+  LINEAGE_SOURCE_DECLARED = 3;
+  // Derived from a view or materialization definition.
+  LINEAGE_SOURCE_VIEW_DEFINITION = 4;
+}
+
+// LineageNode identifies one object that participates in a lineage edge.
+message LineageNode {
+  // Fully-qualified name of the object. `object_name` is required; set the
+  // higher levels (instance / database / schema) to whatever the warehouse
+  // exposes so the platform can resolve the object to a known asset.
+  Fqn fqn = 1 [(buf.validate.field) = {required: true}];
+  // What kind of object this is. Lets the platform separate true
+  // table-to-table lineage from edges that involve warehouse-internal objects.
+  LineageObjectDomain domain = 2;
+}
+
+// LineageColumnEdge is a single column-to-column dependency carried inside a
+// table-level edge. Optional: omit to declare table-level lineage only. The
+// columns name positions on the parent LineageEdge's `upstream` and
+// `downstream` objects respectively.
+message LineageColumnEdge {
+  // Column on the upstream (source) object.
+  string upstream_column = 1 [(buf.validate.field) = {required: true}];
+  // Column on the downstream (target) object that derives from it.
+  string downstream_column = 2 [(buf.validate.field) = {required: true}];
+}
+
+// LineageEdge is one directed dependency: data flows from `upstream` into
+// `downstream`. Represent multi-hop lineage as the set of its direct
+// (distance-1) edges; do not collapse intermediate hops, so the graph stays
+// explicit and each hop keeps its own object domain and column edges.
+message LineageEdge {
+  // Object the data flows from.
+  LineageNode upstream = 1 [(buf.validate.field) = {required: true}];
+  // Object the data flows into.
+  LineageNode downstream = 2 [(buf.validate.field) = {required: true}];
+  // Optional column-level dependencies within this edge. When any edge for a
+  // given downstream object carries column edges, that object's lineage is
+  // treated as column-level; otherwise it is table-level only.
+  repeated LineageColumnEdge column_edges = 3;
+  // Free-form provenance about how this edge was established (for example the
+  // query id, or the warehouse's own description of the deriving process).
+  // Stored as-is and not interpreted by the platform.
+  google.protobuf.Struct meta = 4;
+}

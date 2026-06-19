@@ -38,6 +38,11 @@ message DatabricksCloudConf {
   optional bool use_show_create_table = 10;
   // Fully-qualified table for storing SQL test audit logs.
   optional string audit_table_fqn = 11;
+  // Disable retrieval of Unity Catalog table-to-table lineage. Coalesce Quality
+  // already computes lineage from query logs, so the Unity Catalog edges can be
+  // redundant noise. When unset/false, Unity Catalog table-to-table lineage is
+  // retrieved and published (the default).
+  optional bool disable_unity_table_lineage = 12;
 }
 
 // Databricks OAuth 2.0 machine-to-machine (service principal) credentials.

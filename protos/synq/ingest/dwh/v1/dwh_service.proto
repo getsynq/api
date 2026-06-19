@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/dwh/v1/dwh_agent_task.proto";
 import "synq/ingest/dwh/v1/dwh.proto";
+import "synq/ingest/dwh/v1/lineage.proto";
 import "synq/ingest/dwh/v1/query_log.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -141,6 +142,102 @@ message IngestTableConstraintsRequest {
 }
 message IngestTableConstraintsResponse {}
 
+// LineageReplaceMode controls how an ingested batch interacts with lineage that
+// was ingested earlier, and therefore when previously-ingested edges become
+// outdated and stop contributing to dependencies.
+enum LineageReplaceMode {
+  // Treated as MERGE so a producer that forgets to set the mode can only add or
+  // refresh edges, never silently expire them.
+  LINEAGE_REPLACE_MODE_UNSPECIFIED = 0;
+  // MERGE: upsert the lineage of every downstream object present in this batch
+  // and leave every other object untouched. Use for incremental refreshes — a
+  // single query's lineage, one schema the customer just rebuilt, etc. Nothing
+  // is expired; an edge disappears only when the same downstream object is
+  // re-ingested without it.
+  LINEAGE_REPLACE_MODE_MERGE = 1;
+  // REPLACE_SCOPE: treat this batch as the authoritative, complete snapshot of
+  // all lineage whose downstream object falls inside `scope`. Any previously-
+  // ingested edge whose downstream object is inside the scope but absent from
+  // this batch becomes outdated and is excluded from dependencies. Use for full
+  // periodic refreshes. `scope` MUST be set.
+  LINEAGE_REPLACE_MODE_REPLACE_SCOPE = 2;
+}
+
+// LineageScope declares the set of downstream objects a REPLACE_SCOPE batch is
+// authoritative for — the boundary inside which omitted edges are expired. The
+// scope is always additionally bounded by the request's connection_id. Ignored
+// when the mode is MERGE.
+message LineageScope {
+  oneof scope {
+    option (buf.validate.oneof).required = true;
+    // Authoritative for the whole connection: every downstream object
+    // previously ingested under this request's connection_id.
+    WholeConnectionScope whole_connection = 1;
+    // Authoritative only for the listed databases.
+    DatabasesScope databases = 2;
+    // Authoritative only for the listed schemas.
+    SchemasScope schemas = 3;
+  }
+}
+
+// WholeConnectionScope makes the batch authoritative for the entire connection.
+message WholeConnectionScope {}
+
+// DatabasesScope makes the batch authoritative for the listed databases only.
+message DatabasesScope {
+  // Each entry is "database" or "instance.database".
+  repeated string databases = 1 [(buf.validate.field) = {repeated: {min_items: 1}}];
+}
+
+// SchemasScope makes the batch authoritative for the listed schemas only.
+message SchemasScope {
+  // Each entry is "database.schema" or "instance.database.schema".
+  repeated string schemas = 1 [(buf.validate.field) = {repeated: {min_items: 1}}];
+}
+
+// IngestLineageRequest carries one batch of lineage edges for a single
+// warehouse connection. Send many batches with the same connection_id over
+// time; each batch is interpreted against the others according to
+// `replace_mode`.
+message IngestLineageRequest {
+  // Identifier of the warehouse connection this lineage was read from. Use the
+  // same connection_id you use for the other Ingest* calls of this warehouse so
+  // the lineage attaches to the right objects.
+  string connection_id = 1 [(buf.validate.field) = {required: true}];
+  // A unique id for this batch (UUID). Re-sending a batch with the same
+  // upload_id is de-duplicated, so it is safe to retry.
+  string upload_id = 2 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+
+  // Time at which the lineage was extracted from the warehouse.
+  google.protobuf.Timestamp state_at = 3 [(buf.validate.field) = {
+    timestamp: {
+      lt_now: true
+      gt: {seconds: 1640995200}
+    }
+    required: true
+  }];
+
+  // How the lineage was derived. Drives the precedence of the resulting edges
+  // and keeps lineage of different origins from overwriting one another.
+  LineageSource source = 4;
+
+  // How this batch supersedes previously-ingested lineage. Defaults to MERGE
+  // (incremental) when unset.
+  LineageReplaceMode replace_mode = 5;
+  // Required when replace_mode is REPLACE_SCOPE; ignored otherwise.
+  LineageScope scope = 6;
+
+  // The lineage edges in this batch. Empty in REPLACE_SCOPE mode is a valid way
+  // to expire all lineage inside the scope.
+  repeated LineageEdge edges = 7;
+}
+// IngestLineageResponse is intentionally empty; a successful call means the
+// batch was accepted for processing.
+message IngestLineageResponse {}
+
 service DwhService {
   rpc IngestObjectInformation(IngestObjectInformationRequest) returns (IngestObjectInformationResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -215,6 +312,25 @@ service DwhService {
     };
     option (google.api.http) = {
       post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/table-constraints"
+      body: "*"
+    };
+  }
+
+  // IngestLineage pushes data-flow lineage between warehouse objects (and,
+  // optionally, between their columns) into the platform. Send the lineage you
+  // extract from the warehouse — for example from Snowflake's GET_LINEAGE — as a
+  // batch of directed edges. Use `replace_mode` to choose between an
+  // incremental update (MERGE) and an authoritative refresh of a region of the
+  // warehouse (REPLACE_SCOPE); REPLACE_SCOPE is what lets the platform expire
+  // edges that no longer exist. Safe to retry: re-sending the same batch
+  // converges to the same state.
+  rpc IngestLineage(IngestLineageRequest) returns (IngestLineageResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_INGEST_DWH]
+    };
+    option (google.api.http) = {
+      post: "/api/datawarehouse/v1/connection/{connection_id}/upload/{upload_id}/lineage"
       body: "*"
     };
   }
