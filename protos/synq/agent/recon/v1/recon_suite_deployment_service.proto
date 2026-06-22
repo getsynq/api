@@ -495,8 +495,18 @@ message UpdateDeploymentScheduleRequest {
     string: {min_len: 1}
   }];
 
-  // Absent = clear the schedule.
+  // Partial update (PATCH): every field below is absent = preserve current
+  // setting. This lets a caller flip a single flag (e.g. run_bisection)
+  // without re-stating the schedule.
+
+  // Presence-based:
+  //   - absent           = preserve current schedule
+  //   - present, empty    = clear the schedule (an empty SuiteSchedule has
+  //                         no cron, which the deployment row stores as no
+  //                         schedule)
+  //   - present, with cron = replace the schedule
   optional SuiteSchedule schedule = 2;
+  // Absent = preserve current setting. Otherwise update triggerable_by_api.
   optional bool triggerable_by_api = 3;
   optional string change_summary = 4;
   // Absent = preserve current setting. Otherwise update the

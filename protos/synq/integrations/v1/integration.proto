@@ -17,6 +17,8 @@ import "synq/integrations/v1/postgres_conf.proto";
 import "synq/integrations/v1/redshift_conf.proto";
 import "synq/integrations/v1/snowflake_conf.proto";
 import "synq/integrations/v1/trino_conf.proto";
+import "synq/entities/v1/sql_dialect.proto";
+import "synq/platforms/v1/data_platform_types.proto";
 
 option go_package = "github.com/getsynq/api/integrations/v1";
 
@@ -125,6 +127,16 @@ message Capabilities {
   bool can_enable = 4;
   // The integration can be deleted via `DeleteIntegration`.
   bool can_delete = 5;
+  // Whether this is a data warehouse or database connection (rather than a
+  // transformation tool, catalog, etc.). Querying features — data preview,
+  // SQL tests, and reconciliation — are only available for these.
+  bool is_dwh = 6;
+  // Whether scheduled and API-triggered reconciliations can run against this
+  // integration. True only when it is an enabled data warehouse and your
+  // workspace has enabled reconciliation for it. These runs use the
+  // integration's workspace-level credentials, so this does not depend on any
+  // individual user's personal connection.
+  bool can_reconcile_deploy = 7;
 }
 
 // Integration is a connection from Coalesce Quality to one of your data
@@ -157,6 +169,17 @@ message Integration {
   // 409 / ABORTED. The value is weak (prefixed `W/`) and opaque —
   // do not parse it.
   string etag = 6;
+
+  // The data platform this integration connects to (for example POSTGRES,
+  // CLICKHOUSE, SNOWFLAKE). UNSPECIFIED for integrations that are not data
+  // warehouses or databases.
+  synq.platforms.v1.DataPlatformType platform = 7;
+
+  // The SQL dialect this integration understands — useful when writing SQL
+  // against it, such as custom monitors or reconciliation queries. Determined
+  // by the platform. UNSPECIFIED for integrations that are not data warehouses
+  // or databases.
+  synq.entities.v1.SqlDialect dialect = 8;
 
   // Connection configuration. Secret fields are masked (empty) on reads.
   IntegrationConfig config = 20;
