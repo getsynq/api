@@ -11,11 +11,15 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 
 // Schedule configuration for managed suites.
 message SuiteSchedule {
-  // IANA timezone, e.g. "Europe/Warsaw".
-  string timezone = 1 [(buf.validate.field) = {
-    required: true
-    string: {min_len: 1}
-  }];
+  // An empty SuiteSchedule means "no schedule".
+  option (buf.validate.message).cel = {
+    id: "suite_schedule.timezone_required_with_type"
+    message: "timezone is required when a cron or ical schedule is set"
+    expression: "(!has(this.cron) && !has(this.ical)) || this.timezone != ''"
+  };
+
+  // IANA timezone, e.g. "Europe/Warsaw". Required when a schedule is set.
+  string timezone = 1;
 
   oneof type {
     CronSchedule cron = 2;

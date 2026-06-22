@@ -419,16 +419,22 @@ message PromoteSuiteRequest {
   // fails if any connection in the suite cannot be resolved.
   repeated ConnectionMapping connection_mappings = 3;
 
-  // Optional cron/iCal schedule.
+  // Optional cron/iCal schedule. Absent on a re-promote preserves the
+  // existing deployment's schedule (cron or iCal) verbatim; absent on a
+  // fresh promote means no schedule. To remove a schedule from an existing
+  // deployment use UpdateDeploymentSchedule (clear), not a re-promote.
   optional SuiteSchedule schedule = 4;
 
   // When true, a TriggerDeployment RPC may execute this deployment on demand.
-  bool triggerable_by_api = 5;
+  // Optional so re-promotes can omit it: an absent value preserves the
+  // existing deployment's setting (a fresh promote defaults to false).
+  optional bool triggerable_by_api = 5;
 
-  // When unset (default), the deployment runs with bisection enabled
-  // — mismatched recons drill after the quick check. Set to false for
-  // cheap quick-check-only deployments. Per-recon `bisection.enabled`
-  // still gates which recons are eligible for drill.
+  // Controls whether mismatched recons drill after the quick check.
+  // Absent on a re-promote preserves the existing deployment's setting;
+  // absent on a fresh promote defaults to true (bisection enabled). Set
+  // to false for cheap quick-check-only deployments. Per-recon
+  // `bisection.enabled` still gates which recons are eligible for drill.
   optional bool run_bisection = 8;
 
   optional string change_summary = 6;
