@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package synq.monitors.automated_monitors.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 import "synq/v1/source.proto";
 
@@ -44,10 +46,31 @@ message ListDeploymentRulesRequest {
   // If empty, the one with NULL config_id will be excluded.
   ConfigsFilter configs_filter = 4;
   repeated string rule_ids = 3;
+
+  // Filter by rule type. When empty, rules of every type are returned. When set,
+  // only rules whose type is listed are returned (e.g. pass
+  // [DEPLOYMENT_RULE_TYPE_QUERY, DEPLOYMENT_RULE_TYPE_PRODUCT] to exclude
+  // single-path rules). The filter is applied server-side before paging, so every
+  // page reflects only the selected types.
+  repeated DeploymentRuleType rule_types = 6;
+
+  // Pagination. An unset/zero page_size applies the server default; the server
+  // never returns all rules in one response. Pass page_info.last_id from the
+  // previous response as the cursor to fetch the next page.
+  optional synq.v1.Pagination pagination = 5;
 }
 
 message ListDeploymentRulesResponse {
   repeated synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView deployment_rules = 1;
+
+  // Paging information for this response. Always populated. This response carries
+  // at most one bounded page of rules, never the full set. The cursor is the paging
+  // contract: to retrieve every rule, repeat the request passing page_info.last_id
+  // as pagination.cursor until last_id comes back empty. page_info.count is the
+  // number of rules in this page. page_info.total_count is a best-effort total for
+  // the same filter, but it is deprecated — do not drive paging off it; loop on
+  // last_id instead.
+  synq.v1.PageInfo page_info = 10 [(buf.validate.field) = {required: true}];
 }
 
 message ListDeploymentRulesForAssetRequest {

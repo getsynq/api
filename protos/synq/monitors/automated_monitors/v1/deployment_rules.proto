@@ -119,10 +119,23 @@ message QueryConfig {
   ];
   bool keep_deleted_monitors = 5;
   repeated MetricOption metric_options = 6; // NEW - optional per-metric config
+  // ResolverQL selection string — an advanced, more expressive alternative to
+  // `query`. ResolverQL is a superset of the structured `query`: use it for
+  // selections `query` cannot express (e.g. lineage walks, column predicates).
+  // When set (non-empty) on write, `resolver_ql` is the source of truth and the
+  // structured `query` is ignored. On read, `resolver_ql` is echoed back
+  // VERBATIM (exactly as written, not normalized) for rules authored via
+  // ResolverQL; it is empty for rules authored via the structured `query`,
+  // which are returned in `query` instead.
+  string resolver_ql = 7;
 }
 
 message ExclusiveQueryConfig {
   EntitySelectionQuery query = 1;
+  // ResolverQL selection string for the exclusion set. Same semantics as
+  // QueryConfig.resolver_ql: when set on write it takes precedence over `query`,
+  // and is echoed back VERBATIM on read (empty for rules authored via `query`).
+  string resolver_ql = 2;
 }
 
 message StaticConfig {
@@ -226,4 +239,26 @@ message MonitorsDeploymentRuleView {
 
   synq.v1.Source source = 9;
   optional string config_id = 10;
+}
+
+// DeploymentRuleType identifies which kind of selection a deployment rule uses.
+// The value corresponds to the populated `config` oneof arm on
+// MonitorsDeploymentRule / MonitorsDeploymentRuleView. Use it with
+// ListDeploymentRulesRequest.rule_types to return only rules of selected kinds.
+enum DeploymentRuleType {
+  // No filter — when used in a request, rules of any type are returned.
+  DEPLOYMENT_RULE_TYPE_UNSPECIFIED = 0;
+  // Rule with `query_config`: selects entities by a ResolverQL query and deploys
+  // monitors on the matches.
+  DEPLOYMENT_RULE_TYPE_QUERY = 1;
+  // Rule with `exclusive_query_config`: a ResolverQL query whose matches are
+  // exclusively owned (monitors outside the match set are removed).
+  DEPLOYMENT_RULE_TYPE_EXCLUSIVE_QUERY = 2;
+  // Rule with `static_config`: targets a single fixed entity path.
+  DEPLOYMENT_RULE_TYPE_STATIC_PATH = 3;
+  // Rule with `exclusive_static_config`: a single fixed path, exclusively owned.
+  DEPLOYMENT_RULE_TYPE_EXCLUSIVE_STATIC_PATH = 4;
+  // Rule with `product_config`: deploys monitors across a data product's
+  // entities per its upstream/self selection strategy.
+  DEPLOYMENT_RULE_TYPE_PRODUCT = 5;
 }
