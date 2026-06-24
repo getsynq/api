@@ -123,19 +123,35 @@ message QueryConfig {
   // `query`. ResolverQL is a superset of the structured `query`: use it for
   // selections `query` cannot express (e.g. lineage walks, column predicates).
   // When set (non-empty) on write, `resolver_ql` is the source of truth and the
-  // structured `query` is ignored. On read, `resolver_ql` is echoed back
-  // VERBATIM (exactly as written, not normalized) for rules authored via
-  // ResolverQL; it is empty for rules authored via the structured `query`,
-  // which are returned in `query` instead.
+  // structured `query` is ignored. On read it is echoed back VERBATIM (exactly
+  // as written, not normalized) for rules authored via ResolverQL, and is empty
+  // for rules authored via the structured `query` — so writing a read response
+  // back unchanged preserves the rule's authored form (a structured rule stays
+  // structured rather than being silently rewritten to ResolverQL). To read the
+  // ResolverQL form of a structured rule, use `rendered_resolver_ql`. `query` is
+  // always populated regardless.
   string resolver_ql = 7;
+  // Canonical ResolverQL rendering of this rule's selection, populated for every
+  // query rule regardless of how it was authored. OUTPUT ONLY — it is ignored on
+  // write; set `resolver_ql` to author a selection in ResolverQL. Use it to read
+  // the ResolverQL form of a rule authored via the structured `query`; for
+  // ResolverQL-authored rules it equals `resolver_ql`. Empty only for selections
+  // that have no ResolverQL representation.
+  string rendered_resolver_ql = 8;
 }
 
 message ExclusiveQueryConfig {
   EntitySelectionQuery query = 1;
   // ResolverQL selection string for the exclusion set. Same semantics as
-  // QueryConfig.resolver_ql: when set on write it takes precedence over `query`,
-  // and is echoed back VERBATIM on read (empty for rules authored via `query`).
+  // QueryConfig.resolver_ql: when set on write it takes precedence over `query`;
+  // on read it is echoed back VERBATIM for ResolverQL-authored rules and is empty
+  // for structured-`query` rules (whose ResolverQL form is in
+  // `rendered_resolver_ql`). `query` is always populated.
   string resolver_ql = 2;
+  // Canonical ResolverQL rendering of the exclusion selection. Same semantics as
+  // QueryConfig.rendered_resolver_ql: OUTPUT ONLY, populated for every rule,
+  // ignored on write.
+  string rendered_resolver_ql = 3;
 }
 
 message StaticConfig {
