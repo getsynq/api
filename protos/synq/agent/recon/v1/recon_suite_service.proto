@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
@@ -170,6 +171,12 @@ message SubmitAdhocSuiteRequest {
   // recon is eligible for drill, so this flag is the run-level off
   // switch layered on top.
   optional bool run_bisection = 6;
+
+  // Maximum wall-clock time for this ad-hoc run (quick check plus any
+  // bisection drill). A run that exceeds it is cancelled and marked
+  // failed. Absent uses the server default; the server clamps the
+  // effective value to a supported range.
+  optional google.protobuf.Duration execution_timeout = 8;
 
   // Actor submitting the run. Required.
   synq.issues.actor.v1.Actor actor = 7 [(buf.validate.field) = {required: true}];

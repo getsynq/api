@@ -505,19 +505,25 @@ enum RowMismatchType {
 
 // AggregateStageResult is the result for an aggregate_check stage.
 message AggregateStageResult {
-  // Total groups compared.
+  // Top-level (first group column) total group count. With a multi-level
+  // drill-down this is the number of distinct first-level groups, NOT the number
+  // of leaf groups. Invariant: total_groups == matched_groups + divergent_groups.
   int32 total_groups = 1;
 
-  // Number of groups that matched.
+  // Top-level groups that matched — directly, or because their whole subtree
+  // resolved. Same level as total_groups.
   int32 matched_groups = 2;
 
-  // Number of groups with value differences.
+  // Leaf-level groups with value differences (deepest drill level). NOT
+  // comparable to total_groups: one divergent top-level group can contain many
+  // divergent leaves. For a same-level "X of Y diverged" ratio use
+  // divergent_groups / total_groups; use these leaf counts for detail.
   int32 mismatch_groups = 3;
 
-  // Groups present in target but missing in source.
+  // Leaf-level groups present in target but missing in source.
   int32 missing_source = 4;
 
-  // Groups present in source but missing in target.
+  // Leaf-level groups present in source but missing in target.
   int32 missing_target = 5;
 
   // Overall match result.
@@ -528,6 +534,12 @@ message AggregateStageResult {
 
   // Hierarchical drill-down tree for aggregate comparison.
   AggregateDrillNode drill_down = 8;
+
+  // Top-level groups that diverged (counterpart of matched_groups, same level as
+  // total_groups). This is the same-level numerator for a "divergent_groups of
+  // total_groups diverged" summary — unlike the leaf-level mismatch_groups /
+  // missing_* counts above, which can exceed total_groups in a multi-level drill.
+  int32 divergent_groups = 9;
 }
 
 // AggregateDrillNode represents a node in the hierarchical aggregate drill-down tree.

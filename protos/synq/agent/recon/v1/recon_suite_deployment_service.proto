@@ -4,6 +4,7 @@ package synq.agent.recon.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
@@ -323,6 +324,15 @@ message SuiteDeployment {
   // off switch on top.
   optional bool run_bisection = 22;
 
+  // Maximum wall-clock time for a single run of this deployment (quick
+  // check plus any bisection drill). A run that exceeds it is cancelled
+  // and marked failed rather than left pending. Absent means the server
+  // default applies. The effective value is clamped to a supported range
+  // at execution time, so very small or very large values are bounded.
+  // Set this to bound cost on expensive warehouses where a heavy drill
+  // can run for a long time.
+  optional google.protobuf.Duration execution_timeout = 26;
+
   // Denormalized summaries so listing callers don't need to parse the snapshot.
   repeated string connection_names = 13;
   repeated string integration_ids = 14;
@@ -381,6 +391,9 @@ message SuiteDeploymentHistoryEntry {
   // run_bisection setting at this point in time (default true).
   optional bool run_bisection = 15;
 
+  // execution_timeout setting at this point in time. Absent = server default.
+  optional google.protobuf.Duration execution_timeout = 18;
+
   // Only filled for PROMOTED / REPROMOTED events (snapshot changes).
   optional ReconcilationSuite suite = 11;
   optional google.protobuf.Timestamp source_config_state_at = 12;
@@ -436,6 +449,14 @@ message PromoteSuiteRequest {
   // to false for cheap quick-check-only deployments. Per-recon
   // `bisection.enabled` still gates which recons are eligible for drill.
   optional bool run_bisection = 8;
+
+  // Maximum wall-clock time for a single run of this deployment. Absent on
+  // a fresh promote uses the server default; absent on a re-promote
+  // preserves the existing deployment's setting. The server clamps the
+  // effective value to a supported range. Set a lower value to bound cost
+  // on expensive warehouses, or a higher value for large tables whose
+  // drill legitimately needs longer than the default.
+  optional google.protobuf.Duration execution_timeout = 12;
 
   optional string change_summary = 6;
 
@@ -518,6 +539,11 @@ message UpdateDeploymentScheduleRequest {
   // Absent = preserve current setting. Otherwise update the
   // deployment's run_bisection flag.
   optional bool run_bisection = 5;
+
+  // Absent = preserve current setting. Otherwise update the deployment's
+  // execution_timeout (maximum wall-clock budget for a single run). The
+  // server clamps the effective value to a supported range at run time.
+  optional google.protobuf.Duration execution_timeout = 7;
 
   // Actor performing the schedule update. Required.
   synq.issues.actor.v1.Actor actor = 6 [(buf.validate.field) = {required: true}];
@@ -682,6 +708,13 @@ message TriggerDeploymentRequest {
   // matches what the cron schedule would have done. Set explicitly to
   // false for a cheap quick-check-only run without bisection drill-down.
   optional bool run_bisection = 4;
+
+  // Per-trigger override for the deployment's stored execution_timeout.
+  // Unset (default) inherits the deployment's value so a "Run now" click
+  // matches what the cron schedule would have done. Set explicitly to bound
+  // a one-off run to a shorter or longer wall-clock budget. The server
+  // clamps the effective value to a supported range.
+  optional google.protobuf.Duration execution_timeout = 5;
 }
 
 message TriggerDeploymentResponse {

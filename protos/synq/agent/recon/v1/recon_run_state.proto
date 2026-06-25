@@ -45,6 +45,9 @@ enum ReconciliationRunFailureCategory {
   RECONCILIATION_RUN_FAILURE_CATEGORY_EXECUTION_ERROR = 3;
   // Unexpected internal error.
   RECONCILIATION_RUN_FAILURE_CATEGORY_INTERNAL = 4;
+  // Run exceeded its configured wall-clock execution timeout and was
+  // cancelled before completing.
+  RECONCILIATION_RUN_FAILURE_CATEGORY_TIMEOUT = 5;
 }
 
 // ReconciliationRunState describes the lifecycle of a single reconciliation

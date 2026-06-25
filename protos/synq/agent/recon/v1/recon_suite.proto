@@ -102,8 +102,13 @@ message ConnectionQueries {
 message Reconcilation {
   option (buf.validate.message).cel = {
     id: "key_column_required_for_non_aggregate"
-    message: "key_column is required unless mode is AGGREGATE"
-    expression: "this.key_column != '' || this.mode == 3"
+    message: "key_column or key_columns is required unless mode is AGGREGATE"
+    expression: "this.key_column != '' || size(this.key_columns) > 0 || this.mode == 3"
+  };
+  option (buf.validate.message).cel = {
+    id: "key_column_and_key_columns_mutually_exclusive"
+    message: "set either key_column (single) or key_columns (composite), not both"
+    expression: "this.key_column == '' || size(this.key_columns) == 0"
   };
   option (buf.validate.message).cel = {
     id: "aggregate_config_required"
@@ -132,10 +137,21 @@ message Reconcilation {
   // Target dataset to compare against — the "actual" or "replicated" side.
   Dataset target = 5 [(buf.validate.field).required = true];
 
-  // Primary key column used for ordering and segmentation during bisection.
-  // Required for ROW_CHECKSUM and ROW_COUNT modes.
-  // Optional in AGGREGATE mode when group_columns provides the grouping key.
-  optional string key_column = 6;
+  // Deprecated: use key_columns instead. Single primary key column used for
+  // ordering and segmentation during bisection. Retained for backward
+  // compatibility — existing single-key configs and stored audit logs keep
+  // working. When key_columns is set, this field is ignored. Readers should
+  // resolve the effective key via key_columns first, falling back to this.
+  optional string key_column = 6 [deprecated = true];
+
+  // Ordered list of key columns used for ordering and segmentation during
+  // bisection. Supports composite (multi-column) keys; the bisection orders and
+  // range-filters on the column tuple so the engine can prune via a matching
+  // primary key / index. A single-element list is equivalent to setting
+  // key_column. Required for ROW_CHECKSUM and ROW_COUNT modes (this or the
+  // deprecated key_column). Optional in AGGREGATE mode when group_columns
+  // provides the grouping key.
+  repeated string key_columns = 22;
 
   // Comparison mode controlling how source and target are compared.
   ReconcilationMode mode = 7 [(buf.validate.field).enum = {
