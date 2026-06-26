@@ -314,23 +314,22 @@ message SuiteDeployment {
   // Schedule (if any). Absent = no cron; use triggerable_by_api.
   optional SuiteSchedule schedule = 11;
 
-  // When true, a (future) TriggerDeployment RPC may execute this deployment.
+  // When true, this deployment can be run on demand via TriggerDeployment,
+  // in addition to any cron schedule.
   bool triggerable_by_api = 12;
 
-  // When true (default), scheduled / triggered runs of this deployment
-  // drill into mismatched reconciliations via bisection after the
-  // quick check. Per-recon `bisection.enabled` still gates whether
-  // each recon is eligible for drill, so this is the deployment-level
-  // off switch on top.
+  // When true (the default), runs of this deployment drill into mismatched
+  // reconciliations via bisection after the quick check to locate the
+  // differing rows; when false, runs stop at the quick check. Each
+  // reconciliation's own `bisection.enabled` still controls whether it is
+  // eligible to drill, so this acts as the deployment-wide switch on top.
   optional bool run_bisection = 22;
 
-  // Maximum wall-clock time for a single run of this deployment (quick
-  // check plus any bisection drill). A run that exceeds it is cancelled
-  // and marked failed rather than left pending. Absent means the server
-  // default applies. The effective value is clamped to a supported range
-  // at execution time, so very small or very large values are bounded.
-  // Set this to bound cost on expensive warehouses where a heavy drill
-  // can run for a long time.
+  // Maximum wall-clock time for a single run of this deployment (the quick
+  // check plus any bisection drill). A run that exceeds it is cancelled and
+  // marked failed. Absent means the server default applies; the effective
+  // value is clamped to a supported range. Lower it to bound cost on
+  // expensive warehouses where a deep drill can run for a long time.
   optional google.protobuf.Duration execution_timeout = 26;
 
   // Denormalized summaries so listing callers don't need to parse the snapshot.
@@ -388,10 +387,11 @@ message SuiteDeploymentHistoryEntry {
   optional SuiteSchedule schedule = 8;
   bool triggerable_by_api = 9;
   repeated ConnectionMapping connection_mappings = 10;
-  // run_bisection setting at this point in time (default true).
+  // The run_bisection setting in force at the time of this event.
   optional bool run_bisection = 15;
 
-  // execution_timeout setting at this point in time. Absent = server default.
+  // The execution_timeout in force at the time of this event. Absent means
+  // the server default applied.
   optional google.protobuf.Duration execution_timeout = 18;
 
   // Only filled for PROMOTED / REPROMOTED events (snapshot changes).
@@ -425,11 +425,10 @@ message PromoteSuiteRequest {
   // Specific version to promote. Absent = latest.
   optional google.protobuf.Timestamp state_at = 2;
 
-  // Mappings for connections that don't resolve to a workspace
-  // integration by name. Connections whose name already matches a
-  // workspace integration id (the common FE-authored shape) can be
-  // omitted; the BindingResolver legacy fallback resolves them. Promote
-  // fails if any connection in the suite cannot be resolved.
+  // Mappings for suite connections that don't already resolve to a
+  // workspace integration by name. Connections whose name matches a
+  // workspace integration can be omitted; they are resolved automatically.
+  // Promotion fails if any connection in the suite cannot be resolved.
   repeated ConnectionMapping connection_mappings = 3;
 
   // Optional cron/iCal schedule. Absent on a re-promote preserves the
@@ -443,11 +442,11 @@ message PromoteSuiteRequest {
   // existing deployment's setting (a fresh promote defaults to false).
   optional bool triggerable_by_api = 5;
 
-  // Controls whether mismatched recons drill after the quick check.
-  // Absent on a re-promote preserves the existing deployment's setting;
-  // absent on a fresh promote defaults to true (bisection enabled). Set
-  // to false for cheap quick-check-only deployments. Per-recon
-  // `bisection.enabled` still gates which recons are eligible for drill.
+  // Whether runs of this deployment drill into mismatched reconciliations
+  // after the quick check. Absent preserves the existing deployment's
+  // setting on a re-promote, or defaults to true on a fresh promote. Set
+  // false for quick-check-only deployments. Each reconciliation's own
+  // `bisection.enabled` still controls whether it is eligible to drill.
   optional bool run_bisection = 8;
 
   // Maximum wall-clock time for a single run of this deployment. Absent on
@@ -703,17 +702,16 @@ message TriggerDeploymentRequest {
   // Actor triggering the run. Required.
   synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
 
-  // Per-trigger override for the deployment's stored run_bisection flag.
-  // Unset (default) inherits the deployment's value so a "Run now" click
-  // matches what the cron schedule would have done. Set explicitly to
-  // false for a cheap quick-check-only run without bisection drill-down.
+  // Per-run override for the deployment's stored run_bisection setting.
+  // Unset (the default) inherits the deployment's value, so an on-demand
+  // run behaves like a scheduled one. Set false for a cheap
+  // quick-check-only run with no bisection drill-down.
   optional bool run_bisection = 4;
 
-  // Per-trigger override for the deployment's stored execution_timeout.
-  // Unset (default) inherits the deployment's value so a "Run now" click
-  // matches what the cron schedule would have done. Set explicitly to bound
-  // a one-off run to a shorter or longer wall-clock budget. The server
-  // clamps the effective value to a supported range.
+  // Per-run override for the deployment's stored execution_timeout. Unset
+  // (the default) inherits the deployment's value. Set it to bound this one
+  // run to a shorter or longer wall-clock budget; the server clamps the
+  // effective value to a supported range.
   optional google.protobuf.Duration execution_timeout = 5;
 }
 
