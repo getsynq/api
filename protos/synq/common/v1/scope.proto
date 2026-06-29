@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package synq.common.v1;
 
+import "buf/validate/validate.proto";
+
 option go_package = "github.com/getsynq/api/common/v1";
 
 // ScopeRule is a multi-level pattern for matching data warehouse objects.
@@ -11,15 +13,20 @@ option go_package = "github.com/getsynq/api/common/v1";
 // Matching is case-insensitive.
 message ScopeRule {
   // Database-level pattern.
-  // Maps to: catalog in Databricks/Trino, project in BigQuery.
-  string database = 1;
+  // Only meaningful for warehouses that expose more than one database/catalog
+  // per connection — Snowflake & Trino (catalog), Databricks (catalog), Athena
+  // (Glue catalog), DuckDB (database). Ignored by single-database/-project
+  // connections (Postgres, Redshift, MSSQL, Oracle, BigQuery project) and by
+  // MySQL/ClickHouse, which filter their namespace at the schema level below.
+  string database = 1 [(buf.validate.field).string.max_len = 256];
 
-  // Schema-level pattern.
-  // Maps to: dataset in BigQuery, schema in all other warehouses.
-  string schema = 2;
+  // Schema-level pattern. The level directly above a table.
+  // Maps to: dataset in BigQuery; database (namespace) in MySQL & ClickHouse;
+  // schema in Postgres/Redshift/Snowflake/Trino/MSSQL; owner in Oracle.
+  string schema = 2 [(buf.validate.field).string.max_len = 256];
 
   // Table or view name pattern.
-  string table = 3;
+  string table = 3 [(buf.validate.field).string.max_len = 256];
 }
 
 // ScopeFilter defines include/exclude rules for scoping data warehouse queries.
