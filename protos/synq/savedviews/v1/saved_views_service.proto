@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package synq.savedviews.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/savedviews/v1/saved_view.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/savedviews/v1";
+
+// SavedViewsService manages saved views — named, reusable selections over your
+// entities (and other surfaces) with display configuration, sharing and
+// per-user pinning.
+//
+// A saved view is owned by the user who created it. It can be kept private,
+// shared with the whole workspace, or granted to specific users. Reads return,
+// for the calling user, how each view relates to them (mine / shared / granted)
+// and what they are allowed to do with it. Workspace administrators can manage
+// any view in the workspace.
+service SavedViewsService {
+  // Create or update a saved view.
+  //
+  // The view id is supplied by the caller (a UUID), which makes this operation
+  // idempotent — repeating the same request converges to the same view rather
+  // than creating a duplicate. Mutable fields are optional: a field that is set
+  // is written, a field that is omitted is left unchanged. To guard against
+  // overwriting a concurrent edit, pass the `etag` you last read.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SAVED_VIEW_EDIT,
+        SCOPE_SAVED_VIEW_ADMIN
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/saved-views/v1"
+      body: "*"
+    };
+  }
+
+  // Delete a saved view. Idempotent — deleting an already-deleted or unknown
+  // view succeeds. Pass `etag` to guard against deleting a concurrently-edited
+  // view.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SAVED_VIEW_EDIT,
+        SCOPE_SAVED_VIEW_ADMIN
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/saved-views/v1/delete"
+      body: "*"
+    };
+  }
+
+  // Fetch multiple saved views by id. Ids the caller cannot see, or that do not
+  // exist, are omitted from the response rather than causing an error.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SAVED_VIEW_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/saved-views/v1/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the saved views the calling user can see. By default returns every
+  // visible view (their own, workspace-owned, shared-with-workspace and
+  // granted-to-them); narrow with `scopes`, `context` and `only_pinned`.
+  rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SAVED_VIEW_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/saved-views/v1/list"
+      body: "*"
+    };
+  }
+
+  // Pin or unpin a saved view to the calling user's main screen. Pinning is a
+  // per-user preference: it applies only to the caller and does not modify the
+  // view or its version, so any user who can see a view may pin it.
+  rpc SetPin(SetPinRequest) returns (SetPinResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_SAVED_VIEW_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/saved-views/v1/set-pin"
+      body: "*"
+    };
+  }
+}
+
+message UpsertRequest {
+  // Client-supplied UUID identifying the view. The same id updates the same
+  // view; a new id creates a new view.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Title. Required when creating; omit to keep the existing title on update.
+  optional string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  // Description. Omit to keep the existing description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 10000];
+  // Surface the view applies to. Omit to keep the existing context.
+  optional SavedViewContext context = 4 [(buf.validate.field).enum.defined_only = true];
+  // The selection. Required when creating; omit to keep the existing selection.
+  optional SavedViewSelection selection = 5;
+  // Display configuration. Omit to keep the existing config.
+  optional SavedViewConfig config = 6;
+  // Sharing state. Omit to keep the existing visibility.
+  optional SavedViewVisibility visibility = 7 [(buf.validate.field).enum.defined_only = true];
+  // Access grants. When present, replaces the entire grant set (an empty list
+  // clears all grants); when omitted, grants are left unchanged. Changing
+  // grants requires manage/admin permission on the view.
+  optional GrantList grants = 9;
+
+  // Optional optimistic-concurrency guard. When set, the update fails with a
+  // conflict if the view was modified since this etag was read.
+  optional string etag = 8;
+}
+
+message UpsertResponse {
+  // The stored view after the upsert.
+  SavedView view = 1;
+}
+
+message DeleteRequest {
+  // Id of the view to delete.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 2;
+}
+
+message DeleteResponse {}
+
+message BatchGetRequest {
+  // Ids to fetch (1–200, unique).
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+}
+
+message BatchGetResponse {
+  // Views keyed by id. Ids the caller cannot see or that do not exist are
+  // absent.
+  map<string, SavedView> views = 1;
+}
+
+message ListRequest {
+  // Relationship buckets to include. Empty returns every view the caller can
+  // see. For example [SAVED_VIEW_RELATIONSHIP_MINE] returns only the caller's
+  // own views.
+  repeated SavedViewRelationship scopes = 1 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Restrict to a single surface. Omit to return views for all contexts.
+  optional SavedViewContext context = 2 [(buf.validate.field).enum.defined_only = true];
+  // Restrict to views the caller has pinned.
+  optional bool only_pinned = 4;
+  // Pagination.
+  synq.v1.Pagination pagination = 3;
+}
+
+message ListResponse {
+  // The matching views.
+  repeated SavedView views = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message SetPinRequest {
+  // Id of the view to pin/unpin for the calling user.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Desired pin state: true to pin, false to unpin.
+  bool pinned = 2;
+}
+
+message SetPinResponse {}

@@ -1,0 +1,215 @@
+syntax = "proto3";
+
+package synq.savedviews.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/queries/v1/query.proto";
+
+option go_package = "github.com/getsynq/api/savedviews/v1";
+
+// The surface a saved view applies to. A view saved on the catalog/assets screen
+// is not shown on the checks or issues screens, so listing is normally filtered
+// by the context the caller is rendering.
+enum SavedViewContext {
+  // Catalog / assets — the default surface.
+  SAVED_VIEW_CONTEXT_UNSPECIFIED = 0;
+  // Checks / monitors screen.
+  SAVED_VIEW_CONTEXT_CHECKS = 1;
+  // Issues / incidents screen.
+  SAVED_VIEW_CONTEXT_ISSUES = 2;
+}
+
+// Who can see a saved view. This is the absolute sharing state stored on the
+// view; how it relates to the calling user is reported separately as a
+// SavedViewRelationship on each returned view.
+enum SavedViewVisibility {
+  // Private — only the owner can see it.
+  SAVED_VIEW_VISIBILITY_UNSPECIFIED = 0;
+  // Shared with the whole workspace — everyone in the workspace can see it.
+  SAVED_VIEW_VISIBILITY_SHARED = 1;
+  // Granted — the owner plus the users explicitly listed in the view's grants.
+  SAVED_VIEW_VISIBILITY_GRANTED = 2;
+}
+
+// How a returned saved view relates to the calling user. Output-only: computed
+// per request from the view's owner, visibility and grants against the caller's
+// identity. Clients group their "views" UI by this value.
+enum SavedViewRelationship {
+  SAVED_VIEW_RELATIONSHIP_UNSPECIFIED = 0;
+  // The caller owns the view.
+  SAVED_VIEW_RELATIONSHIP_MINE = 1;
+  // Owned by the workspace itself (e.g. created by a workspace-level token),
+  // visible to everyone.
+  SAVED_VIEW_RELATIONSHIP_WORKSPACE = 2;
+  // Another user's view that they shared with the whole workspace.
+  SAVED_VIEW_RELATIONSHIP_SHARED_TO_WORKSPACE = 3;
+  // Another user's view that was explicitly granted to the caller.
+  SAVED_VIEW_RELATIONSHIP_SHARED_TO_ME = 4;
+}
+
+// The access level a grant confers on its grantee.
+enum GrantRole {
+  // Unspecified is treated as VIEW.
+  GRANT_ROLE_UNSPECIFIED = 0;
+  // The grantee can see the view.
+  GRANT_ROLE_VIEW = 1;
+  // The grantee can also edit the view and change its sharing/grants.
+  GRANT_ROLE_MANAGE = 2;
+}
+
+// How a saved view is displayed once opened. This message is intentionally
+// permissive and forward-compatible: new presentation options are added as new
+// fields, never as a breaking change, so older clients keep working.
+message SavedViewConfig {
+  // Layout used to render the view's results.
+  enum Layout {
+    LAYOUT_UNSPECIFIED = 0;
+    LAYOUT_LIST = 1;
+    LAYOUT_CARDS = 2;
+    LAYOUT_TABLE = 3;
+  }
+  // How results are laid out (list, cards, table). Unspecified lets the client
+  // pick its default for the context.
+  Layout layout = 1 [(buf.validate.field).enum.defined_only = true];
+
+  // Which fields to surface on each result (e.g. "last_run", "owner", "status",
+  // "platform"). Interpreted by the client; unknown field names are ignored.
+  repeated string card_fields = 2 [(buf.validate.field).repeated = {
+    max_items: 50
+    items: {
+      string: {
+        min_len: 1
+        max_len: 100
+      }
+    }
+  }];
+}
+
+// The query behind a saved view, expressed for the public API.
+//
+// On write, provide the query in ONE of two forms:
+//   - `public_query` — a structured query (the same shape used elsewhere for
+//     asset selection), convenient to build from a filter UI; or
+//   - `resolver_ql` — the SYNQ resolver query language, a compact text form
+//     that additionally expresses severity/status and time-window filters
+//     (e.g. `with_severity(statuses=["error"], since="24h")`).
+// When both are set, `resolver_ql` wins. The server compiles the query and
+// stores it canonically; the raw text is not preserved verbatim.
+//
+// On read, the server returns `rendered_resolver_ql` (the stored query rendered
+// back to canonical resolver query language) and, best-effort, `public_query`
+// (the structured representation; parts with no structured equivalent are marked
+// unsupported). `resolver_ql` is not echoed back — read `rendered_resolver_ql`.
+message SavedViewQuery {
+  option (buf.validate.message).cel = {
+    id: "saved_view_query.nonempty"
+    message: "resolver_ql or public_query is required when writing a saved view query"
+    expression: "this.resolver_ql != '' || this.rendered_resolver_ql != '' || has(this.public_query)"
+  };
+
+  // WRITE (option A). The query in resolver query language. Superset form — the
+  // only way to express severity/status and time-window filters.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language. Deterministically derived; does not preserve original
+  // hand-typed formatting or comments.
+  string rendered_resolver_ql = 2;
+
+  // WRITE (option B) and READ. On write, the structured query to store (used
+  // when `resolver_ql` is empty). On read, a structured representation of the
+  // stored query — lossy: parts with no structured equivalent are represented
+  // as unsupported, so prefer `rendered_resolver_ql` for full fidelity.
+  synq.queries.v1.Query public_query = 3;
+}
+
+// The selection that a saved view captures. Modelled as a oneof so future
+// contexts (e.g. an issues filter) can add their own selection shape without
+// reshaping the view.
+message SavedViewSelection {
+  option (buf.validate.message).cel = {
+    id: "saved_view_selection.set"
+    message: "a selection variant is required"
+    expression: "has(this.entity_query)"
+  };
+  oneof selection {
+    // Entity-backed selection (catalog/assets and checks contexts).
+    SavedViewQuery entity_query = 1;
+  }
+}
+
+// A single access grant on a saved view.
+message Grant {
+  // Identity of the grantee. Currently a user email (`user@example.com`); the
+  // view becomes visible to that user once they exist in the workspace, so a
+  // view can be shared with someone before their first login.
+  string grantee_identity = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 320
+  }];
+  // What the grantee may do. Defaults to VIEW.
+  GrantRole role = 2 [(buf.validate.field).enum.defined_only = true];
+}
+
+// A wrapper giving the grant set explicit presence on write, so a partial
+// update can distinguish "replace the grants" (present, possibly empty) from
+// "leave grants unchanged" (absent).
+message GrantList {
+  repeated Grant grants = 1 [(buf.validate.field).repeated = {max_items: 200}];
+}
+
+// What the calling user is allowed to do with a saved view. Output-only:
+// computed per request from ownership, the caller's grant (if any) and their
+// workspace permissions. Viewing and pinning are always allowed for any view
+// the caller can see, so they are not represented here.
+message SavedViewPermissions {
+  // The caller can update the view's definition, title, description and config.
+  bool can_edit = 1;
+  // The caller can delete the view.
+  bool can_delete = 2;
+  // The caller can change the view's sharing/visibility and grants.
+  bool can_manage_grants = 3;
+}
+
+// A saved view: a named, reusable selection over entities (or another context)
+// with display configuration, sharing and per-user pinning.
+message SavedView {
+  // Workspace the view belongs to. Output-only — taken from the caller's token.
+  string workspace = 1;
+  // Client-supplied UUID identifying the view.
+  string id = 2;
+  // The surface this view applies to.
+  SavedViewContext context = 3;
+  // Human-readable title.
+  string title = 4;
+  // Optional longer description.
+  string description = 5;
+  // The selection captured by the view.
+  SavedViewSelection selection = 6;
+  // Display configuration.
+  SavedViewConfig config = 7;
+  // Sharing state.
+  SavedViewVisibility visibility = 8;
+  // Access grants (populated for GRANTED views).
+  repeated Grant grants = 16;
+  // Who created the view. Output-only.
+  synq.issues.actor.v1.Actor owner = 9;
+  // Who last edited the view. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 13;
+  // How this view relates to the calling user. Output-only.
+  SavedViewRelationship relationship = 14;
+  // What the calling user may do with this view. Output-only.
+  SavedViewPermissions permissions = 15;
+  // Whether the calling user has pinned this view to their main screen.
+  // Output-only; change with SetPin.
+  bool pinned = 17;
+  // Entity tag for optimistic concurrency: pass back on Upsert/Delete to guard
+  // against overwriting a concurrent change. Form: `W/"<id>-<version>"`.
+  string etag = 10;
+  // When the view was created. Output-only.
+  google.protobuf.Timestamp created_at = 11;
+  // When the view was last updated. Output-only.
+  google.protobuf.Timestamp updated_at = 12;
+}

@@ -76,6 +76,9 @@ message Identifier {
 
     // Amazon Athena (Glue) table identifier
     AthenaTableIdentifier athena_table = 21;
+
+    // Saved view identifier
+    SavedViewIdentifier saved_view = 22;
   }
 }
 
@@ -331,6 +334,18 @@ message DataproductIdentifier {
 
 message OwnerIdentifier {
   // Owner id that identifies the Owner
+  string id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+//
+// SAVED VIEW
+//
+
+message SavedViewIdentifier {
+  // Saved view id (client-supplied UUID) that identifies the saved view
   string id = 1 [(buf.validate.field) = {
     required: true
     string: {uuid: true}
