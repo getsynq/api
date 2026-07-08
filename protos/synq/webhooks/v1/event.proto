@@ -4,6 +4,7 @@ package synq.webhooks.v1;
 
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/webhooks/v1/callback.proto";
 
 option go_package = "github.com/getsynq/api/webhooks/v1";
@@ -106,6 +107,21 @@ message IssueSummary {
   string trigger_message = 12;
 
   IssueStatus status = 13;
+
+  // The user who set the current status, when the transition was
+  // human-initiated (e.g. someone pressing Expected / Fixed / No action
+  // needed / Investigating in the app or via the public API). This is the
+  // same actor exposed by the Issues API as `Issue.latest_status_actor`, so
+  // the two feeds can be joined on it.
+  //
+  // Set only when an actor is known: it is populated on `issue_status_updated`
+  // events and left unset for system-driven transitions with no human actor
+  // (e.g. a status implied by a monitor run). Consumers must treat it as
+  // optional and tolerate its absence.
+  //
+  // Carries the strongest identity the caller proved — a Coalesce Quality
+  // email, Slack user id, or PagerDuty user id — alongside a display `name`.
+  optional synq.issues.actor.v1.Actor status_actor = 16;
 }
 
 message IncidentOpen {
