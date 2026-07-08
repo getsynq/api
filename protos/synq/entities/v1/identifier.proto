@@ -87,11 +87,11 @@ message Identifier {
 //
 
 message DbtCoreNodeIdentifier {
-  // Coalesce Quality integration_id that identifies the dbt Core project
-  string integration_id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.uuid = true
-  ];
+  // Opaque identifier of the dbt Core project. Usually the Coalesce Quality
+  // integration id (a UUID), but may also be the dbt project name from
+  // manifest.json when the integration is configured to identify assets by
+  // project name. Treat it as an opaque string, not a UUID.
+  string integration_id = 1 [(buf.validate.field).required = true];
 
   // Dbt node_id that identifies one of dbt DAG nodes (model, test, etc)
   string node_id = 2 [(buf.validate.field).required = true];
