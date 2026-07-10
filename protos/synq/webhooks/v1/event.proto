@@ -9,6 +9,33 @@ import "synq/webhooks/v1/callback.proto";
 
 option go_package = "github.com/getsynq/api/webhooks/v1";
 
+// A webhook event delivered to a customer-configured endpoint.
+//
+// Payload signing: every outgoing request is signed so the receiver can verify
+// it originated from Coalesce Quality and was not tampered with or replayed. Two
+// headers are sent on every delivery:
+//
+//   X-Coalesce-Timestamp: <unix seconds when the delivery was signed>
+//   X-Coalesce-Signature: v1=<hex-encoded HMAC-SHA256>
+//
+// The signature is computed as:
+//
+//   signed_payload = "{X-Coalesce-Timestamp}." + <raw request body bytes>
+//   signature      = hex( HMAC_SHA256(key = signing_secret, msg = signed_payload) )
+//
+// where signing_secret is the per-integration secret shown (read-only) in the
+// webhook integration settings. To verify:
+//
+//   1. Read X-Coalesce-Timestamp and the raw request body.
+//   2. Recompute the signature with your copy of the signing secret and compare
+//      it against the v1=... value in X-Coalesce-Signature using a constant-time
+//      comparison.
+//   3. Optionally reject deliveries whose timestamp is outside your tolerance
+//      window (retries reuse the original signing timestamp, so allow for the
+//      retry backoff window — up to ~30 minutes).
+//
+// The v1= prefix identifies the signature scheme; future schemes may add
+// additional space-separated values to the header.
 message Event {
   string workspace = 1;
   string event_id = 2;

@@ -4,6 +4,7 @@ package synq.schedule.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/schedule/v1/schedule.proto";
 
@@ -38,6 +39,78 @@ message PreviewScheduleParams {
       lte: 100
     }
   }];
+
+  // Optional. When set, each computed occurrence is mapped to the nearest
+  // matching grid point before being returned, so the job co-fires with
+  // existing activity (e.g. a warehouse that is already awake) instead of
+  // triggering its own resume. When unset, occurrences are returned exactly as
+  // the schedule expression produces them.
+  optional ScheduleSnap snap = 4;
+}
+
+// ScheduleSnap maps each schedule occurrence onto a grid so runs line up with
+// activity that is already happening, avoiding a separate warehouse resume.
+// Pick one grid source and, optionally, how far an occurrence may move.
+message ScheduleSnap {
+  // Source of the grid to snap onto.
+  oneof grid {
+    option (buf.validate.oneof).required = true;
+
+    // Snap onto the shared warehouse-scrape grid for an integration, so the
+    // run co-fires with the periodic scrape and reuses the same warehouse
+    // wake instead of paying for another resume.
+    IntegrationAnchorGrid integration_anchor = 1;
+
+    // Snap onto a fixed-quantum grid (e.g. every 10 minutes from the Unix
+    // epoch, UTC). Useful for tidy round-minute fire times without coupling to
+    // integration activity.
+    FixedQuantumGrid fixed_quantum = 2;
+  }
+
+  // How far an occurrence may be moved to land on the grid. If the nearest
+  // eligible grid point is farther away than this, the occurrence is returned
+  // unmoved and flagged as not snapped (see SnapInfo). Unset or zero means an
+  // occurrence snaps only when it already lands exactly on a grid point.
+  google.protobuf.Duration tolerance = 10;
+
+  // Direction an occurrence is allowed to move. Unspecified behaves as NEAREST.
+  SnapDirection direction = 11;
+}
+
+// IntegrationAnchorGrid snaps onto the shared, stable grid an integration's
+// periodic warehouse scrape already fires on. Aligning to it lets a run reuse
+// the same warehouse wake as the scrape.
+//
+// The integration is resolved in the caller's own workspace (taken from the
+// authenticated identity, never from the request), and the caller must be
+// authorized to read it — a token without integration read access is rejected.
+message IntegrationAnchorGrid {
+  // The integration whose scrape grid to align to.
+  string integration_id = 1 [(buf.validate.field).required = true];
+
+  // Spacing between grid points. When unset, the integration's configured
+  // scrape cadence is used — this is what actually resumes the warehouse once
+  // per tick. Set it only to override for unusual cases.
+  optional google.protobuf.Duration period = 2;
+}
+
+// FixedQuantumGrid snaps onto a fixed-size grid anchored at the Unix epoch
+// (1970-01-01T00:00:00Z): [epoch, epoch+quantum, epoch+2*quantum, ...].
+message FixedQuantumGrid {
+  // Spacing between grid points, e.g. 10m.
+  google.protobuf.Duration quantum = 1 [(buf.validate.field).required = true];
+}
+
+// SnapDirection constrains which way an occurrence may move to reach the grid.
+enum SnapDirection {
+  // Move to whichever grid point is closest. Same as NEAREST.
+  SNAP_DIRECTION_UNSPECIFIED = 0;
+  // Move to whichever grid point is closest.
+  SNAP_DIRECTION_NEAREST = 1;
+  // Only delay an occurrence to a later grid point, never move it earlier.
+  SNAP_DIRECTION_FORWARD = 2;
+  // Only move an occurrence earlier to a prior grid point, never delay it.
+  SNAP_DIRECTION_BACKWARD = 3;
 }
 
 message PreviewSchedulesRequest {
@@ -55,6 +128,21 @@ message PreviewScheduleResult {
   // Error message if the schedule expression is invalid or cannot be evaluated.
   // Empty on success.
   string error = 2;
+
+  // Per-occurrence snap outcome, index-aligned with `occurrences`. Empty when
+  // snap was not requested.
+  repeated SnapInfo snap_info = 3;
+}
+
+// SnapInfo records, for one occurrence, whether snapping moved it onto the grid.
+message SnapInfo {
+  // The occurrence as the schedule expression produced it, before snapping.
+  google.protobuf.Timestamp original = 1;
+
+  // True if the occurrence was moved onto the grid. False if the nearest grid
+  // point was farther than the tolerance (or none was available), in which
+  // case the aligned `occurrences` entry equals `original`.
+  bool snapped = 2;
 }
 
 message PreviewSchedulesResponse {

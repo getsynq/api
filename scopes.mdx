@@ -1,0 +1,877 @@
+---
+title: "API Scopes"
+description: "Scopes that can be granted to Coalesce Quality API tokens and OAuth clients, and the public API methods each one unlocks"
+---
+
+Every Coalesce Quality API token and OAuth client credential is granted a set of **scopes**. A scope authorises a group of related API methods; a call succeeds when the token carries **at least one** of the scopes required by that method (OR semantics).
+
+Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
+
+There are 43 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+
+## Edit Issues
+
+`SCOPE_ISSUES_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `MarkExpected` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | Mark issue as expected. |
+| `MarkFixed` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | Mark issue as fixed. |
+| `MarkInvestigating` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | Mark issue as being investigated. |
+| `MarkNoActionNeeded` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | Mark issue as no action needed. |
+| `PostComment` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | Post a comment on an issue. |
+| `ClearStatus` | synq.issues.v2.IssuesService | `/api/issues/v2` | Clear the triage status of an issue, returning it to an untriaged state. |
+| `MarkExpected` | synq.issues.v2.IssuesService | `/api/issues/v2` | Mark issue as expected. |
+| `MarkFixed` | synq.issues.v2.IssuesService | `/api/issues/v2` | Mark issue as fixed. |
+| `MarkInvestigating` | synq.issues.v2.IssuesService | `/api/issues/v2` | Mark issue as being investigated. |
+| `MarkNoActionNeeded` | synq.issues.v2.IssuesService | `/api/issues/v2` | Mark issue as no action needed. |
+| `PostComment` | synq.issues.v2.IssuesService | `/api/issues/v2` | Post a comment on an issue. |
+
+## Read Issues
+
+`SCOPE_ISSUES_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` |  |
+| `ListIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` |  |
+| `BatchGetIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` |  |
+| `ListIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` |  |
+
+## Edit Incidents
+
+`SCOPE_INCIDENTS_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `AddIssuesToIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `AssignIncidentOwner` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `CancelIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | Cancel an incident |
+| `CloseIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | Close an incident |
+| `CreateIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `MergeIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `PostComment` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | Post a comment on an incident. |
+| `RemoveIssuesFromIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `RenameIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `SplitIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `UpdateIncidentState` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+
+## Read Incidents
+
+`SCOPE_INCIDENTS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `ListIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+
+## Edit Entity
+
+`SCOPE_ENTITY_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `DeleteCheckRelationships` | synq.entities.custom.v1.ChecksRelationshipsService | — |  |
+| `UpsertCheckRelationships` | synq.entities.custom.v1.ChecksRelationshipsService | — |  |
+| `DeleteEntity` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
+| `UpsertEntity` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
+| `DeleteEntityFeature` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
+| `UpsertEntityFeature` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
+| `DeleteEntitiesGroup` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | DeleteEntitiesGroup deletes a group by its identifier. If the group does not exist, it will be a no-... |
+| `UpsertEntitiesGroup` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | UpsertEntitiesGroup updates current definition of group to the server. As part of the upsert operati... |
+
+## Read Entity
+
+`SCOPE_ENTITY_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `GenerateConnectionsYaml` | synq.agent.dwh.v1.ConnectionsService | — | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
+| `ListConnections` | synq.agent.dwh.v1.ConnectionsService | — | ListConnections retrieves data warehouse connections for a workspace. |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `ListAnnotations` | synq.entities.annotations.v1.AnnotationsService | `/api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
+| `BatchChange` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
+| `List` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | Retrieves the complete change history for specified entities. |
+| `GetCoverage` | synq.entities.checks.v1.ChecksCoverageService | — | GetCoverage retrieves the coverage of checks for a specific entity. |
+| `GetTableConstraints` | synq.entities.constraints.v1.TableConstraintsService | `/api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
+| `BatchDatabaseCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | Get multiple DatabaseCoordinates for identifiers. |
+| `BatchIdsByCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | Given database FQN return possible entity ids. |
+| `ListEntities` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | List all entities. |
+| `ListEntityFeatures` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | List all entities. |
+| `ListEntityGroups` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | ListEntityGroups lists all groups. |
+| `ListTypes` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | List all entities. |
+| `BatchGetEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Get multiple entities by their identifiers. |
+| `GetEntity` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Get specific entity by its identifier. |
+| `ListEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | List entities matching the given filter |
+| `SearchEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Search for entities. |
+| `GetImpact` | synq.entities.impact.v1.ImpactService | `/api/impact/v1` |  |
+| `BatchResolveIdentifiers` | synq.entities.resolve.v1.IdentifierResolveService | `/api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
+| `BatchSchemaMismatches` | synq.entities.schemas.v1.SchemaMismatchesService | `/api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
+| `GetSchema` | synq.entities.schemas.v1.SchemasService | `/api/schema/v1` | Get schema of the entity its identifier. |
+| `BatchSqlDetails` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
+| `ListSqlConstructs` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `GetDiffByCommit` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` |  |
+| `GenerateQuery` | synq.queries.v1.NLQueryService | `/api/queries/v1/generate` | GenerateQuery generates a Query from a natural language description. |
+
+## Edit Type Entity
+
+`SCOPE_ENTITY_TYPE_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `DeleteType` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
+| `UpsertType` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
+
+## Read Type Entity
+
+`SCOPE_ENTITY_TYPE_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `ListTypes` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | List all entities. |
+
+## Edit Lineage
+
+`SCOPE_LINEAGE_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `DeleteRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
+| `UpsertRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | Create or update relationships between entities. If the relationship already exists, it will be upda... |
+
+## Read Lineage
+
+`SCOPE_LINEAGE_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `ListRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
+| `GetImpact` | synq.entities.impact.v1.ImpactService | `/api/impact/v1` |  |
+| `GetLineage` | synq.entities.lineage.v1.LineageService | `/api/lineage/v1` |  |
+| `BatchOrchestration` | synq.entities.orchestration.v1.OrchestrationService | `/api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
+
+## Read Entity code
+
+`SCOPE_CODE_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `ListCode` | synq.entities.code.v1.CodeService | `/api/code/v1` | ListCode retrieves all code artifacts associated with a specific entity. |
+| `GetDiffByChangeId` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` |  |
+
+## Read Status
+
+`SCOPE_STATUS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchGetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | Get multiple entity statuses by their identifiers. |
+| `GetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | Get specific entity status by its identifier. |
+| `BatchGetIssuesStatus` | synq.entities.status.v1.EntityIssuesService | `/api/status/v1/issues/by-id` | Get multiple entity statuses by their identifiers. |
+| `GetIssuesStatus` | synq.entities.status.v1.EntityIssuesService | `/api/status/v1/issues/by-id` | Get specific entity status by its identifier. |
+
+## Edit SQL Tests
+
+`SCOPE_DATACHECKS_SQLTESTS_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchDeleteSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | Delete SqlTests by their IDs. |
+| `BatchUpsertSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | Upsert SqlTests based on a unique ID. |
+
+## Read SQL Tests
+
+`SCOPE_DATACHECKS_SQLTESTS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | Get SqlTests by their IDs. |
+| `ListSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
+
+## Read SQL Tests Audit
+
+`SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `GetSqlTestAudit` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | Get SqlTest audit from a given execution ID in jwt token. |
+
+## Edit Test Suggestions
+
+`SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `MarkAsCancelled` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `MarkAsCompleted` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `MarkAsFailed` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `MarkAsRunning` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `SuggestFor` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `BatchAcceptTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` |  |
+| `BatchCreateTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` |  |
+| `BatchRejectTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` |  |
+
+## Read Test Suggestions
+
+`SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `GetActiveSuggestionStatesFor` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `ListSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `BatchGetTestSuggestionsForEntities` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` |  |
+
+## Trigger Datachecks
+
+`SCOPE_DATACHECKS_TRIGGER`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `TriggerDatachecks` | synq.datachecks.v1.TriggerService | `/api/datachecks/scheduler/v1/trigger` | TriggerDatachecks executes datachecks for the specified entities. |
+
+## Edit Execution
+
+`SCOPE_EXECUTION_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `UpsertExecution` | synq.entities.custom.v1.EntityExecutionsService | `/api/entities/custom/executions/v1` | Execution affects status of the custom entity |
+| `UpsertLogEntry` | synq.entities.custom.v1.EntityExecutionsService | `/api/entities/custom/executions/v1` | LogEntry is a log message for the custom entity |
+| `UpsertExecution` | synq.entities.executions.v1.EntityExecutionsService | `/api/executions/v1` | Execution affects status of the custom entity |
+| `UpsertLogEntry` | synq.entities.executions.v1.EntityExecutionsService | `/api/executions/v1` | LogEntry is a log message for the custom entity |
+
+## Edit Logs
+
+`SCOPE_EXECUTION_LOG_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `UpsertLogEntry` | synq.entities.custom.v1.EntityExecutionsService | `/api/entities/custom/executions/v1` | LogEntry is a log message for the custom entity |
+| `UpsertLogEntry` | synq.entities.executions.v1.EntityExecutionsService | `/api/executions/v1` | LogEntry is a log message for the custom entity |
+
+## Read Execution
+
+`SCOPE_EXECUTION_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | BatchGetExecutions retrieves multiple executions by their IDs. |
+| `GetExecutionsSummary` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | GetExecutionsSummary provides aggregated statistics about executions for specified entities. |
+| `GetLatestExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | GetLatestExecutions retrieves the most recent execution for each specified entity. |
+| `ListExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | ListExecutions retrieves a paginated list of executions for one or more entities. |
+
+## Edit Integration Settings
+
+`SCOPE_INTEGRATION_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `AcceptPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | AcceptPromptSuggestion applies a pending suggestion to the matching SRE agent |
+| `DismissPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | DismissPromptSuggestion marks a pending suggestion as dismissed with an optional |
+| `RecordPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | RecordPromptSuggestion is the producer-side endpoint used by the offline |
+| `BatchGetIntegrations` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
+| `CreateIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Create a new integration. The server assigns the id and returns the created |
+| `DeleteIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Delete an integration. The integration stops being scheduled and is removed |
+| `DisableIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Disable an integration without deleting it. The configuration is kept but |
+| `EnableIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Enable a previously disabled integration. No-op if already enabled. |
+| `GetIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Fetch a single integration by id. Secret config fields are masked. |
+| `GetIntegrationHealth` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Return current health plus a paginated history of recent runs for an |
+| `ListIntegrations` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
+| `RefreshIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Trigger an immediate, ad-hoc refresh of an integration. Available only for |
+| `UpdateIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | Update an integration. The `config` is replaced wholesale — send the |
+| `SetPlatformAuthentication` | synq.platforms.v1.PlatformsService | `/api/platforms/v1` |  |
+
+## Edit User
+
+`SCOPE_USER_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `DeleteUserAliases` | synq.users.v1.UsersService | — |  |
+| `UpsertUserAliases` | synq.users.v1.UsersService | — |  |
+
+## Read User
+
+`SCOPE_USER_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `ListDomainMembers` | synq.domains.members.v1.DomainMembersService | — | List domain members. |
+| `ListUserDomains` | synq.domains.members.v1.DomainMembersService | — | List domains for the given user. |
+| `SetDefaultUserDomain` | synq.domains.members.v1.DomainMembersService | — | Set default domain for user. |
+| `BatchGetUsers` | synq.users.v1.UsersService | — |  |
+| `GetByAlias` | synq.users.v1.UsersService | — |  |
+| `GetByEmail` | synq.users.v1.UsersService | — |  |
+| `GetUserAliases` | synq.users.v1.UsersService | — |  |
+| `GetUserIdentities` | synq.users.v1.UsersService | — | Returns all canonical identity strings for a user. |
+| `ListUsers` | synq.users.v1.UsersService | — |  |
+
+## Assign User
+
+`SCOPE_USER_ASSIGN`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `AddDomainMembers` | synq.domains.members.v1.DomainMembersService | — | Add domain members. |
+| `RemoveDomainMembers` | synq.domains.members.v1.DomainMembersService | — | Remove domain members. |
+
+## Read Monitors
+
+`SCOPE_MONITORS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `ListConfigsMonitors` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `ListMonitors` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `History` | synq.monitors.history.v1.HistoryService | `/api/monitors/history/v1/` |  |
+| `MonitorInfo` | synq.monitors.info.v1.MonitorInfoService | `/api/monitors/info/v1` |  |
+| `BatchGetLatestEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns the most recent observed table-stats sample (row count, freshness) for each |
+| `GetEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
+| `GetMonitorPredictions` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+
+## Edit Automatic Monitors
+
+`SCOPE_MONITORS_AUTOMATIC_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchDeleteDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `BatchDeployDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `BatchGetDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `BatchUpdateDeploymentRuleTitle` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `BatchUpsertDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `DeleteDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `DeployDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `GetDeployDeleteOverview` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `GetDeployOverview` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `ListDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `ListDeploymentRulesForAsset` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+| `UpsertDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` |  |
+
+## Edit Custom Monitors
+
+`SCOPE_MONITORS_CUSTOM_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchCreateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `BatchDeleteMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `BatchUpdateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `BatchUpdateMonitorMode` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `BatchUpdateMonitorSeverity` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `ConfigChangesOverview` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+
+## Edit custom monitors with SQL source
+
+`SCOPE_MONITORS_CUSTOM_SQL_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchCreateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+| `BatchUpdateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` |  |
+
+## Edit Alerts
+
+`SCOPE_ALERTS_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Create` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Create a new alert configuration. |
+| `Delete` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Delete an existing alert configuration. |
+| `ToggleEnabled` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Enables or disables an existing alert configuration. |
+| `Update` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Update an existing alert configuration. |
+
+## Read Alerts
+
+`SCOPE_ALERTS_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchGet` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Get multiple alert configurations by their identifiers. |
+| `List` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | Retrieves a list of alert configurations based on filters. |
+
+## Edit Dataproduct
+
+`SCOPE_DATAPRODUCT_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Delete` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Delete a dataproduct by its identifier. |
+| `RemoveDefinitionPart` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Remove definition part from the definition of an existing dataproduct. |
+| `SetDefinition` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Set the definition for an existing dataproduct. |
+| `Upsert` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Create or update a dataproduct. |
+| `UpsertDefinitionPart` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Upsert definition part to the definition of an existing dataproduct. |
+
+## Read Dataproduct
+
+`SCOPE_DATAPRODUCT_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Get` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Get multiple dataproducts by their identifiers. |
+| `List` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | List all the dataproducts in the current scope. |
+
+## Edit Domain
+
+`SCOPE_DOMAIN_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Delete` | synq.domains.v1.DomainsService | — | Delete a domain by its identifier. |
+| `RemoveDefinitionPart` | synq.domains.v1.DomainsService | — | Remove definition part from the definition of an existing domain. |
+| `SetDefinition` | synq.domains.v1.DomainsService | — | Set the definition for an existing domain. |
+| `Upsert` | synq.domains.v1.DomainsService | — | Create or update a domain. |
+| `UpsertDefinitionPart` | synq.domains.v1.DomainsService | — | Upsert definition part to the definition of an existing domain. |
+
+## Read Domain
+
+`SCOPE_DOMAIN_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchGet` | synq.domains.v1.DomainsService | — | Get multiple domains by their identifiers. |
+| `FetchDomainWithSubDomains` | synq.domains.v1.DomainsService | — | Get a domain with its sub-domains |
+| `List` | synq.domains.v1.DomainsService | — | List all the domains in the current workspace. |
+
+## Manage Extensions
+
+`SCOPE_EXTENSIONS_MANAGE`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `GenerateConnectionsYaml` | synq.agent.dwh.v1.ConnectionsService | — | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
+| `ListConnections` | synq.agent.dwh.v1.ConnectionsService | — | ListConnections retrieves data warehouse connections for a workspace. |
+| `Activate` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | Activate or deactivate the integration. |
+| `Ping` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | Pings Atlan with the given connection credentials. |
+| `Remove` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` |  |
+| `Upsert` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | Upserts an integration and validates it by checking if the provided API URL and token are valid. |
+| `GetAtlanConnections` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` |  |
+| `GetAtlanDataProducts` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` |  |
+| `GetAtlanDomains` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` |  |
+| `FetchRuns` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `GetConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `GetDomainMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `GetMappingToggles` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `GetProductMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `RemoveConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `SetConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `SetMappingToggles` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` |  |
+| `Synchronize` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | Run a synchronization job for the integration. |
+
+## Read Mcp
+
+`SCOPE_MCP_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `GenerateConnectionsYaml` | synq.agent.dwh.v1.ConnectionsService | — | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
+| `ListConnections` | synq.agent.dwh.v1.ConnectionsService | — | ListConnections retrieves data warehouse connections for a workspace. |
+| `GetAuditLog` | synq.agent.recon.v1.AuditLogService | — | GetAuditLog returns a single audit log by invocation ID. |
+| `ListAuditLogs` | synq.agent.recon.v1.AuditLogService | — | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and tim... |
+| `BatchReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | BatchReconciliationRunState returns the latest concluded run and any ongoing |
+| `ListReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | ListReconciliationRunState returns runs filtered by status and/or suite_id. |
+| `GetSuiteConfig` | synq.agent.recon.v1.SuiteConfigService | — | Get the latest version of a suite config by suite_id. |
+| `GetSuiteConfigVersion` | synq.agent.recon.v1.SuiteConfigService | — | Get a specific historical version of a suite config. |
+| `ListSuiteConfigVersions` | synq.agent.recon.v1.SuiteConfigService | — | Get version history for a suite config. |
+| `ListSuiteConfigs` | synq.agent.recon.v1.SuiteConfigService | — | List latest suite configs with filtering and pagination. |
+| `GetSuiteDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | Fetch a deployment by suite_id or deployment_id. |
+| `ListSuiteDeploymentHistory` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | List the append-only history of a deployment (every promote, |
+| `ListSuiteDeployments` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | List deployments for the caller's workspace. Filters support answering |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `GetConfig` | synq.agent.sre.v1.SreAgentService | — | GetConfig returns the Scout configuration (system prompts + DWH connection |
+| `ListPromptSuggestions` | synq.agent.sre.v1.SreAgentService | — | ListPromptSuggestions returns prompt-improvement suggestions recorded for the |
+| `BatchSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `GetActiveSuggestionStatesFor` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `ListSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — |  |
+| `BatchLatestConclusions` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | Retrieves the latest triage state for one or more issues. This method is used by the LLM agent |
+| `BatchTriageState` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
+| `ListTriageState` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
+| `BatchGetSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | Get SqlTests by their IDs. |
+| `ListSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
+| `BatchGetTestSuggestionsForEntities` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` |  |
+| `Get` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | Get multiple dataproducts by their identifiers. |
+| `List` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | List all the dataproducts in the current scope. |
+| `ListAnnotations` | synq.entities.annotations.v1.AnnotationsService | `/api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
+| `BatchChange` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
+| `List` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | Retrieves the complete change history for specified entities. |
+| `GetCoverage` | synq.entities.checks.v1.ChecksCoverageService | — | GetCoverage retrieves the coverage of checks for a specific entity. |
+| `ListCode` | synq.entities.code.v1.CodeService | `/api/code/v1` | ListCode retrieves all code artifacts associated with a specific entity. |
+| `GetTableConstraints` | synq.entities.constraints.v1.TableConstraintsService | `/api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
+| `BatchDatabaseCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | Get multiple DatabaseCoordinates for identifiers. |
+| `BatchIdsByCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | Given database FQN return possible entity ids. |
+| `ListEntities` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | List all entities. |
+| `ListEntityFeatures` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | List all entities. |
+| `ListEntityGroups` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | ListEntityGroups lists all groups. |
+| `ListRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
+| `BatchGetEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Get multiple entities by their identifiers. |
+| `GetEntity` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Get specific entity by its identifier. |
+| `ListEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | List entities matching the given filter |
+| `SearchEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | Search for entities. |
+| `BatchGetExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | BatchGetExecutions retrieves multiple executions by their IDs. |
+| `GetExecutionsSummary` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | GetExecutionsSummary provides aggregated statistics about executions for specified entities. |
+| `GetLatestExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | GetLatestExecutions retrieves the most recent execution for each specified entity. |
+| `ListExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | ListExecutions retrieves a paginated list of executions for one or more entities. |
+| `GetImpact` | synq.entities.impact.v1.ImpactService | `/api/impact/v1` |  |
+| `GetLineage` | synq.entities.lineage.v1.LineageService | `/api/lineage/v1` |  |
+| `BatchOrchestration` | synq.entities.orchestration.v1.OrchestrationService | `/api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
+| `BatchResolveIdentifiers` | synq.entities.resolve.v1.IdentifierResolveService | `/api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
+| `BatchSchemaMismatches` | synq.entities.schemas.v1.SchemaMismatchesService | `/api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
+| `GetSchema` | synq.entities.schemas.v1.SchemasService | `/api/schema/v1` | Get schema of the entity its identifier. |
+| `BatchSqlDetails` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
+| `ListSqlConstructs` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `BatchGetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | Get multiple entity statuses by their identifiers. |
+| `GetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | Get specific entity status by its identifier. |
+| `BatchGetIssuesStatus` | synq.entities.status.v1.EntityIssuesService | `/api/status/v1/issues/by-id` | Get multiple entity statuses by their identifiers. |
+| `GetDiffByChangeId` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` |  |
+| `GetDiffByCommit` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` |  |
+| `BatchGetIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `ListIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` |  |
+| `BatchGetIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` |  |
+| `ListIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` |  |
+| `BatchGetIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` |  |
+| `ListIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` |  |
+| `History` | synq.monitors.history.v1.HistoryService | `/api/monitors/history/v1/` |  |
+| `MonitorInfo` | synq.monitors.info.v1.MonitorInfoService | `/api/monitors/info/v1` |  |
+| `BatchGetLatestEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns the most recent observed table-stats sample (row count, freshness) for each |
+| `GetEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
+| `GetMonitorPredictions` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+| `BatchGet` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
+| `List` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | List the saved views the calling user can see. By default returns every |
+| `SetPin` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
+| `GetByEmail` | synq.users.v1.UsersService | — |  |
+| `GetUserIdentities` | synq.users.v1.UsersService | — | Returns all canonical identity strings for a user. |
+| `ListUsers` | synq.users.v1.UsersService | — |  |
+
+## Write Mcp
+
+`SCOPE_MCP_WRITE`
+
+_No public gRPC/REST methods require this scope directly (e.g. MCP tools or future methods)._
+
+## Read Reconciliation Audits and Settings
+
+`SCOPE_RECON_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `GetAuditLog` | synq.agent.recon.v1.AuditLogService | — | GetAuditLog returns a single audit log by invocation ID. |
+| `ListAuditLogs` | synq.agent.recon.v1.AuditLogService | — | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and tim... |
+| `BatchReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | BatchReconciliationRunState returns the latest concluded run and any ongoing |
+| `ListReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | ListReconciliationRunState returns runs filtered by status and/or suite_id. |
+| `GetSuiteConfig` | synq.agent.recon.v1.SuiteConfigService | — | Get the latest version of a suite config by suite_id. |
+| `GetSuiteConfigVersion` | synq.agent.recon.v1.SuiteConfigService | — | Get a specific historical version of a suite config. |
+| `ListSuiteConfigVersions` | synq.agent.recon.v1.SuiteConfigService | — | Get version history for a suite config. |
+| `ListSuiteConfigs` | synq.agent.recon.v1.SuiteConfigService | — | List latest suite configs with filtering and pagination. |
+| `GetSuiteDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | Fetch a deployment by suite_id or deployment_id. |
+| `ListSuiteDeploymentHistory` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | List the append-only history of a deployment (every promote, |
+| `ListSuiteDeployments` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | List deployments for the caller's workspace. Filters support answering |
+
+## Read Check Categorisation Rules and Status
+
+`SCOPE_POLICIES_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `ListCheckCategories` | synq.entities.checks.v1.ChecksCategoriesService | `/api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
+
+## Read Saved Views
+
+`SCOPE_SAVED_VIEW_READ`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `BatchGet` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
+| `List` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | List the saved views the calling user can see. By default returns every |
+| `SetPin` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
+
+## Create and Edit Saved Views
+
+`SCOPE_SAVED_VIEW_EDIT`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Delete` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `Upsert` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Create or update a saved view. |
+
+## Manage All Saved Views in the Workspace
+
+`SCOPE_SAVED_VIEW_ADMIN`
+
+| Method | Service | REST | Description |
+| ------ | ------- | ---- | ----------- |
+| `Delete` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `Upsert` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | Create or update a saved view. |
+
+## Endpoint reference
+
+Every public API method and the scopes that satisfy it. A token needs any one of the listed scopes.
+
+| Method | Service | REST | Scopes |
+| ------ | ------- | ---- | ------ |
+| `GenerateConnectionsYaml` | synq.agent.dwh.v1.ConnectionsService | — | `SCOPE_INGEST_DWH` ⚙️<br>`SCOPE_MCP_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_EXTENSIONS_MANAGE`<br>`SCOPE_ENTITY_READ` |
+| `ListConnections` | synq.agent.dwh.v1.ConnectionsService | — | `SCOPE_INGEST_DWH` ⚙️<br>`SCOPE_MCP_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_EXTENSIONS_MANAGE`<br>`SCOPE_ENTITY_READ` |
+| `Connect` | synq.agent.dwh.v1.DwhAgentService | — | `SCOPE_INGEST_DWH` ⚙️ |
+| `GetAuditLog` | synq.agent.recon.v1.AuditLogService | — | `SCOPE_RECON_READ`<br>`SCOPE_INGEST_RECON` ⚙️<br>`SCOPE_MCP_READ` |
+| `IngestAuditLog` | synq.agent.recon.v1.AuditLogService | — | `SCOPE_INGEST_RECON` ⚙️ |
+| `ListAuditLogs` | synq.agent.recon.v1.AuditLogService | — | `SCOPE_RECON_READ`<br>`SCOPE_INGEST_RECON` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `CancelReconciliationRun` | synq.agent.recon.v1.RunStateService | — | `SCOPE_RECON_EDIT` ⚙️ |
+| `ListReconciliationRunState` | synq.agent.recon.v1.RunStateService | — | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `DeleteSuiteConfig` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_EDIT` ⚙️ |
+| `GetSuiteConfig` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_READ`<br>`SCOPE_INGEST_RECON` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetSuiteConfigVersion` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `ListSuiteConfigVersions` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `ListSuiteConfigs` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_READ`<br>`SCOPE_INGEST_RECON` ⚙️<br>`SCOPE_MCP_READ` |
+| `SubmitAdhocSuite` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_EDIT` ⚙️<br>`SCOPE_INGEST_RECON` ⚙️ |
+| `UpsertSuiteConfig` | synq.agent.recon.v1.SuiteConfigService | — | `SCOPE_RECON_EDIT` ⚙️<br>`SCOPE_INGEST_RECON` ⚙️ |
+| `GetSuiteDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `ListSuiteDeploymentHistory` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `ListSuiteDeployments` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_READ`<br>`SCOPE_MCP_READ` |
+| `PauseDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `PromoteSuite` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `ResumeDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `TriggerDeployment` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `UnpromoteSuite` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `UpdateDeploymentAnnotations` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `UpdateDeploymentCaseImpacts` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `UpdateDeploymentMappings` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `UpdateDeploymentSchedule` | synq.agent.recon.v1.SuiteDeploymentService | `/api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` ⚙️ |
+| `ParseYaml` | synq.agent.recon.v1.YamlService | `/api/agent/recon/v1/yaml/` | — |
+| `RenderYaml` | synq.agent.recon.v1.YamlService | `/api/agent/recon/v1/yaml/` | — |
+| `SubmitFeatureRequest` | synq.agent.sre.v1.FeatureRequestService | `/api/feature-request/v1/submit` | `SCOPE_MCP_READ`<br>`SCOPE_ENTITY_READ`<br>`SCOPE_ISSUES_READ`<br>`SCOPE_INCIDENTS_READ`<br>`SCOPE_LINEAGE_READ`<br>`SCOPE_MONITORS_READ`<br>`SCOPE_EXECUTION_READ`<br>`SCOPE_CODE_READ`<br>`SCOPE_DATACHECKS_SQLTESTS_READ`<br>`SCOPE_DATACHECKS_TESTSUGGESTIONS_READ` |
+| `Evaluate` | synq.agent.sre.v1.LlmService | `/api/sre/llm/v1/evaluate` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_SRE_LLM` ⚙️ |
+| `AcceptPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_INTEGRATION_EDIT` |
+| `Connect` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_SRE_AGENT` ⚙️ |
+| `DismissPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_INTEGRATION_EDIT` |
+| `GetConfig` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListPromptSuggestions` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_MCP_READ` |
+| `RecordPromptSuggestion` | synq.agent.sre.v1.SreAgentService | — | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_INTEGRATION_EDIT` |
+| `BatchSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetActiveSuggestionStatesFor` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListSuggestionStates` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MarkAsCancelled` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `MarkAsCompleted` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `MarkAsFailed` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `MarkAsRunning` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `SuggestFor` | synq.agent.sre.v1.TestsSuggestionStateService | — | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `BatchLatestConclusions` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchTriageState` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `Conclude` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️ |
+| `ListTriageState` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MarkAsInProgress` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️ |
+| `MarkFailed` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️ |
+| `RecordEvidence` | synq.agent.sre.v1.TriageService | `/api/triage/v1/` | `SCOPE_SRE_AGENT` ⚙️ |
+| `BatchGet` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_READ` |
+| `Create` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
+| `Delete` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
+| `List` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_READ` |
+| `ToggleEnabled` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
+| `Update` | synq.alerts.services.v1.AlertsService | `/api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
+| `Iam` | synq.auth.iam.v1.IamService | `/api/iam/v1` | — |
+| `BatchDeleteSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
+| `BatchGetSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchUpsertSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
+| `GetSqlTestAudit` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ` |
+| `ListSqlTests` | synq.datachecks.sqltests.v1.SqlTestsService | `/api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchAcceptTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
+| `BatchCreateTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
+| `BatchGetTestSuggestionsForEntities` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` | `SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br>`SCOPE_MCP_READ` |
+| `BatchRejectTestSuggestions` | synq.datachecks.testsuggestions.v1.TestSuggestionsService | `/api/datachecks/testsuggestions/v1` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `TriggerDatachecks` | synq.datachecks.v1.TriggerService | `/api/datachecks/scheduler/v1/trigger` | `SCOPE_DATACHECKS_TRIGGER` |
+| `Delete` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
+| `Get` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `List` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `RemoveDefinitionPart` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
+| `SetDefinition` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
+| `Upsert` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
+| `UpsertDefinitionPart` | synq.dataproducts.v1.DataproductsService | `/api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
+| `AddDomainMembers` | synq.domains.members.v1.DomainMembersService | — | `SCOPE_USER_ASSIGN` |
+| `ListDomainMembers` | synq.domains.members.v1.DomainMembersService | — | `SCOPE_USER_READ` |
+| `ListUserDomains` | synq.domains.members.v1.DomainMembersService | — | `SCOPE_USER_READ` |
+| `RemoveDomainMembers` | synq.domains.members.v1.DomainMembersService | — | `SCOPE_USER_ASSIGN` |
+| `SetDefaultUserDomain` | synq.domains.members.v1.DomainMembersService | — | `SCOPE_USER_READ` |
+| `BatchGet` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_READ` |
+| `Delete` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_EDIT` |
+| `FetchDomainWithSubDomains` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_READ` |
+| `GetUsage` | synq.domains.v1.DomainsService | — | `SCOPE_USAGE_GET` ⚙️ |
+| `List` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_READ` |
+| `RemoveDefinitionPart` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_EDIT` |
+| `SetDefinition` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_EDIT` |
+| `Upsert` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_EDIT` |
+| `UpsertDefinitionPart` | synq.domains.v1.DomainsService | — | `SCOPE_DOMAIN_EDIT` |
+| `ListAnnotations` | synq.entities.annotations.v1.AnnotationsService | `/api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchChange` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `List` | synq.entities.changes.v1.ChangesService | `/api/changes/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `DeleteCheckCategories` | synq.entities.checks.v1.ChecksCategoriesService | `/api/entities/checks/v1/categories` | `SCOPE_POLICIES_EDIT` ⚙️ |
+| `ListCheckCategories` | synq.entities.checks.v1.ChecksCategoriesService | `/api/entities/checks/v1/categories` | `SCOPE_POLICIES_READ`<br>`SCOPE_POLICIES_EDIT` ⚙️ |
+| `UpsertCheckCategories` | synq.entities.checks.v1.ChecksCategoriesService | `/api/entities/checks/v1/categories` | `SCOPE_POLICIES_EDIT` ⚙️ |
+| `GetCoverage` | synq.entities.checks.v1.ChecksCoverageService | — | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListCode` | synq.entities.code.v1.CodeService | `/api/code/v1` | `SCOPE_CODE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetTableConstraints` | synq.entities.constraints.v1.TableConstraintsService | `/api/constraints/v1/table-constraints` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchDatabaseCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchIdsByCoordinates` | synq.entities.coordinates.v1.DatabaseCoordinatesService | `/api/coordinates/v1/database/by-` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `DeleteCheckRelationships` | synq.entities.custom.v1.ChecksRelationshipsService | — | `SCOPE_ENTITY_EDIT` |
+| `UpsertCheckRelationships` | synq.entities.custom.v1.ChecksRelationshipsService | — | `SCOPE_ENTITY_EDIT` |
+| `DeleteEntity` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
+| `ListEntities` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `UpsertEntity` | synq.entities.custom.v1.EntitiesService | `/api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
+| `UpsertExecution` | synq.entities.custom.v1.EntityExecutionsService | `/api/entities/custom/executions/v1` | `SCOPE_EXECUTION_EDIT` |
+| `UpsertLogEntry` | synq.entities.custom.v1.EntityExecutionsService | `/api/entities/custom/executions/v1` | `SCOPE_EXECUTION_EDIT`<br>`SCOPE_EXECUTION_LOG_EDIT` |
+| `DeleteEntityFeature` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | `SCOPE_ENTITY_EDIT` |
+| `ListEntityFeatures` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `UpsertEntityFeature` | synq.entities.custom.v1.FeaturesService | `/api/entities/custom/v1/features` | `SCOPE_ENTITY_EDIT` |
+| `DeleteEntitiesGroup` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | `SCOPE_ENTITY_EDIT` |
+| `ListEntityGroups` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `UpsertEntitiesGroup` | synq.entities.custom.v1.GroupsService | `/api/entities/custom/v1/groups` | `SCOPE_ENTITY_EDIT` |
+| `DeleteRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
+| `ListRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `UpsertRelationships` | synq.entities.custom.v1.RelationshipsService | `/api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
+| `DeleteType` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT` |
+| `ListTypes` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | `SCOPE_ENTITY_READ`<br>`SCOPE_ENTITY_TYPE_READ`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `UpsertType` | synq.entities.custom.v1.TypesService | `/api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT` |
+| `BatchGetEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetEntity` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `SearchEntities` | synq.entities.entities.v1.EntitiesService | `/api/entities/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `UpsertExecution` | synq.entities.executions.v1.EntityExecutionsService | `/api/executions/v1` | `SCOPE_EXECUTION_EDIT` |
+| `UpsertLogEntry` | synq.entities.executions.v1.EntityExecutionsService | `/api/executions/v1` | `SCOPE_EXECUTION_EDIT`<br>`SCOPE_EXECUTION_LOG_EDIT` |
+| `BatchGetExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | `SCOPE_EXECUTION_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetExecutionsSummary` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | `SCOPE_EXECUTION_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetLatestExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | `SCOPE_EXECUTION_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListExecutions` | synq.entities.executions.v2.EntityExecutionsService | `/api/executions/v2/` | `SCOPE_EXECUTION_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetImpact` | synq.entities.impact.v1.ImpactService | `/api/impact/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_LINEAGE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetLineage` | synq.entities.lineage.v1.LineageService | `/api/lineage/v1` | `SCOPE_LINEAGE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchOrchestration` | synq.entities.orchestration.v1.OrchestrationService | `/api/orchestration/v1` | `SCOPE_LINEAGE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchResolveIdentifiers` | synq.entities.resolve.v1.IdentifierResolveService | `/api/resolve/v1/by-id` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchSchemaMismatches` | synq.entities.schemas.v1.SchemaMismatchesService | `/api/schema-mismatches/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetSchema` | synq.entities.schemas.v1.SchemasService | `/api/schema/v1` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchSqlDetails` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListSqlConstructs` | synq.entities.sql_insights.v1.SqlInsightsService | `/api/sql-insights/v1/` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchGetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | `SCOPE_STATUS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetIncidents` | synq.entities.status.v1.EntityIncidentsService | `/api/status/v1/incidents/by-id` | `SCOPE_STATUS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchGetIssuesStatus` | synq.entities.status.v1.EntityIssuesService | `/api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetIssuesStatus` | synq.entities.status.v1.EntityIssuesService | `/api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br>`SCOPE_SRE_AGENT` ⚙️ |
+| `Activate` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
+| `Get` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | `SCOPE_INTEGRATION_READ` ⚙️ |
+| `Ping` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
+| `Remove` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
+| `Upsert` | synq.extensions.atlan.integrations.v1.AtlanIntegrationService | `/api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetAtlanConnections` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetAtlanDataProducts` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetAtlanDomains` | synq.extensions.atlan.provider.v1.AtlanProviderService | `/api/extensions/atlan/provider/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `FetchRuns` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetDomainMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetMappingToggles` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetProductMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `RemoveConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `SetConnectionMappings` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `SetMappingToggles` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `Synchronize` | synq.extensions.atlan.workflows.v1.AtlanWorkflowService | `/api/extensions/atlan/workflows/v1/` | `SCOPE_EXTENSIONS_MANAGE` |
+| `GetDiffByChangeId` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` | `SCOPE_CODE_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetDiffByCommit` | synq.git.commits.v1.CommitsService | `/api/git/v1/c` | `SCOPE_ENTITY_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `AddIssuesToIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `AssignIncidentOwner` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `BatchGetIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `CancelIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `CloseIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `CreateIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `ListIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MergeIncidents` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `PostComment` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `RemoveIssuesFromIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `RenameIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `SplitIncident` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `UpdateIncidentState` | synq.incidents.v1.IncidentsService | `/api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `IngestDatahubAspects` | synq.ingest.airflow.v1.AirflowLogsService | `/api/ingest/airflow/v1/` | `SCOPE_INGEST_AIRFLOW` ⚙️ |
+| `IngestLog` | synq.ingest.airflow.v1.AirflowLogsService | `/api/ingest/airflow/v1/` | `SCOPE_INGEST_AIRFLOW` ⚙️ |
+| `IngestCloudwatchLogsData` | synq.ingest.cloudwatch.v1.CloudwatchService | `/api/ingest/cloudwatch/v1/` | `SCOPE_INGEST_CLOUDWATCH` ⚙️ |
+| `IngestInvocation` | synq.ingest.dbt.v1.DbtService | — | `SCOPE_INGEST_DBT` ⚙️ |
+| `IngestLineage` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestObjectInformation` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestObjectMetrics` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestQueryLogs` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestSchemas` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestSqlDefinitions` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestTableConstraints` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `IngestTaskResults` | synq.ingest.dwh.v1.DwhService | `/api/datawarehouse/v1/connection/` | `SCOPE_INGEST_DWH` ⚙️ |
+| `Ingest` | synq.ingest.openlineage.v1.OpenlineageService | `/api/ingest/openlineage/v1` | `SCOPE_INGEST_AIRFLOW` ⚙️<br>`SCOPE_INGEST_OPENLINEAGE` ⚙️ |
+| `IngestExecution` | synq.ingest.sqlmesh.v1.SqlMeshService | — | `SCOPE_INGEST_SQLMESH` ⚙️ |
+| `IngestMetadata` | synq.ingest.sqlmesh.v1.SqlMeshService | — | `SCOPE_INGEST_SQLMESH` ⚙️ |
+| `BatchGetIntegrations` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_INTEGRATION_EDIT` |
+| `CreateIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `DeleteIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `DisableIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `EnableIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `GetIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_INTEGRATION_EDIT` |
+| `GetIntegrationHealth` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_INTEGRATION_EDIT` |
+| `ListIntegrations` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_READ` ⚙️<br>`SCOPE_INTEGRATION_EDIT` |
+| `RefreshIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `UpdateIntegration` | synq.integrations.v1.IntegrationsService | `/api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `BatchGetIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ListIssues` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MarkExpected` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_EDIT` |
+| `MarkFixed` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_EDIT` |
+| `MarkInvestigating` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_EDIT` |
+| `MarkNoActionNeeded` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_EDIT` |
+| `PostComment` | synq.issues.issues.v1.IssuesService | `/api/issues/v1` | `SCOPE_ISSUES_EDIT` |
+| `BatchGetIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `ClearStatus` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `ListIssues` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MarkExpected` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `MarkFixed` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `MarkInvestigating` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `MarkNoActionNeeded` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `PostComment` | synq.issues.v2.IssuesService | `/api/issues/v2` | `SCOPE_ISSUES_EDIT` |
+| `BatchDeleteDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `BatchDeployDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `BatchGetDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `BatchUpdateDeploymentRuleTitle` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `BatchUpsertDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `DeleteDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `DeployDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `GetDeployDeleteOverview` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `GetDeployOverview` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `ListDeploymentRules` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `ListDeploymentRulesForAsset` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `UpsertDeploymentRule` | synq.monitors.automated_monitors.v1.DeploymentRulesService | `/api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `BatchCreateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT`<br>`SCOPE_MONITORS_CUSTOM_SQL_EDIT` |
+| `BatchDeleteMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT` |
+| `BatchUpdateMonitor` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT`<br>`SCOPE_MONITORS_CUSTOM_SQL_EDIT` |
+| `BatchUpdateMonitorMode` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT` |
+| `BatchUpdateMonitorSeverity` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT` |
+| `ConfigChangesOverview` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT` |
+| `ListConfigsMonitors` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_READ` |
+| `ListMonitors` | synq.monitors.custom_monitors.v1.CustomMonitorsService | `/api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_READ` |
+| `History` | synq.monitors.history.v1.HistoryService | `/api/monitors/history/v1/` | `SCOPE_MONITORS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `MonitorInfo` | synq.monitors.info.v1.MonitorInfoService | `/api/monitors/info/v1` | `SCOPE_MONITORS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `BatchGetLatestEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetEntityMetrics` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `GetMonitorPredictions` | synq.monitors.predictions.v1.MonitorPredictionsService | `/api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `SetPlatformAuthentication` | synq.platforms.v1.PlatformsService | `/api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `GenerateQuery` | synq.queries.v1.NLQueryService | `/api/queries/v1/generate` | `SCOPE_ENTITY_READ` |
+| `BatchGet` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | `SCOPE_SAVED_VIEW_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `Delete` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br>`SCOPE_SAVED_VIEW_ADMIN` |
+| `List` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | `SCOPE_SAVED_VIEW_READ`<br>`SCOPE_SRE_AGENT` ⚙️<br>`SCOPE_MCP_READ` |
+| `SetPin` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | `SCOPE_SAVED_VIEW_READ`<br>`SCOPE_MCP_READ` |
+| `Upsert` | synq.savedviews.v1.SavedViewsService | `/api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br>`SCOPE_SAVED_VIEW_ADMIN` |
+| `PreviewSchedules` | synq.schedule.v1.ScheduleService | `/api/schedule/v1/preview` | — |
+| `BatchGetUsers` | synq.users.v1.UsersService | — | `SCOPE_USER_READ` |
+| `DeleteUserAliases` | synq.users.v1.UsersService | — | `SCOPE_USER_EDIT` |
+| `GetByAlias` | synq.users.v1.UsersService | — | `SCOPE_USER_READ` |
+| `GetByEmail` | synq.users.v1.UsersService | — | `SCOPE_USER_READ`<br>`SCOPE_MCP_READ` |
+| `GetUserAliases` | synq.users.v1.UsersService | — | `SCOPE_USER_READ` |
+| `GetUserIdentities` | synq.users.v1.UsersService | — | `SCOPE_USER_READ`<br>`SCOPE_MCP_READ` |
+| `ListUsers` | synq.users.v1.UsersService | — | `SCOPE_USER_READ`<br>`SCOPE_MCP_READ` |
+| `UpsertUserAliases` | synq.users.v1.UsersService | — | `SCOPE_USER_EDIT` |
+
+_⚙️ = internal scope, not selectable on API tokens (reserved for managed integrations)._
