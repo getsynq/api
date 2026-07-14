@@ -79,6 +79,9 @@ message Identifier {
 
     // Saved view identifier
     SavedViewIdentifier saved_view = 22;
+
+    // Microsoft Fabric table identifier
+    FabricTableIdentifier fabric_table = 23;
   }
 }
 
@@ -285,6 +288,34 @@ message AthenaTableIdentifier {
 
   // Glue table or view name.
   string table = 4 [(buf.validate.field).required = true];
+}
+
+// Microsoft Fabric warehouse/lakehouse table identifier. Fabric is
+// workspace-scoped with cross-database three-part [database].[schema].[table]
+// T-SQL names.
+message FabricTableIdentifier {
+  // Workspace SQL analytics endpoint host, e.g.
+  // "<workspace-id>.datawarehouse.fabric.microsoft.com".
+  string instance = 1 [(buf.validate.field).required = true];
+
+  // Fabric warehouse / lakehouse (database).
+  string database = 2 [(buf.validate.field).required = true];
+
+  // Schema within the database.
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Table or view name.
+  string table = 4 [(buf.validate.field).required = true];
+
+  // Fabric workspace GUID, decoded from the endpoint host in `instance`.
+  // Optional and informational: the table is addressed by
+  // instance/database/schema/table, so leave it empty if you don't have it —
+  // it does not affect how the identifier resolves.
+  string workspace_id = 5;
+
+  // Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
+  // Optional and informational, like workspace_id.
+  string tenant_id = 6;
 }
 
 message AirflowDagIdentifier {

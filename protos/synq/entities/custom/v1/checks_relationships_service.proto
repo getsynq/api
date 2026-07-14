@@ -3,23 +3,37 @@ syntax = "proto3";
 package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
 
 service ChecksRelationshipsService {
+  // Create or update relationships that attach a check (e.g. a SQL test) to the
+  // entities it validates. Idempotent per (check, checked) pair: an existing
+  // relationship is updated, otherwise it is created.
   rpc UpsertCheckRelationships(UpsertCheckRelationshipsRequest) returns (UpsertCheckRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
     };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/check-relationships"
+      body: "*"
+    };
   }
 
+  // Delete relationships between checks and the entities they validate.
+  // Relationships that do not exist are ignored.
   rpc DeleteCheckRelationships(DeleteCheckRelationshipsRequest) returns (DeleteCheckRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ENTITY_EDIT]
+    };
+    option (google.api.http) = {
+      delete: "/api/entities/custom/v1/check-relationships"
+      body: "*"
     };
   }
 }

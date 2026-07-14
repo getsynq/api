@@ -125,6 +125,8 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
+| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
+| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | GenerateQuery generates a Query from a natural language description. |
 
 ## Edit Entity Types
@@ -900,8 +902,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ListMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_READ` |
 | `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1/{monitor_path}` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
-| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
-| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | `SCOPE_ENTITY_READ` |

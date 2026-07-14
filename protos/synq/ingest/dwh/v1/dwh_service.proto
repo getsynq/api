@@ -186,13 +186,17 @@ message WholeConnectionScope {}
 // DatabasesScope makes the batch authoritative for the listed databases only.
 message DatabasesScope {
   // Each entry is "database" or "instance.database".
-  repeated string databases = 1 [(buf.validate.field) = {repeated: {min_items: 1}}];
+  repeated string databases = 1 [(buf.validate.field) = {
+    repeated: {min_items: 1}
+  }];
 }
 
 // SchemasScope makes the batch authoritative for the listed schemas only.
 message SchemasScope {
   // Each entry is "database.schema" or "instance.database.schema".
-  repeated string schemas = 1 [(buf.validate.field) = {repeated: {min_items: 1}}];
+  repeated string schemas = 1 [(buf.validate.field) = {
+    repeated: {min_items: 1}
+  }];
 }
 
 // IngestLineageRequest carries one batch of lineage edges for a single
@@ -234,6 +238,7 @@ message IngestLineageRequest {
   // to expire all lineage inside the scope.
   repeated LineageEdge edges = 7;
 }
+
 // IngestLineageResponse is intentionally empty; a successful call means the
 // batch was accepted for processing.
 message IngestLineageResponse {}

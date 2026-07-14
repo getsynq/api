@@ -31,6 +31,7 @@ service MonitorPredictionsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_MONITORS_READ,
+        SCOPE_ENTITY_READ,
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
@@ -48,6 +49,7 @@ service MonitorPredictionsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_MONITORS_READ,
+        SCOPE_ENTITY_READ,
         SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]

@@ -25,6 +25,7 @@ message DataPlatformIdentifier {
     MssqlIdentifier mssql = 13;
     OracleIdentifier oracle = 14;
     AthenaIdentifier athena = 15;
+    FabricIdentifier fabric = 16;
 
     // Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
     string synq_integration_id = 101;
@@ -124,4 +125,26 @@ message AthenaIdentifier {
   // Glue Data Catalog name. Almost always "AwsDataCatalog" — the default
   // catalog for Athena unless the customer registered a federated catalog.
   string catalog = 2 [(buf.validate.field).required = true];
+}
+
+message FabricIdentifier {
+  // Workspace SQL analytics endpoint host, e.g.
+  // "<workspace-id>.datawarehouse.fabric.microsoft.com". Identifies the Fabric
+  // workspace the integration connects to. Fabric is workspace-scoped with
+  // cross-database queries, so the workspace host alone identifies the platform
+  // (like Databricks' workspace URL); a specific warehouse/table is addressed by
+  // FabricTableIdentifier.
+  string instance = 1 [(buf.validate.field).required = true];
+
+  // Fabric workspace GUID — the identifier used by the Fabric REST API for
+  // workspace-scoped resources. The Fabric endpoint host in `instance` encodes
+  // the tenant and workspace GUIDs; this is the decoded workspace GUID, provided
+  // so you don't have to decode it yourself. `instance` remains the identifying
+  // value. Optional: empty when the host isn't a standard Fabric endpoint.
+  string workspace_id = 2;
+
+  // Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
+  // alongside workspace_id. Optional: empty when the host isn't a standard
+  // Fabric endpoint.
+  string tenant_id = 3;
 }

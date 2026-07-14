@@ -58,4 +58,7 @@ message EntityMetricDataPoint {
 
   // Data warehouse snapshot time.
   optional google.protobuf.Timestamp snapshotted_at = 5;
+
+  // Physical size in bytes as reported by the data warehouse.
+  optional google.protobuf.Int64Value size_bytes = 6;
 }

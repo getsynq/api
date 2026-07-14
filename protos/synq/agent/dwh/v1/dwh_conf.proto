@@ -447,3 +447,75 @@ message OracleConf {
   // When true, query logs come from DBA_HIST views (requires Diagnostics Pack license).
   bool use_diagnostics_pack = 9;
 }
+
+// Microsoft Fabric Warehouse / Lakehouse SQL analytics endpoint configuration.
+//
+// Fabric speaks T-SQL over TDS (like SQL Server) but is deliberately its own
+// integration with a minimal, opinionated surface: the connection always uses
+// TLS on port 1433 and authenticates with a Microsoft Entra ID service principal
+// (Fabric rejects SQL logins entirely). Callers therefore only supply the
+// endpoint, the warehouse name, and the service-principal credentials — the
+// azuread ActiveDirectoryServicePrincipal workflow and encryption settings are
+// fixed internally so there is nothing to guess.
+//
+// For hosted deployments that mint their own Entra token (managed identity /
+// workload-identity federation), set access_token instead of client_id +
+// client_secret.
+message FabricConf {
+  option (buf.validate.message).cel = {
+    id: "fabric_auth"
+    message: "Provide access_token, an ambient auth_type (azure_cli/default/managed_identity), or both client_id and client_secret"
+    expression: "this.access_token != '' || this.auth_type in ['azure_cli', 'default', 'managed_identity'] || (this.client_id != '' && this.client_secret != '')"
+  };
+
+  // Workspace SQL analytics endpoint host, e.g.
+  // "<workspace-id>.datawarehouse.fabric.microsoft.com".
+  string host = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Default execution database — the context in which *unqualified* ad-hoc /
+  // monitor SQL resolves. Optional: defaults to "master" (the always-present
+  // workspace entry point). Metadata scrapping and generated metrics SQL are
+  // fully database-qualified via cross-database queries, so this only affects
+  // unqualified queries. It is a different axis from `databases` (which
+  // databases to scrape).
+  string database = 2;
+
+  // Include/exclude filter over the workspace's databases/schemas/tables
+  // (ScopeRule.database = Fabric database/warehouse, .schema = schema,
+  // .table = table). The canonical scope encoding (as AthenaConf uses); unset
+  // means the whole workspace. A per-call scope can only narrow within this,
+  // never escape it.
+  synq.common.v1.ScopeFilter scope = 8;
+
+  // Entra application (client) ID of the service principal (default auth), or
+  // the user-assigned identity client ID when auth_type is "managed_identity".
+  string client_id = 3;
+  // Service principal client secret.
+  string client_secret = 4;
+  // Entra tenant (directory) ID. Optional: inferred from the endpoint when empty;
+  // set it when the server-supplied authority is not the SP's home tenant.
+  string tenant_id = 5;
+
+  // Pre-acquired Entra OAuth access token for the SQL scope
+  // (https://database.windows.net/.default). When set, takes precedence over all
+  // other authentication methods — for managed identity / workload-identity hosts.
+  string access_token = 6;
+
+  // Authentication method, matched case-insensitively. Empty defaults to a
+  // service principal (client_id + client_secret). The ambient modes below
+  // authenticate as the host's own Azure identity with no stored credential and
+  // are intended for on-prem agents (opt-in — never engaged unless named):
+  //   - "azure_cli": reuse an interactive `az login` session (local execution)
+  //   - "default": DefaultAzureCredential chain (managed identity → env →
+  //     workload identity → az CLI)
+  //   - "managed_identity": Azure managed identity (set client_id for a
+  //     user-assigned identity)
+  // Canonical values are lower-case (the scrapper matches case-insensitively).
+  string auth_type = 7 [(buf.validate.field).cel = {
+    id: "fabric_auth_type"
+    message: "auth_type must be empty or one of: service_principal, azure_cli, default, managed_identity"
+    expression: "this in ['', 'service_principal', 'azure_cli', 'default', 'managed_identity']"
+  }];
+}

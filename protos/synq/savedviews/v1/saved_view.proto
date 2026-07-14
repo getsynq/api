@@ -176,8 +176,8 @@ message SavedViewPermissions {
 // A saved view: a named, reusable selection over entities (or another context)
 // with display configuration, sharing and per-user pinning.
 message SavedView {
-  // Workspace the view belongs to. Output-only — taken from the caller's token.
-  string workspace = 1;
+  reserved 1;
+  reserved "workspace";
   // Client-supplied UUID identifying the view.
   string id = 2;
   // The surface this view applies to.

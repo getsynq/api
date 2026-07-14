@@ -4,6 +4,7 @@ package synq.integrations.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/sql_dialect.proto";
 import "synq/integrations/v1/athena_conf.proto";
 import "synq/integrations/v1/bigquery_conf.proto";
 import "synq/integrations/v1/clickhouse_conf.proto";
@@ -17,7 +18,6 @@ import "synq/integrations/v1/postgres_conf.proto";
 import "synq/integrations/v1/redshift_conf.proto";
 import "synq/integrations/v1/snowflake_conf.proto";
 import "synq/integrations/v1/trino_conf.proto";
-import "synq/entities/v1/sql_dialect.proto";
 import "synq/platforms/v1/data_platform_types.proto";
 
 option go_package = "github.com/getsynq/api/integrations/v1";
