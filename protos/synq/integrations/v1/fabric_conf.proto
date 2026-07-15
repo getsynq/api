@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+import "synq/common/v1/scope.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// Microsoft Fabric cloud-managed connection.
+//
+// Fabric is workspace-scoped with cross-database queries (like Snowflake or
+// Databricks, not a single database): the workspace SQL analytics endpoint
+// exposes every warehouse / lakehouse in the workspace as a database, queryable
+// via three-part [database].[schema].[table] T-SQL names.
+//
+// Authentication is Microsoft Entra ID only — Fabric rejects SQL logins, so the
+// headless identity is an Entra service principal (application id + secret), or
+// a pre-acquired Entra access token.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). Secret fields are write-only (masked on reads); omit to keep or
+// send a new value to rotate.
+message FabricCloudConf {
+  // Workspace SQL analytics endpoint host, e.g.
+  // "<workspace-id>.datawarehouse.fabric.microsoft.com".
+  optional string host = 1 [(buf.validate.field).string.min_len = 1];
+  // Default execution database — the context in which unqualified ad-hoc /
+  // monitor SQL resolves. Defaults to "master" (the always-present workspace
+  // entry point) when empty. Metadata reads and generated metrics SQL are fully
+  // database-qualified, so this only affects unqualified queries.
+  optional string database = 2;
+  // Authentication method. Fabric requires Microsoft Entra ID.
+  oneof authentication {
+    // Entra service principal (application id + secret).
+    FabricServicePrincipalAuth service_principal = 3;
+  }
+  // Pre-acquired Entra OAuth access token for the SQL scope
+  // (https://database.windows.net/.default). When set, takes precedence over
+  // the service principal — for callers that mint their own token out of band
+  // (managed identity / workload-identity federation). Write-only — masked on
+  // reads.
+  optional string access_token = 4;
+  // Fetch Fabric query history for cost attribution and SQL / column-level
+  // lineage. Management-plane reads only, no per-query billing.
+  optional bool fetch_query_logs = 5;
+  // Include/exclude scope filter. ScopeRule.database = Fabric database /
+  // warehouse, ScopeRule.schema = schema, ScopeRule.table = table / view.
+  optional synq.common.v1.ScopeFilter scope = 6;
+}
+
+// Microsoft Fabric Entra service-principal credentials.
+message FabricServicePrincipalAuth {
+  // Entra application (client) ID of the service principal.
+  optional string client_id = 1 [(buf.validate.field).string.min_len = 1];
+  // Service principal client secret. Write-only — masked on reads.
+  optional string client_secret = 2;
+  // Entra tenant (directory) ID. Optional: inferred from the Fabric endpoint
+  // when empty; set it when the authority is not the service principal's home
+  // tenant.
+  optional string tenant_id = 3;
+}

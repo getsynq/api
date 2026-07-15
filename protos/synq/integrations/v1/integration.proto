@@ -11,6 +11,7 @@ import "synq/integrations/v1/clickhouse_conf.proto";
 import "synq/integrations/v1/databricks_conf.proto";
 import "synq/integrations/v1/dbt_cloud_conf.proto";
 import "synq/integrations/v1/duckdb_conf.proto";
+import "synq/integrations/v1/fabric_conf.proto";
 import "synq/integrations/v1/mssql_conf.proto";
 import "synq/integrations/v1/mysql_conf.proto";
 import "synq/integrations/v1/oracle_conf.proto";
@@ -61,6 +62,8 @@ message IntegrationConfig {
     AthenaCloudConf athena = 12;
     // dbt Cloud connection.
     DbtCloudConf dbt_cloud = 13;
+    // Microsoft Fabric connection.
+    FabricCloudConf fabric = 14;
   }
 }
 
