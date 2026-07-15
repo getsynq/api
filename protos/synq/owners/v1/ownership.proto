@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package synq.owners.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/alerts/v1/alerts.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/severity.proto";
+
+option go_package = "github.com/getsynq/api/owners/v1";
+
+// An ownership assigns a set of data assets to an owner and configures the
+// alerts routed to that owner about those assets. In the app this is the
+// owner's "Owned assets". One owner can hold many ownerships; deleting the
+// owner deletes all of its ownerships.
+message Ownership {
+  // Opaque id of the ownership (a UUID) supplied by the caller on create, which
+  // makes UpsertOwnership idempotent. This is the same value the alerts API
+  // reports as the ownership reference on an alert attributed to this owner.
+  string id = 1;
+
+  // Id of the Owner this ownership belongs to (the owner's `id`, a UUID).
+  string owner_id = 2;
+
+  // Which assets this ownership covers.
+  OwnershipSelection selection = 3;
+
+  // How alerts fire for the covered assets.
+  AlertConfig alert = 4;
+
+  // Entity tag for optimistic concurrency: pass it back on UpsertOwnership /
+  // DeleteOwnership to guard against overwriting a concurrent change. Form:
+  // `W/"<id>-<version>"`. Opaque — do not parse.
+  string etag = 5;
+
+  // Who created the ownership. Output-only.
+  synq.issues.actor.v1.Actor created_by = 6;
+
+  // Who last edited the ownership. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 7;
+
+  // When the ownership was created. Output-only.
+  google.protobuf.Timestamp created_at = 8;
+
+  // When the ownership was soft-deleted, if it has been. Output-only.
+  optional google.protobuf.Timestamp deleted_at = 9;
+}
+
+// The set of assets an ownership covers.
+message OwnershipSelection {
+  // Exactly one selection kind.
+  oneof selection {
+    option (buf.validate.oneof).required = true;
+
+    // Assets matched by a query. Covers both a custom "asset group" and the
+    // "all assets" case (a match-all query). Unlike a data product definition
+    // (which must be a leaf), an ownership query MAY reference data products
+    // and domains — routing alerts for everything in a data product/domain is
+    // a first-class use.
+    OwnershipQuery query = 1;
+
+    // All assets belonging to a single data product, referenced by its opaque
+    // id (the `id` returned by the data products API). The data product must
+    // exist in the workspace at write time.
+    string dataproduct_id = 2 [(buf.validate.field).string.uuid = true];
+  }
+}
+
+// A named asset selection behind an ownership, expressed for the public API.
+// Uses the same write/read bridge as saved views and data products.
+//
+// On write, provide the query in ONE of two forms:
+//   - `public_query` — a structured query (the same shape used elsewhere for
+//     asset selection), convenient to build from a filter UI; or
+//   - `resolver_ql` — the resolver query language, a compact text form that is
+//     the canonical way to author selections as code.
+// When both are set, `resolver_ql` wins. The server compiles and stores the
+// query canonically; the raw text is not preserved verbatim.
+//
+// On read, the server returns `rendered_resolver_ql` (the stored query rendered
+// back to canonical resolver query language) and, best-effort, `public_query`
+// (the structured representation). `resolver_ql` is not echoed back — read
+// `rendered_resolver_ql`.
+message OwnershipQuery {
+  option (buf.validate.message).cel = {
+    id: "ownership_query.nonempty"
+    message: "resolver_ql or public_query is required"
+    expression: "this.resolver_ql != '' || this.rendered_resolver_ql != '' || has(this.public_query)"
+  };
+
+  // Human-readable name of the asset group (shown as "Asset group name").
+  string name = 1 [(buf.validate.field).string.max_len = 500];
+
+  // WRITE (option A). The query in resolver query language.
+  string resolver_ql = 2 [(buf.validate.field).string.max_len = 20000];
+
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language. Deterministically derived; does not preserve original
+  // hand-typed formatting or comments.
+  string rendered_resolver_ql = 3;
+
+  // WRITE (option B) and READ. On write, the structured query to store (used
+  // when `resolver_ql` is empty). On read, a best-effort structured
+  // representation of the stored query.
+  synq.queries.v1.Query public_query = 4;
+}
+
+// How alerts fire for the assets an ownership covers. Deliberately mirrors the
+// settings on the public alerts API (`synq.alerts.v1`) so alerting behaviour
+// reads the same across SYNQ.
+message AlertConfig {
+  // Failure severities that fire an alert (Warning / Error / Fatal). Empty
+  // means no severity is selected and the ownership routes no failure alerts.
+  repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+
+  // Also alert on issues in the upstream dependencies of the covered assets.
+  bool notify_upstream = 2;
+
+  // How repeat notifications for a still-open issue are handled: no repeats
+  // (Disabled), a scheduled digest (Schedule — a daily digest in the app), or
+  // one on every failed run (Stream). Leave unset for no ongoing notifications.
+  synq.alerts.v1.OngoingAlertsStrategy ongoing = 3;
+
+  // Include a link to the SQL test audit report in notifications.
+  bool allow_sql_test_audit_link = 4;
+
+  // When true this ownership's alerts are turned off while the assignment
+  // itself stays in place.
+  bool is_disabled = 5;
+}

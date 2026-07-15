@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package synq.dataproducts.v2;
+
+import "buf/validate/validate.proto";
+import "synq/queries/v1/query.proto";
+
+option go_package = "github.com/getsynq/api/dataproducts/v2";
+
+// The membership of a data product: which assets belong to it. A definition is
+// an ordered list of parts; an asset is a member if it matches ANY part (the
+// parts are OR'd together).
+//
+// A data product is a LEAF in the reference graph: its membership is defined
+// only by asset-level predicates, static asset ids and lineage of those — never
+// by referencing another data product or domain. The `in_dataproduct` /
+// `in_domain` query operands are therefore rejected anywhere in a data product
+// definition (see DataproductQuery). This keeps membership resolution finite:
+// data products can never take part in a reference cycle.
+message DataproductDefinition {
+  // The parts of the definition. An asset is a member if it matches any part.
+  repeated Part parts = 1 [(buf.validate.field).repeated.max_items = 500];
+
+  // A single piece of a data product definition: either a pinned asset or a
+  // selection query.
+  message Part {
+    // Stable id of this part (a UUID). Supplied by the caller for idempotent
+    // part upserts; the server mints one if left empty on create.
+    string id = 1 [(buf.validate.field).string.max_len = 64];
+
+    oneof part {
+      option (buf.validate.oneof).required = true;
+
+      // Pin a single asset by its opaque entity id (as returned by resolve /
+      // listing APIs). Never constructed by hand.
+      string entity_id = 2 [(buf.validate.field).string = {
+        min_len: 1
+        max_len: 1024
+      }];
+
+      // Select assets by a query.
+      DataproductQuery query = 3;
+    }
+  }
+}
+
+// The selection query behind a data product part, expressed for the public API.
+//
+// On write, provide the query in ONE of two forms:
+//   - `public_query` — a structured query (the same shape used elsewhere for
+//     asset selection), convenient to build from a filter UI; or
+//   - `resolver_ql` — the resolver query language, a compact text form that is
+//     the canonical way to author selections as code.
+// When both are set, `resolver_ql` wins. The server compiles the query and
+// stores it canonically; the raw text is not preserved verbatim.
+//
+// On read, the server returns `rendered_resolver_ql` (the stored query rendered
+// back to canonical resolver query language) and, best-effort, `public_query`
+// (the structured representation). `resolver_ql` is not echoed back — read
+// `rendered_resolver_ql`.
+//
+// Leaf rule: a data product may not reference another data product or domain.
+// The `in_dataproduct`, `in_domain` and `unsupported` operands are rejected at
+// the top level here (CEL) and, for nested sub-queries, by a server-side walk.
+message DataproductQuery {
+  option (buf.validate.message).cel = {
+    id: "dataproduct_query.nonempty"
+    message: "resolver_ql or public_query is required"
+    expression: "this.resolver_ql != '' || this.rendered_resolver_ql != '' || has(this.public_query)"
+  };
+  option (buf.validate.message).cel = {
+    id: "dataproduct_query.leaf"
+    message: "a data product definition may not reference another data product or domain (in_dataproduct / in_domain / unsupported)"
+    expression:
+      "!has(this.public_query) || this.public_query.parts.all(p, "
+      "!has(p.in_dataproduct) && !has(p.in_domain) && !has(p.unsupported))"
+  };
+
+  // WRITE (option A). The query in resolver query language.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language. Deterministically derived; does not preserve original
+  // hand-typed formatting or comments.
+  string rendered_resolver_ql = 2;
+
+  // WRITE (option B) and READ. On write, the structured query to store (used
+  // when `resolver_ql` is empty). On read, a best-effort structured
+  // representation of the stored query.
+  synq.queries.v1.Query public_query = 3;
+}

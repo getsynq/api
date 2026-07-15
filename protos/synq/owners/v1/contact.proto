@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package synq.owners.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/owners/v1";
+
+// A notification channel attached to an owner. An owner can hold several
+// contacts of different kinds; when an owner's ownership fires an alert, the
+// notification is delivered to every one of the owner's contacts.
+message Contact {
+  // The channel to notify. Exactly one kind must be set.
+  oneof contact_method {
+    option (buf.validate.oneof).required = true;
+
+    // Post to a Slack channel.
+    SlackChannelContact slack = 1;
+    // Send to a fixed set of email addresses.
+    EmailContact email = 2;
+    // Post to a Microsoft Teams channel.
+    MsTeamsContact ms_teams = 3;
+    // Notify Coalesce Quality users by email.
+    UserContact users = 4;
+  }
+}
+
+// Deliver notifications to a Slack channel, optionally @-mentioning users or
+// user groups in the message.
+message SlackChannelContact {
+  // Channel to post in — a channel name (e.g. "#data-alerts") or a channel id
+  // (e.g. "C0123456789").
+  string channel = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Name of the Slack workspace (team) the channel belongs to. Optional; only
+  // needed to disambiguate when more than one Slack workspace is connected.
+  string team_name = 2 [(buf.validate.field).string.max_len = 255];
+  // Users and/or user groups to @-mention in the notification. Optional.
+  repeated SlackMention mentions = 3 [(buf.validate.field).repeated.max_items = 100];
+}
+
+// A single @-mention in a Slack notification.
+message SlackMention {
+  // Exactly one of user or group.
+  oneof mention {
+    option (buf.validate.oneof).required = true;
+
+    // Mention an individual Slack user.
+    SlackUserMention user = 1;
+    // Mention a Slack user group.
+    SlackGroupMention group = 2;
+  }
+}
+
+// An @-mention of an individual Slack user.
+message SlackUserMention {
+  // Display handle of the user (informational; helps readers recognise the
+  // mention). Optional.
+  string user_name = 1 [(buf.validate.field).string.max_len = 255];
+  // Slack user id that is actually mentioned (e.g. "U0123456789").
+  string slack_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// An @-mention of a Slack user group.
+message SlackGroupMention {
+  // Display name of the group. Optional.
+  string group_name = 1 [(buf.validate.field).string.max_len = 255];
+  // Slack user-group id that is actually mentioned (e.g. "S0123456789").
+  string slack_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// Deliver notifications by email to a fixed list of recipients.
+message EmailContact {
+  // Recipient email addresses.
+  repeated string recipient_emails = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {email: true}
+    }
+  }];
+}
+
+// Deliver notifications to a Microsoft Teams channel, optionally @-mentioning
+// members.
+message MsTeamsContact {
+  // Teams channel id to post in.
+  string channel_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Members to @-mention in the notification. Optional.
+  repeated MsTeamsMention mentions = 2 [(buf.validate.field).repeated.max_items = 100];
+}
+
+// A single @-mention in a Microsoft Teams notification.
+message MsTeamsMention {
+  // Exactly one mention kind (currently only a member mention).
+  oneof mention {
+    option (buf.validate.oneof).required = true;
+
+    // Mention an individual Teams member.
+    MsTeamsMemberMention member = 1;
+  }
+}
+
+// An @-mention of an individual Microsoft Teams member.
+message MsTeamsMemberMention {
+  // Teams member id that is actually mentioned.
+  string member_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Display name of the member (informational). Optional.
+  string name = 2 [(buf.validate.field).string.max_len = 255];
+}
+
+// Deliver notifications to Coalesce Quality users, identified by email. Each
+// email should match a user in the workspace; the notification reaches them
+// through their own configured notification preferences.
+message UserContact {
+  // Emails of the users to notify.
+  repeated string user_emails = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {email: true}
+    }
+  }];
+}

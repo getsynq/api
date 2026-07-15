@@ -1,0 +1,304 @@
+syntax = "proto3";
+
+package synq.owners.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/owners/v1/contact.proto";
+import "synq/owners/v1/owner.proto";
+import "synq/owners/v1/ownership.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/owners/v1";
+
+// OwnersService manages owners and their ownerships — the "alert routing as
+// code" surface. An owner is a named responsible party with notification
+// channels (contacts); an ownership assigns a set of assets to an owner and
+// configures the alerts routed to it. Owner is the resource, ownership its
+// sub-resource: an ownership is meaningless without its owner, and deleting an
+// owner deletes its ownerships.
+//
+// Ids are opaque UUIDs supplied by the caller, which makes writes idempotent (a
+// retried create converges instead of duplicating). Mutable fields are optional
+// on the Upsert calls: a set field is written, an omitted field is left
+// unchanged. Pass the `etag` you last read to guard against overwriting a
+// concurrent edit.
+service OwnersService {
+  // Create or update an owner. The id is supplied by the caller (a UUID);
+  // repeating the same request converges to the same owner. Mutable fields are
+  // optional: a set field is written, an omitted field is left unchanged. Pass
+  // `etag` to guard against overwriting a concurrent edit.
+  rpc UpsertOwner(UpsertOwnerRequest) returns (UpsertOwnerResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_OWNERS_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1"
+      body: "*"
+    };
+  }
+
+  // Fetch multiple owners by id. Ids that do not exist (or, unless
+  // `include_deleted` is set, are deleted) are omitted from the response rather
+  // than causing an error.
+  rpc BatchGetOwners(BatchGetOwnersRequest) returns (BatchGetOwnersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the owners in the workspace, paginated.
+  rpc ListOwners(ListOwnersRequest) returns (ListOwnersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/owners/v1"};
+  }
+
+  // Delete an owner and all of its ownerships. Idempotent — deleting an
+  // already-deleted or unknown owner succeeds. Soft-deletes by default; set
+  // `purge` to hard-delete and release the id. Pass `etag` to guard against
+  // deleting a concurrently-edited owner.
+  rpc DeleteOwner(DeleteOwnerRequest) returns (DeleteOwnerResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_OWNERS_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1/delete"
+      body: "*"
+    };
+  }
+
+  // Create or update an ownership under an owner. The ownership id is supplied
+  // by the caller (a UUID). Assigning a data product that is already owned by a
+  // different ownership moves it (the previous ownership of that product is
+  // removed), matching the app.
+  rpc UpsertOwnership(UpsertOwnershipRequest) returns (UpsertOwnershipResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_OWNERSHIP_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1/{owner_id}/ownerships"
+      body: "*"
+    };
+  }
+
+  // List the ownerships of an owner, paginated.
+  rpc ListOwnerships(ListOwnershipsRequest) returns (ListOwnershipsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERSHIP_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/owners/v1/{owner_id}/ownerships"};
+  }
+
+  // Fetch multiple ownerships by id (across owners). Ids that do not exist (or,
+  // unless `include_deleted` is set, are deleted) are omitted.
+  rpc BatchGetOwnerships(BatchGetOwnershipsRequest) returns (BatchGetOwnershipsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERSHIP_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1/ownerships/batch-get"
+      body: "*"
+    };
+  }
+
+  // Delete an ownership by id. Idempotent — deleting an already-deleted or
+  // unknown ownership succeeds. Pass `etag` to guard against deleting a
+  // concurrently-edited ownership.
+  rpc DeleteOwnership(DeleteOwnershipRequest) returns (DeleteOwnershipResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_OWNERSHIP_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/owners/v1/ownerships/delete"
+      body: "*"
+    };
+  }
+}
+
+// A wrapper giving the contact set explicit presence on write, so a partial
+// update can distinguish "replace the contacts" (present, possibly empty) from
+// "leave contacts unchanged" (absent).
+message ContactList {
+  repeated Contact contacts = 1 [(buf.validate.field).repeated.max_items = 100];
+}
+
+message UpsertOwnerRequest {
+  // Opaque id of the owner (a UUID). The same id updates the same owner; a new
+  // id creates a new owner.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Owner name. Required when creating; omit to keep the existing name on
+  // update.
+  optional string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+
+  // Notification channels. Omit to leave the existing contacts unchanged; pass
+  // a present (possibly empty) list to replace them.
+  optional ContactList contacts = 3;
+
+  // Source. Omit to keep the existing source (defaults to SOURCE_SYNQ on
+  // create).
+  optional Owner.Source source = 4 [(buf.validate.field).enum.defined_only = true];
+
+  // Optional optimistic-concurrency guard. When set, the update fails with a
+  // conflict if the owner was modified since this etag was read.
+  optional string etag = 5;
+
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 6;
+}
+
+message UpsertOwnerResponse {
+  // The stored owner after the upsert.
+  Owner owner = 1;
+}
+
+message BatchGetOwnersRequest {
+  // Owner ids to fetch (1–200, unique).
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // Include soft-deleted owners.
+  bool include_deleted = 2;
+}
+
+message BatchGetOwnersResponse {
+  // Owners keyed by id. Ids that do not exist (or are deleted, unless
+  // requested) are absent.
+  map<string, Owner> owners = 1;
+}
+
+message ListOwnersRequest {
+  // Pagination.
+  synq.v1.Pagination pagination = 1;
+  // Include soft-deleted owners.
+  bool include_deleted = 2;
+}
+
+message ListOwnersResponse {
+  // The matching owners.
+  repeated Owner owners = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message DeleteOwnerRequest {
+  // Id of the owner to delete.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Hard-delete instead of soft-delete, releasing the id for reuse.
+  bool purge = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message DeleteOwnerResponse {}
+
+message UpsertOwnershipRequest {
+  // Id of the owner this ownership belongs to.
+  string owner_id = 1 [(buf.validate.field).string.uuid = true];
+  // Opaque id of the ownership (a UUID). The same id updates the same
+  // ownership; a new id creates a new one.
+  string id = 2 [(buf.validate.field).string.uuid = true];
+  // Which assets this ownership covers.
+  OwnershipSelection selection = 3 [(buf.validate.field).required = true];
+  // How alerts fire for the covered assets. Optional.
+  AlertConfig alert = 4;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 5;
+  // Who is performing this write. Optional.
+  synq.issues.actor.v1.Actor actor = 6;
+}
+
+message UpsertOwnershipResponse {
+  // The stored ownership after the upsert.
+  Ownership ownership = 1;
+}
+
+message ListOwnershipsRequest {
+  // Id of the owner whose ownerships to list.
+  string owner_id = 1 [(buf.validate.field).string.uuid = true];
+  // Pagination.
+  synq.v1.Pagination pagination = 2;
+  // Include soft-deleted ownerships.
+  bool include_deleted = 3;
+}
+
+message ListOwnershipsResponse {
+  // The owner's ownerships.
+  repeated Ownership ownerships = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message BatchGetOwnershipsRequest {
+  // Ownership ids to fetch (1–200, unique).
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // Include soft-deleted ownerships.
+  bool include_deleted = 2;
+}
+
+message BatchGetOwnershipsResponse {
+  // Ownerships keyed by id. Ids that do not exist (or are deleted, unless
+  // requested) are absent.
+  map<string, Ownership> ownerships = 1;
+}
+
+message DeleteOwnershipRequest {
+  // Id of the ownership to delete.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 2;
+  // Who is performing this write. Optional.
+  synq.issues.actor.v1.Actor actor = 3;
+}
+
+message DeleteOwnershipResponse {}

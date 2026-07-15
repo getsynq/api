@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package synq.dataproducts.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/dataproducts/v2/dataproduct.proto";
+import "synq/dataproducts/v2/dataproduct_definition.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/dataproducts/v2";
+
+// DataproductsService manages data products — named, owned groupings of data
+// assets with a membership definition, a priority and an optional folder.
+//
+// Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
+// (a retried create converges instead of duplicating). Mutable fields are
+// optional on Upsert: a field that is set is written, a field that is omitted is
+// left unchanged. Pass the `etag` you last read to guard against overwriting a
+// concurrent edit.
+//
+// A data product is a leaf in the reference graph — its definition may not
+// reference another data product or domain — so membership resolution always
+// terminates.
+service DataproductsService {
+  // Create or update a data product. The id is supplied by the caller (a UUID);
+  // repeating the same request converges to the same product. Mutable fields are
+  // optional: a set field is written, an omitted field is left unchanged. Pass
+  // `etag` to guard against overwriting a concurrent edit.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v2"
+      body: "*"
+    };
+  }
+
+  // Fetch multiple data products by id. Ids that do not exist (or, unless
+  // `include_deleted` is set, are deleted) are omitted from the response rather
+  // than causing an error.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v2/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the data products in the workspace, paginated. Narrow with `folder`
+  // and `priorities`.
+  rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/dataproducts/v2"};
+  }
+
+  // Delete a data product. Idempotent — deleting an already-deleted or unknown
+  // product succeeds. Soft-deletes by default; set `purge` to hard-delete and
+  // release the id. Pass `etag` to guard against deleting a concurrently-edited
+  // product.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v2/delete"
+      body: "*"
+    };
+  }
+
+  // Replace the entire membership definition of a data product.
+  rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      put: "/api/dataproducts/v2/{id}/definition"
+      body: "*"
+    };
+  }
+
+  // Add or replace a single definition part (matched by its part id).
+  rpc UpsertDefinitionPart(UpsertDefinitionPartRequest) returns (UpsertDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/dataproducts/v2/{id}/definition/parts"
+      body: "*"
+    };
+  }
+
+  // Remove a single definition part by its part id. Idempotent.
+  rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATAPRODUCT_EDIT]
+    };
+    option (google.api.http) = {delete: "/api/dataproducts/v2/{id}/definition/parts/{part_id}"};
+  }
+
+  // List the assets that currently belong to a data product, resolved from its
+  // definition and returned as opaque entity ids. Paginated.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/dataproducts/v2/{id}/members"};
+  }
+}
+
+message UpsertRequest {
+  // Opaque id of the product (a UUID). The same id updates the same product; a
+  // new id creates a new product.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Title. Required when creating; omit to keep the existing title on update.
+  optional string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+  // Description. Omit to keep the existing description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 10000];
+  // Folder. Omit to keep the existing folder; pass an empty string to clear it.
+  optional string folder = 4 [(buf.validate.field).string.max_len = 500];
+  // Priority. Omit to keep the existing priority.
+  optional Dataproduct.Priority priority = 5 [(buf.validate.field).enum.defined_only = true];
+  // Source. Omit to keep the existing source (defaults to SOURCE_SYNQ on
+  // create).
+  optional Dataproduct.Source source = 6 [(buf.validate.field).enum.defined_only = true];
+  // Membership definition. Omit to keep the existing definition; pass a present
+  // (possibly empty) definition to replace it.
+  optional DataproductDefinition definition = 7;
+
+  // Optional optimistic-concurrency guard. When set, the update fails with a
+  // conflict if the product was modified since this etag was read.
+  optional string etag = 8;
+
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 9;
+}
+
+message UpsertResponse {
+  // The stored product after the upsert.
+  Dataproduct dataproduct = 1;
+}
+
+message BatchGetRequest {
+  // Ids to fetch (1–200, unique).
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // Include soft-deleted products.
+  bool include_deleted = 2;
+  // Omit the (potentially large) membership definition from each product.
+  bool exclude_definition = 3;
+}
+
+message BatchGetResponse {
+  // Products keyed by id. Ids that do not exist (or are deleted, unless
+  // requested) are absent.
+  map<string, Dataproduct> dataproducts = 1;
+}
+
+message ListRequest {
+  // Pagination.
+  synq.v1.Pagination pagination = 1;
+  // Restrict to a single folder.
+  optional string folder = 2 [(buf.validate.field).string.max_len = 500];
+  // Restrict to these priorities. Empty returns all priorities.
+  repeated Dataproduct.Priority priorities = 3 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Include soft-deleted products.
+  bool include_deleted = 4;
+  // Omit the membership definition from each product.
+  bool exclude_definition = 5;
+}
+
+message ListResponse {
+  // The matching products.
+  repeated Dataproduct dataproducts = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message DeleteRequest {
+  // Id of the product to delete.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Hard-delete instead of soft-delete, releasing the id for reuse.
+  bool purge = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+}
+
+message DeleteResponse {}
+
+message SetDefinitionRequest {
+  // Id of the product whose definition to replace.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // The new membership definition (replaces the existing one entirely).
+  DataproductDefinition definition = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message SetDefinitionResponse {
+  // The stored product after the definition write.
+  Dataproduct dataproduct = 1;
+}
+
+message UpsertDefinitionPartRequest {
+  // Id of the product.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // The part to add or replace (matched by its part id).
+  DataproductDefinition.Part part = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message UpsertDefinitionPartResponse {
+  // The stored product after the part write.
+  Dataproduct dataproduct = 1;
+}
+
+message RemoveDefinitionPartRequest {
+  // Id of the product.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the part to remove.
+  string part_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message RemoveDefinitionPartResponse {
+  // The stored product after the part removal.
+  Dataproduct dataproduct = 1;
+}
+
+message ListMembersRequest {
+  // Id of the product whose members to list.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Pagination.
+  synq.v1.Pagination pagination = 2;
+}
+
+message ListMembersResponse {
+  // Opaque entity ids of the assets that currently belong to the product.
+  repeated string entity_ids = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}

@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package synq.dataproducts.v2;
+
+import "google/protobuf/timestamp.proto";
+import "synq/dataproducts/v2/dataproduct_definition.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/dataproducts/v2";
+
+// A data product: a named, owned grouping of data assets that share a purpose,
+// with a membership definition, a priority and an optional folder.
+message Dataproduct {
+  // Opaque id of the data product (a UUID). Supplied by the caller on create,
+  // which makes Upsert idempotent.
+  string id = 1;
+
+  // Stable, opaque platform identifier of this data product (of the form
+  // "dataproduct-<uuid>"). Output-only — the server derives it; never construct
+  // it by hand. This is the exact value other SYNQ APIs accept as an entity
+  // reference for this product (lineage, entities, ownership, alerts), so read
+  // it here and pass it there to point at the same product without needing to
+  // know how it is formed.
+  string entity_id = 2;
+
+  // Human-readable title.
+  string title = 3;
+
+  // Optional longer description.
+  string description = 4;
+
+  // Optional free-text folder used to group products in the UI.
+  string folder = 5;
+
+  // Priority. P1 is the highest.
+  enum Priority {
+    PRIORITY_UNSPECIFIED = 0;
+    PRIORITY_P3 = 3;
+    PRIORITY_P2 = 4;
+    PRIORITY_P1 = 5;
+  }
+  Priority priority = 6;
+
+  // Where this data product is managed. Products from an external source
+  // (e.g. Atlan) are read-only in the app.
+  enum Source {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SOURCE_SYNQ = 0;
+    SOURCE_ATLAN = 1;
+  }
+  Source source = 7;
+
+  // The membership definition. Omitted when a read requests
+  // `exclude_definition`.
+  DataproductDefinition definition = 8;
+
+  // Entity tag for optimistic concurrency: pass back on Upsert / Delete /
+  // definition writes to guard against overwriting a concurrent change.
+  // Form: `W/"<id>-<version>"`. Opaque — do not parse.
+  string etag = 9;
+
+  // Who created the data product. Output-only.
+  synq.issues.actor.v1.Actor created_by = 10;
+
+  // Who last edited the data product. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 11;
+
+  // When the data product was created. Output-only.
+  google.protobuf.Timestamp created_at = 12;
+
+  // When the data product was last updated. Output-only.
+  google.protobuf.Timestamp updated_at = 13;
+
+  // When the data product was soft-deleted, if it has been. Output-only.
+  optional google.protobuf.Timestamp deleted_at = 14;
+}

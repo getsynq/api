@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 43 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 47 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -83,8 +83,8 @@ Create and update entities such as tables, dashboards, and jobs in the catalog.
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_ |  |
-| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_ |  |
+| `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`DELETE /api/entities/custom/v1/check-relationships` | Delete relationships between checks and the entities they validate. |
+| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | Create or update relationships that attach a check (e.g. a SQL test) to the |
 | `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
 | `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
 | `DeleteEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`DELETE /api/entities/custom/v1/features` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
@@ -463,6 +463,50 @@ View alert rules and notification channels.
 | `BatchGet`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/get` | Get multiple alert configurations by their identifiers. |
 | `List`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/list` | Retrieves a list of alert configurations based on filters. |
 
+## Edit Owners
+
+`SCOPE_OWNERS_EDIT`
+
+Create, update, and delete owners and their notification channels (Slack, email, Microsoft Teams, users).
+
+| Method | Description |
+| ------ | ----------- |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. Idempotent — deleting an |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
+
+## Read Owners
+
+`SCOPE_OWNERS_READ`
+
+View owners and their notification channels.
+
+| Method | Description |
+| ------ | ----------- |
+| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
+| `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
+
+## Edit Ownership
+
+`SCOPE_OWNERSHIP_EDIT`
+
+Create, update, and delete ownership assignments and the alerts they route to owners.
+
+| Method | Description |
+| ------ | ----------- |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. The ownership id is supplied |
+
+## Read Ownership
+
+`SCOPE_OWNERSHIP_READ`
+
+View ownership assignments and their alert routing.
+
+| Method | Description |
+| ------ | ----------- |
+| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
+| `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
+
 ## Edit Data Products
 
 `SCOPE_DATAPRODUCT_EDIT`
@@ -620,6 +664,10 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
+| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
+| `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
+| `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
@@ -783,8 +831,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
-| `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_ | `SCOPE_ENTITY_EDIT` |
-| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_ | `SCOPE_ENTITY_EDIT` |
+| `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`DELETE /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
+| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
 | `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
@@ -905,6 +953,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | `SCOPE_OWNERS_EDIT` |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | `SCOPE_OWNERSHIP_EDIT` |
+| `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
+| `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | `SCOPE_OWNERS_EDIT` |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_EDIT` |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | `SCOPE_ENTITY_READ` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |

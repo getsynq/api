@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package synq.owners.v1;
+
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/owners/v1/contact.proto";
+
+option go_package = "github.com/getsynq/api/owners/v1";
+
+// An owner: a named responsible party (a team or a person) that data assets can
+// be assigned to, together with the notification channels alerts about those
+// assets are delivered to. Assets are attached to an owner through Ownerships
+// (see OwnershipsService), so an owner on its own routes nothing until at least
+// one ownership assigns it some assets.
+message Owner {
+  // Opaque id of the owner (a UUID) supplied by the caller on create, which
+  // makes UpsertOwner idempotent. This is the id used to address the owner on
+  // this API (creating ownerships under it, deleting it).
+  string id = 1;
+
+  // Stable, opaque platform identifier of this owner (of the form
+  // "owner-<uuid>"). Output-only — the server derives it; never construct it by
+  // hand. This is the exact value other SYNQ APIs accept as an owner reference
+  // (for example the alerts API's owner path), so read it here and pass it
+  // there to point at the same owner without needing to know how it is formed.
+  string entity_id = 2;
+
+  // Human-readable name of the owner (shown as "Owner name" in the app).
+  string title = 3;
+
+  // Notification channels for this owner. A fired alert is delivered to every
+  // contact.
+  repeated Contact contacts = 4;
+
+  // Where the owner is managed. Owners from an external source (e.g. Atlan) are
+  // read-only.
+  enum Source {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SOURCE_SYNQ = 0;
+    SOURCE_ATLAN = 1;
+  }
+  Source source = 5;
+
+  // Entity tag for optimistic concurrency: pass it back on UpsertOwner /
+  // DeleteOwner to guard against overwriting a concurrent change. Form:
+  // `W/"<id>-<version>"`. Opaque — do not parse.
+  string etag = 6;
+
+  // Who created the owner. Output-only.
+  synq.issues.actor.v1.Actor created_by = 7;
+
+  // Who last edited the owner. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 8;
+
+  // When the owner was created. Output-only.
+  google.protobuf.Timestamp created_at = 9;
+
+  // When the owner was soft-deleted, if it has been. Output-only.
+  optional google.protobuf.Timestamp deleted_at = 10;
+}
