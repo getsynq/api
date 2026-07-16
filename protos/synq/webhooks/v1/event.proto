@@ -149,6 +149,26 @@ message IssueSummary {
   // Carries the strongest identity the caller proved — a Coalesce Quality
   // email, Slack user id, or PagerDuty user id — alongside a display `name`.
   optional synq.issues.actor.v1.Actor status_actor = 16;
+
+  // Owners of the entities this issue is about.
+  //
+  // Covers only the direct owners of the affected entities, not the owners of
+  // downstream entities. Empty when the affected entities have no owner
+  // assigned. Ordered as shown in the app.
+  repeated Owner owners = 17;
+
+  // An owner (person or team) responsible for an entity, as assigned in
+  // Coalesce Quality (natively or synced from a catalog).
+  message Owner {
+    // Identifier of the owner within the workspace. Matches the id on the
+    // Owners API, so callers can fetch the full owner record (contacts,
+    // source) from that API.
+    string id = 1;
+    // Display name of the owner, e.g. a team or person name.
+    string title = 2;
+    // Deep link to the owner in the Coalesce Quality app.
+    string url = 3;
+  }
 }
 
 message IncidentOpen {
