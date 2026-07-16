@@ -40,8 +40,11 @@ pip install -r requirements.txt
 python -m coalesce_governance status      # run as a module
 ```
 
-The schema is published at
-[`schemas.synq.io/governance-as-code/draft/governance.schema.json`](https://schemas.synq.io/governance-as-code/draft/governance.schema.json).
+The JSON Schema is published at
+[`schemas.synq.io/governance-as-code/draft/governance.schema.json`](https://schemas.synq.io/governance-as-code/draft/governance.schema.json)
+and also ships with the tool at
+[`coalesce_governance/governance.schema.json`](coalesce_governance/governance.schema.json)
+— reference either from your file's `$schema` header (see [The definition file](#the-definition-file)).
 
 ## Authenticate (kept separate from your definition file)
 
@@ -51,8 +54,8 @@ tool tries them in this order:
 1. **Bearer token** — `--token` or `QUALITY_TOKEN`
 2. **OAuth2 client credentials** — `--client-id/--client-secret` or
    `QUALITY_CLIENT_ID` + `QUALITY_CLIENT_SECRET`
-   (create at [Coalesce Quality → API settings](https://app.synq.io/settings/api)
-   with scopes: Read/Edit Data Products, Owners, Ownership)
+   (create at [Coalesce Quality → API settings](https://app.synq.io/settings/api);
+   pick the scopes listed under [Permissions](#permissions))
 3. **Browser sign-in** — `governance-as-code login` (caches a token under
    `$XDG_CONFIG_HOME/coalesce-quality`, override with `GOVERNANCE_HOME`)
 
@@ -60,6 +63,32 @@ tool tries them in this order:
 export QUALITY_CLIENT_ID=...
 export QUALITY_CLIENT_SECRET=...
 ```
+
+## Permissions
+
+The tool calls the public `synq.dataproducts.v2` and `synq.owners.v1` services,
+which are scope-authorized. Grant the scopes for the commands you run:
+
+| Commands | Scopes required |
+|---|---|
+| `status`, `plan`, `export`, `pull` (read-only) | **Read Data Products**, **Read Owners**, **Read Ownership** |
+| `apply`, `prune` (read + write) | the three Read scopes **plus** **Edit Data Products**, **Edit Owners**, **Edit Ownership** |
+
+How you attach those scopes depends on the credential type:
+
+- **API client (client credentials)** — created under **Settings → API**. Only a
+  workspace **Owner** (the top-level admin role) can create one: the create
+  screen is visible to every role except **Business User**, but the backend
+  rejects the request for anyone who isn't a workspace Owner. Assign the six
+  scopes above (or just the three Read scopes for a read-only client).
+- **Browser sign-in (`login`)** — the workspace must have user/OAuth API access
+  enabled (an admin can toggle this; if it's off you'll see "API Access Not
+  Enabled" on the consent screen). On the consent screen grant:
+  - **"Read-only access to <workspace>"** — covers the three Read scopes; enough
+    for `status`/`plan`/`export`/`pull`.
+  - **"Allow performing changes on my behalf"** — covers the three Edit scopes;
+    required for `apply`/`prune`. Only **Admin** and **Developer** accounts can
+    grant this (the change card only appears for roles that hold Edit scopes).
 
 ## Regions
 
@@ -99,12 +128,12 @@ eval "$(register-python-argcomplete governance-as-code)"
 
 ## The definition file
 
-Validated against [`governance.schema.json`](governance.schema.json) before any
-write. Reference the schema at the top of your file for editor autocomplete and
-inline validation:
+Validated against [`governance.schema.json`](coalesce_governance/governance.schema.json)
+before any write. Reference the schema at the top of your file for editor
+autocomplete and inline validation:
 
 ```yaml
-# yaml-language-server: $schema=./governance.schema.json
+# yaml-language-server: $schema=https://schemas.synq.io/governance-as-code/draft/governance.schema.json
 dataproducts:
   - title: "Sales & Orders"    # `id:` omitted -> adopted-by-title or generated, then written back
     folder: "Domains"

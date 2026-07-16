@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://schemas.synq.io/governance-as-code/draft/governance.schema.json",
   "x-status": "draft",
-  "title": "Coalesce Quality governance-as-code",
-  "description": "Declarative desired state for data products, owners, ownership and alert routing. Applied by the governance-as-code tool via the public API (synq.dataproducts.v2 + synq.owners.v1). Contains NO credentials — auth is passed separately. Every resource has an `id` (a UUID): supply it, or leave it out and the tool generates one and writes it back to the file.",
+  "title": "Coalesce Quality: Governance as Code",
+  "description": "Declaratively manage your Coalesce Quality data products, owners, ownership and alert routing from a single YAML file. Define the desired state, then preview and apply it with the governance-as-code tool. No credentials live in the file — authentication is provided separately.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
