@@ -136,9 +136,11 @@ service DataproductsService {
 }
 
 message UpsertRequest {
-  // Opaque id of the product (a UUID). The same id updates the same product; a
-  // new id creates a new product.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Opaque id of the product. Accepts either the bare UUID or the `entity_id`
+  // form this API returns (`dataproduct-<uuid>`) — the prefix is stripped
+  // server-side, so the value you read back from any API can be passed straight
+  // in. The same id updates the same product; a new id creates a new product.
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
 
   // Title. Required when creating; omit to keep the existing title on update.
   optional string title = 2 [(buf.validate.field).string = {
@@ -173,13 +175,14 @@ message UpsertResponse {
 }
 
 message BatchGetRequest {
-  // Ids to fetch (1–200, unique).
+  // Ids to fetch (1–200, unique). Each accepts either the bare UUID or the
+  // `entity_id` form (`dataproduct-<uuid>`); the prefix is stripped server-side.
   repeated string ids = 1 [(buf.validate.field).repeated = {
     min_items: 1
     max_items: 200
     unique: true
     items: {
-      string: {uuid: true}
+      string: {pattern: "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}
     }
   }];
   // Include soft-deleted products.
@@ -220,8 +223,9 @@ message ListResponse {
 }
 
 message DeleteRequest {
-  // Id of the product to delete.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the product to delete. Accepts the bare UUID or the `dataproduct-<uuid>`
+  // entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Hard-delete instead of soft-delete, releasing the id for reuse.
   bool purge = 2;
   // Optional optimistic-concurrency guard.
@@ -231,8 +235,9 @@ message DeleteRequest {
 message DeleteResponse {}
 
 message SetDefinitionRequest {
-  // Id of the product whose definition to replace.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the product whose definition to replace. Accepts the bare UUID or the
+  // `dataproduct-<uuid>` entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // The new membership definition (replaces the existing one entirely).
   DataproductDefinition definition = 2;
   // Optional optimistic-concurrency guard.
@@ -248,8 +253,9 @@ message SetDefinitionResponse {
 }
 
 message UpsertDefinitionPartRequest {
-  // Id of the product.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the product. Accepts the bare UUID or the `dataproduct-<uuid>`
+  // entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // The part to add or replace (matched by its part id).
   DataproductDefinition.Part part = 2;
   // Optional optimistic-concurrency guard.
@@ -265,8 +271,9 @@ message UpsertDefinitionPartResponse {
 }
 
 message RemoveDefinitionPartRequest {
-  // Id of the product.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the product. Accepts the bare UUID or the `dataproduct-<uuid>`
+  // entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Id of the part to remove.
   string part_id = 2 [(buf.validate.field).string = {
     min_len: 1
@@ -285,8 +292,9 @@ message RemoveDefinitionPartResponse {
 }
 
 message ListMembersRequest {
-  // Id of the product whose members to list.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the product whose members to list. Accepts the bare UUID or the
+  // `dataproduct-<uuid>` entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Pagination.
   synq.v1.Pagination pagination = 2;
 }

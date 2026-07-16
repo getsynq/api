@@ -17,10 +17,11 @@ message Dataproduct {
 
   // Stable, opaque platform identifier of this data product (of the form
   // "dataproduct-<uuid>"). Output-only — the server derives it; never construct
-  // it by hand. This is the exact value other SYNQ APIs accept as an entity
-  // reference for this product (lineage, entities, ownership, alerts), so read
-  // it here and pass it there to point at the same product without needing to
-  // know how it is formed.
+  // it by hand. This is the value other SYNQ APIs accept as an entity reference
+  // for this product (lineage, entities, alerts), so read it here and pass it
+  // there to point at the same product without needing to know how it is formed.
+  // `synq.owners.v1.OwnershipSelection.dataproduct_id` accepts this `entity_id`
+  // directly (or the bare `id`).
   string entity_id = 2;
 
   // Human-readable title.

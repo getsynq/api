@@ -1,0 +1,10 @@
+# For a plain venv install. Prefer `uv tool install .` or `pipx install .`
+# (see README) — those read pyproject.toml.
+--extra-index-url https://buf.build/gen/python
+getsynq-api-grpc-python
+grpcio
+requests
+PyYAML
+jsonschema
+ruamel.yaml
+argcomplete

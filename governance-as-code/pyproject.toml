@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coalesce-quality-governance-as-code"
+version = "0.1.0"
+description = "Declaratively manage Coalesce Quality data products, owners, ownership and alert routing from a YAML file."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "getsynq-api-grpc-python",
+    "grpcio",
+    "requests",
+    "PyYAML",
+    "jsonschema",
+    "ruamel.yaml",
+    "argcomplete",
+]
+
+[project.scripts]
+governance-as-code = "coalesce_governance.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["coalesce_governance"]
+
+# The generated API client is published on buf's Python registry, not PyPI.
+# uv reads this index; for pip/pipx pass --extra-index-url https://buf.build/gen/python
+[[tool.uv.index]]
+name = "buf"
+url = "https://buf.build/gen/python"

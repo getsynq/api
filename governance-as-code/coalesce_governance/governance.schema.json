@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.synq.io/governance-as-code/draft/governance.schema.json",
+  "x-status": "draft",
+  "title": "Coalesce Quality governance-as-code",
+  "description": "Declarative desired state for data products, owners, ownership and alert routing. Applied by the governance-as-code tool via the public API (synq.dataproducts.v2 + synq.owners.v1). Contains NO credentials — auth is passed separately. Every resource has an `id` (a UUID): supply it, or leave it out and the tool generates one and writes it back to the file.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "dataproducts": { "type": "array", "items": { "$ref": "#/definitions/dataproduct" } },
+    "owners": { "type": "array", "items": { "$ref": "#/definitions/owner" } }
+  },
+  "definitions": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable UUID id (as in the API). Omit to have one generated and written back on the next run."
+    },
+    "dataproduct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "resolver_ql"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 10000 },
+        "folder": { "type": "string", "maxLength": 500 },
+        "priority": { "enum": ["P1", "P2", "P3"], "description": "P1 is highest." },
+        "resolver_ql": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Membership query in ResolverQL. A data product is a leaf: no in_dataproduct / in_domain. E.g. with_type(\"table\", filter=with_name(\"orders\"))."
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "contacts": { "type": "array", "items": { "$ref": "#/definitions/contact" } },
+        "ownerships": { "type": "array", "items": { "$ref": "#/definitions/ownership" } }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "description": "Exactly one channel kind.",
+      "properties": {
+        "slack": { "type": "string" },
+        "email": { "type": "array", "items": { "type": "string", "format": "email" }, "minItems": 1 },
+        "users": { "type": "array", "items": { "type": "string", "format": "email" }, "minItems": 1 },
+        "ms_teams": { "type": "string" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [{ "required": ["dataproduct"] }, { "required": ["query"] }],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "dataproduct": { "type": "string", "minLength": 1, "description": "A data product to own (its whole membership), referenced by its `id` or its `title` (title is matched among the products in this file)." },
+        "query": { "$ref": "#/definitions/ownership_query" },
+        "alert": { "$ref": "#/definitions/alert" }
+      }
+    },
+    "ownership_query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolver_ql"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 500 },
+        "resolver_ql": { "type": "string", "minLength": 1, "description": "Asset selection in ResolverQL; MAY reference data products and domains." }
+      }
+    },
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severities": { "type": "array", "items": { "enum": ["WARN", "ERROR", "FATAL"] }, "uniqueItems": true, "description": "Empty = no failure alerts routed." },
+        "notify_upstream": { "type": "boolean" },
+        "allow_sql_test_audit_link": { "type": "boolean" },
+        "ongoing": {
+          "description": "Repeat strategy for a still-open issue.",
+          "oneOf": [
+            { "enum": ["disabled", "stream"] },
+            { "type": "object", "additionalProperties": false, "required": ["schedule"], "properties": { "schedule": { "type": "string" } } }
+          ]
+        }
+      }
+    }
+  }
+}

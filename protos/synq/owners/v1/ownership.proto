@@ -17,8 +17,10 @@ option go_package = "github.com/getsynq/api/owners/v1";
 // owner deletes all of its ownerships.
 message Ownership {
   // Opaque id of the ownership (a UUID) supplied by the caller on create, which
-  // makes UpsertOwnership idempotent. This is the same value the alerts API
-  // reports as the ownership reference on an alert attributed to this owner.
+  // makes UpsertOwnership idempotent. This is the same value
+  // `synq.alerts.v1.AlertsService` reports as the ownership reference
+  // (`synq.alerts.v1.Alert.Owner.ownership_id`) on an alert attributed to this
+  // owner.
   string id = 1;
 
   // Id of the Owner this ownership belongs to (the owner's `id`, a UUID).
@@ -62,9 +64,12 @@ message OwnershipSelection {
     OwnershipQuery query = 1;
 
     // All assets belonging to a single data product, referenced by its opaque
-    // id (the `id` returned by the data products API). The data product must
-    // exist in the workspace at write time.
-    string dataproduct_id = 2 [(buf.validate.field).string.uuid = true];
+    // id (the `id` of a `synq.dataproducts.v2.Dataproduct`, as returned by
+    // `synq.dataproducts.v2.DataproductsService`). Accepts either the bare UUID
+    // or the `entity_id` form (`dataproduct-<uuid>`) — the prefix is stripped
+    // server-side, so a product's `entity_id` from lineage can be assigned
+    // directly. The data product must exist in the workspace at write time.
+    string dataproduct_id = 2 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   }
 }
 

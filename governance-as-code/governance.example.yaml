@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://schemas.synq.io/governance-as-code/draft/governance.schema.json
+#
+# Coalesce Quality governance-as-code — declarative data products, owners,
+# ownership and alert routing. Apply with:  governance-as-code apply -f this.yaml
+#
+# This file contains NO credentials — auth is passed separately (see the README).
+#
+# Identity works like the API: each resource has a UUID `id`. Omit it (as below)
+# and the tool will, on the next run, either adopt an existing resource with the
+# same title or generate a new id — and write that id back into this file.
+
+dataproducts:
+  - title: "Sales & Orders"
+    folder: "Domains"
+    priority: P1
+    # ResolverQL. A data product is a leaf (no in_dataproduct / in_domain).
+    resolver_ql: 'and(with_type("table"), or(with_name("sales"), with_name("order")))'
+
+  - title: "Dashboards"
+    folder: "Concepts"
+    priority: P2
+    resolver_ql: 'with_type("dashboard")'
+
+owners:
+  - title: "Sales Team"
+    contacts:
+      - slack: "#sales-alerts"
+      - email: ["sales@example.com"]
+    ownerships:
+      # Own a whole data product, referenced by title (or by its id).
+      - dataproduct: "Sales & Orders"
+        alert:
+          severities: [ERROR, FATAL]
+          notify_upstream: true
+          ongoing: disabled
+
+  - title: "BI Team"
+    contacts:
+      - slack: "#bi-alerts"
+    ownerships:
+      # Own assets selected by an ad-hoc query, with a weekly digest.
+      - query:
+          name: "All dashboards"
+          resolver_ql: 'with_type("dashboard")'
+        alert:
+          severities: [FATAL]
+          ongoing: { schedule: "0 9 * * MON" }

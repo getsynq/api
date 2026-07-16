@@ -25,6 +25,11 @@ option go_package = "github.com/getsynq/api/owners/v1";
 // on the Upsert calls: a set field is written, an omitted field is left
 // unchanged. Pass the `etag` you last read to guard against overwriting a
 // concurrent edit.
+//
+// Related: `synq.dataproducts.v2.DataproductsService` (an ownership can own a
+// whole data product), `synq.alerts.v1.AlertsService` (how the configured alerts
+// are reported), and `synq.users.v1.UsersService` (resolve the users behind
+// `UserContact` and Slack/Teams mentions).
 service OwnersService {
   // Create or update an owner. The id is supplied by the caller (a UUID);
   // repeating the same request converges to the same owner. Mutable fields are
@@ -155,9 +160,11 @@ message ContactList {
 }
 
 message UpsertOwnerRequest {
-  // Opaque id of the owner (a UUID). The same id updates the same owner; a new
-  // id creates a new owner.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Opaque id of the owner. Accepts either the bare UUID or the `entity_id` form
+  // this API returns (`owner-<uuid>`) — the prefix is stripped server-side, so
+  // the value you read back from any API can be passed straight in. The same id
+  // updates the same owner; a new id creates a new owner.
+  string id = 1 [(buf.validate.field).string.pattern = "^(owner-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
 
   // Owner name. Required when creating; omit to keep the existing name on
   // update.
@@ -189,13 +196,14 @@ message UpsertOwnerResponse {
 }
 
 message BatchGetOwnersRequest {
-  // Owner ids to fetch (1–200, unique).
+  // Owner ids to fetch (1–200, unique). Each accepts either the bare UUID or the
+  // `entity_id` form (`owner-<uuid>`); the prefix is stripped server-side.
   repeated string ids = 1 [(buf.validate.field).repeated = {
     min_items: 1
     max_items: 200
     unique: true
     items: {
-      string: {uuid: true}
+      string: {pattern: "^(owner-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}
     }
   }];
   // Include soft-deleted owners.
@@ -223,8 +231,9 @@ message ListOwnersResponse {
 }
 
 message DeleteOwnerRequest {
-  // Id of the owner to delete.
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the owner to delete. Accepts the bare UUID or the `owner-<uuid>`
+  // entity_id form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(owner-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Hard-delete instead of soft-delete, releasing the id for reuse.
   bool purge = 2;
   // Optional optimistic-concurrency guard.
@@ -236,8 +245,9 @@ message DeleteOwnerRequest {
 message DeleteOwnerResponse {}
 
 message UpsertOwnershipRequest {
-  // Id of the owner this ownership belongs to.
-  string owner_id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the owner this ownership belongs to. Accepts the bare UUID or the
+  // `owner-<uuid>` entity_id form (the prefix is stripped server-side).
+  string owner_id = 1 [(buf.validate.field).string.pattern = "^(owner-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Opaque id of the ownership (a UUID). The same id updates the same
   // ownership; a new id creates a new one.
   string id = 2 [(buf.validate.field).string.uuid = true];
@@ -257,8 +267,9 @@ message UpsertOwnershipResponse {
 }
 
 message ListOwnershipsRequest {
-  // Id of the owner whose ownerships to list.
-  string owner_id = 1 [(buf.validate.field).string.uuid = true];
+  // Id of the owner whose ownerships to list. Accepts the bare UUID or the
+  // `owner-<uuid>` entity_id form (the prefix is stripped server-side).
+  string owner_id = 1 [(buf.validate.field).string.pattern = "^(owner-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Pagination.
   synq.v1.Pagination pagination = 2;
   // Include soft-deleted ownerships.

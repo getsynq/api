@@ -59,7 +59,9 @@ message SlackUserMention {
   // Display handle of the user (informational; helps readers recognise the
   // mention). Optional.
   string user_name = 1 [(buf.validate.field).string.max_len = 255];
-  // Slack user id that is actually mentioned (e.g. "U0123456789").
+  // Slack user id that is actually mentioned (e.g. "U0123456789"). A workspace
+  // user's Slack id is available from `synq.users.v1.UsersService` — the
+  // `slack:<id>` entry in `GetUserIdentities`, or a `slack` alias on the user.
   string slack_id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 64
@@ -114,7 +116,9 @@ message MsTeamsMention {
 
 // An @-mention of an individual Microsoft Teams member.
 message MsTeamsMemberMention {
-  // Teams member id that is actually mentioned.
+  // Teams member id that is actually mentioned. A workspace user's Teams member
+  // id is available from `synq.users.v1.UsersService` — the `msteams:<id>` entry
+  // in `GetUserIdentities`, or an `ms_teams` alias on the user.
   string member_id = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 255
@@ -126,8 +130,12 @@ message MsTeamsMemberMention {
 // Deliver notifications to Coalesce Quality users, identified by email. Each
 // email should match a user in the workspace; the notification reaches them
 // through their own configured notification preferences.
+//
+// Enumerate the valid users (and their emails) with `synq.users.v1.UsersService`
+// — `ListUsers` for the full set, or `GetByEmail` to validate a single address.
 message UserContact {
-  // Emails of the users to notify.
+  // Emails of the users to notify. Each should match a workspace user; look them
+  // up via `synq.users.v1.UsersService.ListUsers` / `GetByEmail`.
   repeated string user_emails = 1 [(buf.validate.field).repeated = {
     min_items: 1
     max_items: 100
