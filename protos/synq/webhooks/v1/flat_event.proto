@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package synq.webhooks.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/webhooks/v1/callback.proto";
+import "synq/webhooks/v1/event.proto";
+
+option go_package = "github.com/getsynq/api/webhooks/v1";
+
+// A webhook event in the flat format — an experimental, opt-in alternative to
+// Event that carries the same information in a flatter shape.
+//
+// Instead of nesting the payload under a per-event-type field (issue_created,
+// issue_updated, incident_open, …), the payload is carried by a single
+// top-level field — `issue`, `incident`, or `ping` — and `event_type` says
+// which one is set and why. A receiver can then read a value the same way on
+// every event, e.g. `issue.owners[0].title` on any issue event, instead of a
+// different path per event type.
+//
+// Exactly one of `issue`, `incident`, or `ping` is set, matching `event_type`.
+// Select this format per webhook integration; the default is the nested Event.
+// Payload signing is identical — see Event for the signature scheme.
+//
+// Experimental: this shape may change while we gather feedback.
+message FlatEvent {
+  option (buf.validate.message).oneof = {
+    fields: [
+      "issue",
+      "incident",
+      "ping"
+    ]
+    required: true
+  };
+
+  string workspace = 1;
+  string event_id = 2;
+  google.protobuf.Timestamp event_time = 3;
+
+  // Which event occurred, and which payload field below is set.
+  Event.EventType event_type = 4;
+
+  // Issue payload. Set on every EVENT_TYPE_ISSUE_* event.
+  IssueSummary issue = 11;
+  // Incident payload. Set on every EVENT_TYPE_INCIDENT_* event.
+  IncidentSummary incident = 12;
+  // Test payload. Set on EVENT_TYPE_PING (sent during webhook setup).
+  Ping ping = 13;
+
+  repeated Callback callbacks = 40;
+}
