@@ -520,6 +520,11 @@ Create, update, and delete data products.
 | `SetDefinition`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition` | Set the definition for an existing dataproduct. |
 | `Upsert`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1` | Create or update a dataproduct. |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition/part` | Upsert definition part to the definition of an existing dataproduct. |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
+| `RemoveDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`DELETE /api/dataproducts/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. Idempotent. |
+| `SetDefinition`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`PUT /api/dataproducts/v2/{id}/definition` | Replace the entire membership definition of a data product. |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
+| `UpsertDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/{id}/definition/parts` | Add or replace a single definition part (matched by its part id). |
 
 ## Read Data Products
 
@@ -531,6 +536,9 @@ View data products and their contents.
 | ------ | ----------- |
 | `Get`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/get` | Get multiple dataproducts by their identifiers. |
 | `List`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`GET /api/dataproducts/v1` | List all the dataproducts in the current scope. |
+| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
+| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
+| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
 
 ## Edit Domains
 
@@ -620,6 +628,9 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGetTestSuggestionsForEntities`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`GET /api/datachecks/testsuggestions/v1` |  |
 | `Get`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/get` | Get multiple dataproducts by their identifiers. |
 | `List`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`GET /api/dataproducts/v1` | List all the dataproducts in the current scope. |
+| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
+| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
+| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
@@ -809,6 +820,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetDefinition`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition` | `SCOPE_DATAPRODUCT_EDIT` |
 | `Upsert`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition/part` | `SCOPE_DATAPRODUCT_EDIT` |
+| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | `SCOPE_DATAPRODUCT_EDIT` |
+| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `RemoveDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`DELETE /api/dataproducts/v2/{id}/definition/parts/{part_id}` | `SCOPE_DATAPRODUCT_EDIT` |
+| `SetDefinition`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`PUT /api/dataproducts/v2/{id}/definition` | `SCOPE_DATAPRODUCT_EDIT` |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_EDIT` |
+| `UpsertDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/{id}/definition/parts` | `SCOPE_DATAPRODUCT_EDIT` |
 | `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_ASSIGN` |
 | `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
 | `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
