@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package synq.queries.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/queries/v1";
+
+// QueriesService compiles and evaluates ResolverQL — the compact text query
+// language used across Coalesce Quality to select entities — over the public
+// API.
+//
+// ResolverQL is a string DSL (for example `with_type("TABLE")` or
+// `in_folder(...)`); a structured `synq.queries.v1.Query` is its parsed,
+// machine-readable form. This service is the bridge between the two and the
+// read-only execution surface for both:
+//   - `TranslateResolverQl` compiles a ResolverQL expression into a structured
+//     `Query` without evaluating it — inspect it, validate it, or reuse it as a
+//     filter on another API (entity listing, folder browsing, ...).
+//   - `ResolveQuery` compiles a ResolverQL expression (or takes an
+//     already-structured `Query`), evaluates it against the catalog, and
+//     returns the matched entity ids. This is the general author -> resolve
+//     loop.
+service QueriesService {
+  // Compile a ResolverQL expression into a structured public `Query`. Unlike
+  // `ResolveQuery`, it does not evaluate the query against the catalog. A
+  // syntactically invalid or uncompilable expression fails with
+  // INVALID_ARGUMENT.
+  rpc TranslateResolverQl(TranslateResolverQlRequest) returns (TranslateResolverQlResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/queries/v1/translate-resolver-ql"
+      body: "*"
+    };
+  }
+
+  // Evaluate a selection and return the matched entity ids, paginated. Pass a
+  // ResolverQL expression via `resolver_ql` (it is compiled server-side) or an
+  // already-structured `query`. Invalid ResolverQL fails with INVALID_ARGUMENT.
+  rpc ResolveQuery(ResolveQueryRequest) returns (ResolveQueryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/queries/v1/resolve"
+      body: "*"
+    };
+  }
+}
+
+message TranslateResolverQlRequest {
+  // ResolverQL expression to compile, for example `with_type("TABLE")`.
+  string resolver_ql = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+}
+
+message TranslateResolverQlResponse {
+  // The compiled structured query. Pass it verbatim to any public API that
+  // accepts a `synq.queries.v1.Query` (for example a folder browse `filter`),
+  // or to `ResolveQuery.query` to evaluate it.
+  Query query = 1;
+
+  // The compiled query rendered back to canonical ResolverQL. Empty when the
+  // query has no ResolverQL representation (legacy / deprecated operands).
+  string rendered_resolver_ql = 2;
+}
+
+message ResolveQueryRequest {
+  // The selection to resolve. Prefer `resolver_ql` for authoring; `query`
+  // accepts an already-structured selection (for example one returned by
+  // `TranslateResolverQl`).
+  oneof selection {
+    option (buf.validate.oneof).required = true;
+
+    // ResolverQL expression to compile and evaluate.
+    string resolver_ql = 1 [(buf.validate.field).string.min_len = 1];
+
+    // Structured query to evaluate.
+    Query query = 2;
+  }
+
+  // Pagination over the matched entity set. `page_size` defaults per API when
+  // unset; pass the previous response's `page_info.last_id` as the cursor to
+  // fetch the next page.
+  synq.v1.Pagination pagination = 3;
+}
+
+message ResolveQueryResponse {
+  // Opaque identifiers of the matched entities, one page worth. Round-trip each
+  // id verbatim to the rest of the entities API.
+  repeated synq.entities.v1.Identifier entity_ids = 1;
+
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+
+  // The resolved selection rendered as canonical ResolverQL. Empty when the
+  // selection has no ResolverQL representation.
+  string rendered_resolver_ql = 3;
+}

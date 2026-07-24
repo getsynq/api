@@ -4,6 +4,7 @@ package synq.dataproducts.v1;
 
 import "buf/validate/validate.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/queries/v1/query.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
 

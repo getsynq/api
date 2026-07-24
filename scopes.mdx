@@ -131,6 +131,8 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | GenerateQuery generates a Query from a natural language description. |
+| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. Pass a |
+| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. Unlike |
 
 ## Edit Entity Types
 
@@ -685,6 +687,8 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
 | `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
+| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. Pass a |
+| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. Unlike |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
@@ -1011,6 +1015,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_EDIT` |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | `SCOPE_ENTITY_READ` |
+| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN` |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |

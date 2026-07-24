@@ -3,34 +3,10 @@ syntax = "proto3";
 package synq.entities.folders.v1;
 
 import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/folder_ref.proto";
 import "synq/platforms/v1/data_platform_types.proto";
 
 option go_package = "github.com/getsynq/api/entities/folders/v1";
-
-// FolderRef is the human-friendly, structured address of a folder: the entity it
-// hangs under (`root_entity_id`) plus the ordered folder names from that root
-// down to the folder (`folders`).
-//
-// It is the stable way to name a folder across responses. Prefer it over the
-// opaque `Folder.folder_entity_id` when you want to log, display, or reconstruct
-// a location — the segments are the same names a user sees in the catalog, and
-// they survive changes to the underlying id encoding.
-//
-// A `FolderRef` with an empty `folders` list names the root entity itself (a
-// top-level integration or container the hierarchy hangs from).
-message FolderRef {
-  // Opaque id of the entity the folder hierarchy hangs under — an integration
-  // root or container (for example a warehouse instance, a database, or a
-  // transformation project). Take it verbatim from `FolderRef.root_entity_id`
-  // of a folder you already read, or from an entity id returned elsewhere.
-  string root_entity_id = 1;
-
-  // Ordered folder names from the root down to this folder (root first, leaf
-  // last), for example ["staging", "sales"]. Empty means the ref points at the
-  // root entity itself. Folder names are kept as separate segments (not joined
-  // with "/") because some platforms allow "/" inside a single folder name.
-  repeated string folders = 2;
-}
 
 // FolderRole describes how a folder placement participates in browsing. It
 // mirrors the placement roles carried by the catalog.
@@ -61,7 +37,7 @@ message Folder {
   // derived from the surrounding hierarchy (always for `GetFolderOf`, and for
   // `Browse` when the parent location is known). When it cannot be derived,
   // `folder_entity_id` remains the authoritative handle.
-  FolderRef ref = 2;
+  synq.entities.v1.FolderRef ref = 2;
 
   // Display name of this folder (its own leaf name, e.g. "sales").
   string name = 3;

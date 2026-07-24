@@ -5,6 +5,7 @@ package synq.alerts.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/alerts/v1/targets.proto";
+import "synq/queries/v1/query.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
 import "synq/v1/severity.proto";

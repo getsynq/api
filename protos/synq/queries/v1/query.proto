@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.queries.v1;
 
 import "buf/validate/validate.proto";
+import "synq/entities/v1/folder_ref.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
 
@@ -48,4 +49,85 @@ message Query {
       Unsupported unsupported = 101;
     }
   }
+}
+
+// Resolves to entities located in one or more folders.
+//
+// Give the folders exactly one way (they are mutually exclusive; if more than
+// one is set, `folders` wins, then `folder_of`, then `path`):
+//   - `folders`   — the preferred, human-authorable form: name each folder by
+//                   its root entity plus its ordered folder-name segments. No
+//                   opaque ids required.
+//   - `folder_of` — "the same folder(s) as these assets": resolves the folder(s)
+//                   containing the assets matched by an inner query, then matches
+//                   everything in them. Lets you select siblings without naming a
+//                   folder.
+//   - `path`      — legacy opaque folder identifiers. Kept for back-compat;
+//                   prefer `folders`. Discover a folder's structured address
+//                   with the folders navigation API instead of hand-writing an id.
+//
+// `deep` controls recursion (see its field comment).
+//
+// InFolder lives here rather than in query_parts.proto because FolderOf nests a
+// full Query, which would make query_parts.proto import query.proto and form a
+// proto file import cycle.
+message InFolder {
+  // Set exactly one folder source: `path`, `folders`, or `folder_of`.
+  option (buf.validate.message).cel = {
+    id: "in_folder.exactly_one_source"
+    message: "set exactly one of path, folders, or folder_of"
+    expression: "[this.path.size() > 0, this.folders.size() > 0, has(this.folder_of)].filter(x, x).size() == 1"
+  };
+
+  // Opaque folder identifiers (a folder's own entity id). `folders` is the
+  // structured, human-authorable alternative. When `path` is the only source
+  // set and `deep` is unset, `deep` defaults to true for back-compat with
+  // queries authored before `deep` existed.
+  repeated string path = 1;
+
+  // Structured, human-authorable folder addresses (root entity + folder-name
+  // segments). Take a `FolderRef` verbatim from a folder returned by the folders
+  // navigation API, or build one from names you can see in the catalog.
+  repeated synq.entities.v1.FolderRef folders = 2;
+
+  // Resolve the folders to search from a set of assets, rather than naming them.
+  // Selects everything in the folder(s) that contain those assets.
+  FolderOf folder_of = 3;
+
+  // When false or unset, matches only the direct members of the folder(s). When
+  // true, matches the entire recursive subtree (members of subfolders too).
+  //
+  // Exception: when only the legacy `path` source is set and `deep` is unset,
+  // it defaults to true (preserves the behaviour of queries authored before this
+  // flag existed). With `folders` or `folder_of`, unset means false (shallow).
+  optional bool deep = 4;
+}
+
+// Resolves the folder(s) containing a set of assets, for use as the folder
+// source of `InFolder` — i.e. "everything in the same folder as these assets".
+//
+// Name the assets either the simple way (`entity_ids`, opaque asset ids) or with
+// a full `input_query` when they need to be computed (e.g. by name or type). Set
+// exactly one.
+message FolderOf {
+  // Set exactly one asset source: `entity_ids` or `input_query`.
+  option (buf.validate.message).cel = {
+    id: "folder_of.exactly_one_source"
+    message: "set exactly one of entity_ids or input_query"
+    expression: "(this.entity_ids.size() > 0) != has(this.input_query)"
+  };
+
+  // Simplified source: the assets named directly by opaque entity id. Use this
+  // for the common "same folder as these specific assets" case; equivalent to an
+  // input_query that lists the same ids.
+  repeated string entity_ids = 3;
+
+  // General source: resolve the folder(s) of whatever assets this query matches
+  // (e.g. a name or type filter). Use when the assets can't be listed up front.
+  Query input_query = 1;
+
+  // When false (default): only each asset's immediate parent folder. When true:
+  // every ancestor folder up the hierarchy, so `InFolder` then also matches
+  // assets in those ancestor folders.
+  bool include_all_ancestors = 2;
 }

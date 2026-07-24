@@ -5,6 +5,7 @@ package synq.entities.folders.v1;
 import "google/api/annotations.proto";
 import "synq/entities/folders/v1/folders.proto";
 import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/folder_ref.proto";
 import "synq/queries/v1/query.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -119,7 +120,7 @@ message BrowseRequest {
     // `Folder.folder_entity_id`).
     string parent_folder_entity_id = 1;
     // Structured address of the parent folder to browse into.
-    FolderRef parent_ref = 2;
+    synq.entities.v1.FolderRef parent_ref = 2;
   }
 
   // Field 3 was `depth`; removed because the flat, one-level response cannot
@@ -174,7 +175,7 @@ message ListMembersRequest {
     // Opaque id of the folder (from `Folder.folder_entity_id`).
     string folder_entity_id = 1;
     // Structured address of the folder.
-    FolderRef folder_ref = 2;
+    synq.entities.v1.FolderRef folder_ref = 2;
   }
 
   // When true, include entities in all nested sub-folders. When false (default),

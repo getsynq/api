@@ -57,10 +57,9 @@ message WithDataPlatformType {
   repeated synq.platforms.v1.DataPlatformType types = 1;
 }
 
-// Resolves to all entities belonging to the given folder structure.
-message InFolder {
-  repeated string path = 1;
-}
+// Note: InFolder and FolderOf are defined in query.proto (alongside Query),
+// because FolderOf.input_query nests a full Query and a query_parts.proto that
+// imported query.proto would create a proto file import cycle.
 
 // Resolves to all entities in the given data domain.
 message InDomain {
