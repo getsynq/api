@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package synq.entities.folders.v1;
+
+import "google/api/annotations.proto";
+import "synq/entities/folders/v1/folders.proto";
+import "synq/entities/v1/entity_types.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/folders/v1";
+
+// FoldersService discovers and browses the folder / containment hierarchy of the
+// catalog: the roots data hangs from, the sub-folders under any folder, the
+// folders a given entity lives in, and the entities contained in a folder.
+//
+// It is a read / navigation surface, not folder management — there are no
+// create, move, or delete operations.
+//
+// Addressing: every folder has an opaque `folder_entity_id` (round-trip it
+// verbatim) and a structured `FolderRef{root_entity_id, folders[]}` (the
+// human-friendly form). Entities — both folder members and the ids you pass to
+// `GetFolderOf` — are named by their opaque entity id, the same id used across
+// the rest of the entities API.
+//
+// Depth footgun: membership is SHALLOW by default. `Browse` returns only the
+// direct children of a folder, and `ListMembers` returns only the entities
+// placed directly in the folder. Set `deep = true` (or raise `Browse.depth`) to
+// recurse into sub-folders.
+service FoldersService {
+  // Browse the hierarchy one level at a time. With no `parent`, returns the
+  // roots (top-level integrations / containers). With a `parent` folder, returns
+  // that folder's direct sub-folders and the entity ids of its direct,
+  // non-folder members.
+  //
+  // One level per call — sub-folders are returned as `Folder`s (each with a
+  // `child_folder_count`), which you Browse into in turn; there is no nested
+  // tree in the response. `filter` narrows the returned members to entities
+  // matching a query.
+  rpc Browse(BrowseRequest) returns (BrowseResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_FOLDERS_READ,
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/folders/v1/browse"
+      body: "*"
+      // Roots (no parent): GET /api/entities/folders/v1/browse
+      additional_bindings: {get: "/api/entities/folders/v1/browse"}
+      // Browse into a specific folder with its id directly in the URL, e.g.
+      // GET /api/entities/folders/v1/folders/clickhouse-prod::default
+      // The =** capture keeps folder ids that contain "/" intact. The structured
+      // `parent_ref` / `filter` inputs are POST-only.
+      additional_bindings: {get: "/api/entities/folders/v1/folders/{parent_folder_entity_id=**}"}
+    };
+  }
+
+  // Given entity ids, return the folder breadcrumb(s) each entity lives in —
+  // ordered root first, leaf (immediate parent) last. An entity may appear in
+  // more than one hierarchy; the response carries every folder along its
+  // containing chain. Compose with `ListMembers` on an entity's immediate parent
+  // to list its siblings.
+  rpc GetFolderOf(GetFolderOfRequest) returns (GetFolderOfResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_FOLDERS_READ,
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/folders/v1/folder-of"
+      body: "*"
+      // Simple GET form: repeat the entity_ids query param, e.g.
+      // GET /api/entities/folders/v1/folder-of?entity_ids=<id-a>&entity_ids=<id-b>
+      additional_bindings: {get: "/api/entities/folders/v1/folder-of"}
+    };
+  }
+
+  // List the entity ids contained in a folder, paginated. Direct members only by
+  // default; set `deep = true` to include members of all nested sub-folders.
+  // Narrow with `types` and/or `filter`.
+  //
+  // Pagination is a stable client-side window over the folder's fully-resolved
+  // member set: each page recomputes and re-orders that set, then returns the
+  // requested slice. Results are consistent, but paging deep through a very
+  // large folder repeats work — prefer a larger `page_size` over many small
+  // pages.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_FOLDERS_READ,
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/folders/v1/members"
+      body: "*"
+      // Simple GET form with the folder id directly in the URL, e.g.
+      // GET /api/entities/folders/v1/members/clickhouse-prod::default?deep=true&pagination.page_size=100
+      // The =** capture (which must be the final path segment) keeps folder ids
+      // that contain "/" intact. `deep`, `types` and `pagination` bind from the
+      // query string; the structured `folder_ref` / `filter` inputs are POST-only.
+      additional_bindings: {get: "/api/entities/folders/v1/members/{folder_entity_id=**}"}
+    };
+  }
+}
+
+message BrowseRequest {
+  // The folder to browse into. Leave unset to browse the roots. Prefer
+  // `parent_folder_entity_id` (the opaque id returned by a previous call);
+  // `parent_ref` is accepted as the structured alternative.
+  oneof parent {
+    // Opaque id of the parent folder to browse into (from
+    // `Folder.folder_entity_id`).
+    string parent_folder_entity_id = 1;
+    // Structured address of the parent folder to browse into.
+    FolderRef parent_ref = 2;
+  }
+
+  // Field 3 was `depth`; removed because the flat, one-level response cannot
+  // represent nested folders — Browse each sub-folder in turn instead.
+  reserved 3;
+  reserved "depth";
+
+  // Optional filter. When set, the returned `member_entity_ids` are limited to
+  // entities matching this query.
+  synq.queries.v1.Query filter = 4;
+}
+
+message BrowseResponse {
+  // Direct sub-folders of the browsed location (or the roots, when no `parent`
+  // was given).
+  repeated Folder folders = 1;
+
+  // Opaque entity ids of the direct, non-folder members of the browsed folder.
+  // Empty when browsing the roots. Shallow by default — members of sub-folders
+  // are not included unless `depth` expanded them.
+  repeated string member_entity_ids = 2;
+}
+
+message GetFolderOfRequest {
+  // Opaque entity ids to look up. Ids that do not exist, or that live in no
+  // folder, are absent from the response.
+  repeated string entity_ids = 1;
+}
+
+message GetFolderOfResponse {
+  // One containing breadcrumb: the folders from a root down to (and including)
+  // the entity's immediate parent, ordered root first.
+  message Breadcrumb {
+    repeated Folder folders = 1;
+  }
+
+  // All breadcrumbs for one entity. Most entities have a single breadcrumb; an
+  // entity placed in several hierarchies has one per hierarchy.
+  message Breadcrumbs {
+    repeated Breadcrumb breadcrumbs = 1;
+  }
+
+  // Requested entity id -> its containing breadcrumb(s).
+  map<string, Breadcrumbs> breadcrumbs_by_entity_id = 1;
+}
+
+message ListMembersRequest {
+  // The folder whose members to list. Prefer `folder_entity_id` (the opaque id
+  // returned by a previous call); `folder_ref` is accepted as the structured
+  // alternative.
+  oneof folder {
+    // Opaque id of the folder (from `Folder.folder_entity_id`).
+    string folder_entity_id = 1;
+    // Structured address of the folder.
+    FolderRef folder_ref = 2;
+  }
+
+  // When true, include entities in all nested sub-folders. When false (default),
+  // return only the entities placed directly in this folder.
+  bool deep = 3;
+
+  // Optional entity-type filter. Empty returns all types.
+  repeated synq.entities.v1.EntityType types = 4;
+
+  // Optional query filter. When set, only members matching this query are
+  // returned.
+  synq.queries.v1.Query filter = 5;
+
+  // Pagination.
+  synq.v1.Pagination pagination = 6;
+}
+
+message ListMembersResponse {
+  // Opaque entity ids of the folder's members.
+  repeated string entity_ids = 1;
+
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}

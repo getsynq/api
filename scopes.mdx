@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 47 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 49 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -118,6 +118,9 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | Get specific entity by its identifier. |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | List entities matching the given filter |
 | `SearchEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1/search` | Search for entities. |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/folders/{parent_folder_entity_id=**}` | Browse the hierarchy one level at a time. With no `parent`, returns the |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members/{folder_entity_id=**}` | List the entity ids contained in a folder, paginated. Direct members only by |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
@@ -651,6 +654,9 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetExecutionsSummary`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/summary` | GetExecutionsSummary provides aggregated statistics about executions for specified entities. |
 | `GetLatestExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/latest` | GetLatestExecutions retrieves the most recent execution for each specified entity. |
 | `ListExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`GET /api/executions/v2/list` | ListExecutions retrieves a paginated list of executions for one or more entities. |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/folders/{parent_folder_entity_id=**}` | Browse the hierarchy one level at a time. With no `parent`, returns the |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members/{folder_entity_id=**}` | List the entity ids contained in a folder, paginated. Direct members only by |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
 | `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
@@ -757,6 +763,26 @@ Manage all saved views in the workspace, including those owned by other users.
 | ------ | ----------- |
 | `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
+
+## Read Folders
+
+`SCOPE_FOLDERS_READ`
+
+Browse the folder hierarchy and list the entities it contains.
+
+| Method | Description |
+| ------ | ----------- |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/folders/{parent_folder_entity_id=**}` | Browse the hierarchy one level at a time. With no `parent`, returns the |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members/{folder_entity_id=**}` | List the entity ids contained in a folder, paginated. Direct members only by |
+
+## Edit Folders
+
+`SCOPE_FOLDERS_EDIT`
+
+Create, update, and delete folders and their placements.
+
+_No public gRPC/REST methods require this scope directly (e.g. MCP tools or future methods)._
 
 ## Endpoint reference
 
@@ -879,6 +905,9 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetExecutionsSummary`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/summary` | `SCOPE_EXECUTION_READ`<br/>`SCOPE_MCP_READ` |
 | `GetLatestExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/latest` | `SCOPE_EXECUTION_READ`<br/>`SCOPE_MCP_READ` |
 | `ListExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`GET /api/executions/v2/list` | `SCOPE_EXECUTION_READ`<br/>`SCOPE_MCP_READ` |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/folders/{parent_folder_entity_id=**}` | `SCOPE_FOLDERS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | `SCOPE_FOLDERS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members/{folder_entity_id=**}` | `SCOPE_FOLDERS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
