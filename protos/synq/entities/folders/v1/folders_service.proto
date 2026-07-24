@@ -51,13 +51,9 @@ service FoldersService {
     option (google.api.http) = {
       post: "/api/entities/folders/v1/browse"
       body: "*"
-      // Roots (no parent): GET /api/entities/folders/v1/browse
+      // GET form: browse the roots, or a folder with
+      // ?parent_folder_entity_id=<id>.
       additional_bindings: {get: "/api/entities/folders/v1/browse"}
-      // Browse into a specific folder with its id directly in the URL, e.g.
-      // GET /api/entities/folders/v1/folders/clickhouse-prod::default
-      // The =** capture keeps folder ids that contain "/" intact. The structured
-      // `parent_ref` / `filter` inputs are POST-only.
-      additional_bindings: {get: "/api/entities/folders/v1/folders/{parent_folder_entity_id=**}"}
     };
   }
 
@@ -107,12 +103,9 @@ service FoldersService {
     option (google.api.http) = {
       post: "/api/entities/folders/v1/members"
       body: "*"
-      // Simple GET form with the folder id directly in the URL, e.g.
-      // GET /api/entities/folders/v1/members/clickhouse-prod::default?deep=true&pagination.page_size=100
-      // The =** capture (which must be the final path segment) keeps folder ids
-      // that contain "/" intact. `deep`, `types` and `pagination` bind from the
-      // query string; the structured `folder_ref` / `filter` inputs are POST-only.
-      additional_bindings: {get: "/api/entities/folders/v1/members/{folder_entity_id=**}"}
+      // GET form: pass the folder id and options via the query string, e.g.
+      // ?folder_entity_id=<id>&deep=true&pagination.page_size=100
+      additional_bindings: {get: "/api/entities/folders/v1/members"}
     };
   }
 }
