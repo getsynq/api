@@ -33,7 +33,7 @@ service DomainsService {
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DOMAIN_EDIT]
+      scopes: [SCOPE_DOMAIN_EDIT, SCOPE_MCP_WRITE]
     };
     option (google.api.http) = {
       post: "/api/domains/v2"
@@ -93,7 +93,7 @@ service DomainsService {
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DOMAIN_EDIT]
+      scopes: [SCOPE_DOMAIN_EDIT, SCOPE_MCP_WRITE]
     };
     option (google.api.http) = {
       post: "/api/domains/v2/delete"

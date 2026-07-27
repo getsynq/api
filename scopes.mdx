@@ -723,6 +723,8 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
 | `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
 | `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. Idempotent — deleting an already-deleted or unknown domain |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. The id is supplied by the caller (a UUID); |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
@@ -903,13 +905,13 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `Upsert`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1` | `SCOPE_DOMAIN_EDIT` |
 | `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/{domain_id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
 | `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
-| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | `SCOPE_DOMAIN_EDIT` |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | `SCOPE_DOMAIN_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | `SCOPE_DOMAIN_EDIT` |
 | `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | `SCOPE_DOMAIN_EDIT` |
-| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | `SCOPE_DOMAIN_EDIT` |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | `SCOPE_DOMAIN_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
