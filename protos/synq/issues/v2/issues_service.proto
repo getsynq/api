@@ -112,7 +112,7 @@ service IssuesService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ISSUES_EDIT]
+      scopes: [SCOPE_ISSUES_EDIT, SCOPE_MCP_WRITE]
     };
   }
 }

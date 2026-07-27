@@ -32,7 +32,7 @@ service DataproductsService {
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATAPRODUCT_EDIT]
+      scopes: [SCOPE_DATAPRODUCT_EDIT, SCOPE_MCP_WRITE]
     };
     option (google.api.http) = {
       post: "/api/dataproducts/v2"
@@ -79,7 +79,7 @@ service DataproductsService {
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_DATAPRODUCT_EDIT]
+      scopes: [SCOPE_DATAPRODUCT_EDIT, SCOPE_MCP_WRITE]
     };
     option (google.api.http) = {
       post: "/api/dataproducts/v2/delete"

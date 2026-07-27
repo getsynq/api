@@ -16,7 +16,8 @@ service TestSuggestionsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SRE_AGENT,
-        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT
+        SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT,
+        SCOPE_MCP_WRITE
       ]
     };
     option (google.api.http) = {

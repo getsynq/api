@@ -32,7 +32,8 @@ service SavedViewsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SAVED_VIEW_EDIT,
-        SCOPE_SAVED_VIEW_ADMIN
+        SCOPE_SAVED_VIEW_ADMIN,
+        SCOPE_MCP_WRITE
       ]
     };
     option (google.api.http) = {
@@ -49,7 +50,8 @@ service SavedViewsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_SAVED_VIEW_EDIT,
-        SCOPE_SAVED_VIEW_ADMIN
+        SCOPE_SAVED_VIEW_ADMIN,
+        SCOPE_MCP_WRITE
       ]
     };
     option (google.api.http) = {

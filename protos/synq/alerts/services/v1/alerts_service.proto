@@ -92,10 +92,10 @@ service AlertsService {
 message CreateRequest {
   option (buf.validate.message).cel = {
     id: "create_request.webhook_incompatible_with_ongoing_alerts"
-    message: "Webhook targets are not compatible with ongoing alert strategies (stream or schedule). Use the disabled ongoing strategy when sending alerts to webhook targets."
+    message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
     expression:
       "!this.targets.exists(t, has(t.webhook)) || "
-      "(!has(this.settings.issue) || has(this.settings.issue.ongoing.disabled))"
+      "(!has(this.settings.issue) || !has(this.settings.issue.ongoing.schedule))"
   };
   option (buf.validate.message).cel = {
     id: "create_request.webhook_incompatible_with_grouped_alerts"
@@ -158,10 +158,10 @@ message AlertIdentifier {
 message UpdateRequest {
   option (buf.validate.message).cel = {
     id: "update_request.webhook_incompatible_with_ongoing_alerts"
-    message: "Webhook targets are not compatible with ongoing alert strategies (stream or schedule). Use the disabled ongoing strategy when sending alerts to webhook targets."
+    message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
     expression:
       "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
-      "(!has(this.settings.issue) || has(this.settings.issue.ongoing.disabled))"
+      "(!has(this.settings.issue) || !has(this.settings.issue.ongoing.schedule))"
   };
   option (buf.validate.message).cel = {
     id: "update_request.webhook_incompatible_with_grouped_alerts"
