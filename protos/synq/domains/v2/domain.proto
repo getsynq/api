@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package synq.domains.v2;
+
+import "google/protobuf/timestamp.proto";
+import "synq/domains/v2/domain_definition.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/domains/v2";
+
+// A data domain: a named area of ownership that groups the assets, data products
+// and sub-domains belonging to one part of the business.
+//
+// Domains form a hierarchy through `parent_id`, and a parent's membership
+// includes everything its sub-domains contain.
+message Domain {
+  // Opaque id of the domain (a UUID). Supplied by the caller on create, which
+  // makes Upsert idempotent. This is the value to pass wherever another API
+  // accepts a domain reference (for example the `in_domain` query operand).
+  string id = 1;
+
+  // Human-readable name.
+  string name = 2;
+
+  // Optional longer description.
+  string description = 3;
+
+  // Id of the parent domain, if this is a sub-domain. Absent for a top-level
+  // domain.
+  optional string parent_id = 4;
+
+  // Where this domain is managed. Domains from an external source are read-only
+  // in the app.
+  enum Source {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SOURCE_SYNQ = 0;
+    SOURCE_ATLAN = 1;
+  }
+  Source source = 5;
+
+  // The membership definition. Omitted when a read requests
+  // `exclude_definition`.
+  DomainDefinition definition = 6;
+
+  // Entity tag for optimistic concurrency: pass back on Upsert / Delete /
+  // definition writes to guard against overwriting a concurrent change.
+  // Form: `W/"<id>-<version>"`. Opaque — do not parse.
+  string etag = 7;
+
+  // Who created the domain. Output-only.
+  synq.issues.actor.v1.Actor created_by = 8;
+
+  // Who last edited the domain. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 9;
+
+  // When the domain was created. Output-only.
+  google.protobuf.Timestamp created_at = 10;
+
+  // When the domain was last updated. Output-only. Absent for a domain that has
+  // not been written since this field was introduced.
+  google.protobuf.Timestamp updated_at = 11;
+
+  // When the domain was soft-deleted, if it has been. Output-only.
+  optional google.protobuf.Timestamp deleted_at = 12;
+}

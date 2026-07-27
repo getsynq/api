@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.domains.members.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
 import "synq/domains/members/v1/domain_membership.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -16,6 +17,10 @@ service DomainMembersService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_ASSIGN]
     };
+    option (google.api.http) = {
+      post: "/api/domains/members/v1/{domain_id}/members"
+      body: "*"
+    };
   }
 
   // Remove domain members.
@@ -23,6 +28,10 @@ service DomainMembersService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_ASSIGN]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/members/v1/{domain_id}/members/remove"
+      body: "*"
     };
   }
 
@@ -32,6 +41,7 @@ service DomainMembersService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
     };
+    option (google.api.http) = {get: "/api/domains/members/v1/{domain_id}/members"};
   }
 
   // List domains for the given user.
@@ -40,6 +50,7 @@ service DomainMembersService {
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
     };
+    option (google.api.http) = {get: "/api/domains/members/v1/users/{user_id}/domains"};
   }
 
   // Set default domain for user.
@@ -47,6 +58,10 @@ service DomainMembersService {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_USER_READ]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/members/v1/{domain_id}/default-for-user"
+      body: "*"
     };
   }
 }

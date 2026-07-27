@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package synq.domains.v2;
+
+import "buf/validate/validate.proto";
+import "synq/domains/v1/domain_definition.proto";
+import "synq/queries/v1/query.proto";
+
+option go_package = "github.com/getsynq/api/domains/v2";
+
+// The membership of a domain: which assets belong to it. A definition is an
+// ordered list of parts; an asset is a member if it matches ANY part (the parts
+// are OR'd together).
+//
+// Unlike a data product, a domain is NOT a leaf: a part may pull in a whole data
+// product or another domain, and membership is then resolved recursively. The
+// server maintains the reference graph across domains and data products and
+// rejects any write that would close a loop, naming the offending path — so a
+// definition can always be resolved in finite time. The domain hierarchy counts
+// as a reference too: a parent domain aggregates its sub-domains.
+message DomainDefinition {
+  // The parts of the definition. An asset is a member if it matches any part.
+  repeated Part parts = 1 [(buf.validate.field).repeated.max_items = 500];
+
+  // A single piece of a domain definition: a pinned asset, a whole data product,
+  // a whole other domain, or a selection query.
+  message Part {
+    // Stable id of this part (a UUID). Supplied by the caller for idempotent part
+    // upserts; the server mints one if left empty on create.
+    string id = 1 [(buf.validate.field).string.max_len = 64];
+
+    oneof part {
+      option (buf.validate.oneof).required = true;
+
+      // Pin a single asset by its opaque entity id (as returned by resolve /
+      // listing APIs). Never constructed by hand.
+      string entity_id = 2 [(buf.validate.field).string = {
+        min_len: 1
+        max_len: 1024
+      }];
+
+      // Include everything that belongs to a data product. Accepts either the
+      // bare data-product UUID or the `dataproduct-<uuid>` form that API returns
+      // as its `entity_id` — the prefix is stripped server-side.
+      string dataproduct_id = 3 [(buf.validate.field).string.pattern = "^(dataproduct-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+
+      // Include everything that belongs to another domain, including that
+      // domain's own sub-domains. Accepts either the bare domain UUID or the
+      // `domain-<uuid>` form — the prefix is stripped server-side. Rejected when
+      // it would make the domains reference each other in a loop.
+      string domain_id = 4 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+
+      // Select assets by a query.
+      //
+      // A query whose whole content is a single domain reference is equivalent to
+      // `domain_id` and is returned in that form on read, since both describe the
+      // same membership.
+      DomainQuery query = 5;
+    }
+  }
+}
+
+// The selection query behind a domain definition part, expressed for the public
+// API.
+//
+// On write, provide the query in ONE of three forms:
+//   - `resolver_ql` — the resolver query language, a compact text form that is
+//     the canonical way to author selections as code;
+//   - `public_query` — a structured query (the same shape used elsewhere for
+//     asset selection), convenient to build from a filter UI; or
+//   - `asset_selection_query` — the structured form domains have always
+//     accepted, kept so an existing definition can be moved across unchanged.
+// When more than one is set the first of that list wins. The server compiles the
+// query and stores it canonically; the raw text is not preserved verbatim.
+//
+// On read, the server returns `rendered_resolver_ql` (the stored query rendered
+// back to canonical resolver query language) plus, best-effort, both structured
+// forms. `resolver_ql` is not echoed back — read `rendered_resolver_ql`.
+//
+// A domain query may reference another domain or a data product (via the
+// `in_domain` / `in_dataproduct` operands, or their resolver-query-language
+// equivalents). Such a reference is resolved recursively and is rejected only
+// when it would close a reference loop.
+message DomainQuery {
+  option (buf.validate.message).cel = {
+    id: "domain_query.nonempty"
+    message: "resolver_ql, public_query or asset_selection_query is required"
+    expression:
+      "this.resolver_ql != '' || this.rendered_resolver_ql != '' || has(this.public_query) "
+      "|| has(this.asset_selection_query)"
+  };
+
+  // WRITE (option A). The query in resolver query language.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language. Deterministically derived; does not preserve original
+  // hand-typed formatting or comments.
+  string rendered_resolver_ql = 2;
+
+  // WRITE (option B) and READ. On write, the structured query to store (used
+  // when `resolver_ql` is empty). On read, a best-effort structured
+  // representation of the stored query.
+  synq.queries.v1.Query public_query = 3;
+
+  // WRITE (option C) and READ. The structured form carried over from
+  // `synq.domains.v1`, for definitions authored against that API. On write it is
+  // used only when neither `resolver_ql` nor `public_query` is set. On read it is
+  // the stored query as-is, so a v1 definition round-trips through v2 unchanged.
+  // `public_query` is the richer form — prefer it for new integrations, since it
+  // can express domain and data-product references this one cannot.
+  synq.domains.v1.AssetSelectionQuery asset_selection_query = 4;
+}

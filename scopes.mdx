@@ -359,9 +359,9 @@ View workspace members and their roles.
 
 | Method | Description |
 | ------ | ----------- |
-| `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | List domain members. |
-| `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_ | List domains for the given user. |
-| `SetDefaultUserDomain`<br/>_synq.domains.members.v1.DomainMembersService_ | Set default domain for user. |
+| `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/{domain_id}/members` | List domain members. |
+| `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/users/{user_id}/domains` | List domains for the given user. |
+| `SetDefaultUserDomain`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/default-for-user` | Set default domain for user. |
 | `BatchGetUsers`<br/>_synq.users.v1.UsersService_ |  |
 | `GetByAlias`<br/>_synq.users.v1.UsersService_ |  |
 | `GetByEmail`<br/>_synq.users.v1.UsersService_ |  |
@@ -377,8 +377,8 @@ Assign users as owners of entities, issues, and other resources.
 
 | Method | Description |
 | ------ | ----------- |
-| `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | Add domain members. |
-| `RemoveDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | Remove domain members. |
+| `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/members` | Add domain members. |
+| `RemoveDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/members/remove` | Remove domain members. |
 
 ## Read Monitors
 
@@ -553,11 +553,16 @@ Create, update, and delete domains.
 
 | Method | Description |
 | ------ | ----------- |
-| `Delete`<br/>_synq.domains.v1.DomainsService_ | Delete a domain by its identifier. |
-| `RemoveDefinitionPart`<br/>_synq.domains.v1.DomainsService_ | Remove definition part from the definition of an existing domain. |
-| `SetDefinition`<br/>_synq.domains.v1.DomainsService_ | Set the definition for an existing domain. |
-| `Upsert`<br/>_synq.domains.v1.DomainsService_ | Create or update a domain. |
-| `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_ | Upsert definition part to the definition of an existing domain. |
+| `Delete`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/delete` | Delete a domain by its identifier. |
+| `RemoveDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`DELETE /api/domains/v1/{domain_id}/definition/parts/{part_id}` | Remove definition part from the definition of an existing domain. |
+| `SetDefinition`<br/>_synq.domains.v1.DomainsService_<br/>`PUT /api/domains/v1/{domain_id}/definition` | Set the definition for an existing domain. |
+| `Upsert`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1` | Create or update a domain. |
+| `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/{domain_id}/definition/parts` | Upsert definition part to the definition of an existing domain. |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. Idempotent — deleting an already-deleted or unknown domain |
+| `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. Idempotent. |
+| `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | Replace the entire membership definition of a domain. |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. The id is supplied by the caller (a UUID); |
+| `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | Add or replace a single definition part (matched by its part id). |
 
 ## Read Domains
 
@@ -567,9 +572,13 @@ View domains and their contents.
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGet`<br/>_synq.domains.v1.DomainsService_ | Get multiple domains by their identifiers. |
-| `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_ | Get a domain with its sub-domains |
-| `List`<br/>_synq.domains.v1.DomainsService_ | List all the domains in the current workspace. |
+| `BatchGet`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/batch-get` | Get multiple domains by their identifiers. |
+| `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/{domain_id}/sub-domains` | Get a domain with its sub-domains |
+| `List`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1` | List all the domains in the current workspace. |
+| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. Ids that do not exist (or, unless |
+| `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
+| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
+| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
 
 ## Manage Extensions
 
@@ -636,6 +645,10 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
 | `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
 | `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
+| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. Ids that do not exist (or, unless |
+| `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
+| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
+| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
@@ -876,19 +889,28 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetDefinition`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`PUT /api/dataproducts/v2/{id}/definition` | `SCOPE_DATAPRODUCT_EDIT` |
 | `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/{id}/definition/parts` | `SCOPE_DATAPRODUCT_EDIT` |
-| `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_ASSIGN` |
-| `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
-| `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
-| `RemoveDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_ASSIGN` |
-| `SetDefaultUserDomain`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
-| `BatchGet`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_READ` |
-| `Delete`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_EDIT` |
-| `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_READ` |
-| `List`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_READ` |
-| `RemoveDefinitionPart`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_EDIT` |
-| `SetDefinition`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_EDIT` |
-| `Upsert`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_EDIT` |
-| `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_ | `SCOPE_DOMAIN_EDIT` |
+| `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/members` | `SCOPE_USER_ASSIGN` |
+| `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/{domain_id}/members` | `SCOPE_USER_READ` |
+| `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/users/{user_id}/domains` | `SCOPE_USER_READ` |
+| `RemoveDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/members/remove` | `SCOPE_USER_ASSIGN` |
+| `SetDefaultUserDomain`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/default-for-user` | `SCOPE_USER_READ` |
+| `BatchGet`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/batch-get` | `SCOPE_DOMAIN_READ` |
+| `Delete`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/delete` | `SCOPE_DOMAIN_EDIT` |
+| `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/{domain_id}/sub-domains` | `SCOPE_DOMAIN_READ` |
+| `List`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1` | `SCOPE_DOMAIN_READ` |
+| `RemoveDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`DELETE /api/domains/v1/{domain_id}/definition/parts/{part_id}` | `SCOPE_DOMAIN_EDIT` |
+| `SetDefinition`<br/>_synq.domains.v1.DomainsService_<br/>`PUT /api/domains/v1/{domain_id}/definition` | `SCOPE_DOMAIN_EDIT` |
+| `Upsert`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1` | `SCOPE_DOMAIN_EDIT` |
+| `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/{domain_id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
+| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | `SCOPE_DOMAIN_EDIT` |
+| `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
+| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
+| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
+| `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | `SCOPE_DOMAIN_EDIT` |
+| `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | `SCOPE_DOMAIN_EDIT` |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | `SCOPE_DOMAIN_EDIT` |
+| `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

@@ -1,0 +1,350 @@
+syntax = "proto3";
+
+package synq.domains.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/domains/v2/domain.proto";
+import "synq/domains/v2/domain_definition.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/domains/v2";
+
+// DomainsService manages data domains — named areas of ownership that group the
+// assets, data products and sub-domains belonging to one part of the business.
+//
+// Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
+// (a retried create converges instead of duplicating). Mutable fields are
+// optional on Upsert: a field that is set is written, a field that is omitted is
+// left unchanged. Pass the `etag` you last read to guard against overwriting a
+// concurrent edit.
+//
+// A domain may contain other domains and data products, so membership resolution
+// is recursive. Every write that adds such a reference — including a change of
+// `parent_id` — is rejected if it would close a loop, so a definition can always
+// be resolved in finite time.
+service DomainsService {
+  // Create or update a domain. The id is supplied by the caller (a UUID);
+  // repeating the same request converges to the same domain. Mutable fields are
+  // optional: a set field is written, an omitted field is left unchanged. Pass
+  // `etag` to guard against overwriting a concurrent edit.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/v2"
+      body: "*"
+    };
+  }
+
+  // Fetch multiple domains by id. Ids that do not exist (or, unless
+  // `include_deleted` is set, are deleted) are omitted from the response rather
+  // than causing an error.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DOMAIN_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/v2/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the domains in the workspace, paginated. Narrow to one level of the
+  // hierarchy with `parent_id`.
+  rpc List(ListRequest) returns (ListResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DOMAIN_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/domains/v2"};
+  }
+
+  // Fetch a domain together with its direct sub-domains, keyed by id.
+  rpc FetchDomainWithSubDomains(FetchDomainWithSubDomainsRequest) returns (FetchDomainWithSubDomainsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DOMAIN_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/domains/v2/{id}/sub-domains"};
+  }
+
+  // Delete a domain. Idempotent — deleting an already-deleted or unknown domain
+  // succeeds. Soft-deletes by default; set `purge` to hard-delete and release the
+  // id, which is refused while the domain still has sub-domains. Pass `etag` to
+  // guard against deleting a concurrently-edited domain.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/v2/delete"
+      body: "*"
+    };
+  }
+
+  // Replace the entire membership definition of a domain.
+  rpc SetDefinition(SetDefinitionRequest) returns (SetDefinitionResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+    option (google.api.http) = {
+      put: "/api/domains/v2/{id}/definition"
+      body: "*"
+    };
+  }
+
+  // Add or replace a single definition part (matched by its part id).
+  rpc UpsertDefinitionPart(UpsertDefinitionPartRequest) returns (UpsertDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/domains/v2/{id}/definition/parts"
+      body: "*"
+    };
+  }
+
+  // Remove a single definition part by its part id. Idempotent.
+  rpc RemoveDefinitionPart(RemoveDefinitionPartRequest) returns (RemoveDefinitionPartResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DOMAIN_EDIT]
+    };
+    option (google.api.http) = {delete: "/api/domains/v2/{id}/definition/parts/{part_id}"};
+  }
+
+  // List the assets that currently belong to a domain, resolved from its
+  // definition — including everything contributed by the data products and
+  // domains it references, and by its own sub-domains — and returned as opaque
+  // entity ids. Paginated.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DOMAIN_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/domains/v2/{id}/members"};
+  }
+
+  // Report how many domains the workspace uses, split into top-level domains and
+  // sub-domains.
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_USAGE_GET]
+    };
+    option (google.api.http) = {get: "/api/domains/v2/usage"};
+  }
+}
+
+message UpsertRequest {
+  // Opaque id of the domain. Accepts either the bare UUID or the `domain-<uuid>`
+  // form — the prefix is stripped server-side, so the value you read back from
+  // any API can be passed straight in. The same id updates the same domain; a new
+  // id creates a new domain.
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+
+  // Name. Required when creating; omit to keep the existing name on update.
+  optional string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  // Description. Omit to keep the existing description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 10000];
+  // Parent domain, making this a sub-domain. Omit to keep the current parent;
+  // pass an empty string to detach the domain and make it top-level. Accepts the
+  // bare UUID or the `domain-<uuid>` form. The parent must already exist, and the
+  // write is rejected if it would make the hierarchy loop.
+  optional string parent_id = 4 [(buf.validate.field).string.pattern = "^$|^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Source. Omit to keep the existing source (defaults to SOURCE_SYNQ on
+  // create).
+  optional Domain.Source source = 5 [(buf.validate.field).enum.defined_only = true];
+  // Membership definition. Omit to keep the existing definition; pass a present
+  // (possibly empty) definition to replace it.
+  optional DomainDefinition definition = 6;
+
+  // Optional optimistic-concurrency guard. When set, the update fails with a
+  // conflict if the domain was modified since this etag was read.
+  optional string etag = 7;
+
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 8;
+}
+
+message UpsertResponse {
+  // The stored domain after the upsert.
+  Domain domain = 1;
+}
+
+message BatchGetRequest {
+  // Ids to fetch (1–200, unique). Each accepts either the bare UUID or the
+  // `domain-<uuid>` form; the prefix is stripped server-side.
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {pattern: "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}
+    }
+  }];
+  // Include soft-deleted domains.
+  bool include_deleted = 2;
+  // Omit the (potentially large) membership definition from each domain.
+  bool exclude_definition = 3;
+}
+
+message BatchGetResponse {
+  // Domains keyed by id. Ids that do not exist (or are deleted, unless
+  // requested) are absent.
+  map<string, Domain> domains = 1;
+}
+
+message ListRequest {
+  // Pagination.
+  synq.v1.Pagination pagination = 1;
+  // Restrict to the children of one domain. Pass an empty string to return only
+  // top-level domains. Omit to return every domain at any level.
+  optional string parent_id = 2 [(buf.validate.field).string.pattern = "^$|^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Include soft-deleted domains.
+  bool include_deleted = 3;
+  // Omit the membership definition from each domain.
+  bool exclude_definition = 4;
+}
+
+message ListResponse {
+  // The matching domains.
+  repeated Domain domains = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message FetchDomainWithSubDomainsRequest {
+  // Id of the domain. Accepts the bare UUID or the `domain-<uuid>` form.
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Omit the membership definition from each domain.
+  bool exclude_definition = 2;
+}
+
+message FetchDomainWithSubDomainsResponse {
+  // The domain and its direct sub-domains, keyed by id.
+  map<string, Domain> domains = 1;
+}
+
+message DeleteRequest {
+  // Id of the domain to delete. Accepts the bare UUID or the `domain-<uuid>` form
+  // (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Hard-delete instead of soft-delete, releasing the id for reuse. Refused while
+  // the domain still has sub-domains — delete or re-parent them first.
+  bool purge = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+}
+
+message DeleteResponse {}
+
+message SetDefinitionRequest {
+  // Id of the domain whose definition to replace. Accepts the bare UUID or the
+  // `domain-<uuid>` form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // The new membership definition (replaces the existing one entirely).
+  DomainDefinition definition = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message SetDefinitionResponse {
+  // The stored domain after the definition write.
+  Domain domain = 1;
+}
+
+message UpsertDefinitionPartRequest {
+  // Id of the domain. Accepts the bare UUID or the `domain-<uuid>` form (the
+  // prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // The part to add or replace (matched by its part id).
+  DomainDefinition.Part part = 2;
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message UpsertDefinitionPartResponse {
+  // The stored domain after the part write.
+  Domain domain = 1;
+}
+
+message RemoveDefinitionPartRequest {
+  // Id of the domain. Accepts the bare UUID or the `domain-<uuid>` form (the
+  // prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Id of the part to remove.
+  string part_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 3;
+  // Who is performing this write. Optional — identity is completed from the
+  // calling credentials; set it to attribute the change on behalf of a user.
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message RemoveDefinitionPartResponse {
+  // The stored domain after the part removal.
+  Domain domain = 1;
+}
+
+message ListMembersRequest {
+  // Id of the domain whose members to list. Accepts the bare UUID or the
+  // `domain-<uuid>` form (the prefix is stripped server-side).
+  string id = 1 [(buf.validate.field).string.pattern = "^(domain-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Pagination.
+  synq.v1.Pagination pagination = 2;
+}
+
+message ListMembersResponse {
+  // Opaque entity ids of the assets that currently belong to the domain.
+  repeated string entity_ids = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message GetUsageRequest {}
+
+message GetUsageResponse {
+  // Number of top-level domains.
+  int32 num_domains = 1;
+  // Number of sub-domains, at any depth.
+  int32 num_sub_domains = 2;
+}
