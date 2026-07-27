@@ -26,6 +26,14 @@ message Query {
     message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
     expression: "this.operand != 3 || this.parts.size() == 2"
   };
+  // EXCEPT reads its two parts positionally — part[0] is kept, part[1] is
+  // removed — so a part that selects nothing is not something to ignore: it
+  // makes the set difference mean something other than what was written.
+  option (buf.validate.message).cel = {
+    id: "query.except_parts_select_something"
+    message: "each QUERY_OPERAND_EXCEPT part must select something"
+    expression: "this.operand != 3 || this.parts.all(p, !has(p.query) || p.query.parts.size() > 0)"
+  };
 
   repeated QueryPart parts = 1;
   QueryOperand operand = 2; // Defaults to AND if not specified.
@@ -41,6 +49,8 @@ message Query {
       WithDataPlatformType with_data_platform_type = 7;
       InFolder in_folder = 8;
       InDomain in_domain = 9;
+      IdentitiesOf identities_of = 10;
+      WithDefaultVisibleTypes with_default_visible_types = 11;
 
       // Nested sub-query, enabling recursive composition of filters and operands.
       Query query = 100;
@@ -101,6 +111,37 @@ message InFolder {
   // it defaults to true (preserves the behaviour of queries authored before this
   // flag existed). With `folders` or `folder_of`, unset means false (shallow).
   optional bool deep = 4;
+}
+
+// Resolves to the identities of whatever the inner query matches.
+//
+// The same real-world table is often described by several assets — a
+// transformation model and the warehouse table it materialises into are one
+// asset with several representations. Those representations form an identity
+// group. IdentitiesOf takes the assets matched by `input_query` and returns
+// their identity groups, so a selection made in one platform's terms also
+// covers the equivalent assets in every other platform.
+//
+// The typical use is subtraction: "this warehouse database, except whatever my
+// transformation tool already owns" is an EXCEPT whose removal clause is an
+// IdentitiesOf over the transformation models. Without it the two selections
+// overlap on every materialised table.
+message IdentitiesOf {
+  // An identity group is only defined relative to a set of assets, so an
+  // input_query that matches nothing makes the operand meaningless.
+  option (buf.validate.message).cel = {
+    id: "identities_of.input_query_selects_something"
+    message: "identities_of requires an input_query with at least one part"
+    expression: "!has(this.input_query) || this.input_query.parts.size() > 0"
+  };
+
+  // The assets whose identities to resolve. Required.
+  Query input_query = 1 [(buf.validate.field).required = true];
+
+  // Restrict the result to these types. When empty, only the other members of
+  // each identity group are returned. When set, an input asset that already has
+  // one of these types is returned as well.
+  repeated WithType.Type limit_to_types = 2;
 }
 
 // Resolves the folder(s) containing a set of assets, for use as the folder

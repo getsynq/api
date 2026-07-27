@@ -93,6 +93,13 @@ message BisectionDrillTarget {
 // SegmentTarget identifies a specific segment to drill into.
 message SegmentTarget {
   // Minimum key (inclusive). Unset means unbounded.
+  //
+  // The encoding matches SegmentInfo in the audit log, and is deliberately not
+  // self-describing: a numeric key appears as a JSON number when it fits the
+  // exact double range and as a JSON string above it, while a textual key always
+  // appears as a JSON string. A composite key is a JSON list, one element per
+  // key column. Only the key column's own type distinguishes the cases, so the
+  // runner types these bounds after resolving the query shape.
   optional google.protobuf.Value min_key = 1;
 
   // Maximum key (exclusive). Unset means unbounded.
@@ -100,6 +107,15 @@ message SegmentTarget {
 
   // Time bucket (for time-based segmentation).
   optional string time_bucket = 3;
+
+  // Depth this segment sat at in the run being resumed.
+  //
+  // Carried so a resumed drill reports true absolute depth and can budget its
+  // own depth limit as "this many further levels" rather than re-spending a
+  // budget the previous run already consumed.
+  optional int32 seed_depth = 4 [(buf.validate.field) = {
+    int32: {gte: 0}
+  }];
 }
 
 // AggregateDrillTarget specifies how to extend or drill deeper into aggregate results.

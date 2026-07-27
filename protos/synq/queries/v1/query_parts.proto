@@ -57,9 +57,21 @@ message WithDataPlatformType {
   repeated synq.platforms.v1.DataPlatformType types = 1;
 }
 
-// Note: InFolder and FolderOf are defined in query.proto (alongside Query),
-// because FolderOf.input_query nests a full Query and a query_parts.proto that
-// imported query.proto would create a proto file import cycle.
+// Resolves to every asset of a type the catalog shows by default — the
+// "everything" starting set.
+//
+// Use it as the base of a subtraction, e.g. an EXCEPT query whose first part is
+// WithDefaultVisibleTypes and whose second part is what to leave out. On its own
+// it selects the whole catalog, so it is rarely useful as the only part of a
+// query.
+//
+// "Default visible" excludes the supporting asset types the catalog hides unless
+// asked for (columns, tests, and similar), so this is not literally every entity.
+message WithDefaultVisibleTypes {}
+
+// Note: InFolder, FolderOf and IdentitiesOf are defined in query.proto
+// (alongside Query), because each nests a full Query and a query_parts.proto
+// that imported query.proto would create a proto file import cycle.
 
 // Resolves to all entities in the given data domain.
 message InDomain {

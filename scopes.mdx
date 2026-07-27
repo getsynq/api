@@ -678,6 +678,9 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`GET /api/issues/v1` |  |
 | `BatchGetIssues`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/by-id` |  |
 | `ListIssues`<br/>_synq.issues.v2.IssuesService_<br/>`GET /api/issues/v2` |  |
+| `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
+| `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` |  |
+| `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` |  |
 | `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1/{monitor_path}` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
@@ -702,7 +705,22 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 
 Use any write MCP (Model Context Protocol) tool, including tools added in the future.
 
-_No public gRPC/REST methods require this scope directly (e.g. MCP tools or future methods)._
+| Method | Description |
+| ------ | ----------- |
+| `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
+| `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
+| `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
+| `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
+| `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` |  |
+| `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` |  |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. Idempotent — deleting an |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. The ownership id is supplied |
+| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
 
 ## Read Reconciliation Audits and Settings
 
@@ -839,7 +857,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetSqlTestAudit`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_ | `SCOPE_DATACHECKS_SQLTESTS_AUDIT_READ` |
 | `ListSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`GET /api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchAcceptTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`PATCH /api/datachecks/testsuggestions/v1/accepted` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
-| `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
+| `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchGetTestSuggestionsForEntities`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`GET /api/datachecks/testsuggestions/v1` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchRejectTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`PATCH /api/datachecks/testsuggestions/v1/rejected` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
 | `TriggerDatachecks`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger` | `SCOPE_DATACHECKS_TRIGGER` |
@@ -851,12 +869,12 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `Upsert`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1` | `SCOPE_DATAPRODUCT_EDIT` |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition/part` | `SCOPE_DATAPRODUCT_EDIT` |
 | `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
-| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | `SCOPE_DATAPRODUCT_EDIT` |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | `SCOPE_DATAPRODUCT_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `RemoveDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`DELETE /api/dataproducts/v2/{id}/definition/parts/{part_id}` | `SCOPE_DATAPRODUCT_EDIT` |
 | `SetDefinition`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`PUT /api/dataproducts/v2/{id}/definition` | `SCOPE_DATAPRODUCT_EDIT` |
-| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_EDIT` |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | `SCOPE_DATAPRODUCT_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/{id}/definition/parts` | `SCOPE_DATAPRODUCT_EDIT` |
 | `AddDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_ASSIGN` |
 | `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_ | `SCOPE_USER_READ` |
@@ -947,10 +965,10 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGetIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/by-id` | `SCOPE_INCIDENTS_READ`<br/>`SCOPE_MCP_READ` |
 | `CancelIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/cancel` | `SCOPE_INCIDENTS_EDIT` |
 | `CloseIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/close` | `SCOPE_INCIDENTS_EDIT` |
-| `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` | `SCOPE_INCIDENTS_EDIT` |
+| `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` | `SCOPE_INCIDENTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`GET /api/incidents/v1` | `SCOPE_INCIDENTS_READ`<br/>`SCOPE_MCP_READ` |
 | `MergeIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/merge` | `SCOPE_INCIDENTS_EDIT` |
-| `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | `SCOPE_INCIDENTS_EDIT` |
+| `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | `SCOPE_INCIDENTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `RemoveIssuesFromIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/issues` | `SCOPE_INCIDENTS_EDIT` |
 | `RenameIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/rename` | `SCOPE_INCIDENTS_EDIT` |
 | `SplitIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/split` | `SCOPE_INCIDENTS_EDIT` |
@@ -979,17 +997,17 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `MarkFixed`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-fixed` | `SCOPE_ISSUES_EDIT` |
 | `MarkInvestigating`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-investigating` | `SCOPE_ISSUES_EDIT` |
 | `MarkNoActionNeeded`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-no-action-needed` | `SCOPE_ISSUES_EDIT` |
-| `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | `SCOPE_ISSUES_EDIT` |
+| `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | `SCOPE_ISSUES_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchDeleteDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchDeployDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/batch/deployed` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchGetDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchUpdateDeploymentRuleTitle`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`PATCH /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchUpsertDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
-| `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
-| `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
-| `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
-| `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
-| `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
+| `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
 | `ListDeploymentRulesForAsset`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/{asset_path}` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `UpsertDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchCreateMonitor`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT`<br/>`SCOPE_MONITORS_CUSTOM_SQL_EDIT` |
@@ -1007,21 +1025,21 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
-| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | `SCOPE_OWNERS_EDIT` |
-| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | `SCOPE_OWNERSHIP_EDIT` |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | `SCOPE_OWNERS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | `SCOPE_OWNERSHIP_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
 | `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
-| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | `SCOPE_OWNERS_EDIT` |
-| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_EDIT` |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | `SCOPE_OWNERS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | `SCOPE_ENTITY_READ` |
 | `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
-| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN` |
+| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
-| `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN` |
+| `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `PreviewSchedules`<br/>_synq.schedule.v1.ScheduleService_<br/>`POST /api/schedule/v1/preview` | — |
 | `BatchGetUsers`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
 | `DeleteUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |

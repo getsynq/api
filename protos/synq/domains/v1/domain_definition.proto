@@ -29,6 +29,14 @@ message AssetSelectionQuery {
     message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
     expression: "this.operand != 3 || this.parts.size() == 2"
   };
+  // EXCEPT reads its two parts positionally — part[0] is kept, part[1] is
+  // removed — so a part that selects nothing is not something to ignore: it
+  // makes the set difference mean something other than what was written.
+  option (buf.validate.message).cel = {
+    id: "asset_selection_query.except_parts_select_something"
+    message: "each QUERY_OPERAND_EXCEPT part must select something"
+    expression: "this.operand != 3 || this.parts.all(p, !has(p.query) || p.query.parts.size() > 0)"
+  };
 
   repeated QueryPart parts = 1;
   synq.queries.v1.QueryOperand operand = 2;
@@ -42,6 +50,8 @@ message AssetSelectionQuery {
       synq.queries.v1.InDataPlatform in_data_platform = 5;
       synq.queries.v1.InFolder in_folder = 6;
       synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
+      synq.queries.v1.IdentitiesOf identities_of = 8;
+      synq.queries.v1.WithDefaultVisibleTypes with_default_visible_types = 9;
 
       AssetSelectionQuery query = 100;
       synq.queries.v1.Unsupported unsupported = 101;
