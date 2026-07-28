@@ -125,11 +125,12 @@ message UpsertSuiteConfigResponse {
 message SubmitAdhocSuiteRequest {
   option (buf.validate.message).cel = {
     id: "suite_or_suite_id_required"
-    message: "either suite or suite_id must be provided"
-    expression: "has(this.suite) || has(this.suite_id)"
+    message: "one of suite, suite_id or resume_from_run must be provided"
+    expression: "has(this.suite) || has(this.suite_id) || has(this.resume_from_run)"
   };
 
-  // Inline suite configuration. Required when suite_id is not set.
+  // Inline suite configuration. Required when neither suite_id nor
+  // resume_from_run is set.
   optional ReconcilationSuite suite = 1;
 
   // Client-generated invocation ID for idempotency.
@@ -178,8 +179,97 @@ message SubmitAdhocSuiteRequest {
   // effective value to a supported range.
   optional google.protobuf.Duration execution_timeout = 8;
 
+  // Continue a previous run instead of executing a suite from its config.
+  // Mutually compatible with neither suite nor suite_id being set: the suite
+  // is rebuilt from the parent run's audit log.
+  optional ResumeFromRun resume_from_run = 9;
+
   // Actor submitting the run. Required.
   synq.issues.actor.v1.Actor actor = 7 [(buf.validate.field) = {required: true}];
+}
+
+// ResumeFromRun turns an ad-hoc submission into a replay of a previous run:
+// either a re-validation ("do the differences it found still exist") or a
+// deeper drill of the mismatches it stopped at.
+//
+// The suite comes from the parent run's audit log, not from a config load, so
+// the replay compares the same data the parent compared — template variables
+// keep the values they resolved to and a cutoff keeps the watermark it derived.
+// Credentials never come from an audit log: it records connection names only,
+// and those are bound to integrations exactly as for any other ad-hoc run
+// (connection_mappings, else a workspace integration of the same name).
+message ResumeFromRun {
+  // Invocation id of the run to continue from. It must be a completed run in
+  // the caller's workspace whose audit log carries a suite snapshot.
+  string parent_invocation_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // What to do with the parent's results.
+  ResumeMode mode = 2 [(buf.validate.field) = {
+    required: true
+    enum: {
+      defined_only: true
+      not_in: [0]
+    }
+  }];
+
+  // Restrict the replay to these reconciliation names. Empty replays every
+  // reconciliation of the parent that is eligible for the mode.
+  repeated string reconciliations = 3;
+
+  // Re-derive every query from the suite instead of replaying the SQL the
+  // parent executed. This moves the comparison window to the current clock, so
+  // it answers "does the suite pass now" rather than "is that difference still
+  // there". Needed for a time-travel snapshot, which can otherwise never turn
+  // green.
+  bool reresolve = 4;
+
+  // RESUME_MODE_REVALIDATE only: re-run reconciliations that already passed.
+  // The default narrows to the ones that did not, which is the point of a
+  // re-validation.
+  bool include_passed = 5;
+
+  // RESUME_MODE_REVALIDATE only: drill into whatever still mismatches, as an
+  // ordinary run with run_bisection does. A re-validation usually only needs
+  // the quick check, so this is opt-in.
+  bool drill_still_mismatched = 6;
+
+  // RESUME_MODE_DRILL only: row count at which drilling stops, overriding the
+  // reconciliation's own. Lowering it is the usual reason to resume a
+  // bisection drill — the parent stopped at a coarser threshold.
+  optional int32 threshold = 7 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // RESUME_MODE_DRILL only: how many further levels to drill below the resumed
+  // segments. Counted from the deepest resumed segment, so it means "this much
+  // deeper" rather than a budget the parent already spent. Absent leaves it
+  // unbounded.
+  optional int32 extra_depth = 8 [(buf.validate.field) = {
+    int32: {gte: 1}
+  }];
+
+  // RESUME_MODE_DRILL only: extra group columns to break each divergent
+  // aggregate group down by. An aggregate drill already visits every configured
+  // group column, so resuming an aggregate reconciliation needs at least one
+  // more column to make progress.
+  repeated string additional_group_columns = 9;
+}
+
+// ResumeMode selects which replay a ResumeFromRun performs.
+enum ResumeMode {
+  RESUME_MODE_UNSPECIFIED = 0;
+
+  // Re-run the parent's queries and report what changed: fixed, still
+  // mismatched, regressed or unchanged.
+  RESUME_MODE_REVALIDATE = 1;
+
+  // Continue the parent's drill from where it stopped — the mismatch segments
+  // a bisection left open, or the divergent groups an aggregate found —
+  // instead of re-drilling the whole dataset from the top.
+  RESUME_MODE_DRILL = 2;
 }
 
 message SubmitAdhocSuiteResponse {
