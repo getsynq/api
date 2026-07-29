@@ -10,13 +10,13 @@ import "synq/agent/recon/v1/recon_suite.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
-// ReconcilationRunRequest describes what to execute in a reconciliation run.
+// ReconciliationRunRequest describes what to execute in a reconciliation run.
 // It can start a fresh run, continue from a previous audit, or drill deeper
 // into specific mismatches found in a prior run.
-message ReconcilationRunRequest {
+message ReconciliationRunRequest {
   // Suite to execute. Required for fresh runs.
   // When continuing from a parent audit, can be omitted to reuse the parent's suite.
-  optional ReconcilationSuite suite = 1;
+  optional ReconciliationSuite suite = 1;
 
   // Parent audit log to continue from.
   // When set, this run resumes or drills deeper into the parent's results.
@@ -24,17 +24,17 @@ message ReconcilationRunRequest {
 
   // Filter which reconciliations to execute.
   // When empty, all reconciliations in the suite are executed.
-  optional ReconcilationFilter filter = 3;
+  optional ReconciliationFilter filter = 3;
 
   // Variable overrides applied on top of suite-level variables.
   map<string, string> variable_overrides = 4;
 
   // Per-reconciliation drill-down and override instructions.
-  repeated ReconcilationOverride overrides = 5;
+  repeated ReconciliationOverride overrides = 5;
 }
 
-// ReconcilationFilter controls which reconciliations are included or excluded.
-message ReconcilationFilter {
+// ReconciliationFilter controls which reconciliations are included or excluded.
+message ReconciliationFilter {
   option (buf.validate.message).cel = {
     id: "include_exclude_exclusive"
     message: "include and exclude are mutually exclusive"
@@ -48,9 +48,9 @@ message ReconcilationFilter {
   repeated string exclude = 2;
 }
 
-// ReconcilationOverride provides per-reconciliation instructions for a run.
+// ReconciliationOverride provides per-reconciliation instructions for a run.
 // Used to drill into specific mismatches, adjust config, or extend comparisons.
-message ReconcilationOverride {
+message ReconciliationOverride {
   // Name of the reconciliation this override applies to.
   string name = 1 [(buf.validate.field) = {
     required: true
@@ -87,7 +87,7 @@ message BisectionDrillTarget {
   }];
 
   // Override the reporting level for this drill pass.
-  optional ReportingLevel reporting_level = 4;
+  optional MismatchDetailLevel mismatch_detail_level = 4;
 }
 
 // SegmentTarget identifies a specific segment to drill into.
@@ -144,7 +144,7 @@ message GroupTarget {
 // RerunAction re-runs a reconciliation from scratch with optional config overrides.
 message RerunAction {
   // Override the comparison mode.
-  optional ReconcilationMode mode = 1;
+  optional ReconciliationMode mode = 1;
 
   // Override the bisection configuration.
   optional BisectionConfig bisection = 2;

@@ -67,7 +67,7 @@ message ListAuditLogsRequest {
   optional synq.v1.Pagination pagination = 4;
 
   // Filter by audit status. When empty, returns all statuses.
-  repeated AuditStatus statuses = 5;
+  repeated AuditOutcome statuses = 5;
 }
 
 message ListAuditLogsResponse {
@@ -87,7 +87,7 @@ message AuditLogEntry {
   google.protobuf.Timestamp started_at = 5;
   google.protobuf.Timestamp completed_at = 6;
   google.protobuf.Duration duration = 7;
-  AuditStatus status = 8;
+  AuditOutcome status = 8;
   AuditSummary summary = 9;
   repeated ReconciliationSummary reconciliations = 10;
 
@@ -114,7 +114,7 @@ message ReconciliationSummary {
   string source_connection = 4;
   // Target connection name.
   string target_connection = 5;
-  ReconciliationStatus status = 6;
+  ReconciliationOutcome status = 6;
   bool overall_match = 7;
   // Error message if the reconciliation failed.
   string error = 8;

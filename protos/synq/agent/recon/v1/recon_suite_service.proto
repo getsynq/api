@@ -19,8 +19,8 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // Ad-hoc suites are one-off configs that get a generated UUID as suite_id.
 service SuiteConfigService {
   // Upsert a managed suite config. Creates if new, updates with new version if exists.
-  // The suite_id equals the suite name (from ReconcilationSuite.name).
-  // Validates the ReconcilationSuite proto. Does NOT validate connections exist.
+  // The suite_id equals the suite name (from ReconciliationSuite.name).
+  // Validates the ReconciliationSuite proto. Does NOT validate connections exist.
   rpc UpsertSuiteConfig(UpsertSuiteConfigRequest) returns (UpsertSuiteConfigResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -106,7 +106,7 @@ service SuiteConfigService {
 
 message UpsertSuiteConfigRequest {
   // The suite configuration to store. suite_id will equal suite.name.
-  ReconcilationSuite suite = 1 [(buf.validate.field).required = true];
+  ReconciliationSuite suite = 1 [(buf.validate.field).required = true];
 
   // Human-readable summary of what changed in this version.
   optional string change_summary = 3;
@@ -131,7 +131,7 @@ message SubmitAdhocSuiteRequest {
 
   // Inline suite configuration. Required when neither suite_id nor
   // resume_from_run is set.
-  optional ReconcilationSuite suite = 1;
+  optional ReconciliationSuite suite = 1;
 
   // Client-generated invocation ID for idempotency.
   // If an execution with this ID already exists, the call is a no-op.
@@ -226,24 +226,24 @@ message ResumeFromRun {
   // green.
   bool reresolve = 4;
 
-  // RESUME_MODE_REVALIDATE only: re-run reconciliations that already passed.
+  // RESUME_MODE_RECHECK only: re-run reconciliations that already passed.
   // The default narrows to the ones that did not, which is the point of a
   // re-validation.
   bool include_passed = 5;
 
-  // RESUME_MODE_REVALIDATE only: drill into whatever still mismatches, as an
+  // RESUME_MODE_RECHECK only: drill into whatever still mismatches, as an
   // ordinary run with run_bisection does. A re-validation usually only needs
   // the quick check, so this is opt-in.
   bool drill_still_mismatched = 6;
 
-  // RESUME_MODE_DRILL only: row count at which drilling stops, overriding the
+  // RESUME_MODE_DRILL_DEEPER only: row count at which drilling stops, overriding the
   // reconciliation's own. Lowering it is the usual reason to resume a
   // bisection drill — the parent stopped at a coarser threshold.
   optional int32 threshold = 7 [(buf.validate.field) = {
     int32: {gte: 1}
   }];
 
-  // RESUME_MODE_DRILL only: how many further levels to drill below the resumed
+  // RESUME_MODE_DRILL_DEEPER only: how many further levels to drill below the resumed
   // segments. Counted from the deepest resumed segment, so it means "this much
   // deeper" rather than a budget the parent already spent. Absent leaves it
   // unbounded.
@@ -251,7 +251,7 @@ message ResumeFromRun {
     int32: {gte: 1}
   }];
 
-  // RESUME_MODE_DRILL only: extra group columns to break each divergent
+  // RESUME_MODE_DRILL_DEEPER only: extra group columns to break each divergent
   // aggregate group down by. An aggregate drill already visits every configured
   // group column, so resuming an aggregate reconciliation needs at least one
   // more column to make progress.
@@ -264,12 +264,12 @@ enum ResumeMode {
 
   // Re-run the parent's queries and report what changed: fixed, still
   // mismatched, regressed or unchanged.
-  RESUME_MODE_REVALIDATE = 1;
+  RESUME_MODE_RECHECK = 1;
 
   // Continue the parent's drill from where it stopped — the mismatch segments
   // a bisection left open, or the divergent groups an aggregate found —
   // instead of re-drilling the whole dataset from the top.
-  RESUME_MODE_DRILL = 2;
+  RESUME_MODE_DRILL_DEEPER = 2;
 }
 
 message SubmitAdhocSuiteResponse {
@@ -364,7 +364,7 @@ message SuiteConfig {
   // Unique identifier. Equals suite_name for managed suites, UUID for ad-hoc.
   string suite_id = 1;
 
-  // Human-readable suite name from ReconcilationSuite.name.
+  // Human-readable suite name from ReconciliationSuite.name.
   string suite_name = 2;
 
   optional string suite_title = 3;
@@ -374,7 +374,7 @@ message SuiteConfig {
   string suite_type = 5;
 
   // The full suite configuration.
-  ReconcilationSuite suite = 6;
+  ReconciliationSuite suite = 6;
 
   // Deduplicated connection names referenced by this suite.
   repeated string connection_names = 8;
@@ -398,7 +398,7 @@ message SuiteConfigVersion {
   string suite_type = 5;
 
   // The full suite configuration at this version.
-  ReconcilationSuite suite = 6;
+  ReconciliationSuite suite = 6;
 
   // Connection names at this version.
   repeated string connection_names = 8;

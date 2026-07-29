@@ -27,24 +27,24 @@ enum AggregateFunction {
   AGGREGATE_FUNCTION_MAX = 5;
 }
 
-// PercentageMode controls which percentage formula is used for threshold comparison.
+// PercentageBasis controls which percentage formula is used for threshold comparison.
 // The choice affects how "big" a difference appears when source and target values
 // differ in magnitude.
-enum PercentageMode {
+enum PercentageBasis {
   // Default: source.
-  PERCENTAGE_MODE_UNSPECIFIED = 0;
+  PERCENTAGE_BASIS_UNSPECIFIED = 0;
 
   // |diff| / |source| — "target is X% off from source."
   // Best when source is the authoritative baseline.
-  PERCENTAGE_MODE_SOURCE = 1;
+  PERCENTAGE_BASIS_SOURCE = 1;
 
   // |diff| / |target| — "source is X% off from target."
   // Best when target is the authoritative baseline.
-  PERCENTAGE_MODE_TARGET = 2;
+  PERCENTAGE_BASIS_TARGET = 2;
 
   // 2 * |diff| / (|source| + |target|) — symmetric, neither side is privileged.
   // Best when both sides are equally authoritative.
-  PERCENTAGE_MODE_SYMMETRIC = 3;
+  PERCENTAGE_BASIS_SYMMETRIC = 3;
 }
 
 // ThresholdConfig defines tolerance thresholds for aggregate comparisons.
@@ -67,7 +67,7 @@ message ThresholdConfig {
 
   // Maximum allowed percentage difference per measure.
   // Expressed as a decimal fraction: 0.1 = 10%, 0.01 = 1%.
-  // The formula used depends on percentage_mode.
+  // The formula used depends on percentage_basis.
   // When set, differences <= this percentage are considered within tolerance.
   optional double percentage = 2 [(buf.validate.field) = {
     double: {gte: 0}
@@ -75,7 +75,7 @@ message ThresholdConfig {
 
   // Which percentage formula to use for threshold evaluation.
   // Only relevant when percentage is set.
-  PercentageMode percentage_mode = 3;
+  PercentageBasis percentage_basis = 3;
 
   // Per group_column level threshold overrides.
   // Allows different tolerance for different levels of the drill-down hierarchy.

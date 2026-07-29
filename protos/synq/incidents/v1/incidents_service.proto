@@ -22,7 +22,10 @@ service IncidentsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INCIDENTS_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_INCIDENTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -159,7 +162,10 @@ service IncidentsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INCIDENTS_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_INCIDENTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 }

@@ -56,7 +56,7 @@ message ReconciliationConfigSummary {
   optional string description = 3;
   string source_connection = 4;
   string target_connection = 5;
-  ReconcilationMode mode = 6;
+  ReconciliationMode mode = 6;
 
   // Resolved annotation list for this case. For suite-config summaries this
   // is suite-level annotations + case-level annotations (deduped). For

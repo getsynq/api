@@ -38,7 +38,10 @@ service OwnersService {
   rpc UpsertOwner(UpsertOwnerRequest) returns (UpsertOwnerResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_OWNERS_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_OWNERS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/owners/v1"
@@ -84,7 +87,10 @@ service OwnersService {
   rpc DeleteOwner(DeleteOwnerRequest) returns (DeleteOwnerResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_OWNERS_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_OWNERS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/owners/v1/delete"
@@ -99,7 +105,10 @@ service OwnersService {
   rpc UpsertOwnership(UpsertOwnershipRequest) returns (UpsertOwnershipResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_OWNERSHIP_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_OWNERSHIP_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/owners/v1/{owner_id}/ownerships"
@@ -143,7 +152,10 @@ service OwnersService {
   rpc DeleteOwnership(DeleteOwnershipRequest) returns (DeleteOwnershipResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_OWNERSHIP_EDIT, SCOPE_MCP_WRITE]
+      scopes: [
+        SCOPE_OWNERSHIP_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/owners/v1/ownerships/delete"

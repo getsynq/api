@@ -27,12 +27,12 @@ message CutoffConfig {
   // How to combine watermarks when both sides are configured.
   // Default: MIN (use the smaller watermark for safety).
   // Ignored when only one side has a watermark.
-  CutoffCombine combine = 3;
+  CutoffCombineStrategy combine = 3;
 
   // Truncate the combined watermark to a time boundary.
   // Example: HOUR truncates 08:47:12 to 08:00:00.
   // Applied after combining, before offset.
-  CutoffTruncate truncate = 4;
+  CutoffTruncateUnit truncate = 4;
 
   // Time offset applied after truncation.
   // Negative durations subtract from the cutoff (safety buffer).
@@ -68,7 +68,7 @@ message CutoffSideConfig {
 
   // Aggregate function to derive the watermark. Default: MAX.
   // Only used when query is not set.
-  CutoffAggregate aggregate = 2;
+  CutoffAggregateFunction aggregate = 2;
 
   // Custom SQL query for watermark derivation.
   // Must return a single row with a "watermark" column.
@@ -86,42 +86,42 @@ message CutoffApplyConfig {
   optional string operator = 2;
 }
 
-// CutoffCombine defines how to combine watermarks from source and target.
-enum CutoffCombine {
+// CutoffCombineStrategy defines how to combine watermarks from source and target.
+enum CutoffCombineStrategy {
   // Default: MIN.
-  CUTOFF_COMBINE_UNSPECIFIED = 0;
+  CUTOFF_COMBINE_STRATEGY_UNSPECIFIED = 0;
 
   // Use the smaller of source and target watermarks (safe default).
-  CUTOFF_COMBINE_MIN = 1;
+  CUTOFF_COMBINE_STRATEGY_MIN = 1;
 
   // Use the larger of source and target watermarks.
-  CUTOFF_COMBINE_MAX = 2;
+  CUTOFF_COMBINE_STRATEGY_MAX = 2;
 
   // Use only the source watermark (target must not be configured).
-  CUTOFF_COMBINE_SOURCE = 3;
+  CUTOFF_COMBINE_STRATEGY_SOURCE = 3;
 
   // Use only the target watermark (source must not be configured).
-  CUTOFF_COMBINE_TARGET = 4;
+  CUTOFF_COMBINE_STRATEGY_TARGET = 4;
 }
 
-// CutoffAggregate defines the aggregate function for watermark derivation.
-enum CutoffAggregate {
+// CutoffAggregateFunction defines the aggregate function for watermark derivation.
+enum CutoffAggregateFunction {
   // Default: MAX.
-  CUTOFF_AGGREGATE_UNSPECIFIED = 0;
+  CUTOFF_AGGREGATE_FUNCTION_UNSPECIFIED = 0;
 
-  CUTOFF_AGGREGATE_MAX = 1;
-  CUTOFF_AGGREGATE_MIN = 2;
+  CUTOFF_AGGREGATE_FUNCTION_MAX = 1;
+  CUTOFF_AGGREGATE_FUNCTION_MIN = 2;
 }
 
-// CutoffTruncate defines time truncation for the cutoff value.
-enum CutoffTruncate {
+// CutoffTruncateUnit defines time truncation for the cutoff value.
+enum CutoffTruncateUnit {
   // No truncation (default).
-  CUTOFF_TRUNCATE_UNSPECIFIED = 0;
+  CUTOFF_TRUNCATE_UNIT_UNSPECIFIED = 0;
 
-  CUTOFF_TRUNCATE_HOUR = 1;
-  CUTOFF_TRUNCATE_DAY = 2;
-  CUTOFF_TRUNCATE_WEEK = 3;
-  CUTOFF_TRUNCATE_MONTH = 4;
-  CUTOFF_TRUNCATE_QUARTER = 5;
-  CUTOFF_TRUNCATE_YEAR = 6;
+  CUTOFF_TRUNCATE_UNIT_HOUR = 1;
+  CUTOFF_TRUNCATE_UNIT_DAY = 2;
+  CUTOFF_TRUNCATE_UNIT_WEEK = 3;
+  CUTOFF_TRUNCATE_UNIT_MONTH = 4;
+  CUTOFF_TRUNCATE_UNIT_QUARTER = 5;
+  CUTOFF_TRUNCATE_UNIT_YEAR = 6;
 }

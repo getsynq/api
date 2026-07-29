@@ -50,7 +50,7 @@ message AuditLog {
   google.protobuf.Duration duration = 8 [(buf.validate.field).required = true];
 
   // Overall execution status derived from individual reconciliation outcomes.
-  AuditStatus status = 9;
+  AuditOutcome status = 9;
 
   // Aggregated counts derived from individual reconciliation results.
   AuditSummary summary = 10;
@@ -68,7 +68,7 @@ message AuditLog {
 
   // Full suite configuration snapshot as executed.
   // Contains all reconciliation definitions, variables, thresholds, etc.
-  ReconcilationSuite suite = 14;
+  ReconciliationSuite suite = 14;
 
   // Resolved template variable values used for query interpolation.
   // Contains the actual values after template evaluation
@@ -92,26 +92,26 @@ message AuditLog {
   map<string, string> resolved_table_references = 20;
 }
 
-// AuditStatus describes the overall outcome of a reconciliation run.
+// AuditOutcome describes the overall outcome of a reconciliation run.
 // Values are ordered by severity: passed < within_threshold < mismatched < failed.
-enum AuditStatus {
-  AUDIT_STATUS_UNSPECIFIED = 0;
+enum AuditOutcome {
+  AUDIT_OUTCOME_UNSPECIFIED = 0;
 
   // All reconciliations completed and matched exactly.
-  AUDIT_STATUS_PASSED = 1;
+  AUDIT_OUTCOME_PASSED = 1;
 
   // Differences were found but all were within configured thresholds.
   // No reconciliation had hard mismatches or infrastructure errors.
   // This is a warning-level outcome.
-  AUDIT_STATUS_MISMATCHED_WITHIN_THRESHOLD = 2;
+  AUDIT_OUTCOME_MISMATCHED_WITHIN_THRESHOLD = 2;
 
   // At least one reconciliation found data differences exceeding
   // configured thresholds (or no thresholds were configured).
-  AUDIT_STATUS_MISMATCHED = 3;
+  AUDIT_OUTCOME_MISMATCHED = 3;
 
   // At least one reconciliation encountered an infrastructure error
   // (connection failure, query error, setup failure, etc.).
-  AUDIT_STATUS_FAILED = 4;
+  AUDIT_OUTCOME_FAILED = 4;
 }
 
 // AuditSummary holds aggregated counts derived from individual reconciliation results.
@@ -173,7 +173,7 @@ message AuditMeta {
 // for a single reconciliation.
 message ReconciliationAudit {
   // The reconciliation configuration as executed.
-  Reconcilation reconcilation = 1 [(buf.validate.field).required = true];
+  Reconciliation reconciliation = 1 [(buf.validate.field).required = true];
 
   // Runtime dataset information (resolved queries, detected dialects).
   DatasetInfo source = 2 [(buf.validate.field).required = true];
@@ -199,7 +199,7 @@ message ReconciliationAudit {
 
   // Outcome status of this reconciliation.
   // Distinguishes infrastructure errors from data mismatches and threshold-based outcomes.
-  ReconciliationStatus status = 10;
+  ReconciliationOutcome status = 10;
 
   // Whether source and target matched overall.
   // True when data matched exactly or differences were within configured thresholds.
@@ -237,27 +237,27 @@ message CutoffResult {
   string target_where = 5;
 }
 
-// ReconciliationStatus describes the outcome of a single reconciliation.
+// ReconciliationOutcome describes the outcome of a single reconciliation.
 // Distinguishes infrastructure errors from data comparison results.
 // Values are ordered by severity: passed < within_threshold < mismatched < failed.
-enum ReconciliationStatus {
-  RECONCILIATION_STATUS_UNSPECIFIED = 0;
+enum ReconciliationOutcome {
+  RECONCILIATION_OUTCOME_UNSPECIFIED = 0;
 
   // Reconciliation completed and data matched exactly — no differences found.
-  RECONCILIATION_STATUS_PASSED = 1;
+  RECONCILIATION_OUTCOME_PASSED = 1;
 
   // Reconciliation found data differences but all differences were within
   // configured thresholds. This is a warning-level outcome — data differs
   // but within acceptable tolerance.
-  RECONCILIATION_STATUS_MISMATCHED_WITHIN_THRESHOLD = 2;
+  RECONCILIATION_OUTCOME_MISMATCHED_WITHIN_THRESHOLD = 2;
 
   // Reconciliation completed but found data differences that exceed
   // configured thresholds (or no thresholds were configured).
-  RECONCILIATION_STATUS_MISMATCHED = 3;
+  RECONCILIATION_OUTCOME_MISMATCHED = 3;
 
   // Reconciliation encountered an infrastructure error (connection failure,
   // query error, setup failure, etc.) and could not complete the comparison.
-  RECONCILIATION_STATUS_FAILED = 4;
+  RECONCILIATION_OUTCOME_FAILED = 4;
 }
 
 // DatasetInfo captures runtime information about a source or target dataset.
@@ -413,10 +413,10 @@ message MismatchLeafDetail {
   int64 count_difference = 6;
 
   // Types of mismatch detected.
-  repeated MismatchType mismatch_types = 7;
+  repeated SegmentMismatchType mismatch_types = 7;
 
   // Why bisection stopped at this leaf.
-  TerminationReason termination_reason = 8;
+  DrillStopReason drill_stop_reason = 8;
 
   // Investigation queries to inspect this mismatch.
   DiffQueries diff_queries = 9;
@@ -428,25 +428,59 @@ message MismatchLeafDetail {
   int32 row_mismatch_count = 11;
 }
 
-// MismatchType categorizes how rows differ between source and target.
-enum MismatchType {
-  MISMATCH_TYPE_UNSPECIFIED = 0;
-  MISMATCH_TYPE_MISSING_IN_SOURCE = 1;
-  MISMATCH_TYPE_MISSING_IN_TARGET = 2;
-  MISMATCH_TYPE_COUNT_MISMATCH = 3;
-  MISMATCH_TYPE_DATA_MISMATCH = 4;
-  MISMATCH_TYPE_UNKNOWN = 5;
+// SegmentMismatchType categorizes how rows differ between source and target.
+//
+// A mismatch leaf carries every type that applies, so a segment whose two
+// sides differ in both row count and content reports COUNT_MISMATCH and
+// DATA_MISMATCH together.
+enum SegmentMismatchType {
+  SEGMENT_MISMATCH_TYPE_UNSPECIFIED = 0;
+
+  // The segment holds rows on the target side but none on the source side.
+  SEGMENT_MISMATCH_TYPE_MISSING_IN_SOURCE = 1;
+
+  // The segment holds rows on the source side but none on the target side.
+  SEGMENT_MISMATCH_TYPE_MISSING_IN_TARGET = 2;
+
+  // Both sides hold rows, but not the same number of them.
+  SEGMENT_MISMATCH_TYPE_COUNT_MISMATCH = 3;
+
+  // Both sides hold rows and their checksums disagree, so at least one row
+  // differs in content. Reported independently of the row counts.
+  SEGMENT_MISMATCH_TYPE_DATA_MISMATCH = 4;
+
+  // The segment was reported as mismatched but none of the categories above
+  // applied. Distinct from UNSPECIFIED, which means the field was never set.
+  SEGMENT_MISMATCH_TYPE_UNKNOWN = 5;
 }
 
-// TerminationReason explains why bisection stopped at a particular node.
-enum TerminationReason {
-  TERMINATION_REASON_UNSPECIFIED = 0;
-  TERMINATION_REASON_THRESHOLD_REACHED = 1;
-  TERMINATION_REASON_MAX_DEPTH_REACHED = 2;
-  TERMINATION_REASON_EMPTY_SEGMENT = 3;
-  TERMINATION_REASON_CANNOT_SPLIT = 4;
-  TERMINATION_REASON_MATCHED = 5;
-  TERMINATION_REASON_ERROR = 6;
+// DrillStopReason explains why bisection stopped at a particular node.
+enum DrillStopReason {
+  DRILL_STOP_REASON_UNSPECIFIED = 0;
+
+  // The segment narrowed to at most the configured number of rows, so it is
+  // reported as-is. Drilling further would still narrow it, which is why this
+  // and MAX_DEPTH_REACHED are the two reasons a later run can resume from.
+  DRILL_STOP_REASON_THRESHOLD_REACHED = 1;
+
+  // The configured depth limit was hit before the segment got small enough.
+  // Resumable: raising the limit and drilling again narrows it further.
+  DRILL_STOP_REASON_MAX_DEPTH_REACHED = 2;
+
+  // Neither side had any rows in the segment, so there was nothing to compare.
+  DRILL_STOP_REASON_EMPTY_SEGMENT = 3;
+
+  // The key range cannot be subdivided any further — every remaining row
+  // shares one key value. Unlike the two resumable reasons above, drilling
+  // again will not narrow this segment.
+  DRILL_STOP_REASON_CANNOT_SPLIT = 4;
+
+  // Source and target agreed, so the segment needed no further drilling.
+  DRILL_STOP_REASON_MATCHED = 5;
+
+  // A query failed while comparing the segment; its result is unknown rather
+  // than matched or mismatched. The failure is on the run's query records.
+  DRILL_STOP_REASON_ERROR = 6;
 }
 
 // SegmentInfo identifies a key range segment.
@@ -496,10 +530,19 @@ message RowMismatchDetail {
 }
 
 // RowMismatchType categorizes a single row-level mismatch.
+//
+// The source/target sense of these values matches SegmentMismatchType and
+// AggregateDivergenceType: source is numbered before target everywhere.
 enum RowMismatchType {
   ROW_MISMATCH_TYPE_UNSPECIFIED = 0;
-  ROW_MISMATCH_TYPE_MISSING_IN_TARGET = 1;
-  ROW_MISMATCH_TYPE_MISSING_IN_SOURCE = 2;
+
+  // The row is present in the target but absent from the source.
+  ROW_MISMATCH_TYPE_MISSING_IN_SOURCE = 1;
+
+  // The row is present in the source but absent from the target.
+  ROW_MISMATCH_TYPE_MISSING_IN_TARGET = 2;
+
+  // The row exists on both sides but its contents differ.
   ROW_MISMATCH_TYPE_MODIFIED = 3;
 }
 
@@ -594,17 +637,25 @@ message AggregateDrillChild {
 enum AggregateDivergenceType {
   AGGREGATE_DIVERGENCE_TYPE_UNSPECIFIED = 0;
 
-  // Values differ between source and target.
-  AGGREGATE_DIVERGENCE_TYPE_MISMATCH = 1;
+  // The group is present on both sides and its measures diverge, at a level
+  // that still has a grouping level beneath it. Where drill_down is populated
+  // the divergence is accounted for by the descendants, so this node is a path
+  // to the mismatches rather than a mismatch in its own right. Only when
+  // drill_down is absent does it stand as the mismatch itself.
+  AGGREGATE_DIVERGENCE_TYPE_SUBGROUP_MISMATCH = 1;
 
   // Group exists in target but not in source.
-  AGGREGATE_DIVERGENCE_TYPE_MISSING_SOURCE = 2;
+  AGGREGATE_DIVERGENCE_TYPE_MISSING_IN_SOURCE = 2;
 
   // Group exists in source but not in target.
-  AGGREGATE_DIVERGENCE_TYPE_MISSING_TARGET = 3;
+  AGGREGATE_DIVERGENCE_TYPE_MISSING_IN_TARGET = 3;
 
-  // Values differ (synonym for mismatch, used in specific contexts).
-  AGGREGATE_DIVERGENCE_TYPE_VALUE_MISMATCH = 4;
+  // The group is present on both sides and its measures diverge at the
+  // deepest grouping level, so it is a mismatch in its own right and carries
+  // the investigation queries. Not a synonym for MISMATCH: the two differ by
+  // whether anything is grouped below, and only this one is counted directly
+  // in the divergent-group totals.
+  AGGREGATE_DIVERGENCE_TYPE_MEASURE_MISMATCH = 4;
 }
 
 // MeasureDifferences holds all difference variants for measure comparisons.
@@ -633,8 +684,8 @@ message ThresholdEvaluation {
   // Configured maximum percentage difference, or 0 if not set.
   double percentage_threshold = 2;
 
-  // Which percentage formula was used.
-  string percentage_mode = 3;
+  // Which percentage formula was used, as a PercentageBasis value name.
+  string percentage_basis = 3;
 
   // Per-measure threshold evaluation results.
   map<string, MeasureVerdict> measures = 4;
@@ -654,17 +705,36 @@ message MeasureVerdict {
   // Percentage threshold applied to this measure.
   double effective_percentage = 4;
 
-  // Percentage mode applied to this measure.
-  string effective_percentage_mode = 5;
+  // Percentage basis applied to this measure, as a PercentageBasis value name.
+  string effective_percentage_basis = 5;
 }
 
 // MeasureVerdictReason explains the threshold evaluation outcome.
+// MeasureVerdictReason explains why a measure was or was not treated as
+// diverging. Thresholds are tried in order — absolute first, then percentage —
+// and the first one the difference falls inside decides the verdict.
 enum MeasureVerdictReason {
   MEASURE_VERDICT_REASON_UNSPECIFIED = 0;
+
+  // Source and target agreed exactly, so no threshold was consulted.
   MEASURE_VERDICT_REASON_EXACT_MATCH = 1;
+
+  // The values differ, but by no more than the configured absolute threshold.
+  // Not treated as divergent.
   MEASURE_VERDICT_REASON_WITHIN_ABSOLUTE_THRESHOLD = 2;
+
+  // The values differ by more than the absolute threshold allowed (or none was
+  // set), but fall inside the configured percentage threshold. Not treated as
+  // divergent. The percentage is computed against whichever side the
+  // PercentageBasis selects.
   MEASURE_VERDICT_REASON_WITHIN_PERCENTAGE_THRESHOLD = 3;
+
+  // The values differ by more than every configured threshold. Divergent.
   MEASURE_VERDICT_REASON_EXCEEDED_ALL_THRESHOLDS = 4;
+
+  // The values differ and no threshold was configured to tolerate it, so any
+  // difference counts. Divergent — distinct from EXCEEDED_ALL_THRESHOLDS,
+  // where thresholds existed and were exceeded.
   MEASURE_VERDICT_REASON_NO_THRESHOLDS_CONFIGURED = 5;
 }
 
@@ -772,7 +842,7 @@ message SegmentAuditNode {
   bool is_leaf = 7;
 
   // Why bisection stopped at this node.
-  TerminationReason termination_reason = 8;
+  DrillStopReason drill_stop_reason = 8;
 
   // Sum of mismatched rows in this subtree.
   int64 mismatch_rows_in_subtree = 9;

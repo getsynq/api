@@ -79,7 +79,7 @@ service SuiteDeploymentService {
     };
   }
 
-  // Patch the per-case CaseFailureImpact map on an existing deployment
+  // Patch the per-case ReconciliationFailureImpact map on an existing deployment
   // without re-promoting the suite snapshot. Useful for "apply to all"
   // FE actions and one-off toggles between RAISE_ISSUE_ON_TABLES and
   // SHOW_ON_TABLES. Re-renders PromotedReconCaseMetadata so the
@@ -88,7 +88,7 @@ service SuiteDeploymentService {
   //
   // Merge semantics: keys present in the request overwrite the stored
   // value for that case. Keys absent from the request are left
-  // untouched (no implicit reset). Sending CASE_FAILURE_IMPACT_UNSPECIFIED
+  // untouched (no implicit reset). Sending RECONCILIATION_FAILURE_IMPACT_UNSPECIFIED
   // clears the override for that case (falls back to the default
   // RAISE_ISSUE_ON_TABLES). Unknown case names are rejected with
   // INVALID_ARGUMENT so the FE catches typos before the deployment is
@@ -203,7 +203,7 @@ service SuiteDeploymentService {
 // rows decode unchanged.
 message ConnectionMapping {
   // Connection name as it appears in the suite config
-  // (e.g. ReconcilationSuite.reconciliations[].source.connection).
+  // (e.g. ReconciliationSuite.reconciliations[].source.connection).
   string connection_name = 1 [(buf.validate.field) = {
     required: true
     string: {min_len: 1}
@@ -227,21 +227,21 @@ message ConnectionMapping {
 }
 
 // Reason why a single connection could not be resolved.
-enum ConnectionResolutionReason {
-  CONNECTION_RESOLUTION_REASON_UNSPECIFIED = 0;
+enum UnresolvedConnectionReason {
+  UNRESOLVED_CONNECTION_REASON_UNSPECIFIED = 0;
   // No mapping was supplied and no workspace integration matches the
   // connection name.
-  CONNECTION_RESOLUTION_REASON_NOT_PROVIDED = 1;
+  UNRESOLVED_CONNECTION_REASON_NOT_PROVIDED = 1;
   // Mapping references an integration that does not exist or the caller
   // cannot see it.
-  CONNECTION_RESOLUTION_REASON_INTEGRATION_NOT_FOUND = 2;
+  UNRESOLVED_CONNECTION_REASON_INTEGRATION_NOT_FOUND = 2;
   // Mapping uses a credential plane the caller is not allowed to use
   // (e.g. user_integration_id without a user identity, or
   // workspace integration_id without SCOPE_INTEGRATION_EDIT).
-  CONNECTION_RESOLUTION_REASON_CREDENTIAL_NOT_ALLOWED = 3;
+  UNRESOLVED_CONNECTION_REASON_CREDENTIAL_NOT_ALLOWED = 3;
   // Integration exists but the allow_reconciliation_adhoc /
   // allow_reconciliation_deploy capability gate is disabled for it.
-  CONNECTION_RESOLUTION_REASON_CAPABILITY_DISABLED = 4;
+  UNRESOLVED_CONNECTION_REASON_CAPABILITY_DISABLED = 4;
 }
 
 // One entry per connection name the server failed to resolve. Returned
@@ -251,7 +251,7 @@ message UnresolvedConnection {
   // Connection name as referenced by the suite config.
   string connection_name = 1;
   // Why the server could not satisfy the mapping.
-  ConnectionResolutionReason reason = 2;
+  UnresolvedConnectionReason reason = 2;
   // Optional human-readable elaboration ("integration X has reconciliation
   // adhoc disabled by workspace admin", etc.). Already includes workspace
   // / suite context — safe to surface verbatim.
@@ -273,15 +273,39 @@ message ConnectionResolutionFailure {
 
 enum DeploymentAction {
   DEPLOYMENT_ACTION_UNSPECIFIED = 0;
+
+  // The suite reached production for the first time, under a new deployment
+  // id. Only PROMOTED and REPROMOTED replace the frozen suite snapshot; every
+  // other action carries the previous snapshot forward unchanged.
   DEPLOYMENT_ACTION_PROMOTED = 1;
+
+  // A suite already in production was published again, keeping its deployment
+  // id and replacing the frozen snapshot with the current configuration.
   DEPLOYMENT_ACTION_REPROMOTED = 2;
+
+  // The run schedule changed. The suite configuration itself is untouched.
   DEPLOYMENT_ACTION_SCHEDULE_CHANGED = 3;
+
+  // The bindings from the suite's connection names to workspace integrations
+  // changed.
   DEPLOYMENT_ACTION_MAPPINGS_CHANGED = 4;
+
+  // Scheduled runs were suspended. The deployment stays in production.
   DEPLOYMENT_ACTION_PAUSED = 5;
+
+  // Scheduled runs were re-enabled after a pause.
   DEPLOYMENT_ACTION_RESUMED = 6;
+
+  // The suite was withdrawn from production. Distinct from PAUSED: this
+  // retires the deployment rather than suspending its schedule.
   DEPLOYMENT_ACTION_UNPROMOTED = 7;
+
+  // The annotations attached to the deployment changed.
   DEPLOYMENT_ACTION_ANNOTATIONS_CHANGED = 8;
-  DEPLOYMENT_ACTION_CASE_IMPACTS_CHANGED = 9;
+
+  // The per-reconciliation failure impact settings changed — which tables a
+  // failing reconciliation raises an issue on.
+  DEPLOYMENT_ACTION_FAILURE_IMPACTS_CHANGED = 9;
 }
 
 // SuiteDeployment is the latest state of a deployment (current row).
@@ -306,7 +330,7 @@ message SuiteDeployment {
   optional string paused_reason = 8;
 
   // Frozen snapshot of the suite config at promote time.
-  ReconcilationSuite suite = 9;
+  ReconciliationSuite suite = 9;
 
   // Mapping used at execution time to resolve DWH credentials.
   repeated ConnectionMapping connection_mappings = 10;
@@ -363,14 +387,14 @@ message SuiteDeployment {
   // own overlay so callers can render and edit it independently.
   repeated synq.entities.v1.Annotation deployment_annotations = 24;
 
-  // Effective per-case CaseFailureImpact map currently in force for this
+  // Effective per-case ReconciliationFailureImpact map currently in force for this
   // deployment. Keyed by case `name`. Cases without an entry behave as
   // RAISE_ISSUE_ON_TABLES. Drives whether the runner attaches each
   // case's referenced tables to Run.target (issue-raising) or
   // Run.extra_references (visibility only) — see
   // PromotedReconCaseMetadata.error_tables / shown_tables for the
   // resolved table lists.
-  map<string, CaseFailureImpact> case_failure_impacts = 25;
+  map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 25;
 }
 
 // SuiteDeploymentHistoryEntry is a single event in the deployment's history.
@@ -395,7 +419,7 @@ message SuiteDeploymentHistoryEntry {
   optional google.protobuf.Duration execution_timeout = 18;
 
   // Only filled for PROMOTED / REPROMOTED events (snapshot changes).
-  optional ReconcilationSuite suite = 11;
+  optional ReconciliationSuite suite = 11;
   optional google.protobuf.Timestamp source_config_state_at = 12;
 
   optional synq.issues.actor.v1.Actor actor = 13;
@@ -406,10 +430,10 @@ message SuiteDeploymentHistoryEntry {
   // events carry the snapshot at the time of the event).
   repeated synq.entities.v1.Annotation deployment_annotations = 16;
 
-  // Effective per-case CaseFailureImpact map at this point in time.
+  // Effective per-case ReconciliationFailureImpact map at this point in time.
   // Snapshot semantics — every history entry carries the full map in
   // force right after the event was recorded.
-  map<string, CaseFailureImpact> case_failure_impacts = 17;
+  map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 17;
 }
 
 // --- Requests / responses ---
@@ -489,10 +513,10 @@ message PromoteSuiteRequest {
   // previous deployment of this suite_id) default to
   // RAISE_ISSUE_ON_TABLES when unset.
   //
-  // Sending CASE_FAILURE_IMPACT_UNSPECIFIED for a known case is treated
+  // Sending RECONCILIATION_FAILURE_IMPACT_UNSPECIFIED for a known case is treated
   // as "no opinion, keep current"; to actively reset to the default,
   // either omit the case or send RAISE_ISSUE_ON_TABLES.
-  map<string, CaseFailureImpact> case_failure_impacts = 11;
+  map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 11;
 }
 
 message PromoteSuiteResponse {
@@ -600,7 +624,7 @@ message UpdateDeploymentCaseImpactsRequest {
 
   // Partial patch of the per-case impact map. See
   // UpdateDeploymentCaseImpacts RPC docs for merge / clear semantics.
-  map<string, CaseFailureImpact> case_failure_impacts = 2;
+  map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 2;
 
   optional string change_summary = 3;
 

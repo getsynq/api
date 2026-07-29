@@ -11,11 +11,11 @@ import "synq/entities/v1/annotation.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
-// ReconcilationSuite is the root configuration for a reconciliation suite.
+// ReconciliationSuite is the root configuration for a reconciliation suite.
 // It defines template variables and one or more reconciliation scenarios
 // that compare data between source and target databases.
 // Database connections are configured separately and referenced by name.
-message ReconcilationSuite {
+message ReconciliationSuite {
   // Short machine identifier for the suite.
   // Unique machine identifier for the suite, used as the stable key for tracking runs over time.
   // Alphanumerics, hyphens, and underscores. May be a UUID.
@@ -37,7 +37,7 @@ message ReconcilationSuite {
 
   // Reconciliation scenarios to execute.
   // Each reconciliation compares data between a source and target dataset.
-  repeated Reconcilation reconciliations = 4 [(buf.validate.field) = {
+  repeated Reconciliation reconciliations = 4 [(buf.validate.field) = {
     repeated: {min_items: 1}
   }];
 
@@ -96,10 +96,10 @@ message ConnectionQueries {
   }];
 }
 
-// Reconcilation defines a single reconciliation scenario comparing data
+// Reconciliation defines a single reconciliation scenario comparing data
 // between a source and target dataset. Each reconciliation runs independently
 // and produces its own pass/mismatch/fail result.
-message Reconcilation {
+message Reconciliation {
   option (buf.validate.message).cel = {
     id: "key_column_required_for_non_aggregate"
     message: "key_column or key_columns is required unless mode is AGGREGATE"
@@ -154,7 +154,7 @@ message Reconcilation {
   repeated string key_columns = 22;
 
   // Comparison mode controlling how source and target are compared.
-  ReconcilationMode mode = 7 [(buf.validate.field).enum = {
+  ReconciliationMode mode = 7 [(buf.validate.field).enum = {
     not_in: [0]
   }];
 
@@ -221,7 +221,7 @@ message Reconcilation {
   repeated synq.entities.v1.Annotation annotations = 21;
 }
 
-// CaseFailureImpact controls whether a reconciliation case's referenced
+// ReconciliationFailureImpact controls whether a reconciliation case's referenced
 // tables (resolved from the source/target SQL at deploy time) inherit the
 // case's failure status, or are only attached to the run for visibility.
 // This is a deployment-time policy, not part of the suite YAML — it is
@@ -229,41 +229,41 @@ message Reconcilation {
 // promoted deployment, not on the authored config. Letting operators
 // flip impact without editing the suite keeps configuration declarative
 // and lets the FE offer "apply to all" without round-tripping YAML.
-enum CaseFailureImpact {
+enum ReconciliationFailureImpact {
   // Defaults to RAISE_ISSUE_ON_TABLES.
-  CASE_FAILURE_IMPACT_UNSPECIFIED = 0;
+  RECONCILIATION_FAILURE_IMPACT_UNSPECIFIED = 0;
 
   // The referenced tables are treated as outcomes of the run: a failed
   // case opens issues on each table, and the table's overall health
   // reflects the reconciliation result. Use this when the reconciliation
   // authoritatively validates the tables it references.
-  CASE_FAILURE_IMPACT_RAISE_ISSUE_ON_TABLES = 1;
+  RECONCILIATION_FAILURE_IMPACT_RAISE_ISSUE_ON_TABLES = 1;
 
   // The referenced tables appear on the run for visibility only. The
   // run is listed in each table's run history but never raises an issue
   // on them. Use this for advisory checks that should not impact the
   // table's published health.
-  CASE_FAILURE_IMPACT_SHOW_ON_TABLES = 2;
+  RECONCILIATION_FAILURE_IMPACT_SHOW_ON_TABLES = 2;
 }
 
-// ReconcilationMode defines the comparison strategy for a reconciliation.
+// ReconciliationMode defines the comparison strategy for a reconciliation.
 // Modes are ordered by depth of comparison: ROW_COUNT < ROW_CHECKSUM < AGGREGATE.
-enum ReconcilationMode {
-  RECONCILATION_MODE_UNSPECIFIED = 0;
+enum ReconciliationMode {
+  RECONCILIATION_MODE_UNSPECIFIED = 0;
 
   // Compare row counts only — no data access, just verifies both sides
   // have the same number of rows. Fastest mode, useful as a smoke test.
-  RECONCILATION_MODE_ROW_COUNT = 1;
+  RECONCILIATION_MODE_ROW_COUNT = 1;
 
   // Row-level checksum comparison with hierarchical bisection drill-down
   // to locate individual mismatched rows. The default and most thorough mode
   // for exact row-by-row comparison.
-  RECONCILATION_MODE_ROW_CHECKSUM = 2;
+  RECONCILIATION_MODE_ROW_CHECKSUM = 2;
 
   // Aggregate comparison — GROUP BY with configurable measures (SUM, AVG, etc.)
   // and tolerance thresholds. Best for large datasets where exact row matching
   // is impractical, or when business-level metrics matter more than individual rows.
-  RECONCILATION_MODE_AGGREGATE = 3;
+  RECONCILIATION_MODE_AGGREGATE = 3;
 }
 
 // HashAlgorithm specifies the hash function used for row checksums
@@ -375,7 +375,7 @@ message ReportingConfig {
   };
 
   // Output detail level for mismatched rows.
-  ReportingLevel level = 1;
+  MismatchDetailLevel level = 1;
 
   // Maximum number of sample rows to include in output per mismatch segment.
   // Limits the size of the audit log when there are many mismatches.
@@ -390,24 +390,24 @@ message ReportingConfig {
   bool consent_acknowledged = 3;
 }
 
-// ReportingLevel controls how much detail is included in results for mismatched rows.
+// MismatchDetailLevel controls how much detail is included in results for mismatched rows.
 // Levels are ordered by increasing data exposure.
-enum ReportingLevel {
+enum MismatchDetailLevel {
   // Default: COUNT_ONLY.
-  REPORTING_LEVEL_UNSPECIFIED = 0;
+  MISMATCH_DETAIL_LEVEL_UNSPECIFIED = 0;
 
   // Only report mismatch counts per segment.
   // No row-level information is exposed. Privacy-safe.
-  REPORTING_LEVEL_COUNT_ONLY = 1;
+  MISMATCH_DETAIL_LEVEL_COUNT_ONLY = 1;
 
   // Include primary key values of mismatched rows.
   // Reveals which rows differ, but not the actual data values.
-  REPORTING_LEVEL_WITH_KEYS = 2;
+  MISMATCH_DETAIL_LEVEL_WITH_KEYS = 2;
 
   // Include full column values for mismatched rows.
   // Requires consent_acknowledged = true.
   // Warning: may expose sensitive data in the audit log.
-  REPORTING_LEVEL_DETAILED = 3;
+  MISMATCH_DETAIL_LEVEL_DETAILED = 3;
 }
 
 // AggregateConfig defines aggregate comparison settings.
