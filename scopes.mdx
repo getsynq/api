@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 49 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 53 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -339,6 +339,22 @@ Create, update, and delete integrations and their connection settings.
 | `RefreshIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/refresh` | Trigger an immediate, ad-hoc refresh of an integration. Available only for |
 | `UpdateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`PUT /api/integrations/v1/{integration_id}` | Update an integration. The `config` is replaced wholesale — send the |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` |  |
+
+## Read Integration Settings
+
+`SCOPE_INTEGRATION_READ`
+
+View integrations and their connection settings.
+
+| Method | Description |
+| ------ | ----------- |
+| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection |
+| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the |
+| `Get`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`GET /api/extensions/atlan/integrations/v1` |  |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
+| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. Secret config fields are masked. |
+| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
 
 ## Edit Users
 
@@ -757,6 +773,50 @@ View reconciliation suites, settings, and audit results.
 | `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List the append-only history of a deployment (every promote, |
 | `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List deployments for the caller's workspace. Filters support answering |
 
+## Edit Reconciliation Settings
+
+`SCOPE_RECON_EDIT`
+
+Create and update reconciliation suites and their settings.
+
+| Method | Description |
+| ------ | ----------- |
+| `IngestAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | IngestAuditLog stores a reconciliation run audit log. |
+| `CancelReconciliationRun`<br/>_synq.agent.recon.v1.RunStateService_ | CancelReconciliationRun marks a SCHEDULED or IN_PROGRESS run as |
+| `DeleteSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Delete a managed suite config (soft delete — inserts a deleted version). |
+| `SubmitAdhocSuite`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Submit an ad-hoc suite for one-off execution. |
+| `UpsertSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Upsert a managed suite config. Creates if new, updates with new version if exists. |
+
+## Promote Reconciliation Suites to run on Schedule or API
+
+`SCOPE_RECON_PROMOTE`
+
+Promote reconciliation suites so they run on a schedule or via the API.
+
+| Method | Description |
+| ------ | ----------- |
+| `PauseDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Pause a deployment. Scheduled and API-triggered runs are suppressed until |
+| `PromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Promote a suite config into production. Freezes a snapshot of the config |
+| `ResumeDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Resume a paused deployment. |
+| `TriggerDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_<br/>`POST /api/recon/v1/deployments/trigger` | Trigger an on-demand execution of a promoted deployment. Enqueues a run |
+| `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Unpromote a deployment. Marks it inactive; scheduler and API triggers |
+| `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Replace the deployment-level annotation overlay on an existing |
+| `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Patch the per-case ReconciliationFailureImpact map on an existing deployment |
+| `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Rewire connection → integration mappings on an existing deployment |
+| `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change schedule and/or triggerable_by_api on an existing deployment |
+
+## Edit Check Categorisation Rules
+
+`SCOPE_POLICIES_EDIT`
+
+Create and update rules that categorise data quality checks.
+
+| Method | Description |
+| ------ | ----------- |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:delete` | DeleteCheckCategories clears the explicit category (both dimensions) |
+| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | UpsertCheckCategories sets (or replaces) the explicit category for |
+
 ## Read Check Categorisation Rules and Status
 
 `SCOPE_POLICIES_READ`
@@ -830,23 +890,37 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GenerateConnectionsYaml`<br/>_synq.agent.dwh.v1.ConnectionsService_ | `SCOPE_MCP_READ`<br/>`SCOPE_EXTENSIONS_MANAGE`<br/>`SCOPE_ENTITY_READ` |
 | `ListConnections`<br/>_synq.agent.dwh.v1.ConnectionsService_ | `SCOPE_MCP_READ`<br/>`SCOPE_EXTENSIONS_MANAGE`<br/>`SCOPE_ENTITY_READ` |
 | `GetAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
+| `IngestAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | `SCOPE_RECON_EDIT` |
 | `ListAuditLogs`<br/>_synq.agent.recon.v1.AuditLogService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
+| `CancelReconciliationRun`<br/>_synq.agent.recon.v1.RunStateService_ | `SCOPE_RECON_EDIT` |
 | `ListReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
+| `DeleteSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_EDIT` |
 | `GetSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `GetSuiteConfigVersion`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSuiteConfigVersions`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSuiteConfigs`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
+| `SubmitAdhocSuite`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_EDIT` |
+| `UpsertSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | `SCOPE_RECON_EDIT` |
 | `GetSuiteDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_READ`<br/>`SCOPE_MCP_READ` |
+| `PauseDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `PromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `ResumeDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `TriggerDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_<br/>`POST /api/recon/v1/deployments/trigger` | `SCOPE_RECON_PROMOTE` |
+| `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `ParseYaml`<br/>_synq.agent.recon.v1.YamlService_<br/>`POST /api/agent/recon/v1/yaml/parse` | — |
 | `RenderYaml`<br/>_synq.agent.recon.v1.YamlService_<br/>`POST /api/agent/recon/v1/yaml/render` | — |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | `SCOPE_MCP_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_ISSUES_READ`<br/>`SCOPE_INCIDENTS_READ`<br/>`SCOPE_LINEAGE_READ`<br/>`SCOPE_MONITORS_READ`<br/>`SCOPE_EXECUTION_READ`<br/>`SCOPE_CODE_READ`<br/>`SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_DATACHECKS_TESTSUGGESTIONS_READ` |
 | `AcceptPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_INTEGRATION_EDIT` |
 | `DismissPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_INTEGRATION_EDIT` |
-| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_MCP_READ` |
-| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_MCP_READ` |
+| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_MCP_READ` |
+| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_MCP_READ` |
 | `RecordPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | `SCOPE_INTEGRATION_EDIT` |
 | `BatchSuggestionStates`<br/>_synq.agent.sre.v1.TestsSuggestionStateService_ | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetActiveSuggestionStatesFor`<br/>_synq.agent.sre.v1.TestsSuggestionStateService_ | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br/>`SCOPE_MCP_READ` |
@@ -916,7 +990,9 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
-| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | `SCOPE_POLICIES_READ` |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:delete` | `SCOPE_POLICIES_EDIT` |
+| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT` |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | `SCOPE_POLICIES_EDIT` |
 | `GetCoverage`<br/>_synq.entities.checks.v1.ChecksCoverageService_ | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListCode`<br/>_synq.entities.code.v1.CodeService_<br/>`GET /api/code/v1` | `SCOPE_CODE_READ`<br/>`SCOPE_MCP_READ` |
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
@@ -967,6 +1043,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_ | `SCOPE_STATUS_READ` |
 | `Activate`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`PATCH /api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
+| `Get`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`GET /api/extensions/atlan/integrations/v1` | `SCOPE_INTEGRATION_READ` |
 | `Ping`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`POST /api/extensions/atlan/integrations/v1/ping` | `SCOPE_EXTENSIONS_MANAGE` |
 | `Remove`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`DELETE /api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
 | `Upsert`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`POST /api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
@@ -997,14 +1074,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `RenameIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/rename` | `SCOPE_INCIDENTS_EDIT` |
 | `SplitIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/split` | `SCOPE_INCIDENTS_EDIT` |
 | `UpdateIncidentState`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/state` | `SCOPE_INCIDENTS_EDIT` |
-| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | `SCOPE_INTEGRATION_EDIT` |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
 | `CreateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `DeleteIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`DELETE /api/integrations/v1/{integration_id}` | `SCOPE_INTEGRATION_EDIT` |
 | `DisableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/disable` | `SCOPE_INTEGRATION_EDIT` |
 | `EnableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/enable` | `SCOPE_INTEGRATION_EDIT` |
-| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_EDIT` |
-| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_EDIT` |
-| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
+| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
+| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
 | `RefreshIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/refresh` | `SCOPE_INTEGRATION_EDIT` |
 | `UpdateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`PUT /api/integrations/v1/{integration_id}` | `SCOPE_INTEGRATION_EDIT` |
 | `BatchGetIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/by-id` | `SCOPE_ISSUES_READ`<br/>`SCOPE_MCP_READ` |

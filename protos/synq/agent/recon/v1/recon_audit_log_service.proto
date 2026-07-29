@@ -14,10 +14,17 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // AuditLogService provides methods to ingest and query reconciliation audit logs.
 service AuditLogService {
   // IngestAuditLog stores a reconciliation run audit log.
+  //
+  // Reporting a locally executed run is part of running one, so the scope that
+  // authorises editing and running suites also authorises reporting their
+  // results — a pipeline needs one credential, not two.
   rpc IngestAuditLog(IngestAuditLogRequest) returns (IngestAuditLogResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_INGEST_RECON]
+      scopes: [
+        SCOPE_INGEST_RECON,
+        SCOPE_RECON_EDIT
+      ]
     };
   }
 
