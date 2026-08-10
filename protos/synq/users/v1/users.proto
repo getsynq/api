@@ -33,6 +33,21 @@ message SlackUser {
     string: {min_len: 1}
     required: true
   }];
+
+  // True when the mapping was established by the user proving ownership of the
+  // Slack account through "Sign in with Slack" (OIDC), rather than being
+  // self-asserted. Server-set only — never trusted from client input. Empty
+  // (unset/false) means the mapping is self-asserted.
+  optional bool verified = 2;
+
+  // Slack workspace/team the user_id belongs to. Set when the mapping was
+  // established via sign-in (a Slack user_id is only unique within a team).
+  // Empty for self-asserted mappings.
+  optional string team_id = 3;
+
+  // How the mapping was established: "manual" (self-asserted selection) or
+  // "slack_oauth" (verified sign-in). Empty is treated as "manual".
+  optional string linked_via = 4;
 }
 
 message MsTeamsUser {
