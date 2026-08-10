@@ -21,7 +21,8 @@ throwaway data product to own, and deletes it at the end.
 Prerequisites:
 - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scopes: Read/Edit Owners, Read/Edit
   Ownership, Read/Edit Data Products).
-- Optionally API_ENDPOINT (defaults to developer.synq.io; US: api.us.synq.io).
+- Optionally API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+  api.au.synq.io for AU).
 """
 
 import os

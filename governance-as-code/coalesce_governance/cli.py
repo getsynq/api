@@ -20,7 +20,7 @@ Identity (as in the API): every resource has a UUID `id`. Omit it and the tool
 either adopts an existing resource with the same title, or generates one — either
 way it writes the id back to the file so future runs are idempotent.
 
-Regions: --region eu|us (APAC coming soon), or --endpoint to override.
+Regions: --region eu|us|au, or --endpoint to override.
 Auth (never in the definition file): --token / QUALITY_TOKEN, or
 --client-id/--client-secret / QUALITY_CLIENT_ID+SECRET, or a cached `login`.
 Agentic use: `apply --yes`, `plan --json`; errors are structured on stdout;
@@ -48,8 +48,7 @@ def _load_schema():
     from importlib.resources import files
     return json.loads(files(__package__).joinpath("governance.schema.json").read_text())
 
-REGIONS = {"eu": "developer.synq.io", "us": "api.us.synq.io"}
-COMING_SOON = {"apac"}
+REGIONS = {"eu": "developer.synq.io", "us": "api.us.synq.io", "au": "api.au.synq.io"}
 
 
 class CliError(Exception):
@@ -62,8 +61,6 @@ def resolve_endpoint(args):
     if os.getenv("API_ENDPOINT"):
         return os.getenv("API_ENDPOINT")
     region = (args.region or "eu").lower()
-    if region in COMING_SOON:
-        raise CliError(f"the {region.upper()} region is not yet available")
     if region not in REGIONS:
         raise CliError(f"unknown region {region!r}; choose from: {', '.join(REGIONS)}")
     return REGIONS[region]
@@ -495,7 +492,7 @@ def _connect(args):
 def build_parser():
     ap = argparse.ArgumentParser(prog="governance-as-code", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--region", choices=sorted(set(REGIONS) | COMING_SOON), help="EU (default), US; APAC soon")
+    ap.add_argument("--region", choices=sorted(REGIONS), help="EU (default), US, AU")
     ap.add_argument("--endpoint", help="override the API host directly")
     ap.add_argument("--token", help="bearer token (else QUALITY_TOKEN)")
     ap.add_argument("--client-id", help="OAuth2 client id (else QUALITY_CLIENT_ID)")

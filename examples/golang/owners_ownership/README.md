@@ -35,7 +35,7 @@ scopes and export them:
 export SYNQ_CLIENT_ID=...
 export SYNQ_CLIENT_SECRET=...
 # Optional; defaults to the EU endpoint developer.synq.io.
-# For the US region use api.us.synq.io.
+# For other regions: api.us.synq.io for US, api.au.synq.io for AU.
 export API_ENDPOINT=developer.synq.io
 ```
 

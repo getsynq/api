@@ -15,7 +15,8 @@ back on reads as `rendered_resolver_ql`.
 
 Prerequisites:
 - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scopes: Read/Edit Data Products).
-- Optionally API_ENDPOINT (defaults to developer.synq.io; US: api.us.synq.io).
+- Optionally API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+  api.au.synq.io for AU).
 """
 
 import os

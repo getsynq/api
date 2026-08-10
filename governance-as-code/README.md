@@ -98,7 +98,7 @@ Pick a region with `--region` (or set `--endpoint` / `API_ENDPOINT` directly):
 |---|---|---|
 | Europe (default) | `eu` | `developer.synq.io` |
 | United States | `us` | `api.us.synq.io` |
-| APAC | `apac` | *coming soon* |
+| Australia | `au` | `api.au.synq.io` |
 
 ## Commands
 

@@ -55,6 +55,7 @@ security:
 servers:
   - url: https://developer.synq.io
   - url: https://api.us.synq.io
+  - url: https://api.au.synq.io
 components:
   securitySchemes:
     bearerAuth:

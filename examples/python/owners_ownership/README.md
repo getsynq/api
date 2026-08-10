@@ -38,7 +38,8 @@ scopes and export them:
 ```bash
 export SYNQ_CLIENT_ID=...
 export SYNQ_CLIENT_SECRET=...
-# Optional; defaults to the EU endpoint developer.synq.io. US: api.us.synq.io.
+# Optional; defaults to the EU endpoint developer.synq.io.
+# For other regions: api.us.synq.io for US, api.au.synq.io for AU.
 export API_ENDPOINT=developer.synq.io
 ```
 

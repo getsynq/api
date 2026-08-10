@@ -82,7 +82,8 @@ You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from th
 You can now fetch the token source by making the following `POST` call to our OAuth2 server.
 
 ```bash
-curl -d "client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&grant_type=client_credentials" -X POST http://api.synq.io/oauth2/token
+# For other regions: api.us.synq.io for US, api.au.synq.io for AU.
+curl -d "client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&grant_type=client_credentials" -X POST https://developer.synq.io/oauth2/token
 
 ```
 

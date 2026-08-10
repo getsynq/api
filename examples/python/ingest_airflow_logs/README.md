@@ -59,7 +59,7 @@ The Lambda execution role needs:
 | Variable       | Required | Default                     | Description                                  |
 | -------------- | -------- | --------------------------- | -------------------------------------------- |
 | `SYNQ_TOKEN`   | yes      | —                           | Bearer token for the SYNQ IngestLog API      |
-| `SYNQ_API_URL` | no       | `https://developer.synq.io` | SYNQ API base URL (`https://api.us.synq.io` for US) |
+| `SYNQ_API_URL` | no       | `https://developer.synq.io` | SYNQ API base URL (`https://api.us.synq.io` for US, `https://api.au.synq.io` for AU) |
 | `LOG_PREFIX`   | no       | `""`                        | S3 key prefix to strip before parsing (e.g. `logs/my-env`) |
 
 ## Deployment

@@ -16,7 +16,7 @@
 //   - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET with scopes:
 //     Read/Edit Data Products.
 //   - Optionally API_ENDPOINT (defaults to the EU endpoint developer.synq.io;
-//     for the US region use api.us.synq.io).
+//     other regions: api.us.synq.io for US, api.au.synq.io for AU).
 package main
 
 import (
