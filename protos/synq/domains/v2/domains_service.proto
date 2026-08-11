@@ -156,8 +156,7 @@ service DomainsService {
     option (google.api.http) = {get: "/api/domains/v2/{id}/members"};
   }
 
-  // Report how many domains the workspace uses, split into top-level domains and
-  // sub-domains.
+  // Report how many domains the workspace uses, split into top-level and sub-domains.
   rpc GetUsage(GetUsageRequest) returns (GetUsageResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

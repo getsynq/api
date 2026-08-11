@@ -99,6 +99,7 @@ service DomainsService {
     option (google.api.http) = {delete: "/api/domains/v1/{domain_id}/definition/parts/{part_id}"};
   }
 
+  // Report how many domains the workspace uses, split into top-level and sub-domains.
   rpc GetUsage(GetUsageRequest) returns (GetUsageResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

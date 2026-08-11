@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 53 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 54 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -623,6 +623,17 @@ Manage platform extensions, including data warehouse agent and catalog connectio
 | `SetMappingToggles`<br/>_synq.extensions.atlan.workflows.v1.AtlanWorkflowService_<br/>`POST /api/extensions/atlan/workflows/v1/mappings/toggle` |  |
 | `Synchronize`<br/>_synq.extensions.atlan.workflows.v1.AtlanWorkflowService_<br/>`POST /api/extensions/atlan/workflows/v1/synchronize` | Run a synchronization job for the integration. |
 
+## Read Usage
+
+`SCOPE_USAGE_GET`
+
+View workspace usage and quota metrics.
+
+| Method | Description |
+| ------ | ----------- |
+| `GetUsage`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/usage` | Report how many domains the workspace uses, split into top-level and sub-domains. |
+| `GetUsage`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/usage` | Report how many domains the workspace uses, split into top-level and sub-domains. |
+
 ## MCP Read Access
 
 `SCOPE_MCP_READ`
@@ -973,6 +984,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGet`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/batch-get` | `SCOPE_DOMAIN_READ` |
 | `Delete`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/delete` | `SCOPE_DOMAIN_EDIT` |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/{domain_id}/sub-domains` | `SCOPE_DOMAIN_READ` |
+| `GetUsage`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/usage` | `SCOPE_USAGE_GET` |
 | `List`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1` | `SCOPE_DOMAIN_READ` |
 | `RemoveDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`DELETE /api/domains/v1/{domain_id}/definition/parts/{part_id}` | `SCOPE_DOMAIN_EDIT` |
 | `SetDefinition`<br/>_synq.domains.v1.DomainsService_<br/>`PUT /api/domains/v1/{domain_id}/definition` | `SCOPE_DOMAIN_EDIT` |
@@ -981,6 +993,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | `SCOPE_DOMAIN_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
+| `GetUsage`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/usage` | `SCOPE_USAGE_GET` |
 | `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | `SCOPE_DOMAIN_READ`<br/>`SCOPE_MCP_READ` |
 | `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | `SCOPE_DOMAIN_EDIT` |
