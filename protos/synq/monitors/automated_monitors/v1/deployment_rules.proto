@@ -5,6 +5,7 @@ import "buf/validate/validate.proto";
 import "synq/queries/v1/query.proto";
 import "synq/queries/v1/query_operand.proto";
 import "synq/queries/v1/query_parts.proto";
+import "synq/monitors/v1/delay_model.proto";
 import "synq/v1/source.proto";
 
 option go_package = "github.com/getsynq/api/monitors/automated_monitors/v1";
@@ -147,6 +148,9 @@ message QueryConfig {
   // ResolverQL-authored rules it equals `resolver_ql`. Empty only for selections
   // that have no ResolverQL representation.
   string rendered_resolver_ql = 8;
+  // How the delay and volume_change_delay metrics model the expected arrival time of new
+  // data. Unset leaves the stored value unchanged.
+  synq.monitors.v1.DelayModel delay_model = 9;
 }
 
 message ExclusiveQueryConfig {
@@ -179,6 +183,9 @@ message StaticConfig {
     }
   ];
   repeated MetricOption metric_options = 5; // NEW
+  // How the delay and volume_change_delay metrics model the expected arrival time of new
+  // data. Unset leaves the stored value unchanged.
+  synq.monitors.v1.DelayModel delay_model = 6;
 }
 
 message ExclusiveStaticConfig {
@@ -204,6 +211,9 @@ message ProductConfig {
   ProductConfigSelfStrategy self = 6;
   bool keep_deleted_monitors = 7;
   repeated MetricOption metric_options = 8; // NEW
+  // How the delay and volume_change_delay metrics model the expected arrival time of new
+  // data. Unset leaves the stored value unchanged.
+  synq.monitors.v1.DelayModel delay_model = 9;
 }
 
 message ProductConfigUpstreamStrategy {

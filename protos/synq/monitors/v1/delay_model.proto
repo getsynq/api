@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package synq.monitors.v1;
+
+option go_package = "github.com/getsynq/api/monitors/v1";
+
+// How the expected arrival time of new data is modelled, for the delay and volume change
+// delay metrics. Only table stats monitors produce those metrics, so the choice has no
+// effect on any other monitor type.
+enum DelayModel {
+  // Not set — the workspace default applies.
+  DELAY_MODEL_UNSPECIFIED = 0;
+  // Expects data to keep arriving at the cadence it has been arriving at, regardless of
+  // which day it is. The default, and the right choice for a pipeline that runs daily.
+  DELAY_MODEL_STANDARD = 1;
+  // Learns a separate cadence for each day of the week, so a pipeline that deliberately
+  // skips weekends is not reported as delayed on Saturday and Sunday. Needs roughly two
+  // weeks of history before it has a pattern to compare against.
+  DELAY_MODEL_WEEKLY_PATTERN = 2;
+}

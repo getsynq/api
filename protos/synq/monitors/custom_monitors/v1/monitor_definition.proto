@@ -7,6 +7,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
+import "synq/monitors/v1/delay_model.proto";
 
 option go_package = "github.com/getsynq/api/monitors/custom_monitors/v1";
 
@@ -112,6 +113,9 @@ message MonitorTableStats {
     // max() is applied automatically.
     string sql = 3 [(buf.validate.field).string.min_len = 1];
   }
+  // How the delay and volume_change_delay metrics model the expected arrival time of new
+  // data. Unset leaves the stored value unchanged.
+  synq.monitors.v1.DelayModel delay_model = 4;
 }
 
 message MonitorCategoryDistribution {
