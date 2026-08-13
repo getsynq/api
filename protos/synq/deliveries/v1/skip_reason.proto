@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package synq.deliveries.v1;
+
+option go_package = "github.com/getsynq/api/deliveries/v1";
+
+// SkipReason says why a delivery sent nothing. Every code path that declines to
+// send names one, so an integration that appears silent can be explained rather
+// than guessed at.
+//
+// It is an enum rather than a message we wrote once, so a caller can act on the
+// reason: a not-subscribed event is fixed in the integration's settings, a
+// disabled integration is fixed by enabling it, and an unsupported event type is
+// not fixable at all.
+enum SkipReason {
+  SKIP_REASON_UNSPECIFIED = 0;
+  // The event type is not among the ones the integration subscribes to.
+  SKIP_REASON_EVENT_TYPE_NOT_SUBSCRIBED = 1;
+  // The destination has no representation for this kind of event.
+  SKIP_REASON_EVENT_TYPE_UNSUPPORTED_BY_INTEGRATION = 2;
+  // The change of state maps to no action on the destination.
+  SKIP_REASON_NO_ACTION_FOR_LIFECYCLE_STATE = 3;
+  // The integration the event was addressed to no longer exists.
+  SKIP_REASON_INTEGRATION_NOT_FOUND = 4;
+  // The integration exists but is disabled.
+  SKIP_REASON_INTEGRATION_DISABLED = 5;
+  // The event carried no issue or incident to describe.
+  SKIP_REASON_EMPTY_EVENT_SUBJECT = 6;
+}
