@@ -1,0 +1,314 @@
+syntax = "proto3";
+
+package synq.deliveries.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/deliveries/v1/attempt.proto";
+import "synq/deliveries/v1/delivery.proto";
+import "synq/deliveries/v1/skip_reason.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/deliveries/v1";
+
+// DeliveriesService reports what was sent to your notification integrations —
+// webhooks, PagerDuty, Opsgenie — and what came back.
+//
+// It answers the three questions an integration owner has. "Did this event
+// reach my endpoint": list the deliveries for an event id and read the outcome
+// of each. "Why did my endpoint reject it": read the attempts, which carry the
+// request as it was sent and the response as it came back. "Why did I get
+// nothing at all": every delivery that sent nothing records a reason, so a
+// silent integration can be explained rather than guessed at.
+//
+// Deliveries are kept for 90 days. Credential-bearing header values are never
+// returned, on either side of an attempt — see `Header`.
+service DeliveriesService {
+  // List deliveries, newest event first. With no `integration_id` this is the
+  // whole workspace's feed; with one it is that integration's.
+  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_READ]
+    };
+    option (google.api.http) = {get: "/api/deliveries/v1"};
+  }
+
+  // Fetch deliveries by id. Ids that do not exist, or have passed out of the
+  // retention window, are omitted from the response rather than causing an
+  // error. Unlike `ListDeliveries`, this always returns the routing provenance.
+  rpc BatchGetDeliveries(BatchGetDeliveriesRequest) returns (BatchGetDeliveriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_READ]
+    };
+    option (google.api.http) = {
+      post: "/api/deliveries/v1/by-id"
+      body: "*"
+    };
+  }
+
+  // Fetch a single delivery by id. `BatchGetDeliveries` does the same for many
+  // at once and is the variant exposed over REST.
+  rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_READ]
+    };
+  }
+
+  // List every attempt made for one delivery, oldest first. A delivery is
+  // attempted at most ten times, so the result is small and is not paginated.
+  rpc ListAttempts(ListAttemptsRequest) returns (ListAttemptsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_READ]
+    };
+    option (google.api.http) = {get: "/api/deliveries/v1/{delivery_id}/attempts"};
+  }
+
+  // Count deliveries over a window, bucketed by outcome, by skip reason and by
+  // HTTP status class. Use it to watch your own delivery failure rate without
+  // paging through the feed.
+  rpc SummariseDeliveries(SummariseDeliveriesRequest) returns (SummariseDeliveriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_READ]
+    };
+    option (google.api.http) = {
+      post: "/api/deliveries/v1/summarise"
+      body: "*"
+    };
+  }
+
+  // Send an earlier delivery again, to the same integration, with the same
+  // event. The replay is a new delivery with its own id, linked to the original
+  // through `redelivery_of`, and appears in `ListDeliveries` like any other.
+  //
+  // It is signed with the integration's current secret rather than the one the
+  // original used, which makes it the way to confirm that a rotated secret is
+  // accepted by the receiver.
+  //
+  // Retrying this call sends the delivery again. Rate-limited per integration;
+  // over the limit it fails with `RESOURCE_EXHAUSTED` rather than queueing.
+  rpc Redeliver(RedeliverRequest) returns (RedeliverResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/deliveries/v1/{delivery_id}/redeliver"
+      body: "*"
+    };
+  }
+
+  // Send a test delivery to an integration, to confirm the endpoint is reachable
+  // and that it accepts what is sent. It is always sent, whatever event types
+  // the integration subscribes to — a test that silently matches nothing would
+  // report the same as a broken endpoint.
+  //
+  // Returns the id of the delivery it created. The send is asynchronous: poll
+  // `BatchGetDeliveries` with that id until the outcome leaves `OUTCOME_PENDING`.
+  //
+  // Retrying this call sends another test. Rate-limited per integration; over
+  // the limit it fails with `RESOURCE_EXHAUSTED` rather than queueing.
+  rpc SendTestDelivery(SendTestDeliveryRequest) returns (SendTestDeliveryResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DELIVERY_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/deliveries/v1/test"
+      body: "*"
+    };
+  }
+}
+
+message ListDeliveriesRequest {
+  // Restrict to one integration. Omit for the whole workspace's feed.
+  optional string integration_id = 1 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Restrict to one event — every integration it reached, and what each did with
+  // it. This is the `event_id` from a received webhook payload.
+  optional string event_id = 2 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Restrict to the issue or incident the delivery was about. Takes the same
+  // identifier the rest of the API uses for that object.
+  optional string subject_id = 3 [(buf.validate.field).string.max_len = 200];
+  // Restrict to these event types, by `synq.webhooks.v1.Event.EventType` name.
+  // Empty matches every type.
+  repeated string event_types = 4 [(buf.validate.field).repeated = {
+    max_items: 20
+    items: {
+      string: {max_len: 100}
+    }
+  }];
+  // Restrict to these outcomes. Empty matches every outcome.
+  repeated Outcome outcomes = 5 [(buf.validate.field).repeated = {
+    max_items: 5
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Restrict to deliveries whose most recent attempt returned one of these HTTP
+  // statuses. Empty matches every status.
+  repeated int32 status_codes = 6 [(buf.validate.field).repeated = {
+    max_items: 20
+    items: {
+      int32: {
+        gte: 100
+        lte: 599
+      }
+    }
+  }];
+  // Only deliveries for events at or after this time. Defaults to the start of
+  // the retention window.
+  optional google.protobuf.Timestamp since = 7;
+  // Only deliveries for events strictly before this time. Defaults to now.
+  optional google.protobuf.Timestamp until = 8;
+  // Pagination. Deliveries are returned newest event first; pass the `last_id`
+  // of the previous page as the cursor.
+  synq.v1.Pagination pagination = 9;
+  // Also return `matched_alert_configs` and `correlation_key` on each delivery.
+  // Off by default: it costs a second read per delivery, and a feed rarely needs
+  // it. `BatchGetDeliveries` always returns them.
+  bool include_routing = 10;
+}
+
+message ListDeliveriesResponse {
+  // The matching deliveries, newest event first.
+  repeated Delivery deliveries = 1;
+  // Cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message BatchGetDeliveriesRequest {
+  // Delivery ids to fetch (1–200, unique), as returned by `ListDeliveries`,
+  // `Redeliver` or `SendTestDelivery`.
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {max_len: 200}
+    }
+  }];
+}
+
+message BatchGetDeliveriesResponse {
+  // The deliveries found, keyed by id. Ids that do not exist are absent.
+  map<string, Delivery> deliveries = 1;
+}
+
+message GetDeliveryRequest {
+  // Delivery id.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message GetDeliveryResponse {
+  // The delivery. Absent when there is none with that id.
+  optional Delivery delivery = 1;
+}
+
+message ListAttemptsRequest {
+  // Delivery whose attempts to list.
+  string delivery_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message ListAttemptsResponse {
+  // Every attempt made, oldest first. Empty for a delivery that sent nothing,
+  // and for one still waiting on its first attempt.
+  repeated Attempt attempts = 1;
+}
+
+message SummariseDeliveriesRequest {
+  // Restrict to one integration. Omit to summarise the whole workspace.
+  optional string integration_id = 1 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Start of the window, on event time. Required — a summary of everything kept
+  // is rarely the question, and always the most expensive one.
+  google.protobuf.Timestamp since = 2 [(buf.validate.field).required = true];
+  // End of the window, on event time. Defaults to now.
+  optional google.protobuf.Timestamp until = 3;
+}
+
+message SummariseDeliveriesResponse {
+  // The window actually summarised, after defaults were applied.
+  google.protobuf.Timestamp since = 1;
+  google.protobuf.Timestamp until = 2;
+  // Deliveries in the window, whatever became of them.
+  int32 total = 3;
+  // Counts per outcome. Outcomes with no deliveries are omitted.
+  repeated OutcomeCount by_outcome = 4;
+  // Counts per HTTP status class of the most recent attempt. Deliveries that
+  // were never attempted are omitted rather than counted as a class.
+  repeated StatusClassCount by_status_class = 5;
+  // Counts per reason for sending nothing. Only over the deliveries counted as
+  // `OUTCOME_SKIPPED` or `OUTCOME_NOT_ROUTED`.
+  repeated SkipReasonCount by_skip_reason = 6;
+}
+
+message OutcomeCount {
+  Outcome outcome = 1;
+  int32 count = 2;
+}
+
+message StatusClassCount {
+  StatusClass status_class = 1;
+  int32 count = 2;
+}
+
+message SkipReasonCount {
+  SkipReason skip_reason = 1;
+  int32 count = 2;
+}
+
+// StatusClass groups HTTP statuses the way a delivery report reads them.
+enum StatusClass {
+  STATUS_CLASS_UNSPECIFIED = 0;
+  // 2xx — accepted. The only class that counts as delivered.
+  STATUS_CLASS_SUCCESS = 2;
+  // 3xx. Redirects are not followed: a delivery carries credentials scoped to
+  // one host, so a destination answering with one is treated as not having
+  // accepted the payload.
+  STATUS_CLASS_REDIRECT = 3;
+  // 4xx — the destination rejected the request.
+  STATUS_CLASS_CLIENT_ERROR = 4;
+  // 5xx — the destination failed to handle it.
+  STATUS_CLASS_SERVER_ERROR = 5;
+  // No response arrived at all: a connection failure, a TLS error, a timeout.
+  STATUS_CLASS_NO_RESPONSE = 6;
+}
+
+message RedeliverRequest {
+  // Delivery to send again.
+  string delivery_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message RedeliverResponse {
+  // Id of the delivery created by the replay. Poll `BatchGetDeliveries` with it
+  // to follow the outcome.
+  string delivery_id = 1;
+}
+
+message SendTestDeliveryRequest {
+  // Integration to send the test to.
+  string integration_id = 1 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Message to carry in the test payload, so a test can be recognised on the
+  // receiving end. Defaults to a generic one.
+  optional string message = 2 [(buf.validate.field).string.max_len = 500];
+}
+
+message SendTestDeliveryResponse {
+  // Id of the delivery created. Poll `BatchGetDeliveries` with it to follow the
+  // outcome.
+  string delivery_id = 1;
+}

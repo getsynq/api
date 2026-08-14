@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package synq.deliveries.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/deliveries/v1/skip_reason.proto";
+
+option go_package = "github.com/getsynq/api/deliveries/v1";
+
+// Delivery is one event as it was addressed to one integration: what it was
+// about, whether it went, and what happened when it did.
+//
+// One event reaches every integration subscribed to it, so an event that fans
+// out to three integrations produces three deliveries. They share `event_id`
+// and each has its own `id`.
+message Delivery {
+  // Opaque identifier of this delivery, composed by the service. Pass it back to
+  // `BatchGetDeliveries`, `ListAttempts` and `Redeliver`; do not parse it or
+  // build one yourself, as its composition can change.
+  string id = 1;
+  // Identifier of the event this delivery carries, shared by every integration
+  // the same event reached. Filter `ListDeliveries` on it to answer "which of my
+  // integrations did this event reach, and what did each of them do with it".
+  // It is also the `event_id` in the webhook payload a receiver got, so a
+  // customer holding a received webhook can find its delivery from it.
+  string event_id = 2;
+  // The integration this delivery was addressed to.
+  string integration_id = 3;
+  // Name of the `synq.webhooks.v1.Event.EventType` the delivery carries — for
+  // example `EVENT_TYPE_ISSUE_CREATED`. Empty when the event has no
+  // representation for this kind of integration.
+  string event_type = 4;
+  // What the event is about, so a delivery can be found from the issue or
+  // incident a question is asked about.
+  DeliverySubject subject = 5;
+  // When the event happened. This is the event time, not the time it was sent —
+  // `last_attempt_at` is that. Deliveries are listed newest event first.
+  google.protobuf.Timestamp created_at = 6;
+
+  // What became of the delivery.
+  Outcome outcome = 7;
+  // Why nothing was sent. Set exactly when `outcome` is `OUTCOME_SKIPPED` or
+  // `OUTCOME_NOT_ROUTED`.
+  SkipReason skip_reason = 8;
+
+  // How many attempts have been made so far, across every request this delivery
+  // produced. Zero for a delivery that sent nothing, and for one still queued.
+  int32 attempt_count = 9;
+  // When the most recent attempt started. Unset until the first attempt.
+  google.protobuf.Timestamp last_attempt_at = 10;
+  // When the next attempt is due. Set only while `outcome` is `OUTCOME_PENDING`;
+  // an attempt can still start slightly later than this under load.
+  google.protobuf.Timestamp next_attempt_at = 11;
+  // How long the attempts took in total. Useful as "how long did this take to
+  // land" rather than as a measure of one request.
+  google.protobuf.Duration duration = 12;
+  // HTTP status of the most recent attempt. Zero when no response was received —
+  // either nothing has been sent yet, or the request failed before one arrived,
+  // in which case the attempt carries the transport error.
+  int32 status_code = 13;
+
+  // The delivery this one replays, set when it was produced by `Redeliver`.
+  // Empty for a first delivery.
+  string redelivery_of = 14;
+
+  // Which alert configurations selected this integration for this event —
+  // the answer to "why did I get this". More than one when several
+  // configurations match the same event, because their alerts are merged into a
+  // single delivery per integration. Empty for deliveries not produced by
+  // alerting, such as a test delivery.
+  //
+  // Always populated by `BatchGetDeliveries`; populated by `ListDeliveries`
+  // only when the request sets `include_routing`.
+  repeated MatchedAlertConfig matched_alert_configs = 15;
+
+  // The key the destination deduplicates on — a PagerDuty `dedup_key`, an
+  // Opsgenie `alias` — so an incident in your own tool can be traced back to the
+  // delivery that opened it. Empty for destinations that create no such object.
+  //
+  // Populated on the same terms as `matched_alert_configs`.
+  string correlation_key = 16;
+}
+
+// Outcome is what became of a delivery. It is a state the service maintains,
+// not something to recompute from status codes: a 500 that will be retried and
+// a 500 that exhausted the retries are the same status and different outcomes.
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  // Accepted and queued, with at least one attempt still to come.
+  OUTCOME_PENDING = 1;
+  // Every request the delivery produced was accepted by the destination.
+  OUTCOME_DELIVERED = 2;
+  // The destination rejected it, or it was still failing when the retries ran
+  // out. No further attempt will be made — use `Redeliver` to try again.
+  OUTCOME_FAILED = 3;
+  // The integration was reached and declined to send anything; `skip_reason`
+  // says why. Nothing was attempted and nothing will be.
+  OUTCOME_SKIPPED = 4;
+  // No integration could be resolved for the event at all; `skip_reason` says
+  // why. Distinct from `OUTCOME_SKIPPED`, where the integration was found and it
+  // was its own configuration that declined.
+  OUTCOME_NOT_ROUTED = 5;
+}
+
+// DeliverySubject is the object an event is about.
+message DeliverySubject {
+  // Which kind of object `id` refers to.
+  SubjectType type = 1;
+  // Identifier of the issue or incident, as the rest of the API uses it. For a
+  // test delivery this is the event id, since a test is about nothing else.
+  string id = 2;
+  // Title at the time the delivery was decided, kept so a delivery stays
+  // readable after the issue is renamed or closed.
+  string title = 3;
+  // Link to the object in the app. Empty when the subject has no page.
+  string url = 4;
+}
+
+enum SubjectType {
+  SUBJECT_TYPE_UNSPECIFIED = 0;
+  SUBJECT_TYPE_ISSUE = 1;
+  SUBJECT_TYPE_INCIDENT = 2;
+  // A delivery sent by `SendTestDelivery`, which is about no issue or incident.
+  SUBJECT_TYPE_DELIVERY_TEST = 3;
+}
+
+// MatchedAlertConfig names one alert configuration that selected an integration
+// for an event.
+message MatchedAlertConfig {
+  // Identifier of the alert configuration.
+  string alert_config_id = 1;
+  // Its name when the delivery was decided, so the delivery stays attributable
+  // after the configuration is renamed or deleted.
+  string name = 2;
+  // Fully-qualified name, set only for configurations managed as code.
+  string fqn = 3;
+  // The ownership the configuration belongs to. Empty for workspace-level
+  // configurations.
+  string ownership_id = 4;
+  // The owner the integration was reached through. Empty when the configuration
+  // names the integration directly rather than routing to an owner.
+  string owner_path = 5;
+}

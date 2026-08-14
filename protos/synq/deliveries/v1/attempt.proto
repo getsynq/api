@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package synq.deliveries.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/deliveries/v1";
+
+// Attempt is one try at handing a delivery to its destination, recorded as it
+// happened: what was sent, what came back, and how long it took.
+//
+// A delivery can produce more than one outgoing request — an integration that
+// creates an object and then annotates it makes two — and each request is
+// retried on its own. Attempts of the same request share `request_id` and count
+// up in `attempt`.
+message Attempt {
+  // The delivery this attempt belongs to.
+  string delivery_id = 1;
+  // Which try this was for `request_id`, starting at 1.
+  int32 attempt = 2;
+  // Opaque identifier of the outgoing request. Group attempts by it to follow
+  // one request's retries; compare it to tell two requests of the same delivery
+  // apart.
+  string request_id = 3;
+  // When the attempt started.
+  google.protobuf.Timestamp attempted_at = 4;
+  // How long it took, whether it succeeded or failed.
+  google.protobuf.Duration duration = 5;
+  // Why the attempt never produced a response — a connection failure, a TLS
+  // error, a timeout. Empty when a response was received, however it read.
+  string error = 6;
+
+  // How the delivery was handed over. Every attempt today is an HTTP request;
+  // the field is a choice so a future transport can be added without changing
+  // the shape of the ones already here.
+  oneof transport {
+    HttpAttempt http = 7;
+  }
+
+  reserved 8;
+}
+
+// HttpAttempt is one HTTP request and the response it got.
+//
+// Credential-bearing headers are never returned, whichever side they appear on —
+// see `Header`.
+message HttpAttempt {
+  // Method used, upper-case.
+  string method = 1;
+  // Full URL the request was sent to, query string included.
+  string url = 2;
+  // Headers as sent.
+  repeated Header request_headers = 3;
+  // Body as sent. A value the destination requires to be secret — a routing key,
+  // for instance — is replaced by a marker naming the field it stood in, so the
+  // record shows that a value was sent rather than implying none was.
+  string request_body = 4;
+  // Size of the body actually sent, in bytes, before any such substitution.
+  int32 request_bytes = 5;
+
+  // HTTP status returned. Zero when no response arrived; `error` on the attempt
+  // then says why.
+  int32 status_code = 6;
+  // Headers the destination returned.
+  repeated Header response_headers = 7;
+  // Body the destination returned, cut short past a fixed size — see
+  // `response_truncated`.
+  string response_body = 8;
+  // Size of the response body as the destination sent it, before truncation.
+  int32 response_bytes = 9;
+  // Whether `response_body` was cut short. When set, `response_bytes` is the
+  // full size and `response_body` holds the leading bytes.
+  bool response_truncated = 10;
+}
+
+// Header is one HTTP header of an attempt.
+//
+// A header whose value carries a credential is never returned, on either the
+// request or the response side. That covers headers you configured as secret,
+// credentials held for the destination, and the standard credential-bearing
+// names (`Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`,
+// `X-Api-Key`, `X-Auth-Token`) whatever their contents — a destination echoing
+// its own authorization header back is withheld too.
+//
+// Signature headers are returned in full: `X-Coalesce-Signature` is a digest of
+// the body and `X-Coalesce-Timestamp` is a timestamp, neither of which is the
+// signing secret, and the exact bytes are what you need to reproduce a
+// verification that failed.
+message Header {
+  // Header name, as sent.
+  string name = 1;
+  // Header value. Empty when `withheld` is set.
+  string value = 2;
+  // Whether the value was withheld. The header itself is still reported, so the
+  // record shows which headers were present.
+  bool withheld = 3;
+  // Short digest of a withheld value, stable for the same value. Enough to
+  // answer "is this the same token as the one that worked yesterday" by
+  // comparing two deliveries, without disclosing either value.
+  string fingerprint = 4;
+  // Which version of the stored secret the withheld value was read from, so a
+  // delivery can be attributed to a specific secret across a rotation. Empty for
+  // values that come from no stored secret.
+  string secret_version = 5;
+}
