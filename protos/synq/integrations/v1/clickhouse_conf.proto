@@ -33,4 +33,37 @@ message ClickhouseCloudConf {
   optional bool fetch_query_logs = 9;
   // Fully-qualified table for storing SQL test audit logs.
   optional string audit_table_fqn = 10;
+  // How ClickHouse system tables are read. Omit to keep reading across a cluster
+  // named "default", which every ClickHouse Cloud service provides.
+  optional ClickhouseClusterConf cluster = 11;
+}
+
+// How metadata reads address ClickHouse system tables.
+//
+// System tables are per-node, so on a service with more than one replica a plain
+// read reflects whichever replica answered rather than the whole warehouse.
+message ClickhouseClusterConf {
+  ClickhouseClusterMode mode = 1;
+  // Cluster to read through, as named under remote_servers in the ClickHouse
+  // configuration. `SELECT DISTINCT cluster FROM system.clusters` lists what a
+  // server has. Empty means "default". Ignored in single-node mode.
+  string name = 2 [(buf.validate.field).string = {
+    max_len: 256
+    pattern: "^([A-Za-z_][A-Za-z0-9_.\\-]*)?$"
+  }];
+}
+
+enum ClickhouseClusterMode {
+  // Treated as CLICKHOUSE_CLUSTER_MODE_ALL_REPLICAS. Reading across a cluster is
+  // the behaviour of an integration that has never set this, so single-node
+  // reads have to be asked for rather than inherited from an unset field.
+  CLICKHOUSE_CLUSTER_MODE_UNSPECIFIED = 0;
+  // Read system tables across the named cluster, so metadata covers every
+  // replica. Requires `GRANT REMOTE ON *.*`.
+  CLICKHOUSE_CLUSTER_MODE_ALL_REPLICAS = 1;
+  // Read system tables on the connected node only. The one option that works on
+  // a ClickHouse whose remote_servers defines no cluster, and it needs no REMOTE
+  // grant — but on a service that does have replicas it reports the metadata of
+  // a single node.
+  CLICKHOUSE_CLUSTER_MODE_SINGLE_NODE = 2;
 }

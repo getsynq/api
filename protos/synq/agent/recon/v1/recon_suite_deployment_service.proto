@@ -389,6 +389,21 @@ message SuiteDeployment {
   optional synq.issues.actor.v1.Actor last_actor = 20;
   optional string last_change_summary = 21;
 
+  // When this deployment reached production, and who put it there — taken from
+  // the most recent promotion in its history, not from whatever happened last.
+  //
+  // Read these rather than state_at / last_actor whenever the question is "when
+  // did this go live and on whose authority". Pausing, rescheduling, editing
+  // annotations or changing categories all restamp state_at / last_actor and
+  // leave these two untouched, so a surface that renders the promotion from
+  // state_at reports the wrong time and often the wrong person.
+  //
+  // A re-promote is a promotion, so it restamps both. Unpromoting does not clear
+  // them: an inactive deployment still reports when it was last live. Both are
+  // absent only for a deployment whose history holds no promotion event.
+  optional google.protobuf.Timestamp promoted_at = 30;
+  optional synq.issues.actor.v1.Actor promoted_by = 31;
+
   // Next cron occurrence computed live from `schedule` at response
   // time. Absent when there's no schedule, when the deployment is
   // inactive/paused, or when the schedule expression no longer yields
