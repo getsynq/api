@@ -20,8 +20,30 @@ message CheckCategory {
     required: true
     string: {max_len: 50}
   }];
-  // Explicit name of the Check category. If it is not defined categorisation rules are applied based on package + kind.
+  // Explicit technical category of the check — what kind of check this is,
+  // mechanically (e.g. "nullness", "uniqueness", "freshness"), so the same
+  // check expressed on another platform shares one category.
+  //
+  // Presence is meaningful on update: omit the field to leave the current
+  // value untouched, send an empty string to clear it, send a non-empty
+  // string to set or replace it. Leaving it unset means the check is
+  // uncategorised for this dimension and the workspace's categorisation
+  // rules decide it from package + kind; the `quality.check_category`
+  // annotation on the entity is read as the lower-precedence fallback.
   optional string category = 3 [(buf.validate.field) = {
+    required: false
+    string: {max_len: 50}
+  }];
+  // Explicit governance category of the check — what the check is for, the
+  // data-quality dimension a governance function tracks coverage against
+  // (e.g. "Completeness", "Accuracy", "Timeliness").
+  //
+  // Resolves independently of `category` and follows the same presence
+  // semantics: omitted leaves it unchanged, empty clears it, non-empty sets
+  // it. Unset means uncategorised for this dimension; the
+  // `quality.governance_category` annotation on the entity is the
+  // lower-precedence fallback.
+  optional string governance_category = 4 [(buf.validate.field) = {
     required: false
     string: {max_len: 50}
   }];
