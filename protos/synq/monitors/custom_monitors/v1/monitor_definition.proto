@@ -225,4 +225,34 @@ message MonitorDefinition {
   // instead of the table identified by monitored_id directly.
   // Column references in time_partitioning, segmentation, and filter refer to columns in the SQL output.
   optional SqlSource sql_source = 50;
+
+  // Technical category this monitor declares for itself — what kind of check it
+  // is mechanically (e.g. "volume", "freshness"). It is the monitor's own
+  // declaration, not an administrative
+  // override: it is authoritative over any categorisation rule the workspace
+  // would otherwise apply, and is itself overridden by an explicit per-check
+  // category an admin sets.
+  //
+  // The value is free-form and workspace-defined — whatever vocabulary your
+  // categorisation rules already use. It is displayed with underscores turned
+  // into spaces, so `snake_case` reads well.
+  //
+  // Send the whole monitor on every upsert: leaving this out is the same as
+  // sending it empty, and both mean the monitor declares no technical
+  // category. A monitor then falls back to its `quality.check_category`
+  // annotation, which remains accepted and keeps working — this field simply
+  // outranks it.
+  //
+  // A segmented monitor's segments take this value too. A segment is the same
+  // monitor sliced by a column value, so it cannot declare a category of its
+  // own.
+  optional string category = 51;
+
+  // Governance category this monitor declares for itself — what the check is
+  // for, the data quality dimension governance reports on (e.g. "timeliness").
+  // Resolves independently of `category` — setting one never suppresses the
+  // other — and follows the same precedence, the same free-form vocabulary and
+  // the same full-state upsert rule described above. Its annotation fallback is
+  // `quality.governance_category`.
+  optional string governance_category = 52;
 }

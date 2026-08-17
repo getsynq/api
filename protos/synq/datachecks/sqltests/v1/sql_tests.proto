@@ -81,6 +81,31 @@ message SqlTest {
 
   // Tables referenced by the SQL expression, resolved at upsert time.
   repeated InputTable input_tables = 15;
+
+  // Technical category this test declares for itself — what kind of check it is
+  // mechanically (e.g. "nullness", "uniqueness"). It is the test's own
+  // declaration, not an administrative
+  // override: it is authoritative over any categorisation rule the workspace
+  // would otherwise apply, and is itself overridden by an explicit per-check
+  // category an admin sets.
+  //
+  // The value is free-form and workspace-defined — whatever vocabulary your
+  // categorisation rules already use. It is displayed with underscores turned
+  // into spaces, so `snake_case` reads well.
+  //
+  // Send the whole test on every upsert: leaving this out is the same as
+  // sending it empty, and both mean the test declares no technical category.
+  // A test then falls back to its `quality.check_category` annotation, which
+  // remains accepted and keeps working — this field simply outranks it.
+  optional string category = 16;
+
+  // Governance category this test declares for itself — what the check is for,
+  // the data quality dimension governance reports on (e.g. "completeness").
+  // Resolves independently of `category` — setting one never suppresses the
+  // other — and follows the same precedence, the same free-form vocabulary and
+  // the same full-state upsert rule described above. Its annotation fallback is
+  // `quality.governance_category`.
+  optional string governance_category = 17;
 }
 
 // InputTable is a table reference resolved from the SQL expression of a SqlTest.

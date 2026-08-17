@@ -79,6 +79,21 @@ service SuiteDeploymentService {
     };
   }
 
+  // Change the categories declared for a deployment's reconciliation checks
+  // without re-promoting the suite snapshot. Each field is patched independently:
+  // omitting one leaves it as it was, sending an empty string clears it, and
+  // sending a value sets or replaces it — so changing the governance category can
+  // never disturb the technical one.
+  //
+  // The new categories reach the published checks immediately; a re-promote is not
+  // needed for them to take effect.
+  rpc UpdateDeploymentCategories(UpdateDeploymentCategoriesRequest) returns (UpdateDeploymentCategoriesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECON_PROMOTE]
+    };
+  }
+
   // Patch the per-case ReconciliationFailureImpact map on an existing deployment
   // without re-promoting the suite snapshot. Useful for "apply to all"
   // FE actions and one-off toggles between RAISE_ISSUE_ON_TABLES and
@@ -306,6 +321,9 @@ enum DeploymentAction {
   // The per-reconciliation failure impact settings changed — which tables a
   // failing reconciliation raises an issue on.
   DEPLOYMENT_ACTION_FAILURE_IMPACTS_CHANGED = 9;
+
+  // The categories declared for the deployment's reconciliation checks changed.
+  DEPLOYMENT_ACTION_CATEGORIES_CHANGED = 10;
 }
 
 // SuiteDeployment is the latest state of a deployment (current row).
@@ -395,6 +413,67 @@ message SuiteDeployment {
   // PromotedReconCaseMetadata.error_tables / shown_tables for the
   // resolved table lists.
   map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 25;
+
+  // Technical category declared for every reconciliation check this deployment
+  // publishes — the "what kind of check is this, mechanically" dimension the
+  // catalog groups and filters checks by (for example "nullness", "uniqueness",
+  // "freshness"), which is what lets one category cover the same check written as
+  // a dbt test, a SQLMesh audit or a reconciliation.
+  //
+  // Declared on the promotion rather than in the suite file, because a
+  // reconciliation only becomes a check once it is promoted: the suite file says
+  // what to reconcile, the promotion says how it behaves in production — the same
+  // reason `schedule` lives here and not in the file.
+  //
+  // Absent means this deployment declares no category. The category is then taken
+  // from a reserved `quality.check_category` annotation on the suite, the case or
+  // the deployment overlay (see deployment_annotations), and failing that from the
+  // workspace's own categorisation rules. Setting this field outranks both.
+  //
+  // Free-form: the vocabulary is whatever the workspace already uses, not a fixed
+  // enum. Always read and write it together with governance_category — the two
+  // dimensions resolve independently and a surface that exposes one must expose
+  // both.
+  optional string category = 27;
+
+  // Governance category declared for every reconciliation check this deployment
+  // publishes — the "what is this check for" dimension, orthogonal to `category`
+  // (for example "completeness", "accuracy", "timeliness"). It is the dimension a
+  // data-governance function tracks coverage against.
+  //
+  // Same declaration point, same precedence and same free-form vocabulary as
+  // `category`; resolved independently of it, so declaring one never suppresses
+  // the other's annotation.
+  optional string governance_category = 28;
+
+  // Per-case overrides of the two fields above, keyed by case `name` from the
+  // suite config. Cases without an entry use the deployment-wide declaration.
+  //
+  // Worth overriding when the cases of one suite are the same kind of check but
+  // serve different governance purposes — a case comparing row counts is about
+  // completeness while a case comparing values is about accuracy, and they can
+  // carry different governance categories while sharing the deployment's technical
+  // one.
+  map<string, CaseCategories> case_categories = 29;
+}
+
+// CaseCategories declares the categories for a single reconciliation case,
+// overriding what the deployment declares. The two dimensions are independent, so
+// a case can override one and inherit the other.
+//
+// Per field:
+//   - absent                : inherit the deployment's declaration
+//   - present, empty string : declare nothing for this case, even when the
+//                             deployment declares a value — the category then
+//                             falls to the reserved annotation or the workspace's
+//                             categorisation rules
+//   - present, non-empty    : set this case's category
+//
+// An entry with neither field set therefore means the same as no entry at all, and
+// is dropped rather than stored.
+message CaseCategories {
+  optional string category = 1;
+  optional string governance_category = 2;
 }
 
 // SuiteDeploymentHistoryEntry is a single event in the deployment's history.
@@ -434,6 +513,17 @@ message SuiteDeploymentHistoryEntry {
   // Snapshot semantics — every history entry carries the full map in
   // force right after the event was recorded.
   map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 17;
+
+  // The declared categories in force at this point in time. Snapshot semantics,
+  // like the fields above: every history entry carries the values in force right
+  // after the event was recorded, not just the CATEGORIES_CHANGED ones. Absent
+  // means no category was declared at that time.
+  optional string category = 19;
+  optional string governance_category = 20;
+
+  // Per-case category overrides in force at this point in time. Snapshot
+  // semantics, like the map above.
+  map<string, CaseCategories> case_categories = 21;
 }
 
 // --- Requests / responses ---
@@ -517,6 +607,29 @@ message PromoteSuiteRequest {
   // as "no opinion, keep current"; to actively reset to the default,
   // either omit the case or send RAISE_ISSUE_ON_TABLES.
   map<string, ReconciliationFailureImpact> reconciliation_failure_impacts = 11;
+
+  // Categories to declare for the reconciliation checks this promotion publishes.
+  // See SuiteDeployment.category / .governance_category for what they mean and how
+  // they interact with annotations and categorisation rules.
+  //
+  // On a re-promote these behave as a patch of the previous deployment's values,
+  // per field:
+  //   - absent                : keep whatever the previous deployment declared
+  //   - present, empty string : clear the declaration, falling back to the
+  //                             reserved annotation or the workspace rules
+  //   - present, non-empty    : set or replace the declaration
+  //
+  // So a re-promote that says nothing about categories never silently drops one.
+  // Use UpdateDeploymentCategories to change them without re-promoting.
+  optional string category = 13;
+  optional string governance_category = 14;
+
+  // Initial per-case category overrides, keyed by case `name`. Keys omitted on a
+  // re-promote keep the previous deployment's override; see CaseCategories for how
+  // a single dimension is inherited or cleared. Overrides for cases the promoted
+  // snapshot doesn't contain are rejected with INVALID_ARGUMENT, so a renamed or
+  // deleted case surfaces as an error rather than a silently dead override.
+  map<string, CaseCategories> case_categories = 15;
 }
 
 message PromoteSuiteResponse {
@@ -613,6 +726,40 @@ message UpdateDeploymentAnnotationsRequest {
 }
 
 message UpdateDeploymentAnnotationsResponse {
+  SuiteDeployment deployment = 1;
+}
+
+message UpdateDeploymentCategoriesRequest {
+  string suite_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // Patch of the declared categories. Field presence is meaningful and the two
+  // fields are independent:
+  //   - absent                : leave the current value unchanged
+  //   - present, empty string : clear the declaration
+  //   - present, non-empty    : set or replace the declaration
+  //
+  // A request that sets nothing at all is accepted and changes nothing.
+  optional string category = 2;
+  optional string governance_category = 3;
+
+  // Patch of the per-case overrides, keyed by case `name`. Keys present in the
+  // request replace that case's override; keys absent are left untouched, so this
+  // never resets overrides the caller didn't mention. Send an entry with both
+  // fields absent to drop a case's override and go back to inheriting the
+  // deployment's declaration. Unknown case names are rejected with
+  // INVALID_ARGUMENT.
+  map<string, CaseCategories> case_categories = 6;
+
+  optional string change_summary = 4;
+
+  // Actor performing the category update. Required.
+  synq.issues.actor.v1.Actor actor = 5 [(buf.validate.field) = {required: true}];
+}
+
+message UpdateDeploymentCategoriesResponse {
   SuiteDeployment deployment = 1;
 }
 

@@ -813,6 +813,7 @@ Promote reconciliation suites so they run on a schedule or via the API.
 | `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Unpromote a deployment. Marks it inactive; scheduler and API triggers |
 | `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Replace the deployment-level annotation overlay on an existing |
 | `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Patch the per-case ReconciliationFailureImpact map on an existing deployment |
+| `UpdateDeploymentCategories`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change the categories declared for a deployment's reconciliation checks |
 | `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Rewire connection → integration mappings on an existing deployment |
 | `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change schedule and/or triggerable_by_api on an existing deployment |
 
@@ -948,6 +949,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
+| `UpdateDeploymentCategories`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | `SCOPE_RECON_PROMOTE` |
 | `ParseYaml`<br/>_synq.agent.recon.v1.YamlService_<br/>`POST /api/agent/recon/v1/yaml/parse` | — |
