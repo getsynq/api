@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package synq.datachecks.sqltests.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/datachecks/sqltests/v1/sql_test_deployment_rules.proto";
+import "synq/datachecks/sqltests/v1/sql_tests_service.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+import "synq/v1/source.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
+
+message GetSqlTestDeployOverviewRequest {
+  SqlTestDeploymentRule deployment_rule = 1;
+}
+
+message GetSqlTestDeployOverviewResponse {
+  SqlTestsDeploymentOverview overview = 1;
+}
+
+message GetSqlTestDeployDeleteOverviewRequest {
+  string id = 1;
+}
+
+message GetSqlTestDeployDeleteOverviewResponse {
+  SqlTestsDeploymentOverview overview = 1;
+}
+
+message DeleteSqlTestDeploymentRuleRequest {
+  string id = 1;
+}
+
+message DeleteSqlTestDeploymentRuleResponse {}
+
+message BatchDeleteSqlTestDeploymentRulesRequest {
+  // IDs of the SqlTestDeploymentRules to delete.
+  repeated string ids = 1;
+}
+
+message BatchDeleteSqlTestDeploymentRulesResponse {}
+
+message ListSqlTestDeploymentRulesRequest {
+  repeated synq.v1.Source sources = 1;
+  // Filter SqlTestDeploymentRules by config IDs.
+  // Pass `ConfigsFilter{ids: ["config1", "config2"]}` to filter by specific configs.
+  // If nil, no config_id filtering is applied.
+  // If empty, the one with NULL config_id will be excluded.
+  ConfigsFilter configs_filter = 2;
+  repeated string rule_ids = 3;
+
+  // Filter by rule type. When empty, rules of every type are returned. When set,
+  // only rules whose type is listed are returned. The filter is applied
+  // server-side before paging, so every page reflects only the selected types.
+  repeated SqlTestDeploymentRuleType rule_types = 4;
+
+  // Pagination. Omitting this, or sending a zero page_size, returns every
+  // matching rule in one response — there is no server-side default page size.
+  // Set page_size to bound the response; pass page_info.last_id from the
+  // previous response as the cursor to fetch the next page.
+  optional synq.v1.Pagination pagination = 5;
+}
+
+message ListSqlTestDeploymentRulesResponse {
+  repeated SqlTestDeploymentRuleView deployment_rules = 1;
+
+  // Paging information for this response. Always populated. This response carries
+  // at most one bounded page of rules, never the full set. The cursor is the paging
+  // contract: to retrieve every rule, repeat the request passing page_info.last_id
+  // as pagination.cursor until last_id comes back empty.
+  synq.v1.PageInfo page_info = 2 [(buf.validate.field) = {required: true}];
+}
+
+message BatchGetSqlTestDeploymentRulesRequest {
+  repeated string ids = 1;
+}
+
+message BatchGetSqlTestDeploymentRulesResponse {
+  map<string, SqlTestDeploymentRuleView> deployment_rules = 1;
+}
+
+message DeploySqlTestDeploymentRuleRequest {
+  SqlTestDeploymentRule deployment_rule = 1;
+}
+
+message DeploySqlTestDeploymentRuleResponse {}
+
+message BatchDeploySqlTestDeploymentRulesRequest {
+  // List of SqlTestDeploymentRules to deploy.
+  repeated SqlTestDeploymentRule deployment_rules = 1;
+}
+
+message BatchDeploySqlTestDeploymentRulesResponse {
+  // IDs for which SqlTestDeploymentRules were deployed without error.
+  repeated string deployed_ids = 1;
+
+  message DeployError {
+    string id = 1;
+    string reason = 2;
+  }
+  // Errors raised while deploying. Empty if there were no errors.
+  repeated DeployError errors = 2;
+}
+
+// SqlTestsDeploymentRulesService manages SqlTestDeploymentRules — rules that
+// dynamically deploy SQL test templates onto every table or view a query
+// matches, resyncing over time as the match set changes.
+service SqlTestsDeploymentRulesService {
+  // Preview the effect of deploying a rule (which have not yet been saved), without
+  // deploying it.
+  rpc GetSqlTestDeployOverview(GetSqlTestDeployOverviewRequest) returns (GetSqlTestDeployOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/datachecks/sql-test-deployment-rules/v1/overview"};
+  }
+
+  // Preview the effect of deleting a rule, without deleting it.
+  rpc GetSqlTestDeployDeleteOverview(GetSqlTestDeployDeleteOverviewRequest) returns (GetSqlTestDeployDeleteOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/datachecks/sql-test-deployment-rules/v1/{id}/deleted"};
+  }
+
+  rpc ListSqlTestDeploymentRules(ListSqlTestDeploymentRulesRequest) returns (ListSqlTestDeploymentRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/datachecks/sql-test-deployment-rules/v1"};
+  }
+
+  rpc BatchGetSqlTestDeploymentRules(BatchGetSqlTestDeploymentRulesRequest) returns (BatchGetSqlTestDeploymentRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/datachecks/sql-test-deployment-rules/v1/by-id"
+      body: "*"
+    };
+  }
+
+  // Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests
+  // onto its current match set.
+  rpc DeploySqlTestDeploymentRule(DeploySqlTestDeploymentRuleRequest) returns (DeploySqlTestDeploymentRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/datachecks/sql-test-deployment-rules/v1/deployed"
+      body: "*"
+    };
+  }
+
+  rpc BatchDeploySqlTestDeploymentRules(BatchDeploySqlTestDeploymentRulesRequest) returns (BatchDeploySqlTestDeploymentRulesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/datachecks/sql-test-deployment-rules/v1/batch/deployed"
+      body: "*"
+    };
+  }
+
+  rpc DeleteSqlTestDeploymentRule(DeleteSqlTestDeploymentRuleRequest) returns (DeleteSqlTestDeploymentRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_SQLTESTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {delete: "/api/datachecks/sql-test-deployment-rules/v1/{id}"};
+  }
+
+  rpc BatchDeleteSqlTestDeploymentRules(BatchDeleteSqlTestDeploymentRulesRequest) returns (BatchDeleteSqlTestDeploymentRulesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_DATACHECKS_SQLTESTS_EDIT]
+    };
+    option (google.api.http) = {delete: "/api/datachecks/sql-test-deployment-rules/v1/batch"};
+  }
+}

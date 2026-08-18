@@ -20,14 +20,22 @@ message ClickhouseCloudConf {
   optional string username = 3;
   // Password. Write-only — masked on reads.
   optional string password = 4;
-  // Default database/schema used when not specified in a reference.
+  // Database the connection opens with, so unqualified table names in a query
+  // resolve against it. It is not a scrape filter: metadata is read from system
+  // tables and covers every database the credentials can see, whatever this says.
   optional string default_dataset = 5;
   // Additional connection parameters as key/value pairs (e.g.
   // "max_execution_time": "30").
   map<string, string> additional_parameters = 6;
   // Enable SSL/TLS.
   optional bool ssl = 7;
-  // Database to connect to and ingest metadata from.
+  // Name this ClickHouse is published under, and the top element of every path
+  // and breadcrumb its tables appear in — `prod`, `staging`, `eu-analytics`.
+  // ClickHouse has no container above a database, so something has to name the
+  // service; left empty that is the connection host, which is correct but
+  // unreadable for a ClickHouse Cloud endpoint. It is not a database and does not
+  // restrict what is scraped. Changing it republishes every table under new
+  // paths, so pick one per service and keep it.
   optional string database_name = 8;
   // Ingest query logs from system.query_log.
   optional bool fetch_query_logs = 9;

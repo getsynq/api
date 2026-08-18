@@ -43,7 +43,10 @@ message ClickhouseConf {
       lte: 65535
     }
   }];
-  // Database name
+  // Database the connection opens with, so unqualified table names in a query
+  // resolve against it. It does not restrict what is scraped: metadata is read
+  // from system tables and covers every database the user can see, whatever this
+  // says. Leave it empty to open on "default".
   string database = 3 [(buf.validate.field) = {}];
   // Username for authentication
   string username = 4 [(buf.validate.field) = {required: true}];
@@ -61,6 +64,18 @@ message ClickhouseConf {
   // How ClickHouse system tables are read. Omit to keep reading across a cluster
   // named "default", which every ClickHouse Cloud service provides.
   ClickhouseClusterConf cluster = 8;
+  // Name this ClickHouse is published under, and the top element of every path
+  // and breadcrumb its tables appear in — `prod`, `staging`, `eu-analytics`.
+  //
+  // ClickHouse has no container above a database, so something has to name the
+  // service itself. Left empty, that is the connection host, which is correct but
+  // unreadable for a ClickHouse Cloud endpoint; a name given here replaces it.
+  //
+  // Two connections to the same service must give the same name, and a name is
+  // the identity of everything scraped through it: changing it republishes those
+  // tables under new paths, and the old ones are no longer produced. Pick one per
+  // service and keep it.
+  string instance_name = 9 [(buf.validate.field).string = {max_len: 256}];
 }
 
 // How metadata reads address ClickHouse system tables.

@@ -1,0 +1,279 @@
+syntax = "proto3";
+
+package synq.datachecks.sqltests.v1;
+
+import "buf/validate/validate.proto";
+import "synq/datachecks/sqltests/v1/sql_tests.proto";
+import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
+import "synq/v1/source.proto";
+
+option go_package = "github.com/getsynq/api/datachecks/sqltests/v1";
+
+// RuleTest is a SQL test template deployed by a SqlTestDeploymentRule onto every
+// table or view the rule's selection matches. It carries the same test kinds as
+// SqlTest.template, but — unlike Template — has no anchor entity: the anchor is
+// whichever table or view the rule matched, filled in separately for each
+// deployed test.
+message RuleTest {
+  option (buf.validate.message).cel = {
+    id: "rule_test.name_required_for_business_tests"
+    message: "name is required when business_rule_test or business_query_test is set"
+    expression: "(!has(this.business_rule_test) && !has(this.business_query_test)) || this.name.size() > 0"
+  };
+
+  // Field 24 is reserved for a future raw-SQL test kind templated with a {{table}} placeholder.
+  reserved 24;
+
+  // Human friendly name for this test. Required (non-empty) for business_rule_test
+  // and business_query_test — for those two kinds, name is the test's identity key
+  // across rule redeployments, so a renamed test is treated as a different test.
+  // Optional for every other kind: leave it unset and a name is generated.
+  string name = 1;
+  // Description of purpose and motivation, copied onto every test this rule deploys.
+  string description = 2;
+  // Overrides the rule's config-level severity for this test only. Leave unset to
+  // use the config-level severity.
+  Severity severity = 3;
+
+  oneof test {
+    // Checks if specified columns contain no NULL values (e.g., user_id should never be null)
+    NotNullTest not_null_test = 11;
+    // Checks if specified columns contain empty values (e.g., description field can be empty)
+    EmptyTest empty_test = 12;
+    // Validates that column values are within an allowed set (e.g., status in ['active', 'inactive', 'pending'])
+    AcceptedValuesTest accepted_values_test = 13;
+    // Validates that column values are not in a forbidden set (e.g., country not in ['UNKNOWN', 'TEST'])
+    RejectedValuesTest rejected_values_test = 14;
+    // Ensures specified columns form a unique key combination (e.g., order_id is unique)
+    UniqueTest unique_test = 15;
+    // Checks if data is up-to-date based on a time column (e.g., latest event_timestamp within 24h)
+    FreshnessTest freshness_test = 16;
+    // Validates numeric values are within specified range (e.g., price between 0 and 1000)
+    MinMaxTest min_max_test = 17;
+    // Compares time-based columns for logical order (e.g., start_date before end_date)
+    RelativeTimeTest relative_time_test = 18;
+    // Per-row boolean predicate; rows matching are reported as failures
+    // (e.g., total_amount != subtotal + tax)
+    BusinessRuleTest business_rule_test = 19;
+    // Validates numeric values are greater than or equal to a minimum value (e.g., price >= 0)
+    MinValueTest min_value_test = 20;
+    // Validates numeric values are less than or equal to a maximum value (e.g., price <= 1000)
+    MaxValueTest max_value_test = 21;
+    // Validates referential integrity between source and reference tables
+    RelationshipsTest relationships_test = 22;
+    // Full SELECT whose result rows are reported as failures; supports
+    // GROUP BY, JOINs, etc.
+    BusinessQueryTest business_query_test = 23;
+  }
+}
+
+// SqlTestsQueryConfig selects tables and views by query, deploying every test in
+// `tests` onto each match. As the matched set changes over time (new tables,
+// dropped columns, …), a periodic sync keeps deployed tests in step.
+message SqlTestsQueryConfig {
+  option (buf.validate.message).cel = {
+    id: "sql_tests_query_config.requires_selection"
+    message: "at least one of query or resolver_ql must be set"
+    expression: "this.query.parts.size() > 0 || this.resolver_ql.size() > 0"
+  };
+
+  // Structured selection of tables and views to deploy tests onto.
+  synq.monitors.automated_monitors.v1.EntitySelectionQuery query = 1;
+  // ResolverQL selection string — an advanced, more expressive alternative to
+  // `query`. ResolverQL is a superset of the structured `query`: use it for
+  // selections `query` cannot express (e.g. lineage walks, column predicates).
+  // When set (non-empty) on write, `resolver_ql` is the source of truth and the
+  // structured `query` is ignored. On read it is echoed back VERBATIM (exactly
+  // as written, not normalized) for rules authored via ResolverQL, and is empty
+  // for rules authored via the structured `query` — so writing a read response
+  // back unchanged preserves the rule's authored form. To read the ResolverQL
+  // form of a structured rule, use `rendered_resolver_ql`. `query` is always
+  // populated regardless.
+  string resolver_ql = 2;
+  // Canonical ResolverQL rendering of this rule's selection, populated for every
+  // rule regardless of how it was authored. OUTPUT ONLY — it is ignored on
+  // write; set `resolver_ql` to author a selection in ResolverQL.
+  string rendered_resolver_ql = 3;
+  // Tests deployed onto every table or view this rule's selection matches.
+  repeated RuleTest tests = 4 [(buf.validate.field).repeated.min_items = 1];
+  // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html)
+  // for the execution schedule applied to every test this rule deploys. Empty
+  // means on-demand — deployed tests are never scheduled to run automatically.
+  string recurrence_rule = 5;
+  // IANA timezone name (e.g., "Europe/Prague", "America/New_York") used to
+  // interpret recurrence_rule. Empty defaults to UTC.
+  string timezone = 6;
+  // Severity applied to every test this rule deploys, unless a RuleTest
+  // overrides it. Required — must be set to a value other than unspecified.
+  Severity severity = 7 [(buf.validate.field).enum = {not_in: [0]}];
+  // Applied to every test this rule deploys. Toggles saving of failure runs.
+  bool save_failures = 8;
+  // When a previously matched table or view stops matching this rule's
+  // selection, its deployed tests are deleted by default. Set true to keep
+  // them as-is instead — they remain rule-managed but are no longer resynced.
+  bool keep_removed_tests = 9;
+}
+
+// SqlTestsExclusiveQueryConfig selects tables and views by query and takes
+// exclusive ownership of the match set: any table or view previously managed by
+// this rule that no longer matches has its deployed tests removed on the next
+// sync, with no `keep_removed_tests` opt-out (a rule managing an exclusive set
+// never "keeps" a table that stopped matching).
+message SqlTestsExclusiveQueryConfig {
+  // Structured selection of tables and views this rule exclusively owns.
+  synq.monitors.automated_monitors.v1.EntitySelectionQuery query = 1;
+  // ResolverQL selection string for the exclusion set. Same semantics as
+  // SqlTestsQueryConfig.resolver_ql: when set on write it takes precedence over
+  // `query`; on read it is echoed back VERBATIM for ResolverQL-authored rules
+  // and is empty for structured-`query` rules (whose ResolverQL form is in
+  // `rendered_resolver_ql`). `query` is always populated.
+  string resolver_ql = 2;
+  // Canonical ResolverQL rendering of the exclusion selection. OUTPUT ONLY,
+  // populated for every rule, ignored on write.
+  string rendered_resolver_ql = 3;
+}
+
+// SqlTestsStaticConfig deploys tests onto a single, fixed table or view. Unlike
+// the query-based configs, a static rule never resyncs against a changing
+// match set — it pins one path.
+message SqlTestsStaticConfig {
+  // Synq path of the table or view this rule deploys tests onto.
+  string path = 1;
+  // Tests deployed onto the table or view at `path`.
+  repeated RuleTest tests = 2 [(buf.validate.field).repeated.min_items = 1];
+  // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html)
+  // for the execution schedule applied to every test this rule deploys. Empty
+  // means on-demand.
+  string recurrence_rule = 3;
+  // IANA timezone name used to interpret recurrence_rule. Empty defaults to UTC.
+  string timezone = 4;
+  // Severity applied to every test this rule deploys, unless a RuleTest
+  // overrides it. Required — must be set to a value other than unspecified.
+  Severity severity = 5 [(buf.validate.field).enum = {not_in: [0]}];
+  // Applied to every test this rule deploys. Toggles saving of failure runs.
+  bool save_failures = 6;
+}
+
+// SqlTestsExclusiveStaticConfig marks a single fixed path as exclusively owned by
+// this rule — used to carve out a per-table override from a broader query rule
+// (see SqlTestDeploymentRule precedence).
+message SqlTestsExclusiveStaticConfig {
+  // Synq path of the table or view this rule exclusively owns.
+  string path = 1;
+}
+
+// SqlTestDeploymentRule dynamically deploys SQL test templates onto every table
+// or view its selection matches, keeping them in sync as tables and columns
+// change. Use it instead of authoring one SqlTest per table when the same set
+// of checks should apply to many tables (e.g. "not_null(email) on every table
+// that has an email column").
+message SqlTestDeploymentRule {
+  // Unique identifier for this rule.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Human friendly name for this rule.
+  string title = 2 [(buf.validate.field) = {
+    string: {
+      min_len: 1
+      max_len: 100
+    }
+  }];
+
+  oneof config {
+    // Deploys tests onto every match of a query; the match set is resynced
+    // over time.
+    SqlTestsQueryConfig query_config = 3;
+    // Deploys tests onto every match of a query; this rule exclusively owns the
+    // match set.
+    SqlTestsExclusiveQueryConfig exclusive_query_config = 4;
+    // Deploys tests onto a single fixed table or view.
+    SqlTestsStaticConfig static_config = 5;
+    // Exclusively owns a single fixed table or view.
+    SqlTestsExclusiveStaticConfig exclusive_static_config = 6;
+  }
+
+  synq.v1.Source source = 7;
+  // Config ID this rule was authored from, when deployed via configuration as
+  // code. Unset for rules authored directly through this API.
+  optional string config_id = 8;
+}
+
+// SqlTestDeploymentRuleView is a SqlTestDeploymentRule together with a summary
+// of how many tests it currently has deployed.
+message SqlTestDeploymentRuleView {
+  string id = 1;
+  string title = 2;
+  // Number of tests currently deployed by this rule, across every matched
+  // table or view.
+  int32 test_count = 3;
+
+  oneof config {
+    SqlTestsQueryConfig query_config = 4;
+    SqlTestsExclusiveQueryConfig exclusive_query_config = 5;
+    SqlTestsStaticConfig static_config = 6;
+    SqlTestsExclusiveStaticConfig exclusive_static_config = 7;
+  }
+
+  synq.v1.Source source = 8;
+  optional string config_id = 9;
+}
+
+// SqlTestDeploymentRuleType identifies which kind of selection a deployment rule
+// uses. The value corresponds to the populated `config` oneof arm on
+// SqlTestDeploymentRule / SqlTestDeploymentRuleView. Use it with
+// ListSqlTestDeploymentRulesRequest.rule_types to return only rules of selected
+// kinds.
+enum SqlTestDeploymentRuleType {
+  // No filter — when used in a request, rules of any type are returned.
+  SQL_TEST_DEPLOYMENT_RULE_TYPE_UNSPECIFIED = 0;
+  // Rule with `query_config`: selects tables/views by query and deploys tests
+  // on the matches.
+  SQL_TEST_DEPLOYMENT_RULE_TYPE_QUERY = 1;
+  // Rule with `exclusive_query_config`: a query whose matches are exclusively
+  // owned by this rule.
+  SQL_TEST_DEPLOYMENT_RULE_TYPE_EXCLUSIVE_QUERY = 2;
+  // Rule with `static_config`: targets a single fixed table or view.
+  SQL_TEST_DEPLOYMENT_RULE_TYPE_STATIC = 3;
+  // Rule with `exclusive_static_config`: a single fixed table or view,
+  // exclusively owned.
+  SQL_TEST_DEPLOYMENT_RULE_TYPE_EXCLUSIVE_STATIC = 4;
+}
+
+// SqlTestDeploymentChange describes one test's planned or applied change for a
+// single table or view within a SqlTestsDeploymentOverview.
+message SqlTestDeploymentChange {
+  // Synq path of the table or view the test targets or would target.
+  string table_path = 1;
+  // Synq path of the SqlTest, when it already exists (create-side changes may
+  // leave this empty until the test is actually deployed).
+  string sql_test_path = 2;
+  // Name of the test, resolved from its RuleTest.name (or the generated name for
+  // non-business test kinds).
+  string test_name = 3;
+}
+
+// SqlTestsDeploymentOverview previews or reports the effect of deploying a
+// SqlTestDeploymentRule, per test rather than per table — a table with three
+// tests deployed appears as three entries, one for each test.
+message SqlTestsDeploymentOverview {
+  // Tests that would be newly created by this deploy.
+  repeated SqlTestDeploymentChange tests_to_create = 1;
+  // Tests that already exist and would be updated (e.g. a changed severity or
+  // template) by this deploy.
+  repeated SqlTestDeploymentChange tests_to_update = 2;
+  // Tests that would be deleted by this deploy, because their table or view no
+  // longer matches the rule's selection.
+  repeated SqlTestDeploymentChange tests_to_delete = 3;
+  // Tests that already exist, still match, and would be left unchanged.
+  repeated SqlTestDeploymentChange tests_to_keep = 4;
+
+  // SkippedTable names a table or view the rule's selection matched, but that
+  // this deploy could not deploy tests onto.
+  message SkippedTable {
+    // Synq path of the skipped table or view.
+    string table_path = 1;
+    // Human-readable reason the table or view was skipped.
+    string reason = 2;
+  }
+  // Tables or views this rule matched but could not deploy tests onto.
+  repeated SkippedTable skipped_tables = 5;
+}

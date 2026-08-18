@@ -213,6 +213,10 @@ Create, update, and delete SQL tests.
 
 | Method | Description |
 | ------ | ----------- |
+| `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` |  |
+| `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` |  |
+| `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
+| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests |
 | `BatchDeleteSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`DELETE /api/datachecks/sqltests/v1` | Delete SqlTests by their IDs. |
 | `BatchUpsertSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1` | Upsert SqlTests based on a unique ID. |
 
@@ -225,6 +229,10 @@ View SQL tests and their configuration.
 | Method | Description |
 | ------ | ----------- |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/by-id` |  |
+| `GetSqlTestDeployDeleteOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/{id}/deleted` | Preview the effect of deleting a rule, without deleting it. |
+| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without |
+| `ListSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1` |  |
 | `BatchGetSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1/by-id` | Get SqlTests by their IDs. |
 | `ListSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`GET /api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
 
@@ -664,6 +672,10 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchLatestConclusions`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/conclusions` | Retrieves the latest triage state for one or more issues. This method is used by the LLM agent |
 | `BatchTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/states` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
 | `ListTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/statuses` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
+| `BatchGetSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/by-id` |  |
+| `GetSqlTestDeployDeleteOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/{id}/deleted` | Preview the effect of deleting a rule, without deleting it. |
+| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without |
+| `ListSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1` |  |
 | `BatchGetSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1/by-id` | Get SqlTests by their IDs. |
 | `ListSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`GET /api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
 | `BatchGetTestSuggestionsForEntities`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`GET /api/datachecks/testsuggestions/v1` |  |
@@ -747,6 +759,8 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 
 | Method | Description |
 | ------ | ----------- |
+| `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
+| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests |
 | `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
 | `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
 | `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
@@ -978,6 +992,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ToggleEnabled`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/toggle` | `SCOPE_ALERTS_EDIT` |
 | `Update`<br/>_synq.alerts.services.v1.AlertsService_<br/>`PUT /api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
 | `Iam`<br/>_synq.auth.iam.v1.IamService_<br/>`GET /api/iam/v1` | — |
+| `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
+| `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
+| `BatchGetSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/by-id` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
+| `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` | `SCOPE_DATACHECKS_SQLTESTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | `SCOPE_DATACHECKS_SQLTESTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `GetSqlTestDeployDeleteOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/{id}/deleted` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
+| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
+| `ListSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchDeleteSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`DELETE /api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
 | `BatchGetSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1/by-id` | `SCOPE_DATACHECKS_SQLTESTS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchUpsertSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
