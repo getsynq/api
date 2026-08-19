@@ -68,7 +68,6 @@ message IssueConclusion {
     required: true
     repeated: {
       items: {
-        required: true
         string: {uuid: true}
       }
     }
@@ -113,11 +112,7 @@ message IssueConclusionWithEvidence {
   // List of issues for which original conclusion was created.
   repeated string original_issue_ids = 11;
   // Collection of structured evidence items collected during the investigation.
-  repeated synq.agent.sre.v1.EvidenceItem evidence = 2 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated synq.agent.sre.v1.EvidenceItem evidence = 2;
 
   // Optional feedback given by the user on the SRE generated conclusion.
   optional synq.agent.sre.v1.ConclusionFeedback user_feedback = 3;

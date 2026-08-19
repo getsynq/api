@@ -74,10 +74,7 @@ message EvaluateRequest {
   // History of messages in the conversation.
   // Must contain at least one message. The last message is used as the final request to the LLM.
   repeated Message messages = 3 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 
   // Type of model to use for the evaluation.

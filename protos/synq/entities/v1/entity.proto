@@ -71,7 +71,6 @@ message Entity {
     repeated: {
       min_items: 0
       max_items: 20
-      items: {required: true}
     }
   }];
   bool is_dwh_table = 15;

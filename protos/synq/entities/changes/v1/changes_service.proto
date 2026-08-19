@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package synq.entities.changes.v1;
 
-import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/entity_change.proto";
@@ -71,11 +70,7 @@ message ListRequest {
 
   // Identifiers of entities for which to get changes.
   // Change is returned when it affects id.
-  repeated synq.entities.v1.Identifier ids = 4 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated synq.entities.v1.Identifier ids = 4;
 
   // Return changes older than or on `before`. Defaults to `now()`.
   optional google.protobuf.Timestamp change_before = 2;

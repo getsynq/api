@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package synq.entities.orchestration.v1;
 
-import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/orchestration/v1/orchestration.proto";
 import "synq/entities/v1/identifier.proto";
@@ -32,11 +31,7 @@ service OrchestrationService {
 
 message BatchOrchestrationRequest {
   // Entities to query for orchestration relationships (e.g., Airflow tasks, dbt models, SQLMesh models, tables)
-  repeated entities.v1.Identifier entities = 1 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated entities.v1.Identifier entities = 1;
 }
 
 message BatchOrchestrationResponse {

@@ -99,6 +99,8 @@ message SqlTestsQueryConfig {
   // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html)
   // for the execution schedule applied to every test this rule deploys. Empty
   // means on-demand — deployed tests are never scheduled to run automatically.
+  // When set, it must carry an inline `DTSTART:` naming the first occurrence, e.g.
+  // "DTSTART:20260101T000000Z\nRRULE:FREQ=DAILY".
   string recurrence_rule = 5;
   // IANA timezone name (e.g., "Europe/Prague", "America/New_York") used to
   // interpret recurrence_rule. Empty defaults to UTC.
@@ -120,6 +122,12 @@ message SqlTestsQueryConfig {
 // sync, with no `keep_removed_tests` opt-out (a rule managing an exclusive set
 // never "keeps" a table that stopped matching).
 message SqlTestsExclusiveQueryConfig {
+  option (buf.validate.message).cel = {
+    id: "sql_tests_exclusive_query_config.requires_selection"
+    message: "at least one of query or resolver_ql must be set"
+    expression: "this.query.parts.size() > 0 || this.resolver_ql.size() > 0"
+  };
+
   // Structured selection of tables and views this rule exclusively owns.
   synq.monitors.automated_monitors.v1.EntitySelectionQuery query = 1;
   // ResolverQL selection string for the exclusion set. Same semantics as
@@ -138,12 +146,13 @@ message SqlTestsExclusiveQueryConfig {
 // match set — it pins one path.
 message SqlTestsStaticConfig {
   // Synq path of the table or view this rule deploys tests onto.
-  string path = 1;
+  string path = 1 [(buf.validate.field).string.min_len = 1];
   // Tests deployed onto the table or view at `path`.
   repeated RuleTest tests = 2 [(buf.validate.field).repeated.min_items = 1];
   // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html)
   // for the execution schedule applied to every test this rule deploys. Empty
-  // means on-demand.
+  // means on-demand. When set, it must carry an inline `DTSTART:` naming the first
+  // occurrence, e.g. "DTSTART:20260101T000000Z\nRRULE:FREQ=DAILY".
   string recurrence_rule = 3;
   // IANA timezone name used to interpret recurrence_rule. Empty defaults to UTC.
   string timezone = 4;
@@ -159,7 +168,7 @@ message SqlTestsStaticConfig {
 // (see SqlTestDeploymentRule precedence).
 message SqlTestsExclusiveStaticConfig {
   // Synq path of the table or view this rule exclusively owns.
-  string path = 1;
+  string path = 1 [(buf.validate.field).string.min_len = 1];
 }
 
 // SqlTestDeploymentRule dynamically deploys SQL test templates onto every table

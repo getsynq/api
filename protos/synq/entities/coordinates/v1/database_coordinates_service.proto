@@ -48,11 +48,7 @@ service DatabaseCoordinatesService {
 // BatchGetEntitiesRequest is the request message for the BatchGetEntities method.
 message BatchDatabaseCoordinatesRequest {
   // Identifiers of the entities to get.
-  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated synq.entities.v1.Identifier ids = 1;
 }
 
 // BatchGetEntitiesResponse is the response message for the BatchGetEntities method.
@@ -65,7 +61,9 @@ message BatchIdsByCoordinatesRequest {
   // Databases coordinates as present in the SQL, e.g. `db.schema.table`
   repeated string sql_fqn = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }

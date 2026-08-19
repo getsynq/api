@@ -58,7 +58,9 @@ message EntityColumnsStartPoint {
   entities.v1.Identifier id = 1 [(buf.validate.field) = {required: true}];
   repeated string column_names = 2 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }

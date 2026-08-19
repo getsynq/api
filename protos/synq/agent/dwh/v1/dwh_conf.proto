@@ -263,7 +263,9 @@ message TrinoConf {
   // To which catalogs to connect
   repeated string catalogs = 4 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 

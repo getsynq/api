@@ -177,10 +177,7 @@ message ListExecutionsRequest {
   // Entity identifiers to get executions for.
   // Executions affecting any of these entities will be returned.
   repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 
   // Return executions that started after this timestamp.
@@ -238,10 +235,7 @@ message BatchGetExecutionsResponse {
 message GetExecutionsSummaryRequest {
   // Entity identifiers to get summary for.
   repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 
   // Return executions that started after this timestamp.
@@ -291,10 +285,7 @@ message GetLatestExecutionsRequest {
   // Examples that WILL return results: monitors, dbt models, airflow tasks, tests
   // Examples that WON'T return results: tables (they don't execute, they are created/updated by models)
   repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 
   // Filter by execution status.

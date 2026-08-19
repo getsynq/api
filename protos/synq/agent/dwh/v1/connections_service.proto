@@ -53,7 +53,6 @@ message ListConnectionsRequest {
   repeated string connection_ids = 1 [(buf.validate.field) = {
     repeated: {
       items: {
-        required: true
         string: {uuid: true}
       }
     }

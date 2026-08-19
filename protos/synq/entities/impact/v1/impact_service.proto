@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package synq.entities.impact.v1;
 
-import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/impact/v1/impact.proto";
 import "synq/entities/v1/identifier.proto";
@@ -29,11 +28,7 @@ service ImpactService {
 }
 
 message GetImpactRequest {
-  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated synq.entities.v1.Identifier ids = 1;
 }
 
 message GetImpactResponse {

@@ -20,7 +20,6 @@ message Config {
       keys: {
         string: {pattern: '^[0-9a-zA-Z][a-zA-Z0-9-_]*$'}
       }
-      values: {required: true}
     }
   }];
 

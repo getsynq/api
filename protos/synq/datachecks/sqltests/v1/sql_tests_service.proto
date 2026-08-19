@@ -143,4 +143,18 @@ message BatchDeleteSqlTestsRequest {
   repeated string ids = 1;
 }
 
-message BatchDeleteSqlTestsResponse {}
+message BatchDeleteSqlTestsResponse {
+  // Details of a single ID that could not be deleted.
+  message DeleteError {
+    // The ID from the request that was not deleted, echoed back as it was sent.
+    string id = 1;
+    // Why it was not deleted. A test deployed by a SqlTestDeploymentRule cannot be
+    // deleted directly — delete or narrow the rule instead, or the rule's next sync
+    // would recreate the test.
+    string reason = 2;
+  }
+  // IDs that were not deleted, with the reason for each. Empty when everything in the
+  // request was deleted. Every other ID in the request is deleted regardless, so a
+  // caller reconciling a set can act on what failed without retrying what did not.
+  repeated DeleteError errors = 1;
+}

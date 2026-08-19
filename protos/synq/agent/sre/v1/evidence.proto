@@ -21,7 +21,6 @@ message EvidenceItem {
     required: true
     repeated: {
       items: {
-        required: true
         string: {uuid: true}
       }
     }
@@ -68,7 +67,6 @@ message HistoryEvidence {
     repeated: {
       min_items: 1
       items: {
-        required: true
         string: {uuid: true}
       }
     }
@@ -118,7 +116,6 @@ message RelatedIssueEvidence {
     repeated: {
       min_items: 1
       items: {
-        required: true
         string: {uuid: true}
       }
     }
@@ -146,10 +143,7 @@ message CommitEvidence {
 
   // List of relevant code changes in the commit.
   repeated CodeChange relevant_code_changes = 2 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 }
 
@@ -173,10 +167,7 @@ message CodeChange {
 message DataQueryEvidenceV2 {
   // List of data query evidence items, each containing a query ID and its analysis.
   repeated DataQueryEvidenceItem items = 1 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 }
 

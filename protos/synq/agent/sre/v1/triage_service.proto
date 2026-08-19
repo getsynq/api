@@ -113,11 +113,7 @@ message ConcludeRequest {
   // Each conclusion type must be supported by appropriate evidence collected during investigation.
   synq.agent.sre.v1.IssueConclusion conclusion = 6 [(buf.validate.field) = {required: true}];
   // Collection of evidence items supporting the conclusion. Evidences previously recorded should not be added here.
-  repeated synq.agent.sre.v1.EvidenceItem evidence = 7 [(buf.validate.field) = {
-    repeated: {
-      items: {required: true}
-    }
-  }];
+  repeated synq.agent.sre.v1.EvidenceItem evidence = 7;
 }
 
 // Response for the Conclude operation. Empty as the operation is fire-and-forget.
@@ -131,10 +127,7 @@ message RecordEvidenceRequest {
   // Collection of structured evidence items collected during the investigation.
   // Must contain at least one evidence item.
   repeated synq.agent.sre.v1.EvidenceItem evidence = 7 [(buf.validate.field) = {
-    repeated: {
-      min_items: 1
-      items: {required: true}
-    }
+    repeated: {min_items: 1}
   }];
 }
 
@@ -154,7 +147,9 @@ message BatchTriageStateRequest {
   // List of issue IDs for which triage status should be returned.
   repeated string issue_ids = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }
@@ -166,7 +161,11 @@ message BatchTriageStateResponse {
 message ListTriageStateRequest {
   repeated synq.agent.sre.v1.IssueTriageStatus statuses = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        enum: {
+          not_in: [0]
+        }
+      }
       min_items: 1
     }
   }];
@@ -180,7 +179,9 @@ message MarkAsInProgressRequest {
   // List of issue IDs for which work has started.
   repeated string issue_ids = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }
@@ -188,7 +189,9 @@ message MarkAsInProgressRequest {
 message MarkAsInProgressResponse {
   repeated string marked_issue_ids = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }
@@ -197,7 +200,9 @@ message MarkFailedRequest {
   // List of issue IDs for which work has failed.
   repeated string issue_ids = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
   string error_message = 2;
@@ -206,7 +211,9 @@ message MarkFailedRequest {
 message MarkFailedResponse {
   repeated string marked_issue_ids = 1 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }

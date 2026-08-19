@@ -39,7 +39,9 @@ message GetDiffByChangeIdRequest {
   string change_id = 1 [(buf.validate.field) = {required: true}];
   repeated string limit_to_files = 2 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }
@@ -63,7 +65,9 @@ message GetDiffByCommitRequest {
   }];
   repeated string limit_to_files = 2 [(buf.validate.field) = {
     repeated: {
-      items: {required: true}
+      items: {
+        string: {min_len: 1}
+      }
     }
   }];
 }
