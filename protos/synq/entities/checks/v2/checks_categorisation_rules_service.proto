@@ -1,0 +1,406 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/checks/v2/categorisation_rule.proto";
+import "synq/entities/checks/v2/category_dimension.proto";
+import "synq/entities/checks/v2/check_matcher.proto";
+import "synq/entities/checks/v2/recategorisation_status.proto";
+import "synq/entities/checks/v2/rule_matches.proto";
+import "synq/entities/checks/v2/rule_scope.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// ChecksCategorisationRulesService manages the rules that categorise a
+// workspace's checks automatically.
+//
+// A rule says "checks matching this predicate get this category on this
+// dimension". Rules are the scalable way to categorise: they apply to checks
+// that already exist and to every check ingested afterwards, so a new dbt
+// package or a new warehouse does not mean a fresh round of manual tagging. A
+// rule-computed category is the lowest-precedence source — a category set
+// explicitly on a check through ChecksCategoriesService, and one the producing
+// tool declared, both win over it.
+//
+// A typical loop is: ListCategorisationFilters to see what the workspace's
+// checks look like, PreviewRule to check the reach of a candidate, UpsertRule
+// to save it, then GetRecategorisationStatus to confirm the existing checks
+// have caught up.
+//
+// Every workspace starts with a set of platform-provided rules covering the
+// common cases. They are visible here, they can be superseded by a workspace
+// rule of any priority, and they cannot be edited from a workspace.
+service ChecksCategorisationRulesService {
+  // Create or update a categorisation rule.
+  //
+  // The rule id is supplied by the caller (a UUID), which makes this operation
+  // idempotent — repeating the same request converges to the same rule rather
+  // than creating a duplicate. On create, `dimension`, `title`, `category` and
+  // `matcher` are required. On update, a field that is set is written and a
+  // field that is omitted is left unchanged. To guard against overwriting a
+  // concurrent edit, pass the `etag` you last read.
+  //
+  // Saving a rule schedules a sweep that recategorises the workspace's existing
+  // checks. It normally completes in seconds; GetRecategorisationStatus
+  // confirms it.
+  rpc UpsertRule(UpsertRuleRequest) returns (UpsertRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules"
+      body: "*"
+    };
+  }
+
+  // Delete a categorisation rule. Checks the rule categorised fall back to the
+  // next rule that matches them, or become uncategorised. Idempotent —
+  // deleting an already-deleted or unknown rule succeeds. Pass `etag` to guard
+  // against deleting a concurrently-edited rule.
+  rpc DeleteRule(DeleteRuleRequest) returns (DeleteRuleResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/delete"
+      body: "*"
+    };
+  }
+
+  // List the rules that apply to the caller's workspace — its own rules plus
+  // the platform-provided ones — in the order they are tried. Narrow with
+  // `dimension` and `scope`.
+  rpc ListRules(ListRulesRequest) returns (ListRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/list"
+      body: "*"
+    };
+  }
+
+  // Read specific rules by id — typically to resolve the `rule_id` a
+  // ResolvedCategory carries into the rule that produced it. Ids the caller
+  // cannot see, or that do not exist, are omitted from the response rather than
+  // causing an error.
+  rpc BatchGetRules(BatchGetRulesRequest) returns (BatchGetRulesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/batch-get"
+      body: "*"
+    };
+  }
+
+  // Report what a candidate rule would change, without saving it.
+  //
+  // The candidate is slotted into the workspace's live rule set — replacing an
+  // existing rule when `id` names one — and the whole resolution is run over
+  // every check, so scope, priority, explicit categories and producer-declared
+  // categories are all honoured. The response separates the candidate's raw
+  // reach from its real effect, which are rarely the same number.
+  //
+  // Preview a rule before saving it: one that matches broadly can recategorise
+  // a large part of a workspace in a single sweep.
+  rpc PreviewRule(PreviewRuleRequest) returns (PreviewRuleResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/preview"
+      body: "*"
+    };
+  }
+
+  // Report how many checks each rule currently categorises, with a sample of
+  // them — the state already applied, not a projection. Use it to show
+  // "categorises N checks" next to each rule, and to spot a rule that has
+  // stopped matching anything. For the full, paginated list of one rule's
+  // checks, call ChecksCategoriesService.ListCheckCategories with the rule id.
+  rpc ListRuleMatches(ListRuleMatchesRequest) returns (ListRuleMatchesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/matches"
+      body: "*"
+    };
+  }
+
+  // Progress of the re-categorisation sweep a rule change schedules. The sweep
+  // normally completes in seconds, so this is how to confirm that the
+  // workspace's existing checks have caught up with the new rules — not
+  // something a client has to wait on.
+  rpc GetRecategorisationStatus(GetRecategorisationStatusRequest) returns (GetRecategorisationStatusResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categorisation-rules/recategorisation-status"
+      body: "*"
+    };
+  }
+}
+
+message UpsertRuleRequest {
+  // Client-supplied UUID identifying the rule. The same id updates the same
+  // rule; a new id creates a new rule.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // The dimension the rule categorises along. Required when creating; omit to
+  // keep it on update.
+  optional CategoryDimension dimension = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Scope of the rule. Defaults to RULE_SCOPE_WORKSPACE when creating; omit to
+  // keep it on update. Platform-provided rules cannot be edited from a
+  // workspace.
+  optional RuleScope scope = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Human-readable title, shown wherever the rule is credited for a category.
+  // Required when creating; omit to keep it on update.
+  optional string title = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  // The category assigned to matching checks. Required when creating; omit to
+  // keep it on update. Prefer a name the workspace already uses — read them
+  // from ChecksCategoriesService.ListCategories.
+  optional string category = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  // Which checks the rule applies to. Required when creating; omit to keep it
+  // on update. Replaces the previous matcher wholesale — there is no partial
+  // update within a matcher.
+  optional CheckMatcher matcher = 6;
+  // Rank within the rule's scope: the highest number is tried first. Defaults
+  // to 0 when creating; omit to keep it on update.
+  optional int32 priority = 7 [(buf.validate.field).int32 = {
+    gte: -1000000
+    lte: 1000000
+  }];
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict if the rule was modified since this etag was read.
+  optional string etag = 8 [(buf.validate.field).string.max_len = 100];
+
+  // Who is making the change, when the caller acts on someone's behalf — an
+  // agent, a bot, an automation. Recorded as the editor and shown back on
+  // reads. Omit it when the caller's own credentials already identify them.
+  optional synq.issues.actor.v1.Actor actor = 9;
+}
+
+message UpsertRuleResponse {
+  // The stored rule after the write.
+  CategorisationRule rule = 1;
+}
+
+message DeleteRuleRequest {
+  // Id of the rule to delete.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 2 [(buf.validate.field).string.max_len = 100];
+  // Who is making the change. See UpsertRuleRequest.actor.
+  optional synq.issues.actor.v1.Actor actor = 3;
+}
+
+message DeleteRuleResponse {}
+
+message ListRulesRequest {
+  // Restrict to one dimension. Omit to return both.
+  optional CategoryDimension dimension = 1 [(buf.validate.field).enum.defined_only = true];
+  // Restrict to the workspace's own rules or to the platform-provided ones.
+  // Omit to return both.
+  optional RuleScope scope = 2 [(buf.validate.field).enum.defined_only = true];
+  // Pagination. Defaults to 200 rules per page.
+  synq.v1.Pagination pagination = 3;
+}
+
+message ListRulesResponse {
+  // Matching rules, in the order they are tried: workspace rules before
+  // platform-provided ones, then by descending priority.
+  repeated CategorisationRule rules = 1;
+  // Pagination cursor for the next page. Empty when this is the last page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message BatchGetRulesRequest {
+  // Rule ids to read (1–200, unique).
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+}
+
+message BatchGetRulesResponse {
+  // Rules keyed by id. Ids the caller cannot see, or that do not exist, are
+  // absent.
+  map<string, CategorisationRule> rules = 1;
+}
+
+message PreviewRuleRequest {
+  // Set to an existing rule's id to preview an edit to it — the candidate
+  // replaces that rule during resolution, so the result reflects the change
+  // rather than the addition of a second rule. Omit to preview a new rule.
+  optional string id = 1 [(buf.validate.field).string.uuid = true];
+  // The dimension the candidate would categorise along.
+  CategoryDimension dimension = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Scope the candidate would be saved with. Defaults to
+  // RULE_SCOPE_WORKSPACE.
+  RuleScope scope = 3 [(buf.validate.field).enum.defined_only = true];
+  // Title the candidate would be saved with. Does not affect the outcome.
+  string title = 4 [(buf.validate.field).string.max_len = 200];
+  // The category the candidate would assign.
+  string category = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  // Which checks the candidate would apply to.
+  CheckMatcher matcher = 6 [(buf.validate.field).required = true];
+  // Priority the candidate would be saved with. It participates in resolution
+  // exactly as it would once saved, so previewing at the wrong priority
+  // reports the wrong impact.
+  int32 priority = 7 [(buf.validate.field).int32 = {
+    gte: -1000000
+    lte: 1000000
+  }];
+  // How many check ids to return in each of the response's samples — it caps
+  // `affected_entity_ids` and `explicit_category_entity_ids` independently, so
+  // either may come back at this size. Defaults to 100, and may be 0 for
+  // counts only. The counts are always exact whatever this is set to.
+  optional int32 sample_size = 8 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000
+  }];
+}
+
+message PreviewRuleResponse {
+  // Checks whose predicate the candidate matches at all — its raw reach,
+  // whether or not it ends up winning them.
+  int64 matched_count = 1;
+  // Checks whose effective category on the candidate's dimension would
+  // actually change. This is the rule's real impact. It equals
+  // newly_categorised_count + reassigned_count, and matched_count equals this
+  // plus unchanged_count.
+  int64 affected_count = 2;
+  // Of the affected checks, how many have no category on this dimension today.
+  int64 newly_categorised_count = 3;
+  // Of the affected checks, how many already have a different category that
+  // the candidate would take over. Worth a second look before saving.
+  int64 reassigned_count = 4;
+  // Checks the candidate matches whose effective category would not change.
+  // The three fields below say why, and add up to this one.
+  int64 unchanged_count = 5;
+  // A sample of the affected checks, ordered by entity id.
+  repeated string affected_entity_ids = 6;
+  // True when the sample was cut short by `sample_size`.
+  bool affected_entity_ids_truncated = 7;
+
+  // Of the unchanged checks, how many a rule of higher priority already wins,
+  // so the candidate never gets to assign anything. Raise the candidate's
+  // priority to take these over.
+  int64 higher_priority_rule_count = 8;
+  // Of the unchanged checks, how many carry a category set explicitly on the
+  // check, or declared by the tool that produced it. Either outranks every
+  // rule, so these are the checks the candidate looks like it covers and does
+  // not — no priority will win them. Clear the explicit category to hand a
+  // check back to the rules.
+  int64 explicit_category_count = 9;
+  // Of the unchanged checks, how many the candidate does win, assigning the
+  // category the check already has. Nothing to do about these; the rule is
+  // simply agreeing with what is there.
+  int64 same_category_count = 10;
+  // A sample of the checks counted in `explicit_category_count`, ordered by
+  // entity id — the ones worth showing a customer, because a rule that reads
+  // as covering them does not.
+  repeated string explicit_category_entity_ids = 11;
+  // True when that sample was cut short by `sample_size`.
+  bool explicit_category_entity_ids_truncated = 12;
+}
+
+message ListRuleMatchesRequest {
+  // Rules to report on. Empty returns every rule that currently categorises at
+  // least one check.
+  repeated string rule_ids = 1 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // How many check ids to return per rule as a sample. Defaults to 100, and
+  // may be 0 for counts only. The counts are always exact whatever this is set
+  // to.
+  optional int32 sample_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000
+  }];
+}
+
+message ListRuleMatchesResponse {
+  // Matches keyed by rule id. Rules that currently categorise nothing are
+  // absent.
+  map<string, RuleMatches> matches = 1;
+}
+
+message GetRecategorisationStatusRequest {}
+
+message GetRecategorisationStatusResponse {
+  // Progress of the caller's workspace sweep.
+  RecategorisationStatus status = 1;
+}

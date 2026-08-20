@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "buf/validate/validate.proto";
+import "synq/entities/checks/v2/categorisation_facets.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// A list of accepted annotation values.
+message AnnotationValues {
+  repeated string values = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    items: {
+      string: {max_len: 1000}
+    }
+  }];
+}
+
+// A condition on one annotation of a check.
+//
+// Annotations are the key/value metadata a producer attaches to a check — a
+// dbt test's `meta` entries, for example — which makes them the way to
+// categorise by something only your own team knows, such as a domain or an
+// owning squad.
+message AnnotationMatch {
+  // Annotation key to look up on the check.
+  string key = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // How the annotation's value is compared. Exactly one mode must be set.
+  oneof match {
+    option (buf.validate.oneof).required = true;
+
+    // Matches when the key is present, whatever its value. Set it to true; a
+    // false value is not a negation and is rejected.
+    bool exists = 2 [(buf.validate.field).bool.const = true];
+    // Matches when the value equals this string exactly.
+    string equals = 3 [(buf.validate.field).string.max_len = 1000];
+    // Matches when the value is one of these.
+    AnnotationValues in = 4;
+    // Matches when the value matches this RE2 regular expression.
+    string regex = 5 [(buf.validate.field).string.max_len = 1000];
+  }
+}
+
+// Selects checks by their attributes. A check matches when every populated
+// field matches it; an empty field places no constraint, so an entirely empty
+// matcher matches every check in the workspace.
+//
+// This is the form to reach for first: it is what the rule editor writes, what
+// reads back legibly, and what ListCategorisationFilters offers values for.
+message CheckAttributesMatcher {
+  // Platform, entity type, package and kind the check must be one of.
+  CategorisationFacets facets = 1;
+  // Patterns matched against the check's name. `*` stands for any sequence of
+  // characters, including none; every other character matches literally. A
+  // check matches when at least one pattern matches. An empty list matches any
+  // name.
+  repeated string names = 2 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      string: {max_len: 500}
+    }
+  }];
+  // Conditions on the check's annotations. A check must satisfy every entry.
+  repeated AnnotationMatch annotation_matches = 3 [(buf.validate.field).repeated.max_items = 50];
+}
+
+// Which checks a categorisation rule applies to.
+message CheckMatcher {
+  oneof matcher {
+    option (buf.validate.oneof).required = true;
+
+    // Select checks by their attributes. Covers almost every rule and is the
+    // only form the rule editor can render.
+    CheckAttributesMatcher attributes = 1;
+    // A CEL expression returning a boolean, for the rare predicate the
+    // attribute matcher cannot express — combining alternatives across
+    // dimensions, or matching on a substring of a name. See
+    // https://github.com/google/cel-spec for the language.
+    //
+    // Variables available to the expression:
+    //   platform, asset_type, package, kind, name, description  (string)
+    //   is_platform_native                                      (bool)
+    //   annotations                              (map<string, string>)
+    //
+    // Platform and entity-type enum value names are available as string
+    // constants. For example:
+    //   platform == PLATFORM_DBT && kind.startsWith("not_null")
+    string expression = 2 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 20000
+    }];
+  }
+}

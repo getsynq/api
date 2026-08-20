@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "synq/entities/checks/v2/category_dimension.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// One category name in a workspace's vocabulary, with how it is produced and
+// how much of the workspace currently carries it.
+//
+// Category names are free-form workspace strings, not a fixed list. Offering
+// this vocabulary in a picker rather than a text box is what keeps a workspace
+// converging on one spelling per concept.
+message CategoryInfo {
+  // The category name.
+  string name = 1;
+  // The dimension the name belongs to. The same name can exist on both
+  // dimensions; they are separate entries.
+  CategoryDimension dimension = 2;
+  // At least one rule in the caller's workspace produces this category.
+  bool has_workspace_rule = 3;
+  // At least one platform-provided rule produces this category.
+  bool has_global_rule = 4;
+  // How many checks currently resolve to this category on this dimension,
+  // whatever produced it. A name can have rules and no checks (nothing matches
+  // yet), or checks and no rules (every one of them was categorised explicitly
+  // or by its producer).
+  int64 check_count = 5;
+}
+
+// How much of a workspace one dimension covers.
+message DimensionSummary {
+  // The dimension summarised.
+  CategoryDimension dimension = 1;
+  // Checks in the workspace with a category on this dimension.
+  int64 categorised_check_count = 2;
+  // Checks in the workspace with no category on this dimension. This is the
+  // number to drive down.
+  int64 uncategorised_check_count = 3;
+}

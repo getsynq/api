@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// Whether a categorisation rule belongs to the workspace or is one of the
+// platform-provided defaults.
+enum RuleScope {
+  RULE_SCOPE_UNSPECIFIED = 0;
+  // Platform-provided rule, shared by every workspace and read-only for
+  // workspace users.
+  RULE_SCOPE_GLOBAL = 1;
+  // Rule defined in the caller's workspace. A workspace rule always wins over
+  // a matching global rule.
+  RULE_SCOPE_WORKSPACE = 2;
+}

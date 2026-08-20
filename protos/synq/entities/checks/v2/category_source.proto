@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// Where a check's effective category came from. The three sources are a strict
+// precedence: an admin override beats a producer-explicit category, which beats
+// a computed one.
+enum CategorySource {
+  // The check has no category on this dimension — it is uncategorised.
+  CATEGORY_SOURCE_UNSPECIFIED = 0;
+  // Admin override — pinned on the check itself through UpsertCheckCategories.
+  // Overrides always win.
+  CATEGORY_SOURCE_OVERRIDE = 1;
+  // Producer-explicit — declared by the tool that produced the check, either
+  // directly or as a `quality.check_category` / `quality.governance_category`
+  // annotation carried on the source asset.
+  CATEGORY_SOURCE_PRODUCER = 2;
+  // Computed — derived from the workspace's categorisation rules.
+  CATEGORY_SOURCE_RULE = 3;
+}

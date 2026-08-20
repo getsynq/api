@@ -1,0 +1,303 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/checks/v2/categorisation_facets.proto";
+import "synq/entities/checks/v2/categorisation_filter.proto";
+import "synq/entities/checks/v2/category_dimension.proto";
+import "synq/entities/checks/v2/category_info.proto";
+import "synq/entities/checks/v2/check_categories.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// ChecksCategoriesService reads and edits the categories of the checks in a
+// workspace.
+//
+// Categorising checks is what turns a long list of tests into a picture of data
+// quality: it lets you ask how much of a data product is covered for
+// completeness, or which freshness checks exist across three warehouses that
+// each name the same idea differently.
+//
+// Every check resolves to at most one category per dimension:
+//
+//   * technical — what kind of check this is, mechanically ("nullness",
+//     "uniqueness", "freshness");
+//   * governance — what the check is for, in data-quality terms
+//     ("Completeness", "Accuracy", "Timeliness").
+//
+// The two are independent, and each resolves from three sources, in descending
+// precedence: a category set explicitly on the check through this service, a
+// category the producing tool declared, and a category one of the workspace's
+// categorisation rules computed. Rules are managed by
+// ChecksCategorisationRulesService and are the right tool for anything that
+// generalises; set a category explicitly only for the checks that are genuine
+// exceptions.
+//
+// The workspace and the acting identity always come from the request
+// credentials, never from the payload.
+service ChecksCategoriesService {
+  // Set the category of one or more checks explicitly. An explicit category is
+  // authoritative for its check: it overrides both the producer-declared
+  // category and anything the categorisation rules compute, and it survives
+  // every later rule change.
+  //
+  // Each dimension updates independently. A field that is omitted leaves that
+  // dimension as it is; a field set to the empty string clears the explicit
+  // category on that dimension, so the check falls back to its
+  // producer-declared or rule-computed value. Repeating the same request
+  // converges to the same state rather than accumulating changes.
+  rpc UpsertCheckCategories(UpsertCheckCategoriesRequest) returns (UpsertCheckCategoriesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories"
+      body: "*"
+    };
+  }
+
+  // Clear the explicit categories of one or more checks, on both dimensions.
+  // Each check falls back to its producer-declared or rule-computed category.
+  // Idempotent — clearing a check that has no explicit category succeeds.
+  rpc DeleteCheckCategories(DeleteCheckCategoriesRequest) returns (DeleteCheckCategoriesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories/delete"
+      body: "*"
+    };
+  }
+
+  // List the workspace's checks with their resolved categories. Returns every
+  // check by default; the filters combine, so one call answers questions like
+  // "which dbt tests still have no governance category" or "which checks did
+  // this rule categorise".
+  rpc ListCheckCategories(ListCheckCategoriesRequest) returns (ListCheckCategoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories/list"
+      body: "*"
+    };
+  }
+
+  // Read the categories of specific checks. Ids that do not exist are omitted
+  // from the response rather than causing an error, so a partially-stale list
+  // of ids still returns what it can.
+  rpc BatchGetCheckCategories(BatchGetCheckCategoriesRequest) returns (BatchGetCheckCategoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the workspace's category vocabulary: the category names in use on
+  // each dimension, whether a workspace or platform rule produces each one, and
+  // how many checks carry it. Use it to populate a category picker so a
+  // workspace converges on one spelling per concept, and to see how much of the
+  // workspace is still uncategorised.
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories/vocabulary"
+      body: "*"
+    };
+  }
+
+  // List the attribute values the workspace's checks actually have — the
+  // platforms, entity types, packages and kinds available to build a
+  // categorisation rule or a listing filter from.
+  //
+  // Pass `selected` to narrow each list to values that co-occur with the
+  // current selection, so a rule editor never offers a combination that matches
+  // nothing. A list never constrains itself: choosing one platform still leaves
+  // every other platform selectable.
+  rpc ListCategorisationFilters(ListCategorisationFiltersRequest) returns (ListCategorisationFiltersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_POLICIES_READ,
+        SCOPE_POLICIES_EDIT,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/v2/checks/categories/filters"
+      body: "*"
+    };
+  }
+}
+
+message UpsertCheckCategoriesRequest {
+  // The checks to categorise. Every entry must name a distinct check.
+  repeated CheckCategoryUpdate categories = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+  }];
+  // Who is making the change, when the caller acts on someone's behalf — an
+  // agent, a bot, an automation. Recorded as the editor and shown back on
+  // reads. Omit it when the caller's own credentials already identify them.
+  optional synq.issues.actor.v1.Actor actor = 2;
+}
+
+message UpsertCheckCategoriesResponse {
+  // The resolved category state of each updated check, in request order.
+  repeated CheckCategories categories = 1;
+}
+
+message DeleteCheckCategoriesRequest {
+  // The checks to clear. Every entry must name a distinct check.
+  repeated CheckCategoryDeletion categories = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+  }];
+  // Who is making the change. See UpsertCheckCategoriesRequest.actor.
+  optional synq.issues.actor.v1.Actor actor = 2;
+}
+
+message DeleteCheckCategoriesResponse {}
+
+message ListCheckCategoriesRequest {
+  // Keep only checks that are, or are not, categorised on the technical
+  // dimension.
+  CategorisationFilter technical_filter = 1 [(buf.validate.field).enum.defined_only = true];
+  // Keep only checks that are, or are not, categorised on the governance
+  // dimension.
+  CategorisationFilter governance_filter = 2 [(buf.validate.field).enum.defined_only = true];
+  // Keep only checks whose technical category was, or was not, set explicitly.
+  OverrideFilter technical_override_filter = 3 [(buf.validate.field).enum.defined_only = true];
+  // Keep only checks whose governance category was, or was not, set
+  // explicitly.
+  OverrideFilter governance_override_filter = 4 [(buf.validate.field).enum.defined_only = true];
+  // Keep only checks currently categorised by one of these rules, on either
+  // dimension. This is the paginated companion to
+  // ChecksCategorisationRulesService.ListRuleMatches, which reports exact
+  // counts and a sample per rule.
+  repeated string rule_ids = 5 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // Keep only checks whose effective technical category is one of these.
+  repeated string technical_categories = 7 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      string: {max_len: 200}
+    }
+  }];
+  // Keep only checks whose effective governance category is one of these.
+  repeated string governance_categories = 8 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      string: {max_len: 200}
+    }
+  }];
+  // Keep only checks with these attributes — the same platform / entity type /
+  // package / kind selection a categorisation rule matches on, so a listing can
+  // be narrowed to exactly the checks a candidate rule would consider.
+  CategorisationFacets attributes = 9;
+  // Keep only these checks. Combines with the other filters, so it answers
+  // "which of these checks are uncategorised" in a single call.
+  repeated string entity_ids = 10 [(buf.validate.field).repeated = {
+    max_items: 500
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2000
+      }
+    }
+  }];
+  // Pagination. Defaults to 200 checks per page.
+  synq.v1.Pagination pagination = 6;
+}
+
+message ListCheckCategoriesResponse {
+  // The matching checks, ordered by entity id.
+  repeated CheckCategories categories = 1;
+  // Pagination cursor for the next page. Empty when this is the last page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message BatchGetCheckCategoriesRequest {
+  // Checks to read (1–500, unique).
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2000
+      }
+    }
+  }];
+}
+
+message BatchGetCheckCategoriesResponse {
+  // Category state keyed by check id. Ids that do not exist are absent.
+  map<string, CheckCategories> categories = 1;
+}
+
+message ListCategoriesRequest {
+  // Restrict to one dimension. Omit to return both.
+  optional CategoryDimension dimension = 1 [(buf.validate.field).enum.defined_only = true];
+}
+
+message ListCategoriesResponse {
+  // Every category name in use, sorted by name within each dimension.
+  repeated CategoryInfo categories = 1;
+  // Coverage per dimension, so "N of M checks categorised" can be rendered
+  // without summing the entries above.
+  repeated DimensionSummary dimensions = 2;
+}
+
+message ListCategorisationFiltersRequest {
+  // The values already chosen, if any. Each returned list is narrowed to values
+  // that co-occur with this selection.
+  CategorisationFacets selected = 1;
+}
+
+message ListCategorisationFiltersResponse {
+  // The values available given `selected`.
+  CategorisationFacets available = 1;
+}

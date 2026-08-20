@@ -35,8 +35,12 @@ message CheckEntity {
   // Whether the check is platform native
   bool is_platform_native = 4;
 
-  // Explicit name of the structural category to use for this check
+  // Technical category to use for this check — what kind of check it is,
+  // mechanically, e.g. "nullness". Empty when the check declares none, in which
+  // case the category a categorisation rule computes is used instead.
   optional string category = 5;
-  // Explicit name of the governance category to use for this check
+  // Governance category to use for this check — what the check is for, e.g.
+  // "Completeness". Empty when the check declares none, in which case the
+  // category a categorisation rule computes is used instead.
   optional string governance_category = 6;
 }

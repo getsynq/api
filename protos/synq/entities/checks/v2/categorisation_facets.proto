@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "buf/validate/validate.proto";
+import "synq/entities/v1/entity_types.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// A set of check attributes. The same four dimensions select checks in three
+// places — the predicate of a categorisation rule, the filter on a check
+// listing, and the values a workspace actually has — so one message carries
+// them everywhere and a value read from one can be passed straight to the next.
+//
+// An empty list places no constraint on its dimension. Within a list the values
+// are alternatives; across lists they combine.
+message CategorisationFacets {
+  // Platforms the check runs on.
+  repeated synq.platforms.v1.DataPlatformType data_platform_types = 1 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Entity types of the check itself, e.g. ENTITY_TYPE_DBT_TEST.
+  repeated synq.entities.v1.EntityType entity_types = 2 [(buf.validate.field).repeated = {
+    max_items: 500
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Packages the check comes from, e.g. "dbt_utils".
+  repeated string packages = 3 [(buf.validate.field).repeated = {
+    max_items: 200
+    items: {
+      string: {max_len: 500}
+    }
+  }];
+  // Check kinds, e.g. "not_null", "unique".
+  repeated string kinds = 4 [(buf.validate.field).repeated = {
+    max_items: 500
+    items: {
+      string: {max_len: 500}
+    }
+  }];
+}

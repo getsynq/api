@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// Progress of the workspace-wide re-categorisation that follows a rule change.
+//
+// A rule change takes effect on newly ingested checks immediately. Checks that
+// already exist are rewritten by a sweep, scheduled automatically whenever
+// rules are created, updated or deleted; several edits in quick succession
+// coalesce into one sweep. The sweep normally completes in seconds, so reading
+// this is about confirming a change landed rather than waiting on it — until it
+// finishes, some checks still carry the categories the previous rules gave
+// them.
+message RecategorisationStatus {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    // No sweep is scheduled or running — the workspace's checks are up to date
+    // with its rules.
+    STATE_IDLE = 1;
+    // A sweep is queued but has not started.
+    STATE_SCHEDULED = 2;
+    // A sweep is running.
+    STATE_IN_PROGRESS = 3;
+  }
+  // Current state of the sweep.
+  State state = 1;
+  // When the pending sweep was queued.
+  optional google.protobuf.Timestamp scheduled_at = 2;
+  // When the current or most recent sweep started.
+  optional google.protobuf.Timestamp started_at = 3;
+  // When the most recent sweep finished.
+  optional google.protobuf.Timestamp finished_at = 4;
+  // Checks examined by the current or most recent sweep.
+  int64 scanned_count = 5;
+  // Checks whose categorisation actually changed in that sweep.
+  int64 rewritten_count = 6;
+  // Populated when the most recent sweep failed. The next rule change
+  // schedules a fresh sweep.
+  optional string last_error = 7;
+}

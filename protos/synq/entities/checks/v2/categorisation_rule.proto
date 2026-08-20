@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "google/protobuf/timestamp.proto";
+import "synq/entities/checks/v2/category_dimension.proto";
+import "synq/entities/checks/v2/check_matcher.proto";
+import "synq/entities/checks/v2/rule_scope.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// A rule that assigns a category to every check it matches.
+//
+// Rules are how a workspace categorises at scale: they apply to the checks that
+// exist today and to every check ingested afterwards, so nobody has to revisit
+// individual checks as tools publish new ones.
+//
+// Rules resolve independently per dimension, and exactly one rule wins a check.
+// Rules are tried in this order, and the first whose matcher matches assigns
+// the category:
+//
+//  1. Scope first. Every workspace rule is tried before any platform-provided
+//     one, whatever their priorities are — so a workspace rule at priority 0
+//     still beats a global rule at priority 1000. This is what makes your own
+//     rules an override of the defaults rather than a competitor to them.
+//  2. Then priority, highest number first. `priority` is a rank, not a
+//     position: 10 is tried before 1.
+//  3. Then, among rules of equal scope and priority, most recently updated
+//     first, and finally by id. `resolution_order` reports the resulting
+//     position, so you never have to reproduce this ordering yourself.
+//
+// A category a rule computes is used only when the check has neither a category
+// set explicitly on it nor one its producer declared.
+message CategorisationRule {
+  // Client-supplied UUID identifying the rule.
+  string id = 1;
+  // The dimension this rule categorises along.
+  CategoryDimension dimension = 2;
+  // Whether the rule belongs to the workspace or is a platform default.
+  RuleScope scope = 3;
+  // Human-readable title, shown wherever the rule is credited for a category.
+  string title = 4;
+  // The category assigned to matching checks.
+  string category = 5;
+  // Which checks the rule applies to.
+  CheckMatcher matcher = 6;
+  // Rank within the rule's scope: the highest number is tried first. Ties are
+  // broken as described above.
+  int32 priority = 7;
+  // Position of this rule in the order rules are tried for its dimension,
+  // counting from 0 across both scopes — 0 is the rule that gets first refusal
+  // on every check. Output-only, and recomputed whenever any rule in the
+  // dimension changes.
+  int32 resolution_order = 12;
+  // Who last edited the rule: display name, and the account or channel they
+  // acted through. Absent on a platform-provided rule, which nobody in your
+  // workspace edited, and on a rule whose editor could not be resolved to
+  // anything a reader would recognise. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 8;
+  // Optimistic-concurrency token: pass it back on UpsertRule or DeleteRule to
+  // have the write rejected if the rule changed in the meantime. Form:
+  // `W/"<id>-<version>"`.
+  string etag = 9;
+  // When the rule was created. Output-only.
+  google.protobuf.Timestamp created_at = 10;
+  // When the rule was last updated. Output-only.
+  google.protobuf.Timestamp updated_at = 11;
+}

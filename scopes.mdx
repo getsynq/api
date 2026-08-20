@@ -692,6 +692,15 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
 | `GetCoverage`<br/>_synq.entities.checks.v1.ChecksCoverageService_ | GetCoverage retrieves the coverage of checks for a specific entity. |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
 | `ListCode`<br/>_synq.entities.code.v1.CodeService_<br/>`GET /api/code/v1` | ListCode retrieves all code artifacts associated with a specific entity. |
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | Get multiple DatabaseCoordinates for identifiers. |
@@ -766,6 +775,10 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
 | `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. Idempotent — deleting an already-deleted or unknown domain |
 | `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. The id is supplied by the caller (a UUID); |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/delete` | Clear the explicit categories of one or more checks, on both dimensions. |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. An explicit category is |
+| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
+| `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
@@ -842,6 +855,19 @@ Create and update rules that categorise data quality checks.
 | `DeleteCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:delete` | DeleteCheckCategories clears the explicit category (both dimensions) |
 | `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
 | `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | UpsertCheckCategories sets (or replaces) the explicit category for |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/delete` | Clear the explicit categories of one or more checks, on both dimensions. |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. An explicit category is |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
+| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
+| `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
 
 ## Read Check Categorisation Rules and Status
 
@@ -852,6 +878,15 @@ View check categorisation rules and their status.
 | Method | Description |
 | ------ | ----------- |
 | `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
 
 ## Read Saved Views
 
@@ -1063,6 +1098,19 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT` |
 | `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | `SCOPE_POLICIES_EDIT` |
 | `GetCoverage`<br/>_synq.entities.checks.v1.ChecksCoverageService_ | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/delete` | `SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | `SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | `SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | `SCOPE_POLICIES_READ`<br/>`SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_READ` |
+| `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | `SCOPE_POLICIES_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListCode`<br/>_synq.entities.code.v1.CodeService_<br/>`GET /api/code/v1` | `SCOPE_CODE_READ`<br/>`SCOPE_MCP_READ` |
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// The dimension a category classifies a check along. A check carries at most
+// one category per dimension, and the two resolve independently of each other.
+enum CategoryDimension {
+  CATEGORY_DIMENSION_UNSPECIFIED = 0;
+  // Technical — what kind of check this is, mechanically. Values such as
+  // "nullness", "uniqueness", "referential integrity", "freshness".
+  CATEGORY_DIMENSION_TECHNICAL = 1;
+  // Governance — what the check is for, in data-quality terms. Values such as
+  // "Completeness", "Accuracy", "Validity", "Timeliness", "Uniqueness".
+  CATEGORY_DIMENSION_GOVERNANCE = 2;
+}

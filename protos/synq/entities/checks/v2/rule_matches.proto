@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// The checks one categorisation rule currently categorises — the state already
+// applied to the workspace, not a projection of what a rule would do.
+//
+// The count is always exact. The sample is a readable excerpt, not the full
+// set: to page through every check a rule categorised, call
+// ListCheckCategories with the rule's id.
+message RuleMatches {
+  // How many checks the rule categorises in the workspace.
+  int64 check_count = 1;
+  // A sample of those checks, ordered by entity id.
+  repeated string sample_entity_ids = 2;
+  // True when the sample was cut short, meaning the rule categorises more
+  // checks than the sample shows.
+  bool sample_truncated = 3;
+}

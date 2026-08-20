@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "synq/entities/v1/entity_types.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// Enough of a check to recognise it and act on it without a second call.
+//
+// Every field is output-only and reflects the check as the tool that produced
+// it described it — a dbt test, a monitor, a reconciliation case. Nothing here
+// is editable through the categorisation API; to change any of it, change it in
+// the tool that publishes the check.
+message CheckSummary {
+  // Name of the check, as its producer names it. Always the last element of
+  // `full_name` when that is populated; kept as its own field so a client that
+  // only needs the label never has to index into an array.
+  string name = 1;
+  // Full display path down to the check, root first and leaf last — suitable
+  // for rendering a breadcrumb as-is, the same order and meaning as
+  // `synq.entities.folders.v1.Folder.full_name`:
+  // `["prod", "analytics", "orders", "not_null_customer_id"]`.
+  //
+  // The leading segments are the producer's own containers — a dbt project, a
+  // warehouse database and schema — so how many there are varies by platform.
+  // Drop the last element for the path to the check's parent.
+  repeated string full_name = 2;
+  // Package the check comes from, e.g. "dbt", "dbt_utils". Empty when the
+  // producer has no notion of packages.
+  string package = 3;
+  // General kind of the check, e.g. "not_null", "unique", "row_count". This is
+  // the attribute categorisation rules most often match on.
+  string kind = 4;
+  // Entity type of the check itself, e.g. ENTITY_TYPE_DBT_TEST.
+  synq.entities.v1.EntityType entity_type = 5;
+  // Platform the check runs on, e.g. DATA_PLATFORM_TYPE_DBT.
+  synq.platforms.v1.DataPlatformType data_platform_type = 6;
+  // Whether the check is native to its platform (a dbt test in a dbt project)
+  // rather than defined in Coalesce Quality.
+  bool is_platform_native = 7;
+  // Description of the check, where the producer supplied one.
+  string description = 8;
+  // The entities the check validates. Empty when the check's targets could not
+  // be resolved.
+  repeated string checked_entity_ids = 9;
+  // Free-form key/value metadata the tool that produced the check attached to
+  // it — a dbt test's `meta` entries, a SQLMesh audit's, a custom label.
+  //
+  // This is what a categorisation rule's `annotation_matches` predicate is
+  // written against, so reading them is how you find out what there is to
+  // match on in your own workspace.
+  map<string, string> annotations = 10;
+}

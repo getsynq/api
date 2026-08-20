@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/checks/v2/category_source.proto";
+import "synq/entities/checks/v2/check_summary.proto";
+import "synq/entities/checks/v2/rule_scope.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// What the workspace's categorisation rules compute for a check on one
+// dimension, whatever ends up in effect.
+message ComputedCategory {
+  // The category the rule assigns.
+  string category = 1;
+  // The rule that assigns it. Pass it to BatchGetRules to read the rule, or to
+  // ListCheckCategories to list every check the rule categorised.
+  string rule_id = 2;
+  // Title of that rule, so it can be named without a second call.
+  string rule_title = 3;
+}
+
+// The category a check resolves to on one dimension, together with where that
+// value came from.
+//
+// Reading `source` matters as much as reading `category`: a value that came
+// from a rule changes when the rules change, while one set explicitly on the
+// check stays until someone clears it.
+message ResolvedCategory {
+  // The category in effect. Empty when the check is uncategorised on this
+  // dimension.
+  string category = 1;
+  // Which of the three sources produced `category`.
+  CategorySource source = 2;
+  // The category set explicitly on the check, if any. Populated whatever the
+  // effective value is, so you can tell an explicit category apart from the
+  // one it replaced. Empty when none is set.
+  string override = 3;
+  // The rule that computed the category. Populated only when `source` is
+  // CATEGORY_SOURCE_RULE; pass it to BatchGetRules to read the rule, or to
+  // ListCheckCategories to list every check the rule categorised.
+  string rule_id = 4;
+  // Title of the rule named by `rule_id`, so "categorised by …" can be
+  // rendered without a second call.
+  string rule_title = 5;
+  // Whether the rule that won is one of the workspace's own or a
+  // platform-provided default. Populated only when `source` is
+  // CATEGORY_SOURCE_RULE.
+  RuleScope rule_scope = 6;
+  // What the categorisation rules compute for this check, populated whenever a
+  // rule matches it at all.
+  //
+  // When `source` is CATEGORY_SOURCE_RULE this is the value in effect and
+  // repeats `category`. When a category set explicitly on the check, or one its
+  // producer declared, is standing in front of the rules, this is what the
+  // check falls back to once that is cleared — the one part of the resolution a
+  // client cannot work out from the fields above. Absent when no rule matches.
+  ComputedCategory computed = 7;
+}
+
+// The category state of a single check, on both dimensions.
+message CheckCategories {
+  // The check this describes. Treat it as opaque: acquire it from a listing or
+  // from IdentifierResolveService and pass it back unchanged.
+  string entity_id = 1;
+  // Technical category — what kind of check this is, mechanically.
+  ResolvedCategory technical = 2;
+  // Governance category — what the check is for.
+  ResolvedCategory governance = 3;
+  // What the check is, so a listing is actionable on its own. Absent for a
+  // check that carries an explicit category but is not (or is no longer)
+  // present in the catalogue.
+  CheckSummary check = 7;
+  // Optimistic-concurrency token covering the categories set explicitly on
+  // this check. Pass it back on UpsertCheckCategories or DeleteCheckCategories
+  // to have the write rejected if someone changed them in the meantime. Empty
+  // when the check carries no explicit category. Form:
+  // `W/"<entity_id>-<version>"`.
+  string etag = 4;
+  // Who last set the explicit categories: display name, and the account or
+  // channel they acted through. Absent when no explicit categories are set,
+  // and when the setter could not be resolved to anything a reader would
+  // recognise.
+  synq.issues.actor.v1.Actor updated_by = 5;
+  // When the explicit categories were last changed. Absent when none are set.
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// The categories to set explicitly on one check.
+//
+// Each dimension is updated independently, and presence is meaningful: omit a
+// field to leave that dimension as it is, send an empty string to clear it so
+// the check falls back to its producer-declared or rule-computed value, send a
+// non-empty string to set or replace it.
+message CheckCategoryUpdate {
+  // The check to categorise.
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+  // Technical category to set — what kind of check this is, mechanically.
+  optional string technical = 2 [(buf.validate.field).string.max_len = 200];
+  // Governance category to set — what the check is for.
+  optional string governance = 3 [(buf.validate.field).string.max_len = 200];
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict if the check's explicit categories changed since this etag was
+  // read. Pass an empty string to require that the check has no explicit
+  // category yet, which turns the write into a create-only operation.
+  optional string etag = 4 [(buf.validate.field).string.max_len = 2100];
+}
+
+// One check whose explicit categories should be cleared, on both dimensions.
+message CheckCategoryDeletion {
+  // The check to clear.
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+  // Optional optimistic-concurrency guard, with the same meaning as on
+  // CheckCategoryUpdate.
+  optional string etag = 2 [(buf.validate.field).string.max_len = 2100];
+}

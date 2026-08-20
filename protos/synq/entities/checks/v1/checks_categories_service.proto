@@ -5,6 +5,7 @@ package synq.entities.checks.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/checks/v1";
@@ -70,7 +71,7 @@ message CheckCategory {
   // identifier in the catalogue).
   string check_path = 1 [(buf.validate.field).string.min_len = 1];
 
-  // Explicit structural category (empty = no explicit structural
+  // Explicit technical category (empty = no explicit technical
   // category; the rule-computed one is used instead).
   string category = 2;
 
@@ -78,9 +79,16 @@ message CheckCategory {
   // the rule-computed one is used instead).
   string governance_category = 3;
 
-  // Identity of the actor that last set this category. Server-derived
-  // from the request context; ignored on input.
-  string actor_identity = 4;
+  // Field 4 carried the setter's raw identity string. It reported an internal
+  // subject to any caller that read it, and `updated_by` covers the question
+  // it was there to answer.
+  reserved 4;
+  reserved "actor_identity";
+
+  // Who last set this category: display name, and the account or channel they
+  // acted through. Absent when the setter could not be resolved to anything a
+  // reader would recognise. Server-derived; ignored on input.
+  synq.issues.actor.v1.Actor updated_by = 6;
 
   // When this category was last updated. Server-set; ignored on input.
   google.protobuf.Timestamp updated_at = 5;
@@ -91,7 +99,7 @@ message UpsertCheckCategoriesRequest {
 }
 
 message UpsertCheckCategoriesResponse {
-  // Echoed categories with server-set actor_identity / updated_at.
+  // Echoed categories with the server-set editor and timestamp.
   repeated CheckCategory categories = 1;
 }
 

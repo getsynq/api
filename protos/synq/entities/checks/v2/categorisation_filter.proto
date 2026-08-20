@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package synq.entities.checks.v2;
+
+option go_package = "github.com/getsynq/api/entities/checks/v2";
+
+// Narrows a listing to checks that do — or do not — have an effective category
+// on a dimension.
+enum CategorisationFilter {
+  // No filter.
+  CATEGORISATION_FILTER_UNSPECIFIED = 0;
+  // Only checks that have an effective category on the dimension.
+  CATEGORISATION_FILTER_CATEGORISED = 1;
+  // Only checks with no effective category on the dimension.
+  CATEGORISATION_FILTER_UNCATEGORISED = 2;
+}
+
+// Narrows a listing to checks that do — or do not — carry a category set
+// explicitly on them on a dimension.
+enum OverrideFilter {
+  // No filter.
+  OVERRIDE_FILTER_UNSPECIFIED = 0;
+  // Only checks whose category on the dimension was set explicitly.
+  OVERRIDE_FILTER_OVERRIDDEN = 1;
+  // Only checks whose category on the dimension was not set explicitly.
+  OVERRIDE_FILTER_NOT_OVERRIDDEN = 2;
+}
