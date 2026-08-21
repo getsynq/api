@@ -48,6 +48,9 @@ enum TriageFailureCategory {
   TRIAGE_FAILURE_CATEGORY_RESOURCE_NOT_FOUND = 6;
   // An unexpected internal error occurred
   TRIAGE_FAILURE_CATEGORY_INTERNAL = 7;
+  // Scout is not enabled for this workspace, so no triage can run until an
+  // administrator configures it
+  TRIAGE_FAILURE_CATEGORY_NOT_CONFIGURED = 8;
 }
 
 // IssueTriageState represents the current state of an issue in the SRE agent's investigation workflow.

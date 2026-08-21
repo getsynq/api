@@ -31,6 +31,12 @@ message MonitorInfo {
   // be overwritten the next time the rule is applied. False for monitors that
   // are configured individually.
   bool managed_by_rule = 10;
+  // Human-provided description of what this monitor checks. Unset for monitor
+  // types that don't carry one.
+  optional string description = 11;
+  // SQL query used as the data source instead of querying the monitored table
+  // or view directly, when the monitor is configured with one.
+  optional string sql_source = 12;
 }
 
 message Monitored {
