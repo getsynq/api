@@ -223,32 +223,43 @@ message SchemaChange {
 message SchemaColumnChange {
   // ColumnRemovalChangeType represents the removal of a column from the schema.
   message ColumnRemovalChangeType {
-    // Identifier of the removed column.
+    // Identifier of the removed column. Normalized to lower case with special characters stripped, so
+    // several columns of one schema can share it.
     string column_id = 1;
     // Native data type of the removed column.
     string native_type = 2;
     // Original position of the column in the schema.
     int32 ordinal_position = 3;
+    // Name of the column as it appears in the source system, which is what distinguishes two columns
+    // sharing a column_id. Empty when the source system reported no distinct name, and on changes
+    // recorded before this field existed.
+    string human_name = 4;
   }
 
   // ColumnNativeTypeChangeType represents a change in a column's data type.
   message ColumnNativeTypeChangeType {
-    // Identifier of the modified column.
+    // Identifier of the modified column. See ColumnRemovalChangeType.column_id.
     string column_id = 1;
     // Previous data type of the column.
     string previous_native_type = 2;
     // New data type of the column.
     string current_native_type = 3;
+    // Name of the column as it appears in the source system. See ColumnRemovalChangeType.human_name.
+    string human_name = 4;
+    // Position of the changed column in the current version of the schema.
+    int32 ordinal_position = 5;
   }
 
   // ColumnAdditionChangeType represents the addition of a new column to the schema.
   message ColumnAdditionChangeType {
-    // Identifier of the new column.
+    // Identifier of the new column. See ColumnRemovalChangeType.column_id.
     string column_id = 1;
     // Data type of the new column.
     string native_type = 2;
     // Position where the column was added in the schema.
     int32 ordinal_position = 3;
+    // Name of the column as it appears in the source system. See ColumnRemovalChangeType.human_name.
+    string human_name = 4;
   }
 
   oneof column_change {
