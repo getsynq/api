@@ -130,10 +130,12 @@ message ListDeliveriesRequest {
   // Restrict to one integration. Omit for the whole workspace's feed.
   optional string integration_id = 1 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Restrict to one event — every integration it reached, and what each did with
-  // it. This is the `event_id` from a received webhook payload.
+  // it. This is the `event_id` from a received webhook payload. Setting it
+  // searches everything still retained, ignoring `since` and `until`.
   optional string event_id = 2 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
   // Restrict to the issue or incident the delivery was about. Takes the same
-  // identifier the rest of the API uses for that object.
+  // identifier the rest of the API uses for that object. Setting it searches
+  // everything still retained, ignoring `since` and `until`.
   optional string subject_id = 3 [(buf.validate.field).string.max_len = 200];
   // Restrict to these event types, by `synq.webhooks.v1.Event.EventType` name.
   // Empty matches every type.
@@ -162,9 +164,12 @@ message ListDeliveriesRequest {
     }
   }];
   // Only deliveries for events at or after this time. Defaults to the start of
-  // the retention window.
+  // the retention window, and is ignored when `event_id` or `subject_id` names
+  // what to return. Note that this bounds the event time, which for an issue is
+  // when the issue began rather than when the delivery was sent.
   optional google.protobuf.Timestamp since = 7;
-  // Only deliveries for events strictly before this time. Defaults to now.
+  // Only deliveries for events strictly before this time. Defaults to now, and
+  // is ignored when `event_id` or `subject_id` names what to return.
   optional google.protobuf.Timestamp until = 8;
   // Pagination. Deliveries are returned newest event first; pass the `last_id`
   // of the previous page as the cursor.

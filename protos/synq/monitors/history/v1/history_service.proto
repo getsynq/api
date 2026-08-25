@@ -19,12 +19,15 @@ service HistoryService {
         SCOPE_MCP_READ
       ]
     };
-    option (google.api.http) = {get: "/api/monitors/history/v1/{monitor_path}"};
+    // Query param, not a path capture: synq paths contain ":" which HTTP
+    // transcoding treats as a custom-method verb, so /{monitor_path} 404s.
+    option (google.api.http) = {get: "/api/monitors/history/v1"};
   }
 }
 
 message HistoryRequest {
-  // Experimental: Will be replaced with identifier
+  // Monitor synq path (e.g. monitor::integration::db::schema::table::volume).
+  // REST clients pass this as the `monitorPath` query parameter.
   string monitor_path = 1;
 
   int32 metrics_version = 3;

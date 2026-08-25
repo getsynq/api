@@ -415,7 +415,7 @@ View monitors and their configuration.
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
 | `ListConfigsMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1/by-config` |  |
 | `ListMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1` |  |
-| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1/{monitor_path}` |  |
+| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
@@ -742,7 +742,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
 | `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` |  |
 | `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` |  |
-| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1/{monitor_path}` |  |
+| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
@@ -1236,7 +1236,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ConfigChangesOverview`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1/config-changes` | `SCOPE_MONITORS_CUSTOM_EDIT` |
 | `ListConfigsMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1/by-config` | `SCOPE_MONITORS_READ` |
 | `ListMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_READ` |
-| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1/{monitor_path}` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
+| `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
