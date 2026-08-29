@@ -201,7 +201,10 @@ message MonitorDefinition {
   Source source = 9; // Source of the monitor.
   string timezone = 10;
 
+  // The metric this monitor measures.
   oneof monitor {
+    option (buf.validate.oneof).required = true;
+
     MonitorFreshness freshness = 20;
     MonitorVolume volume = 21;
     MonitorCustomNumeric custom_numeric = 22;
