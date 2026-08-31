@@ -19,6 +19,13 @@ message Annotation {
   }];
 
   // Optional list of values that the annotation can carry.
+  //
+  // A value is something entities are filtered and searched by, not free-form
+  // metadata, so keep it to a label a person would pick out of a list. The limit
+  // is set to hold an identifier or a link the annotated system generated —
+  // truncating one of those produces a value that no longer resolves, and no
+  // longer matches the filter it exists for. Put prose in the entity
+  // description instead.
   repeated string values = 2 [(buf.validate.field) = {
     repeated: {
       min_items: 0
@@ -26,7 +33,7 @@ message Annotation {
       items: {
         string: {
           min_len: 1
-          max_len: 50
+          max_len: 100
         }
       }
     }

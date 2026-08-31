@@ -12905,11 +12905,19 @@ components:
                     type: array
                     items:
                         type: string
-                        maxLength: 50
+                        maxLength: 100
                         minLength: 1
                         maxItems: 20
                     maxItems: 20
-                    description: Optional list of values that the annotation can carry.
+                    description: |-
+                        Optional list of values that the annotation can carry.
+
+                         A value is something entities are filtered and searched by, not free-form
+                         metadata, so keep it to a label a person would pick out of a list. The limit
+                         is set to hold an identifier or a link the annotated system generated —
+                         truncating one of those produces a value that no longer resolves, and no
+                         longer matches the filter it exists for. Put prose in the entity
+                         description instead.
             title: Annotation
             required:
                 - name
@@ -27877,17 +27885,33 @@ paths:
                     description: String key for the annotation.
                 - name: annotations.values
                   in: query
-                  description: Optional list of values that the annotation can carry.
+                  description: |-
+                    Optional list of values that the annotation can carry.
+
+                     A value is something entities are filtered and searched by, not free-form
+                     metadata, so keep it to a label a person would pick out of a list. The limit
+                     is set to hold an identifier or a link the annotated system generated —
+                     truncating one of those produces a value that no longer resolves, and no
+                     longer matches the filter it exists for. Put prose in the entity
+                     description instead.
                   schema:
                     type: array
                     items:
                         type: string
-                        maxLength: 50
+                        maxLength: 100
                         minLength: 1
                         maxItems: 20
                     title: values
                     maxItems: 20
-                    description: Optional list of values that the annotation can carry.
+                    description: |-
+                        Optional list of values that the annotation can carry.
+
+                         A value is something entities are filtered and searched by, not free-form
+                         metadata, so keep it to a label a person would pick out of a list. The limit
+                         is set to hold an identifier or a link the annotated system generated —
+                         truncating one of those produces a value that no longer resolves, and no
+                         longer matches the filter it exists for. Put prose in the entity
+                         description instead.
                 - name: integrationIds
                   in: query
                   schema:
