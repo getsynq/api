@@ -110,8 +110,9 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | Get multiple DatabaseCoordinates for identifiers. |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | Given database FQN return possible entity ids. |
+| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | List all entities. |
-| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List all entities. |
+| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | ListEntityGroups lists all groups. |
 | `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | List all entities. |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | Get multiple entities by their identifiers. |
@@ -175,7 +176,7 @@ View upstream and downstream lineage between entities.
 | Method | Description |
 | ------ | ----------- |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
-| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
+| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
 | `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
@@ -705,10 +706,11 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | Get multiple DatabaseCoordinates for identifiers. |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | Given database FQN return possible entity ids. |
+| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | List all entities. |
-| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List all entities. |
+| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | ListEntityGroups lists all groups. |
-| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
+| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | Get multiple entities by their identifiers. |
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | Get specific entity by its identifier. |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | List entities matching the given filter |
@@ -1116,6 +1118,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`DELETE /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
+| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
 | `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

@@ -11,6 +11,7 @@ import "synq/entities/custom/features/v1/git_file_reference.proto";
 import "synq/entities/custom/features/v1/schema.proto";
 import "synq/entities/custom/features/v1/sql_definition.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
@@ -75,7 +76,8 @@ service FeaturesService {
     };
   }
 
-  // List all entities.
+  // List the features of one entity, or of every custom entity in the
+  // workspace when entity_id is left unset.
   rpc ListEntityFeatures(ListEntityFeaturesRequest) returns (ListEntityFeaturesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -115,11 +117,23 @@ message DeleteEntityFeatureRequest {
 message DeleteEntityFeatureResponse {}
 
 message ListEntityFeaturesRequest {
-  // Identifier of the entity to get features for.
-  synq.entities.v1.Identifier entity_id = 1 [(buf.validate.field).required = true];
+  // Identifier of the entity to get features for. Leave unset to list the
+  // features of every custom entity in the workspace.
+  synq.entities.v1.Identifier entity_id = 1;
+
+  // Pagination. Omitting this, or sending a zero page_size, returns every
+  // matching feature in one response — there is no server-side default page
+  // size. Set page_size to bound the response; pass page_info.last_id from the
+  // previous response as the cursor to fetch the next page.
+  optional synq.v1.Pagination pagination = 2;
 }
 
 message ListEntityFeaturesResponse {
   // List of features for the entity.
   repeated Feature features = 1;
+
+  // Paging information for this response. Always populated. Repeat the request
+  // passing page_info.last_id as pagination.cursor until last_id comes back
+  // empty to walk the whole result set.
+  synq.v1.PageInfo page_info = 2;
 }

@@ -30,12 +30,14 @@ message Entity {
   // Information about entity type
   optional synq.entities.v1.EntityType entity_type = 14;
 
-  // Name of the entity that is displayed to the user.
+  // Name of the entity that is displayed to the user. Set it to the name the
+  // entity is known by in the system it comes from, rather than shortening it
+  // to fit — the limit is set wide enough to carry a generated name whole.
   string name = 3 [(buf.validate.field) = {
     required: true
     string: {
       min_len: 1
-      max_len: 100
+      max_len: 500
     }
   }];
 

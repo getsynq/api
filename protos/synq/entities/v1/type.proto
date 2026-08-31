@@ -21,12 +21,16 @@ message Type {
     }
   }];
 
-  // Name of the custom entity type that is displayed to the user.
+  // Short label for the custom entity type, shown beside the type's icon, in
+  // type filters, and on the type badge of every entity of this type.
+  //
+  // It is the only name a custom type has, so keep it short enough to read as
+  // a caption rather than a description — "Kafka Topic", not a sentence.
   string name = 3 [(buf.validate.field) = {
     required: true
     string: {
       min_len: 1
-      max_len: 20
+      max_len: 100
     }
   }];
 

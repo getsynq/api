@@ -5,6 +5,7 @@ package synq.entities.custom.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
@@ -36,6 +37,23 @@ service ChecksRelationshipsService {
       body: "*"
     };
   }
+
+  // List every relationship that attaches a check to the entities it
+  // validates, across the whole workspace.
+  rpc ListCheckRelationships(ListCheckRelationshipsRequest) returns (ListCheckRelationshipsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/custom/v1/check-relationships/list"
+      body: "*"
+    };
+  }
 }
 
 message UpsertCheckRelationshipsRequest {
@@ -49,6 +67,23 @@ message DeleteCheckRelationshipsRequest {
 }
 
 message DeleteCheckRelationshipsResponse {}
+
+message ListCheckRelationshipsRequest {
+  // Pagination. Omitting this, or sending a zero page_size, returns every
+  // check relationship in one response — there is no server-side default page
+  // size. Set page_size to bound the response; pass page_info.last_id from the
+  // previous response as the cursor to fetch the next page.
+  optional synq.v1.Pagination pagination = 1;
+}
+
+message ListCheckRelationshipsResponse {
+  repeated CheckRelationship check_relationships = 1;
+
+  // Paging information for this response. Always populated. Repeat the request
+  // passing page_info.last_id as pagination.cursor until last_id comes back
+  // empty to walk the whole workspace.
+  synq.v1.PageInfo page_info = 2;
+}
 
 message CheckRelationship {
   synq.entities.v1.Identifier check = 1 [(buf.validate.field).required = true];

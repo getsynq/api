@@ -10,14 +10,17 @@ option go_package = "github.com/getsynq/api/entities/sql_insights/v1";
 
 // SqlInsightsService exposes analytical information about the SQL used across a
 // workspace's entities. It answers questions such as "which SQL constructs are
-// used in my warehouse, and how often" and "what SQL constructs does this
-// specific entity use", without requiring the caller to re-parse any SQL.
+// used in my warehouse, and by how many entities" and "what SQL constructs
+// does this specific entity use", without requiring the caller to re-parse any
+// SQL.
 service SqlInsightsService {
   // ListSqlConstructs returns the distribution of SQL constructs across all
-  // entities in the workspace, with an occurrence count per construct. The
-  // result is workspace-scoped (derived from the authenticated request) — no
-  // entity paths are supplied. Useful for building filter/autocomplete UIs and
-  // for high-level "shape of our SQL" analytics.
+  // entities in the workspace. Every count is a number of entities, not a number
+  // of occurrences: an entity whose SQL contains five GROUP BY clauses adds one
+  // to the HAS_GROUP_BY count, not five. The result is workspace-scoped (derived
+  // from the authenticated request) — no entity paths are supplied. Useful for
+  // building filter/autocomplete UIs and for high-level "shape of our SQL"
+  // analytics.
   rpc ListSqlConstructs(ListSqlConstructsRequest) returns (ListSqlConstructsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -32,7 +35,9 @@ service SqlInsightsService {
 
   // BatchSqlDetails returns the SQL details (currently the set of detected SQL
   // constructs) for each of the requested entities, keyed by their synq path.
-  // Entities with no SQL details are omitted from the response map.
+  // Every requested path appears in the response, including a path with no SQL
+  // details and a path matching no entity; both are returned with an empty set
+  // of constructs.
   rpc BatchSqlDetails(BatchSqlDetailsRequest) returns (BatchSqlDetailsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -53,8 +58,8 @@ service SqlInsightsService {
 // of the authenticated request.
 message ListSqlConstructsRequest {}
 
-// ListSqlConstructsResponse carries the per-construct occurrence counts for the
-// workspace.
+// ListSqlConstructsResponse reports how many of the workspace's entities use
+// each SQL construct.
 message ListSqlConstructsResponse {
   // SqlConstructCount pairs a SQL construct with the number of entities in the
   // workspace whose SQL uses it.
@@ -78,7 +83,8 @@ message BatchSqlDetailsRequest {
 
 // BatchSqlDetailsResponse maps each requested synq path to its SQL details.
 message BatchSqlDetailsResponse {
-  // SQL details keyed by synq path. Paths with no SQL details are omitted.
+  // SQL details keyed by synq path. Every requested path is present; a path
+  // with no SQL details has an empty set of constructs.
   map<string, SqlDetails> sql_details = 1;
 }
 

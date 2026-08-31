@@ -5,6 +5,7 @@ package synq.entities.custom.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/type.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/v1";
@@ -70,8 +71,19 @@ message DeleteTypeRequest {
 }
 message DeleteTypeResponse {}
 
-message ListTypesRequest {}
+message ListTypesRequest {
+  // Pagination. Omitting this, or sending a zero page_size, returns every type
+  // in one response — there is no server-side default page size. Set page_size
+  // to bound the response; pass page_info.last_id from the previous response as
+  // the cursor to fetch the next page.
+  optional synq.v1.Pagination pagination = 1;
+}
 message ListTypesResponse {
   // List of entities.
   repeated synq.entities.v1.Type types = 1;
+
+  // Paging information for this response. Always populated. Repeat the request
+  // passing page_info.last_id as pagination.cursor until last_id comes back
+  // empty to walk the whole workspace.
+  synq.v1.PageInfo page_info = 2;
 }
