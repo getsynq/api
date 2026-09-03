@@ -5530,6 +5530,11 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestsDeploymentOverview.SkippedTable'
                     description: Tables or views this rule matched but could not deploy tests onto.
+                skippedTests:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestsDeploymentOverview.SkippedTest'
+                    description: Tests this rule declares that another rule already owns on the same table.
             title: SqlTestsDeploymentOverview
             additionalProperties: false
             description: |-
@@ -5550,6 +5555,38 @@ components:
             description: |-
                 SkippedTable names a table or view the rule's selection matched, but that
                  this deploy could not deploy tests onto.
+        synq.datachecks.sqltests.v1.SqlTestsDeploymentOverview.SkippedTest:
+            type: object
+            properties:
+                tablePath:
+                    type: string
+                    description: Synq path of the table or view carrying the test.
+                sqlTestPath:
+                    type: string
+                    description: |-
+                        Synq path of the SqlTest, when it already exists (empty while the owning
+                         rule has not deployed it yet).
+                testName:
+                    type: string
+                    description: Name of the test, resolved the same way as in SqlTestDeploymentChange.
+                reason:
+                    type: string
+                    description: Human-readable reason the test was skipped.
+                ownerRuleId:
+                    type: string
+                    description: Id of the deployment rule that owns the test.
+                ownerRuleTitle:
+                    type: string
+                    description: |-
+                        Title the owning rule carried when this plan was made. A title can be
+                         renamed — use owner_rule_id to look the rule up.
+            title: SkippedTest
+            additionalProperties: false
+            description: |-
+                SkippedTest names one test the rule declares that this deploy left in place
+                 rather than deploying, because another rule already deployed it on that table.
+                 Rules covering the same table merge additively: each deploys the tests that are
+                 not there yet, and never touches a test another rule owns.
         synq.datachecks.sqltests.v1.SqlTestsExclusiveQueryConfig:
             type: object
             properties:
@@ -20042,6 +20079,24 @@ components:
                     type: string
                 reason:
                     type: string
+                    description: |-
+                        Why the asset was skipped, as a stable SCREAMING_SNAKE token. Clients branch
+                         on these, so treat the spellings as part of this API: adding a value is safe,
+                         renaming one is a breaking change. A value not listed here may appear — a
+                         client must fall through to "skipped, reason unrecognised" rather than assume
+                         the set is closed.
+
+                           SKIPPED_HIGHER_PRIORITY_RULE       another rule of higher precedence governs
+                                                              the asset, so this rule's settings never
+                                                              reach it (see rule precedence)
+                           SKIPPED_NO_FRESHNESS_COLUMN_MATCH  no column matched the freshness field
+                           SKIPPED_NO_FRESHNESS_FIELD_PATTERN no freshness field pattern is configured
+                           SKIPPED_NO_INTEGRATION             the asset's integration is gone
+                           SKIPPED_TEST_PREPARATION_FAILED    the test could not be prepared
+                           SKIPPED_TEST_OWNED_BY_OTHER_RULE   another rule already deploys that test
+
+                         A string rather than an enum for compatibility: an enum would have to be
+                         introduced as a second field, since the producers already write these tokens.
             title: SkippedAsset
             additionalProperties: false
         synq.monitors.automated_monitors.v1.StaticConfig:
@@ -21304,6 +21359,130 @@ components:
                 How the expected arrival time of new data is modelled, for the delay and volume change
                  delay metrics. Only table stats monitors produce those metrics, so the choice has no
                  effect on any other monitor type.
+        synq.overlays.v1.BatchGetEntityOverlaysRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 1000
+                    minItems: 1
+                    uniqueItems: true
+                    description: |-
+                        The entities to ask about: 1 to 1000 ids, no duplicates.
+
+                         An `entity_id` is opaque. Take one from any listing or search response, or
+                         from `synq.entities.resolve.v1.IdentifierResolveService` if what you hold is
+                         a warehouse table name or a model name, and pass it back unchanged. Do not
+                         build one yourself or parse one apart — the format carries no meaning you can
+                         rely on and is not part of this contract.
+            title: BatchGetEntityOverlaysRequest
+            additionalProperties: false
+        synq.overlays.v1.BatchGetEntityOverlaysResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.overlays.v1.EntityOverlays'
+                    description: One entry per requested entity, in the order they were requested.
+            title: BatchGetEntityOverlaysResponse
+            additionalProperties: false
+        synq.overlays.v1.BatchGetOverlayMemberCountsRequest:
+            type: object
+            properties:
+                overlayEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 1000
+                    minItems: 1
+                    uniqueItems: true
+                    description: |-
+                        The overlays to count: 1 to 1000 ids, no duplicates.
+
+                         Opaque ids, as returned by `BatchGetEntityOverlays` or by the listing calls
+                         of the service that defines the overlay. Data products and owners may be
+                         mixed freely in one request.
+            title: BatchGetOverlayMemberCountsRequest
+            additionalProperties: false
+        synq.overlays.v1.BatchGetOverlayMemberCountsResponse:
+            type: object
+            properties:
+                overlays:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.overlays.v1.OverlayMemberCount'
+                    description: One entry per requested overlay, in the order they were requested.
+            title: BatchGetOverlayMemberCountsResponse
+            additionalProperties: false
+        synq.overlays.v1.EntityOverlays:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    description: The entity this entry answers for, echoed back from the request.
+                ownerEntityIds:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Owners responsible for this entity — the parties an alert about it reaches.
+                         Read their names and contact channels with `synq.owners.v1.OwnersService`.
+
+                         Empty when no owner claims the entity, and also when your credential may not
+                         read owners. Order is not significant and may change between calls; sort if
+                         you display them.
+                dataproductEntityIds:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Data products this entity belongs to. Read their names and definitions with
+                         `synq.dataproducts.v2.DataproductsService`.
+
+                         Empty when the entity is in no data product, and also when your credential
+                         may not read data products. Order is not significant and may change between
+                         calls; sort if you display them.
+            title: EntityOverlays
+            additionalProperties: false
+            description: |-
+                EntityOverlays is one entity and the overlays claiming it, one list per kind.
+
+                 Kinds are separate lists rather than one tagged list because what you can do
+                 with an id depends on its kind: an owner id reads through the owners service, a
+                 data-product id through the data-products service.
+        synq.overlays.v1.OverlayMemberCount:
+            type: object
+            properties:
+                overlayEntityId:
+                    type: string
+                    description: The overlay this entry answers for, echoed back from the request.
+                memberCount:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        How many distinct entities belong to it.
+
+                         Zero covers every case where there is nothing to count: an overlay with no
+                         members, an id that does not exist, and an id your credential may not read.
+                         If you need to tell those apart, read the overlay itself through the service
+                         that defines it.
+            title: OverlayMemberCount
+            additionalProperties: false
         synq.owners.v1.AlertConfig:
             type: object
             properties:
@@ -43945,6 +44124,76 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.orchestration.v1.BatchOrchestrationResponse'
+    /api/overlays/v1/by-id:
+        post:
+            tags:
+                - synq.overlays.v1.OverlaysService
+            summary: BatchGetEntityOverlays
+            description: |-
+                For each entity, list every overlay that claims it.
+
+                 The response has one entry per requested id, in the order you asked, so you
+                 can match results positionally and never have to tell "absent" from "empty".
+                 An entity that belongs to no overlay comes back with empty lists.
+
+                 Freshness. Which overlays exist and what they are attached to is up to date
+                 the moment you change it — create an overlay, delete one, point an ownership
+                 at a different data product, and the next call reflects it. What each
+                 overlay *contains* is recomputed periodically, so an asset that newly
+                 satisfies an existing rule — a table appearing in a folder a rule watches —
+                 shows up shortly afterwards rather than instantly.
+
+                 Returns PERMISSION_DENIED if your credential can read neither data products
+                 nor owners. If it can read one but not the other, the call succeeds and the
+                 list you may not read comes back empty rather than failing.
+            operationId: synq.overlays.v1.OverlaysService.BatchGetEntityOverlays
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.overlays.v1.BatchGetEntityOverlaysRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.overlays.v1.BatchGetEntityOverlaysResponse'
+    /api/overlays/v1/member-counts:
+        post:
+            tags:
+                - synq.overlays.v1.OverlaysService
+            summary: BatchGetOverlayMemberCounts
+            description: |-
+                Count the members of each named overlay.
+
+                 The cheap way to answer "how big is this" — use it for a summary line or a
+                 badge. When you need the assets themselves, list them through the service
+                 that defines the overlay.
+
+                 Counts distinct members, so an owner responsible for two data products that
+                 overlap is not charged twice for the assets they share.
+
+                 Same freshness as `BatchGetEntityOverlays`: counts follow the periodic
+                 recomputation of what each overlay contains.
+
+                 Returns PERMISSION_DENIED if your credential can read neither data products
+                 nor owners.
+            operationId: synq.overlays.v1.OverlaysService.BatchGetOverlayMemberCounts
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.overlays.v1.BatchGetOverlayMemberCountsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.overlays.v1.BatchGetOverlayMemberCountsResponse'
     /api/owners/v1:
         get:
             tags:
@@ -46363,6 +46612,49 @@ tags:
       description: IssuesService is a service for managing Issues.
     - name: synq.issues.issues.v1.IssuesService
       description: IssuesService is a service for managing Issues.
+    - name: synq.overlays.v1.OverlaysService
+      description: |-
+        OverlaysService answers which organizational overlays claim an entity.
+
+         An overlay is a grouping you lay over your catalog rather than something the
+         warehouse itself knows about. Two kinds exist today: a **data product**, which
+         groups the assets that make up something your organization delivers, and an
+         **owner**, which names the person or team responsible for a set of assets and
+         where alerts about them go. Each is defined by a membership rule, not by an
+         explicit list, so what belongs to one changes as your warehouse does.
+
+         "Owner" here means stewardship — who is accountable for an asset and who hears
+         about it when something breaks. It is not the structural containment sense the
+         word carries elsewhere in the API, where an asset can be said to own the checks
+         and monitors declared on it. Nothing this service returns describes that
+         relationship.
+
+         This service reads that membership backwards. The defining services answer
+         "what is in this data product"; this one answers "which data products and
+         owners claim this table" — the question you have when you are looking at one
+         asset and want to know who cares about it and what it feeds.
+
+         Membership follows identity. Where the same table is represented more than
+         once in your catalog — a transformation model and the warehouse table it
+         builds — an overlay whose rule matches one of them claims the others too. So
+         an alert routed by ownership reaches the responsible party whichever
+         representation raised it, and you do not have to know which one a rule was
+         written against.
+
+         Two consequences worth planning around. You can ask about whichever
+         representation you happen to hold and get the same answer, so there is no need
+         to resolve an identity group first. And if you do ask about several members of
+         one group in a single call, each comes back with its own entry carrying the
+         same overlays — correct, but redundant, so ask about one member per group when
+         you are near the request limit.
+
+         Related services:
+           - `synq.dataproducts.v2.DataproductsService` and `synq.owners.v1.OwnersService`
+             define the overlays read here, and turn an id from a response into a name,
+             a description and its contact channels.
+           - `synq.entities.resolve.v1.IdentifierResolveService` turns an identifier you
+             already hold — a warehouse table name, a dbt model — into the `entity_id`
+             these calls take.
     - name: synq.git.commits.v1.CommitsService
     - name: synq.schedule.v1.ScheduleService
       description: ScheduleService provides schedule evaluation utilities.

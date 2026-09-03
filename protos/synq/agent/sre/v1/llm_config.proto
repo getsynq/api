@@ -27,4 +27,18 @@ message OpenAIApi {
 
   // Model to use for simpler operations, e.g. summary generation or improving the format of messages.
   string summary_model = 4 [(buf.validate.field) = {required: true}];
+
+  // How long the thinking model deliberates before each answer: "none"
+  // (answer without thinking first), "low", "medium" or "high". Empty leaves
+  // it to the deployment default. It is a cost decision, not a capability one
+  // — the agent works at every level.
+  //
+  // Free-form rather than an enum because the levels belong to whichever
+  // provider serves the model, and they keep being added. The value reaches
+  // the provider as given, so a level this build has never heard of works;
+  // one the model refuses is dropped for that request and logged.
+  string thinking_effort = 5 [(buf.validate.field).string = {
+    max_len: 32,
+    pattern: "^([a-z][a-z_-]*)?$"
+  }];
 }

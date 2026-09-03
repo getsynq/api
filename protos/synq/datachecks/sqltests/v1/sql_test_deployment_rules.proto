@@ -285,4 +285,27 @@ message SqlTestsDeploymentOverview {
   }
   // Tables or views this rule matched but could not deploy tests onto.
   repeated SkippedTable skipped_tables = 5;
+
+  // SkippedTest names one test the rule declares that this deploy left in place
+  // rather than deploying, because another rule already deployed it on that table.
+  // Rules covering the same table merge additively: each deploys the tests that are
+  // not there yet, and never touches a test another rule owns.
+  message SkippedTest {
+    // Synq path of the table or view carrying the test.
+    string table_path = 1;
+    // Synq path of the SqlTest, when it already exists (empty while the owning
+    // rule has not deployed it yet).
+    string sql_test_path = 2;
+    // Name of the test, resolved the same way as in SqlTestDeploymentChange.
+    string test_name = 3;
+    // Human-readable reason the test was skipped.
+    string reason = 4;
+    // Id of the deployment rule that owns the test.
+    string owner_rule_id = 5;
+    // Title the owning rule carried when this plan was made. A title can be
+    // renamed — use owner_rule_id to look the rule up.
+    string owner_rule_title = 6;
+  }
+  // Tests this rule declares that another rule already owns on the same table.
+  repeated SkippedTest skipped_tests = 6;
 }

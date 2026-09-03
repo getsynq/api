@@ -512,6 +512,8 @@ View owners and their notification channels.
 
 | Method | Description |
 | ------ | ----------- |
+| `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
+| `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
 
@@ -569,6 +571,8 @@ View data products and their contents.
 | `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
 | `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
 | `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
+| `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
+| `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
 
 ## Edit Domains
 
@@ -744,11 +748,14 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
 | `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` |  |
 | `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` |  |
+| `ListDeploymentRulesForAsset`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/{asset_path}` |  |
 | `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+| `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
+| `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
@@ -1229,7 +1236,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
 | `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
 | `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
-| `ListDeploymentRulesForAsset`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/{asset_path}` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
+| `ListDeploymentRulesForAsset`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/{asset_path}` | `SCOPE_MONITORS_AUTOMATIC_EDIT`<br/>`SCOPE_MCP_READ` |
 | `UpsertDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchCreateMonitor`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1` | `SCOPE_MONITORS_CUSTOM_EDIT`<br/>`SCOPE_MONITORS_CUSTOM_SQL_EDIT` |
 | `BatchDeleteMonitor`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1/delete` | `SCOPE_MONITORS_CUSTOM_EDIT` |
@@ -1244,6 +1251,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
 | `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | `SCOPE_OWNERS_EDIT`<br/>`SCOPE_MCP_WRITE` |

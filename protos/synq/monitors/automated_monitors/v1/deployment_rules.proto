@@ -95,6 +95,23 @@ message CustomMonitorSettingsChange {
 
 message SkippedAsset {
   string asset_path = 1;
+  // Why the asset was skipped, as a stable SCREAMING_SNAKE token. Clients branch
+  // on these, so treat the spellings as part of this API: adding a value is safe,
+  // renaming one is a breaking change. A value not listed here may appear — a
+  // client must fall through to "skipped, reason unrecognised" rather than assume
+  // the set is closed.
+  //
+  //   SKIPPED_HIGHER_PRIORITY_RULE       another rule of higher precedence governs
+  //                                      the asset, so this rule's settings never
+  //                                      reach it (see rule precedence)
+  //   SKIPPED_NO_FRESHNESS_COLUMN_MATCH  no column matched the freshness field
+  //   SKIPPED_NO_FRESHNESS_FIELD_PATTERN no freshness field pattern is configured
+  //   SKIPPED_NO_INTEGRATION             the asset's integration is gone
+  //   SKIPPED_TEST_PREPARATION_FAILED    the test could not be prepared
+  //   SKIPPED_TEST_OWNED_BY_OTHER_RULE   another rule already deploys that test
+  //
+  // A string rather than an enum for compatibility: an enum would have to be
+  // introduced as a second field, since the producers already write these tokens.
   string reason = 2;
 }
 
