@@ -19491,6 +19491,18 @@ components:
             additionalProperties: false
         synq.monitors.automated_monitors.v1.DeployDeploymentRuleResponse:
             type: object
+            properties:
+                overview:
+                    description: |-
+                        What the deploy did: the monitors it created, removed and left in place, the
+                         surviving monitors whose settings it changed, and the assets it skipped.
+
+                         Computed inside this call, before the write, from the same overview the
+                         deploy acted on — so unlike an overview a caller fetches for itself, no
+                         decision window separates it from what happened. Optional and additive: an
+                         older server leaves it unset, and a caller must then answer from what it
+                         knew before the call rather than treat the absence as an error.
+                    $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.MonitorsDeploymentOverview'
             title: DeployDeploymentRuleResponse
             additionalProperties: false
         synq.monitors.automated_monitors.v1.DeploymentRuleType:
@@ -19785,6 +19797,22 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.SkippedAsset'
+                overlappingRuleIds:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Deployment rules OTHER than the one this overview is for that also govern the
+                         assets it leaves monitored (the ones in active_monitors_for /
+                         active_custom_monitors_for). Exact and complete: it is read off the same
+                         rule/asset rows the overview itself is computed from, so no per-asset lookup
+                         can improve on it. Empty when no other rule covers those assets — and note
+                         that a rule whose contribution is shadowed instead (SkippedAsset.reason
+                         SKIPPED_HIGHER_PRIORITY_RULE) is not here; those assets are not left
+                         monitored by this rule at all.
+
+                         Ids only. Read their titles, owners and types with
+                         ListDeploymentRules(rule_ids).
             title: MonitorsDeploymentOverview
             additionalProperties: false
         synq.monitors.automated_monitors.v1.MonitorsDeploymentRule:
@@ -21087,6 +21115,15 @@ components:
                         SQL query used as the data source instead of querying the monitored table
                          or view directly, when the monitor is configured with one.
                     nullable: true
+                deletedAt:
+                    description: |-
+                        When set, the monitor has been deleted: it no longer runs, no longer
+                         reports metrics, and is excluded from every listing. The record is still
+                         served by id so a stored or stale identifier resolves to something, which
+                         makes this the only signal that the monitor is gone. Unset for a live
+                         monitor.
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
             title: MonitorInfo
             additionalProperties: false
         synq.monitors.info.v1.MonitorInfoRequest:

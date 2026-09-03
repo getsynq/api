@@ -91,7 +91,17 @@ message DeployDeploymentRuleRequest {
   synq.monitors.automated_monitors.v1.MonitorsDeploymentRule deployment_rule = 1;
 }
 
-message DeployDeploymentRuleResponse {}
+message DeployDeploymentRuleResponse {
+  // What the deploy did: the monitors it created, removed and left in place, the
+  // surviving monitors whose settings it changed, and the assets it skipped.
+  //
+  // Computed inside this call, before the write, from the same overview the
+  // deploy acted on — so unlike an overview a caller fetches for itself, no
+  // decision window separates it from what happened. Optional and additive: an
+  // older server leaves it unset, and a caller must then answer from what it
+  // knew before the call rather than treat the absence as an error.
+  synq.monitors.automated_monitors.v1.MonitorsDeploymentOverview overview = 1;
+}
 
 message BatchDeployDeploymentRulesRequest {
   // List of DeploymentRules to deploy.

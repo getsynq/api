@@ -127,6 +127,19 @@ message MonitorsDeploymentOverview {
   repeated CustomMonitorSettingsChange custom_monitor_settings_changes = 8;
 
   repeated SkippedAsset skipped_assets = 9;
+
+  // Deployment rules OTHER than the one this overview is for that also govern the
+  // assets it leaves monitored (the ones in active_monitors_for /
+  // active_custom_monitors_for). Exact and complete: it is read off the same
+  // rule/asset rows the overview itself is computed from, so no per-asset lookup
+  // can improve on it. Empty when no other rule covers those assets — and note
+  // that a rule whose contribution is shadowed instead (SkippedAsset.reason
+  // SKIPPED_HIGHER_PRIORITY_RULE) is not here; those assets are not left
+  // monitored by this rule at all.
+  //
+  // Ids only. Read their titles, owners and types with
+  // ListDeploymentRules(rule_ids).
+  repeated string overlapping_rule_ids = 10;
 }
 
 message QueryConfig {

@@ -2,6 +2,7 @@ syntax = "proto3";
 package synq.monitors.info.v1;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/entities/v1/sql_dialect.proto";
 
@@ -37,6 +38,12 @@ message MonitorInfo {
   // SQL query used as the data source instead of querying the monitored table
   // or view directly, when the monitor is configured with one.
   optional string sql_source = 12;
+  // When set, the monitor has been deleted: it no longer runs, no longer
+  // reports metrics, and is excluded from every listing. The record is still
+  // served by id so a stored or stale identifier resolves to something, which
+  // makes this the only signal that the monitor is gone. Unset for a live
+  // monitor.
+  optional google.protobuf.Timestamp deleted_at = 13;
 }
 
 message Monitored {
