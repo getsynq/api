@@ -10393,6 +10393,23 @@ components:
                     items:
                         type: string
                         minLength: 1
+                unavailableSources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.CodeSourceError'
+                    description: |-
+                        Sources that could not be read while assembling this response. Empty on a
+                         complete response, which is the normal case.
+
+                         Code is composed from several independent sources, so one of them being
+                         briefly unavailable degrades the response rather than failing it: the
+                         codes that were read are returned, and the source that was not is named
+                         here. Retry to pick up what is missing.
+
+                         An empty `codes` always means the entity has no code, never that a source
+                         was unavailable — a request that could read nothing at all returns an
+                         error rather than an empty response, because the two are otherwise
+                         indistinguishable.
             title: ListCodeResponse
             additionalProperties: false
             description: ListCodeResponse is the response message for the ListCode method.
@@ -13069,6 +13086,46 @@ components:
                     type: string
                     description: Optional path in e.g. git or project directory which is source of the code
                     nullable: true
+                definerPlatform:
+                    description: |-
+                        Data platform of the entity that defines this code — dbt, SQLMesh,
+                         Snowflake, and so on. `definer_entity_type` says what kind of thing
+                         defines the code; this says which tool it belongs to.
+
+                         Use it to order the code an entity has when it has more than one piece:
+                         a warehouse table modelled by a transformation framework carries both the
+                         framework's source and the warehouse's own DDL, and the framework source
+                         is what a reader normally wants first.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                hasExecutionError:
+                    type: boolean
+                    description: |-
+                        True when the definer failed to produce this code the last time it ran —
+                         a model that did not compile, a routine whose body could not be read.
+                         The `content` is then the last body that was captured, which may be stale
+                         or empty; `execution_error` says what went wrong.
+                executionError:
+                    type: string
+                    description: |-
+                        Message describing the failure `has_execution_error` reports. Empty when
+                         there is no failure, and may also be empty when the producer recorded a
+                         failure without a message.
+                isTruncated:
+                    type: boolean
+                    description: |-
+                        True when `content` holds only the first part of the file. Files above
+                         the ingestion size cap are stored as a prefix, and a client showing this
+                         code should say so rather than presenting the prefix as the whole body.
+                         `original_size_bytes` gives the untruncated size.
+                originalSizeBytes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Size in bytes of the code before any truncation. Zero when the producer
+                         does not know the original size, which is the normal case for code that
+                         is not read from a file.
             title: Code
             required:
                 - definerIdentifier
@@ -13079,6 +13136,43 @@ components:
                  This message is used to store and manage various types of code artifacts, such as SQL queries,
                  Python scripts, dbt models, and other code configurations. Each code piece is associated with
                  a specific entity that defines or owns it, and includes metadata about its type and state.
+        synq.entities.v1.CodeSource:
+            type: string
+            title: CodeSource
+            enum:
+                - CODE_SOURCE_UNSPECIFIED
+                - CODE_SOURCE_SQL_DEFINITION
+                - CODE_SOURCE_ENTITY_DEFINITION
+                - CODE_SOURCE_REPOSITORY_FILE
+                - CODE_SOURCE_CUSTOM_ENTITY
+                - CODE_SOURCE_SQL_TEST
+                - CODE_SOURCE_RECONCILIATION
+                - CODE_SOURCE_MONITOR
+            description: |-
+                CodeSource names one of the places an entity's code is read from. An entity
+                 usually has code in more than one of them — a dbt model has its own source
+                 and the warehouse table's DDL — and each is read independently, so one
+                 being unavailable does not hide the others.
+        synq.entities.v1.CodeSourceError:
+            type: object
+            properties:
+                source:
+                    description: Which source was unavailable.
+                    $ref: '#/components/schemas/synq.entities.v1.CodeSource'
+                message:
+                    type: string
+                    description: |-
+                        Human-readable reason, for logging and for telling a reader why part of
+                         the code is missing. Not a stable string; do not branch on it.
+            title: CodeSourceError
+            additionalProperties: false
+            description: |-
+                CodeSourceError reports one source that could not be read while the rest of
+                 the response was assembled. Its code is missing from `codes`; everything
+                 else in the response is complete.
+
+                 Retry the same request to pick the missing source up — these are transient
+                 by nature. A request in which every source failed returns an error instead.
         synq.entities.v1.CodeType:
             type: string
             title: CodeType
@@ -13091,7 +13185,20 @@ components:
                 - CODE_TYPE_DBT
                 - CODE_TYPE_SQLMESH
                 - CODE_TYPE_LOOKML
-            description: CodeType enum represents different types of code that can be processed in the Coalesce Quality platform
+                - CODE_TYPE_JAVASCRIPT
+                - CODE_TYPE_BASH
+                - CODE_TYPE_DAX
+                - CODE_TYPE_JAVA
+                - CODE_TYPE_SCALA
+                - CODE_TYPE_TEXT
+                - CODE_TYPE_MARKDOWN
+            description: |-
+                CodeType describes how to read the body of a Code — which language or
+                 format its `content` is written in, so a client can highlight, parse or
+                 hand it to the right tool.
+
+                 A producer that cannot tell leaves CODE_TYPE_UNSPECIFIED rather than
+                 guessing; treat that as plain text.
         synq.entities.v1.CustomIdentifier:
             type: object
             properties:
@@ -20100,6 +20207,24 @@ components:
                 - SEVERITY_WARNING
                 - SEVERITY_ERROR
                 - SEVERITY_INFO
+        synq.monitors.automated_monitors.v1.SkipReason:
+            type: string
+            title: SkipReason
+            enum:
+                - SKIP_REASON_UNSPECIFIED
+                - SKIP_REASON_HIGHER_PRIORITY_RULE
+                - SKIP_REASON_NO_FRESHNESS_COLUMN_MATCH
+                - SKIP_REASON_NO_FRESHNESS_FIELD_PATTERN
+                - SKIP_REASON_NO_INTEGRATION
+                - SKIP_REASON_TEST_PREPARATION_FAILED
+                - SKIP_REASON_TEST_OWNED_BY_OTHER_RULE
+            description: |-
+                SkipReason is the checkable form of SkippedAsset.reason. Values mirror the
+                 SCREAMING_SNAKE tokens documented on that field one-for-one. The set is open
+                 by design — a producer may report a reason before this enum has a matching
+                 value for it — so a client must treat SKIP_REASON_UNSPECIFIED (and any value
+                 this client predates) as "skipped, reason unrecognised" rather than as proof
+                 nothing applies.
         synq.monitors.automated_monitors.v1.SkippedAsset:
             type: object
             properties:
@@ -20125,6 +20250,15 @@ components:
 
                          A string rather than an enum for compatibility: an enum would have to be
                          introduced as a second field, since the producers already write these tokens.
+                reasonCode:
+                    description: |-
+                        Machine-checkable form of `reason`, so a client can branch on a value the
+                         compiler knows instead of string-matching a wire constant. `reason` remains
+                         authoritative and keeps being written unchanged; `reason_code` is
+                         SKIP_REASON_UNSPECIFIED for a `reason` this field does not yet cover — fall
+                         through to "skipped, reason unrecognised" rather than treat that as
+                         impossible, since the set of reasons is expected to grow.
+                    $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.SkipReason'
             title: SkippedAsset
             additionalProperties: false
         synq.monitors.automated_monitors.v1.StaticConfig:

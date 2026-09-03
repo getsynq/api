@@ -93,6 +93,22 @@ message CustomMonitorSettingsChange {
   optional string resolved_freshness_field = 4;
 }
 
+// SkipReason is the checkable form of SkippedAsset.reason. Values mirror the
+// SCREAMING_SNAKE tokens documented on that field one-for-one. The set is open
+// by design — a producer may report a reason before this enum has a matching
+// value for it — so a client must treat SKIP_REASON_UNSPECIFIED (and any value
+// this client predates) as "skipped, reason unrecognised" rather than as proof
+// nothing applies.
+enum SkipReason {
+  SKIP_REASON_UNSPECIFIED = 0;
+  SKIP_REASON_HIGHER_PRIORITY_RULE = 1;
+  SKIP_REASON_NO_FRESHNESS_COLUMN_MATCH = 2;
+  SKIP_REASON_NO_FRESHNESS_FIELD_PATTERN = 3;
+  SKIP_REASON_NO_INTEGRATION = 4;
+  SKIP_REASON_TEST_PREPARATION_FAILED = 5;
+  SKIP_REASON_TEST_OWNED_BY_OTHER_RULE = 6;
+}
+
 message SkippedAsset {
   string asset_path = 1;
   // Why the asset was skipped, as a stable SCREAMING_SNAKE token. Clients branch
@@ -113,6 +129,13 @@ message SkippedAsset {
   // A string rather than an enum for compatibility: an enum would have to be
   // introduced as a second field, since the producers already write these tokens.
   string reason = 2;
+  // Machine-checkable form of `reason`, so a client can branch on a value the
+  // compiler knows instead of string-matching a wire constant. `reason` remains
+  // authoritative and keeps being written unchanged; `reason_code` is
+  // SKIP_REASON_UNSPECIFIED for a `reason` this field does not yet cover — fall
+  // through to "skipped, reason unrecognised" rather than treat that as
+  // impossible, since the set of reasons is expected to grow.
+  SkipReason reason_code = 3;
 }
 
 message MonitorsDeploymentOverview {

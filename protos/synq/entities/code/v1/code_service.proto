@@ -50,4 +50,18 @@ message ListCodeResponse {
       }
     }
   }];
+
+  // Sources that could not be read while assembling this response. Empty on a
+  // complete response, which is the normal case.
+  //
+  // Code is composed from several independent sources, so one of them being
+  // briefly unavailable degrades the response rather than failing it: the
+  // codes that were read are returned, and the source that was not is named
+  // here. Retry to pick up what is missing.
+  //
+  // An empty `codes` always means the entity has no code, never that a source
+  // was unavailable — a request that could read nothing at all returns an
+  // error rather than an empty response, because the two are otherwise
+  // indistinguishable.
+  repeated synq.entities.v1.CodeSourceError unavailable_sources = 4;
 }
