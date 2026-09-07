@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package synq.entities.typedefs.v1;
+
+import "synq/entities/v1/entity_types.proto";
+import "synq/entities/v1/execution_types.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/entities/typedefs/v1";
+
+// Traits are the facts Coalesce Quality knows about a kind of thing, beyond its
+// name — whether it is a transformation model, whether it lives in a warehouse,
+// whether you can put a monitor on it.
+//
+// They come back as maps rather than as named fields so that new traits reach you
+// without regenerating your client. Look up the ones you care about by name and
+// ignore the rest:
+//
+//   if (def.traits.flags["is_model"]) { ... }
+//
+// Common flag names are `is_model`, `is_source`, `is_dwh_table`, `is_dwh_view`,
+// `is_bi_like`, `is_monitorable` and `is_searchable`. More are added over time, so
+// treat the map as open-ended.
+//
+// A name missing from the map has no answer for this type. Read traits with a
+// default rather than assuming false, so your code keeps working against both an
+// older and a newer server:
+//
+//   isModel = def.traits.flags.get("is_model", false)
+message Traits {
+  // Yes/no traits, by name. For example `{"is_model": true, "is_dwh_table": false}`.
+  map<string, bool> flags = 1;
+
+  // Traits whose value is a piece of text, by name. For example
+  // `{"synql_alias": "table"}`. There are far fewer of these than flags, and most
+  // types have none.
+  map<string, string> strings = 2;
+}
+
+// EntityTypeDef describes one kind of entity that exists in your workspace — a
+// BigQuery table, a dbt model, an Airflow DAG, or a type you defined yourself.
+//
+// Use it to turn the `entity_type` that other endpoints return into something you
+// can show a person or make a decision about: a name to display, the platform it
+// came from, and what Coalesce Quality does with it.
+//
+// The built-in types and your own custom types both come back here, in this same
+// shape. A custom type is the one with a non-zero `type_id`.
+message EntityTypeDef {
+  // The entity type, matching the `entity_type` other endpoints return for an
+  // entity of this kind. Compare against it directly.
+  //
+  // If your generated code is older than the server, a type it does not know
+  // arrives as an unrecognised number — `name` still identifies it.
+  synq.entities.v1.EntityType entity_type = 1;
+
+  // A stable name for the type that never changes, safe to store and to compare
+  // against. Built-in types use the enum spelling, e.g. `ENTITY_TYPE_BQ_TABLE`.
+  // Your own types are named `CUSTOM_TYPE_<type_id>`, e.g. `CUSTOM_TYPE_20`, which
+  // stays the same even if you rename the type.
+  //
+  // Prefer this over the numeric value whenever you store a reference to a type.
+  string name = 2;
+
+  // The type's name without its platform: "Table", "View", "DAG". Use it where the
+  // platform is already clear from the surrounding context.
+  //
+  // For a type you defined yourself, this is the name you gave it.
+  string short_name = 3;
+
+  // The plural of `short_name`, for counts and headings: "Tables", "Views".
+  //
+  // Empty for a type you defined yourself, since you gave it a single name — fall
+  // back to `short_name`.
+  string short_plural_name = 4;
+
+  // The type's name including its platform: "BigQuery Table", "Snowflake View".
+  // Use it where a type appears on its own, so that a table from two different
+  // warehouses still reads clearly.
+  //
+  // For a type you defined yourself, this is the same as `short_name`.
+  string full_name = 5;
+
+  // The plural of `full_name`: "BigQuery Tables". Empty under the same condition as
+  // `short_plural_name`.
+  string full_plural_name = 6;
+
+  // A sentence explaining the type, where there is one. Often empty.
+  string description = 7;
+
+  // The platform this type belongs to — the warehouse, BI tool or orchestrator it
+  // comes from. Pair it with ListPlatformDefs to show that platform's name.
+  //
+  // A type you defined yourself belongs to no external platform, so it reports
+  // Coalesce Quality itself.
+  synq.platforms.v1.DataPlatformType platform = 8;
+
+  // What Coalesce Quality knows about entities of this type.
+  //
+  // For a built-in type this is everything it knows. For a type you defined
+  // yourself it is the traits that can be declared on a custom type, each reported
+  // whether you set it or not; the traits Coalesce Quality works out on its own for
+  // built-in types are not reported for a custom type, so read those with a
+  // default.
+  Traits traits = 9;
+
+  // The id of a type you defined yourself, and 0 for a built-in type. It is the
+  // same `type_id` that appears on your entities of this type, and the id you pass
+  // to synq.entities.custom.v1.TypesService to change the type or fetch its icon.
+  //
+  // A non-zero value is how you tell your own types from the built-in ones.
+  int32 type_id = 10;
+}
+
+// PlatformDef describes one platform Coalesce Quality connects to — a warehouse, a
+// BI tool, an orchestrator, a transformation framework.
+//
+// Use it to show a platform's name rather than building one out of an enum value.
+message PlatformDef {
+  // The platform, matching the `platform` on an EntityTypeDef and the platform
+  // fields other endpoints return.
+  synq.platforms.v1.DataPlatformType platform = 1;
+
+  // A stable name for the platform that never changes, safe to store: the enum
+  // spelling, e.g. `DATA_PLATFORM_TYPE_BIGQUERY`.
+  string name = 2;
+
+  // The platform's name as it is normally written: "BigQuery", "ClickHouse",
+  // "Microsoft SQL Server", "dbt". Use this anywhere a person will read it.
+  string display_name = 3;
+
+  // What Coalesce Quality knows about the platform. `is_dwh` tells you whether it
+  // is a data warehouse — true for BigQuery and Snowflake, false for dbt or
+  // Looker.
+  Traits traits = 4;
+}
+
+// ExecutionTypeDef describes one kind of run Coalesce Quality records against an
+// entity — a dbt invocation, a warehouse query job, a detected schema change.
+//
+// Use it to name the `execution_type` that execution and run endpoints return.
+message ExecutionTypeDef {
+  // The execution type, matching the `execution_type` other endpoints return.
+  synq.entities.v1.ExecutionType execution_type = 1;
+
+  // A stable name for the execution type that never changes, safe to store: the
+  // enum spelling, e.g. `EXECUTION_TYPE_DBT_INVOCATION`.
+  string name = 2;
+
+  // The execution type's name for display: "Query Job", "Schema Change", "dbt".
+  string short_name = 3;
+
+  // The platform this kind of run comes from. Unset for the kinds Coalesce Quality
+  // produces itself, such as a detected schema change.
+  synq.platforms.v1.DataPlatformType platform = 4;
+
+  // What Coalesce Quality knows about this kind of run. Empty for a kind that has
+  // no traits of its own.
+  Traits traits = 5;
+}

@@ -128,6 +128,9 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
+| `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
+| `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
@@ -155,6 +158,9 @@ View entity type definitions.
 | Method | Description |
 | ------ | ----------- |
 | `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | List all entities. |
+| `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
+| `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
+| `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
 
 ## Edit Lineage
 
@@ -1173,6 +1179,9 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_ | `SCOPE_STATUS_READ` |
+| `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
+| `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
+| `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `Activate`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`PATCH /api/extensions/atlan/integrations/v1` | `SCOPE_EXTENSIONS_MANAGE` |
 | `Get`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`GET /api/extensions/atlan/integrations/v1` | `SCOPE_INTEGRATION_READ` |
 | `Ping`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`POST /api/extensions/atlan/integrations/v1/ping` | `SCOPE_EXTENSIONS_MANAGE` |

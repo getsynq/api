@@ -23,7 +23,16 @@ service MonitorInfoService {
 }
 
 message MonitorInfoRequest {
+  // Identifier of the monitor, or of a monitor-like entity such as a dbt test or
+  // a SQL test. Its `synq_path` spelling also accepts a custom monitor's own id,
+  // in either of the forms `monitor_id` takes.
   synq.entities.v1.Identifier id = 1;
+
+  // Id of a custom monitor, as `synq.monitors.custom_monitors.v1.ListMonitors`
+  // returns it and `BatchUpdateMonitor` takes it. Accepts the bare UUID or the
+  // `custom-<uuid>` form. An alternative to `id` rather than an addition to it:
+  // setting both is an error.
+  optional string monitor_id = 2;
 }
 
 message MonitorInfoResponse {

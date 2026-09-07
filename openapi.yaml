@@ -12939,6 +12939,260 @@ components:
                 - ISSUE_STATUS_WARN
                 - ISSUE_STATUS_ERROR
                 - ISSUE_STATUS_CRITICAL
+        synq.entities.typedefs.v1.EntityTypeDef:
+            type: object
+            properties:
+                entityType:
+                    description: |-
+                        The entity type, matching the `entity_type` other endpoints return for an
+                         entity of this kind. Compare against it directly.
+
+                         If your generated code is older than the server, a type it does not know
+                         arrives as an unrecognised number — `name` still identifies it.
+                    $ref: '#/components/schemas/synq.entities.v1.EntityType'
+                name:
+                    type: string
+                    description: |-
+                        A stable name for the type that never changes, safe to store and to compare
+                         against. Built-in types use the enum spelling, e.g. `ENTITY_TYPE_BQ_TABLE`.
+                         Your own types are named `CUSTOM_TYPE_<type_id>`, e.g. `CUSTOM_TYPE_20`, which
+                         stays the same even if you rename the type.
+
+                         Prefer this over the numeric value whenever you store a reference to a type.
+                shortName:
+                    type: string
+                    description: |-
+                        The type's name without its platform: "Table", "View", "DAG". Use it where the
+                         platform is already clear from the surrounding context.
+
+                         For a type you defined yourself, this is the name you gave it.
+                shortPluralName:
+                    type: string
+                    description: |-
+                        The plural of `short_name`, for counts and headings: "Tables", "Views".
+
+                         Empty for a type you defined yourself, since you gave it a single name — fall
+                         back to `short_name`.
+                fullName:
+                    type: string
+                    description: |-
+                        The type's name including its platform: "BigQuery Table", "Snowflake View".
+                         Use it where a type appears on its own, so that a table from two different
+                         warehouses still reads clearly.
+
+                         For a type you defined yourself, this is the same as `short_name`.
+                fullPluralName:
+                    type: string
+                    description: |-
+                        The plural of `full_name`: "BigQuery Tables". Empty under the same condition as
+                         `short_plural_name`.
+                description:
+                    type: string
+                    description: A sentence explaining the type, where there is one. Often empty.
+                platform:
+                    description: |-
+                        The platform this type belongs to — the warehouse, BI tool or orchestrator it
+                         comes from. Pair it with ListPlatformDefs to show that platform's name.
+
+                         A type you defined yourself belongs to no external platform, so it reports
+                         Coalesce Quality itself.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                traits:
+                    description: |-
+                        What Coalesce Quality knows about entities of this type.
+
+                         For a built-in type this is everything it knows. For a type you defined
+                         yourself it is the traits that can be declared on a custom type, each reported
+                         whether you set it or not; the traits Coalesce Quality works out on its own for
+                         built-in types are not reported for a custom type, so read those with a
+                         default.
+                    $ref: '#/components/schemas/synq.entities.typedefs.v1.Traits'
+                typeId:
+                    type: integer
+                    format: int32
+                    description: |-
+                        The id of a type you defined yourself, and 0 for a built-in type. It is the
+                         same `type_id` that appears on your entities of this type, and the id you pass
+                         to synq.entities.custom.v1.TypesService to change the type or fetch its icon.
+
+                         A non-zero value is how you tell your own types from the built-in ones.
+            title: EntityTypeDef
+            additionalProperties: false
+            description: |-
+                EntityTypeDef describes one kind of entity that exists in your workspace — a
+                 BigQuery table, a dbt model, an Airflow DAG, or a type you defined yourself.
+
+                 Use it to turn the `entity_type` that other endpoints return into something you
+                 can show a person or make a decision about: a name to display, the platform it
+                 came from, and what Coalesce Quality does with it.
+
+                 The built-in types and your own custom types both come back here, in this same
+                 shape. A custom type is the one with a non-zero `type_id`.
+        synq.entities.typedefs.v1.ExecutionTypeDef:
+            type: object
+            properties:
+                executionType:
+                    description: The execution type, matching the `execution_type` other endpoints return.
+                    $ref: '#/components/schemas/synq.entities.v1.ExecutionType'
+                name:
+                    type: string
+                    description: |-
+                        A stable name for the execution type that never changes, safe to store: the
+                         enum spelling, e.g. `EXECUTION_TYPE_DBT_INVOCATION`.
+                shortName:
+                    type: string
+                    description: 'The execution type''s name for display: "Query Job", "Schema Change", "dbt".'
+                platform:
+                    description: |-
+                        The platform this kind of run comes from. Unset for the kinds Coalesce Quality
+                         produces itself, such as a detected schema change.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                traits:
+                    description: |-
+                        What Coalesce Quality knows about this kind of run. Empty for a kind that has
+                         no traits of its own.
+                    $ref: '#/components/schemas/synq.entities.typedefs.v1.Traits'
+            title: ExecutionTypeDef
+            additionalProperties: false
+            description: |-
+                ExecutionTypeDef describes one kind of run Coalesce Quality records against an
+                 entity — a dbt invocation, a warehouse query job, a detected schema change.
+
+                 Use it to name the `execution_type` that execution and run endpoints return.
+        synq.entities.typedefs.v1.ListEntityTypeDefsRequest:
+            type: object
+            title: ListEntityTypeDefsRequest
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListEntityTypeDefsResponse:
+            type: object
+            properties:
+                entityTypeDefs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.typedefs.v1.EntityTypeDef'
+                    description: |-
+                        Every entity type in your workspace, built-in and your own, ordered by entity
+                         type value. Your own types sort together after the built-in ones, and two calls
+                         against an unchanged workspace return the same order.
+            title: ListEntityTypeDefsResponse
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListExecutionTypeDefsRequest:
+            type: object
+            title: ListExecutionTypeDefsRequest
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListExecutionTypeDefsResponse:
+            type: object
+            properties:
+                executionTypeDefs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.typedefs.v1.ExecutionTypeDef'
+                    description: Every kind of run, ordered by execution type value.
+            title: ListExecutionTypeDefsResponse
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListPlatformDefsRequest:
+            type: object
+            title: ListPlatformDefsRequest
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListPlatformDefsResponse:
+            type: object
+            properties:
+                platformDefs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.typedefs.v1.PlatformDef'
+                    description: Every platform, ordered by platform value.
+            title: ListPlatformDefsResponse
+            additionalProperties: false
+        synq.entities.typedefs.v1.PlatformDef:
+            type: object
+            properties:
+                platform:
+                    description: |-
+                        The platform, matching the `platform` on an EntityTypeDef and the platform
+                         fields other endpoints return.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                name:
+                    type: string
+                    description: |-
+                        A stable name for the platform that never changes, safe to store: the enum
+                         spelling, e.g. `DATA_PLATFORM_TYPE_BIGQUERY`.
+                displayName:
+                    type: string
+                    description: |-
+                        The platform's name as it is normally written: "BigQuery", "ClickHouse",
+                         "Microsoft SQL Server", "dbt". Use this anywhere a person will read it.
+                traits:
+                    description: |-
+                        What Coalesce Quality knows about the platform. `is_dwh` tells you whether it
+                         is a data warehouse — true for BigQuery and Snowflake, false for dbt or
+                         Looker.
+                    $ref: '#/components/schemas/synq.entities.typedefs.v1.Traits'
+            title: PlatformDef
+            additionalProperties: false
+            description: |-
+                PlatformDef describes one platform Coalesce Quality connects to — a warehouse, a
+                 BI tool, an orchestrator, a transformation framework.
+
+                 Use it to show a platform's name rather than building one out of an enum value.
+        synq.entities.typedefs.v1.Traits:
+            type: object
+            properties:
+                flags:
+                    type: object
+                    additionalProperties:
+                        type: boolean
+                        title: value
+                    description: 'Yes/no traits, by name. For example `{"is_model": true, "is_dwh_table": false}`.'
+                strings:
+                    type: object
+                    additionalProperties:
+                        type: string
+                        title: value
+                    description: |-
+                        Traits whose value is a piece of text, by name. For example
+                         `{"synql_alias": "table"}`. There are far fewer of these than flags, and most
+                         types have none.
+            title: Traits
+            additionalProperties: false
+            description: |-
+                Traits are the facts Coalesce Quality knows about a kind of thing, beyond its
+                 name — whether it is a transformation model, whether it lives in a warehouse,
+                 whether you can put a monitor on it.
+
+                 They come back as maps rather than as named fields so that new traits reach you
+                 without regenerating your client. Look up the ones you care about by name and
+                 ignore the rest:
+
+                   if (def.traits.flags["is_model"]) { ... }
+
+                 Common flag names are `is_model`, `is_source`, `is_dwh_table`, `is_dwh_view`,
+                 `is_bi_like`, `is_monitorable` and `is_searchable`. More are added over time, so
+                 treat the map as open-ended.
+
+                 A name missing from the map has no answer for this type. Read traits with a
+                 default rather than assuming false, so your code keeps working against both an
+                 older and a newer server:
+
+                   isModel = def.traits.flags.get("is_model", false)
+        synq.entities.typedefs.v1.Traits.FlagsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    type: boolean
+            title: FlagsEntry
+            additionalProperties: false
+        synq.entities.typedefs.v1.Traits.StringsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    type: string
+            title: StringsEntry
+            additionalProperties: false
         synq.entities.v1.AirflowDagIdentifier:
             type: object
             properties:
@@ -21371,7 +21625,19 @@ components:
             type: object
             properties:
                 id:
+                    description: |-
+                        Identifier of the monitor, or of a monitor-like entity such as a dbt test or
+                         a SQL test. Its `synq_path` spelling also accepts a custom monitor's own id,
+                         in either of the forms `monitor_id` takes.
                     $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                monitorId:
+                    type: string
+                    description: |-
+                        Id of a custom monitor, as `synq.monitors.custom_monitors.v1.ListMonitors`
+                         returns it and `BatchUpdateMonitor` takes it. Accepts the bare UUID or the
+                         `custom-<uuid>` form. An alternative to `id` rather than an addition to it:
+                         setting both is an error.
+                    nullable: true
             title: MonitorInfoRequest
             additionalProperties: false
         synq.monitors.info.v1.MonitorInfoResponse:
@@ -21549,7 +21815,11 @@ components:
             properties:
                 synqPath:
                     type: string
-                    description: Monitor synq_path.
+                    description: |-
+                        Monitor to read. Accepts the monitor's synq_path, the `::seg-<value>`
+                         synq_path of one of its segments, or — for a custom monitor — its own id as
+                         `synq.monitors.custom_monitors.v1.ListMonitors` returns it: the bare UUID or
+                         the `custom-<uuid>` form.
                 metricsVersion:
                     type: integer
                     format: int32
@@ -34549,6 +34819,80 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.folders.v1.ListMembersResponse'
+    /api/entities/typedefs/v1/entity-types/list:
+        post:
+            tags:
+                - synq.entities.typedefs.v1.TypeDefsService
+            summary: ListEntityTypeDefs
+            description: |-
+                List every kind of entity in your workspace, the built-in types and your own.
+
+                 The built-in half covers every value of `synq.entities.v1.EntityType` this
+                 server serves, so this is also how you discover a type that your generated code
+                 is too old to name. Your own types have no enum value of their own — each one
+                 is identified by its `type_id`.
+            operationId: synq.entities.typedefs.v1.TypeDefsService.ListEntityTypeDefs
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.typedefs.v1.ListEntityTypeDefsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.typedefs.v1.ListEntityTypeDefsResponse'
+    /api/entities/typedefs/v1/execution-types/list:
+        post:
+            tags:
+                - synq.entities.typedefs.v1.TypeDefsService
+            summary: ListExecutionTypeDefs
+            description: |-
+                List every kind of run Coalesce Quality records against an entity.
+
+                 A dbt invocation, a warehouse query job, a detected schema change. Use it to
+                 name the `execution_type` that execution and run endpoints return.
+            operationId: synq.entities.typedefs.v1.TypeDefsService.ListExecutionTypeDefs
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.typedefs.v1.ListExecutionTypeDefsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.typedefs.v1.ListExecutionTypeDefsResponse'
+    /api/entities/typedefs/v1/platforms/list:
+        post:
+            tags:
+                - synq.entities.typedefs.v1.TypeDefsService
+            summary: ListPlatformDefs
+            description: |-
+                List every platform Coalesce Quality connects to, with its display name.
+
+                 Use it to name the platform on an entity — "BigQuery", "Microsoft SQL Server" —
+                 rather than deriving a name from the enum value.
+            operationId: synq.entities.typedefs.v1.TypeDefsService.ListPlatformDefs
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.typedefs.v1.ListPlatformDefsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.typedefs.v1.ListPlatformDefsResponse'
     /api/entities/v1:
         get:
             tags:
@@ -43830,6 +44174,21 @@ paths:
                     title: integration_id
                     description: Coalesce Quality integration_id of the monitored identifier
                     deprecated: true
+                - name: monitorId
+                  in: query
+                  description: |-
+                    Id of a custom monitor, as `synq.monitors.custom_monitors.v1.ListMonitors`
+                     returns it and `BatchUpdateMonitor` takes it. Accepts the bare UUID or the
+                     `custom-<uuid>` form. An alternative to `id` rather than an addition to it:
+                     setting both is an error.
+                  schema:
+                    type: string
+                    title: monitor_id
+                    description: |-
+                        Id of a custom monitor, as `synq.monitors.custom_monitors.v1.ListMonitors`
+                         returns it and `BatchUpdateMonitor` takes it. Accepts the bare UUID or the
+                         `custom-<uuid>` form. An alternative to `id` rather than an addition to it:
+                         setting both is an error.
             responses:
                 "200":
                     description: Success
@@ -43849,11 +44208,19 @@ paths:
             parameters:
                 - name: synqPath
                   in: query
-                  description: Monitor synq_path.
+                  description: |-
+                    Monitor to read. Accepts the monitor's synq_path, the `::seg-<value>`
+                     synq_path of one of its segments, or — for a custom monitor — its own id as
+                     `synq.monitors.custom_monitors.v1.ListMonitors` returns it: the bare UUID or
+                     the `custom-<uuid>` form.
                   schema:
                     type: string
                     title: synq_path
-                    description: Monitor synq_path.
+                    description: |-
+                        Monitor to read. Accepts the monitor's synq_path, the `::seg-<value>`
+                         synq_path of one of its segments, or — for a custom monitor — its own id as
+                         `synq.monitors.custom_monitors.v1.ListMonitors` returns it: the bare UUID or
+                         the `custom-<uuid>` form.
                 - name: metricsVersion
                   in: query
                   description: Metrics version. Defaults to the monitor's current version.
@@ -47023,6 +47390,41 @@ tags:
          - Filter executions by time range, status, or execution type
          - Get aggregated summaries of execution activity
          - Track execution trends and patterns
+    - name: synq.entities.typedefs.v1.TypeDefsService
+      description: |-
+        TypeDefsService tells you what the type values in every other endpoint mean.
+
+         Responses across the API describe things by enum — an entity is an
+         `ENTITY_TYPE_BQ_TABLE`, it belongs to `DATA_PLATFORM_TYPE_BIGQUERY`, a run is an
+         `EXECUTION_TYPE_DBT_INVOCATION`. This service turns each of those into a name you
+         can display and a set of facts you can act on: is this a transformation model,
+         does it live in a warehouse, can it be monitored.
+
+         Read it instead of keeping your own copy of the list. New entity types and new
+         platforms are added as Coalesce Quality supports more tools, and a hard-coded
+         table in your code will label them with whatever its fallback produces and miss
+         that an existing type gained a capability. Everything here comes from the server,
+         so you pick both up without changing your code.
+
+         A typical integration calls all three once at startup, keeps them in a map, and
+         looks types up as responses arrive.
+
+         Scoping and freshness:
+
+           * ListEntityTypeDefs is per workspace, because the types you defined yourself
+             are part of your workspace's vocabulary. It returns the built-in types and
+             your own custom types together.
+           * ListPlatformDefs and ListExecutionTypeDefs are the same for everyone.
+           * The built-in half changes only when Coalesce Quality is upgraded, so caching
+             it for the life of your process is fine. You can add or edit your own custom
+             types at any time, so if a newly created type needs to appear promptly, cache
+             the entity types for minutes rather than hours, or re-read after you change
+             one.
+
+         The workspace comes from your credentials; there is nothing to pass.
+
+         Each list is small — hundreds of entries — so every call returns the whole set
+         and none of them page.
     - name: synq.entities.orchestration.v1.OrchestrationService
       description: |-
         OrchestrationService provides information about orchestration relationships between entities.

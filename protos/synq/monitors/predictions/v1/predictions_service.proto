@@ -62,7 +62,10 @@ service MonitorPredictionsService {
 }
 
 message GetMonitorPredictionsRequest {
-  // Monitor synq_path.
+  // Monitor to read. Accepts the monitor's synq_path, the `::seg-<value>`
+  // synq_path of one of its segments, or — for a custom monitor — its own id as
+  // `synq.monitors.custom_monitors.v1.ListMonitors` returns it: the bare UUID or
+  // the `custom-<uuid>` form.
   string synq_path = 1;
 
   // Metrics version. Defaults to the monitor's current version.
