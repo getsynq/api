@@ -4429,12 +4429,18 @@ components:
                         $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTest'
                     description: |-
                         List of SqlTests to upsert.
-                         The upsert is performed based on the unique path provided for each SqlTest.
+                         Each SqlTest is matched on the `id` it carries, and on its path when it has
+                         no id, so a caller that keeps its own ids can rename or re-target a test
+                         without replacing it.
                 sqlTestIdsToReset:
                     type: array
                     items:
                         type: string
-                    description: List of SqlTest IDs to reset. Some updates might require resetting the SqlTest to a fresh state.
+                    description: |-
+                        List of SqlTest IDs to re-arm, given as the same `id` sent above. A test has
+                         no learned state to discard: this re-arms the scheduler of a test that
+                         carries a recurrence rule, so it runs immediately rather than at its next
+                         slot, and does nothing for a test scheduled externally.
             title: BatchUpsertSqlTestsRequest
             additionalProperties: false
         synq.datachecks.sqltests.v1.BatchUpsertSqlTestsResponse:
@@ -5229,7 +5235,16 @@ components:
                     $ref: '#/components/schemas/synq.datachecks.sqltests.v1.Template'
                 configId:
                     type: string
-                    description: Config ID for the SqlTest.
+                    description: |-
+                        Config ID this test was authored from, when deployed via configuration as
+                         code. Unset for tests authored directly through this API.
+
+                         On a write this field is only ever set, never unset: omitting it keeps the
+                         stored value, so a full-replace update cannot detach the test from the
+                         config that owns it. An empty string is a real config id — the one a deploy
+                         that declares no namespace uses — so sending it attaches the test to that
+                         config rather than clearing the field. No value detaches a test; recreating
+                         it is the only way to hand it back to the app.
                     nullable: true
                 source:
                     $ref: '#/components/schemas/synq.v1.Source'
@@ -5379,6 +5394,13 @@ components:
                         description: |-
                             Config ID this rule was authored from, when deployed via configuration as
                              code. Unset for rules authored directly through this API.
+
+                             On a write this field is only ever set, never unset: omitting it keeps the
+                             stored value, so a full-replace update cannot detach the rule from the
+                             config that owns it. An empty string is a real config id — the one a deploy
+                             that declares no namespace uses — so sending it attaches the rule to that
+                             config rather than clearing the field. No value detaches a rule; recreating
+                             it is the only way to hand it back to the app.
                         nullable: true
                 - oneOf:
                     - properties:
@@ -5930,6 +5952,7 @@ components:
                     type: array
                     items:
                         type: string
+                        format: uuid
                 recurrenceRule:
                     type: string
                     description: '[Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html) for the execution schedule of the SqlTest.'
@@ -5993,6 +6016,7 @@ components:
                     type: array
                     items:
                         type: string
+                        format: uuid
                 reason:
                     type: string
                     nullable: true
@@ -13123,9 +13147,11 @@ components:
                         - string
                     format: int64
                     description: |-
-                        Size in bytes of the code before any truncation. Zero when the producer
-                         does not know the original size, which is the normal case for code that
-                         is not read from a file.
+                        Size in bytes of the code before any truncation. Read it together with
+                         `is_truncated`, which is what makes it meaningful: where `content` was cut,
+                         this is the size of the whole body, and a truncated body always has one.
+                         Zero where nothing measured the source, which is the normal case for code
+                         that is not read from a file and never happens for a truncated body.
             title: Code
             required:
                 - definerIdentifier
@@ -13168,8 +13194,8 @@ components:
             additionalProperties: false
             description: |-
                 CodeSourceError reports one source that could not be read while the rest of
-                 the response was assembled. Its code is missing from `codes`; everything
-                 else in the response is complete.
+                 the response was assembled. That source's code is missing or incomplete in
+                 `codes`; every other source in the response is complete.
 
                  Retry the same request to pick the missing source up — these are transient
                  by nature. A request in which every source failed returns an error instead.
@@ -19481,6 +19507,7 @@ components:
                     type: array
                     items:
                         type: string
+                        format: uuid
             title: BatchGetDeploymentRulesRequest
             additionalProperties: false
         synq.monitors.automated_monitors.v1.BatchGetDeploymentRulesResponse:
@@ -19583,6 +19610,7 @@ components:
             properties:
                 id:
                     type: string
+                    format: uuid
             title: DeleteDeploymentRuleRequest
             additionalProperties: false
         synq.monitors.automated_monitors.v1.DeleteDeploymentRuleResponse:
@@ -19728,6 +19756,7 @@ components:
             properties:
                 id:
                     type: string
+                    format: uuid
             title: GetDeployDeleteOverviewRequest
             additionalProperties: false
         synq.monitors.automated_monitors.v1.GetDeployDeleteOverviewResponse:
@@ -19941,6 +19970,16 @@ components:
                     configId:
                         type: string
                         title: config_id
+                        description: |-
+                            Config ID this rule was authored from, when deployed via configuration as
+                             code. Unset for rules authored directly through this API.
+
+                             On a write this field is only ever set, never unset: omitting it keeps the
+                             stored value, so a full-replace update cannot detach the rule from the
+                             config that owns it. An empty string is a real config id — the one a deploy
+                             that declares no namespace uses — so sending it attaches the rule to that
+                             config rather than clearing the field. No value detaches a rule; recreating
+                             it is the only way to hand it back to the app.
                         nullable: true
                 - oneOf:
                     - properties:
@@ -20299,6 +20338,7 @@ components:
             properties:
                 id:
                     type: string
+                    format: uuid
                 title:
                     type: string
             title: UpdateDeploymentRuleTitleRequest
@@ -20331,8 +20371,26 @@ components:
                     type: array
                     items:
                         type: string
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.BatchCreateMonitorResponse.CreateError'
+                    description: |-
+                        One entry per requested monitor that was not created, most commonly because a
+                         monitor with that id already exists. Empty when every requested monitor was
+                         created.
             title: BatchCreateMonitorResponse
             additionalProperties: false
+        synq.monitors.custom_monitors.v1.BatchCreateMonitorResponse.CreateError:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
+            title: CreateError
+            additionalProperties: false
+            description: Details of a requested monitor that was not created.
         synq.monitors.custom_monitors.v1.BatchDeleteMonitorRequest:
             type: object
             properties:
@@ -20413,8 +20471,25 @@ components:
                     type: array
                     items:
                         type: string
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.BatchUpdateMonitorResponse.UpdateError'
+                    description: |-
+                        One entry per requested monitor that was not updated, most commonly because no
+                         monitor with that id exists. Empty when every requested monitor was updated.
             title: BatchUpdateMonitorResponse
             additionalProperties: false
+        synq.monitors.custom_monitors.v1.BatchUpdateMonitorResponse.UpdateError:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
+            title: UpdateError
+            additionalProperties: false
+            description: Details of a requested monitor that was not updated.
         synq.monitors.custom_monitors.v1.BatchUpdateMonitorSeverityRequest:
             type: object
             properties:
@@ -20563,6 +20638,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.MonitorDefinition.Source'
+                includeDeleted:
+                    type: boolean
+                    description: |-
+                        Include deleted monitors in the listing. Off by default, so an ordinary
+                         listing keeps describing only what is live.
+
+                         Turn it on to resolve a `monitor_ids` entry that may name a deleted monitor.
+                         The id this endpoint returns is the only reference a caller holds after
+                         creating or listing a monitor, and the monitored asset needed to address the
+                         same monitor as an entity is on the stored row and nowhere else, so a
+                         listing that excluded it left the id unresolvable.
+
+                         One entry per monitor either way: a monitor keeps a row per version, and the
+                         listing reports the latest one. `deleted_at` on each returned monitor is
+                         what tells a deleted monitor from a live one.
                 pagination:
                     description: Pagination
                     nullable: true
@@ -20730,6 +20820,16 @@ components:
                     type: string
                 configId:
                     type: string
+                    description: |-
+                        Config ID this monitor was authored from, when deployed via configuration
+                         as code. Unset for monitors authored directly through this API.
+
+                         On a write this field is only ever set, never unset: omitting it keeps the
+                         stored value, so a full-replace update cannot detach the monitor from the
+                         config that owns it. An empty string is a real config id — the one a deploy
+                         that declares no namespace uses — so sending it attaches the monitor to
+                         that config rather than clearing the field. No value detaches a monitor;
+                         recreating it is the only way to hand it back to the app.
                     nullable: true
                 source:
                     description: Source of the monitor.
@@ -20777,6 +20877,13 @@ components:
                          the same full-state upsert rule described above. Its annotation fallback is
                          `quality.governance_category`.
                     nullable: true
+                deletedAt:
+                    description: |-
+                        When the monitor was deleted. Unset while it is live, which is every monitor
+                         an ordinary listing reports; a deleted one comes back only from a listing
+                         that asked for it. Read-only, and ignored on writes.
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
             title: MonitorDefinition
             required:
                 - id
@@ -21519,6 +21626,134 @@ components:
             title: MonitorPrediction
             additionalProperties: false
             description: Single prediction data point from the anomaly detection model.
+        synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsRequest:
+            type: object
+            properties:
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsRequest.SegmentLabel'
+                    minItems: 1
+                    description: |-
+                        The segments to name. Each entry replaces that segment's label outright; a
+                         segment not listed is left alone.
+            title: BatchUpdateMonitorSegmentLabelsRequest
+            additionalProperties: false
+        synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsRequest.SegmentLabel:
+            type: object
+            properties:
+                id:
+                    type: string
+                    minLength: 1
+                    description: Id of the segment to name, as returned by ListMonitorSegments.
+                label:
+                    type: string
+                    maxLength: 256
+                    description: |-
+                        The name to give the segment. An empty string clears the label, so the
+                         segment falls back to showing its raw value.
+            title: SegmentLabel
+            additionalProperties: false
+        synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsResponse:
+            type: object
+            properties:
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.segments.v1.MonitorSegment'
+                    description: The segments that were updated, in their state after the update.
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsResponse.UpdateError'
+                    description: |-
+                        One entry per requested segment that was not updated, most commonly because
+                         no segment with that id has been ingested. Empty when every requested
+                         segment was updated.
+            title: BatchUpdateMonitorSegmentLabelsResponse
+            additionalProperties: false
+        synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsResponse.UpdateError:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: The id as it was requested.
+                reason:
+                    type: string
+            title: UpdateError
+            additionalProperties: false
+            description: Details of a requested segment that was not updated.
+        synq.monitors.segments.v1.ListMonitorSegmentsRequest:
+            type: object
+            properties:
+                monitorId:
+                    type: string
+                    minLength: 1
+                    description: |-
+                        The monitor whose segments to list: either a custom monitor id, or the
+                         Coalesce Quality path of the monitor. Both are accepted wherever this API
+                         addresses a monitor.
+            title: ListMonitorSegmentsRequest
+            additionalProperties: false
+        synq.monitors.segments.v1.ListMonitorSegmentsResponse:
+            type: object
+            properties:
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.segments.v1.MonitorSegment'
+                    description: |-
+                        The monitor's segments, ordered by name. Empty when the monitor is not
+                         segmented, or has not ingested any data yet.
+            title: ListMonitorSegmentsResponse
+            additionalProperties: false
+        synq.monitors.segments.v1.MonitorSegment:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: |-
+                        Identifier of this segment. Opaque: pass it back to
+                         BatchUpdateMonitorSegmentLabels to name the segment, or to
+                         synq.monitors.predictions.v1.MonitorPredictionsService as synq_path to read
+                         this segment's predictions. Do not construct or parse it.
+                monitorId:
+                    type: string
+                    description: |-
+                        Id of the monitor this segment belongs to, as accepted by
+                         synq.monitors.custom_monitors.v1.CustomMonitorsService.
+                segmentationExpression:
+                    type: string
+                    description: |-
+                        The monitor's segmentation expression: the column or expression whose
+                         distinct values produce the segments, for example "country".
+                value:
+                    type: string
+                    description: |-
+                        The value of the segmentation expression this segment covers, exactly as it
+                         was read from the monitored data.
+                label:
+                    type: string
+                    description: |-
+                        The name given to this segment. Unset when the segment has never been
+                         named, in which case every surface shows `value` instead.
+                    nullable: true
+                name:
+                    type: string
+                    description: |-
+                        What this segment is shown as: `label` when one is set, `value` otherwise.
+                         This is the name that reaches check names, search and alerts.
+                createdAt:
+                    description: When this segment was first observed in the monitored data.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                lastIngestedAt:
+                    description: |-
+                        When this segment was last observed in the monitored data. A segment whose
+                         value stops appearing keeps its last observation time until the monitor
+                         drops it.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: MonitorSegment
+            additionalProperties: false
         synq.monitors.v1.DelayModel:
             type: string
             title: DelayModel
@@ -28161,12 +28396,26 @@ paths:
                   description: |-
                     Config ID this rule was authored from, when deployed via configuration as
                      code. Unset for rules authored directly through this API.
+
+                     On a write this field is only ever set, never unset: omitting it keeps the
+                     stored value, so a full-replace update cannot detach the rule from the
+                     config that owns it. An empty string is a real config id — the one a deploy
+                     that declares no namespace uses — so sending it attaches the rule to that
+                     config rather than clearing the field. No value detaches a rule; recreating
+                     it is the only way to hand it back to the app.
                   schema:
                     type: string
                     title: config_id
                     description: |-
                         Config ID this rule was authored from, when deployed via configuration as
                          code. Unset for rules authored directly through this API.
+
+                         On a write this field is only ever set, never unset: omitting it keeps the
+                         stored value, so a full-replace update cannot detach the rule from the
+                         config that owns it. An empty string is a real config id — the one a deploy
+                         that declares no namespace uses — so sending it attaches the rule to that
+                         config rather than clearing the field. No value detaches a rule; recreating
+                         it is the only way to hand it back to the app.
             responses:
                 "200":
                     description: Success
@@ -42353,9 +42602,29 @@ paths:
                     $ref: '#/components/schemas/synq.v1.Source'
                 - name: deploymentRule.configId
                   in: query
+                  description: |-
+                    Config ID this rule was authored from, when deployed via configuration as
+                     code. Unset for rules authored directly through this API.
+
+                     On a write this field is only ever set, never unset: omitting it keeps the
+                     stored value, so a full-replace update cannot detach the rule from the
+                     config that owns it. An empty string is a real config id — the one a deploy
+                     that declares no namespace uses — so sending it attaches the rule to that
+                     config rather than clearing the field. No value detaches a rule; recreating
+                     it is the only way to hand it back to the app.
                   schema:
                     type: string
                     title: config_id
+                    description: |-
+                        Config ID this rule was authored from, when deployed via configuration as
+                         code. Unset for rules authored directly through this API.
+
+                         On a write this field is only ever set, never unset: omitting it keeps the
+                         stored value, so a full-replace update cannot detach the rule from the
+                         config that owns it. An empty string is a real config id — the one a deploy
+                         that declares no namespace uses — so sending it attaches the rule to that
+                         config rather than clearing the field. No value detaches a rule; recreating
+                         it is the only way to hand it back to the app.
             responses:
                 "200":
                     description: Success
@@ -42376,6 +42645,7 @@ paths:
                   schema:
                     type: string
                     title: id
+                    format: uuid
             responses:
                 "200":
                     description: Success
@@ -42396,6 +42666,7 @@ paths:
                   schema:
                     type: string
                     title: id
+                    format: uuid
             responses:
                 "200":
                     description: Success
@@ -42535,6 +42806,7 @@ paths:
                     type: array
                     items:
                         type: string
+                        format: uuid
                     title: ids
             responses:
                 "200":
@@ -42701,6 +42973,37 @@ paths:
                     items:
                         $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.MonitorDefinition.Source'
                     title: sources
+                - name: includeDeleted
+                  in: query
+                  description: |-
+                    Include deleted monitors in the listing. Off by default, so an ordinary
+                     listing keeps describing only what is live.
+
+                     Turn it on to resolve a `monitor_ids` entry that may name a deleted monitor.
+                     The id this endpoint returns is the only reference a caller holds after
+                     creating or listing a monitor, and the monitored asset needed to address the
+                     same monitor as an entity is on the stored row and nowhere else, so a
+                     listing that excluded it left the id unresolvable.
+
+                     One entry per monitor either way: a monitor keeps a row per version, and the
+                     listing reports the latest one. `deleted_at` on each returned monitor is
+                     what tells a deleted monitor from a live one.
+                  schema:
+                    type: boolean
+                    title: include_deleted
+                    description: |-
+                        Include deleted monitors in the listing. Off by default, so an ordinary
+                         listing keeps describing only what is live.
+
+                         Turn it on to resolve a `monitor_ids` entry that may name a deleted monitor.
+                         The id this endpoint returns is the only reference a caller holds after
+                         creating or listing a monitor, and the monitored asset needed to address the
+                         same monitor as an entity is on the stored row and nowhere else, so a
+                         listing that excluded it left the id unresolvable.
+
+                         One entry per monitor either way: a monitor keeps a row per version, and the
+                         listing reports the latest one. `deleted_at` on each returned monitor is
+                         what tells a deleted monitor from a live one.
                 - name: pagination.cursor
                   in: query
                   description: |-
@@ -43688,6 +43991,63 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.monitors.predictions.v1.BatchGetLatestEntityMetricsResponse'
+    /api/monitors/segments/v1:
+        get:
+            tags:
+                - synq.monitors.segments.v1.MonitorSegmentsService
+            summary: ListMonitorSegments
+            description: |-
+                Lists the segments a monitor has ingested so far, with their raw value and
+                 current label. A segment appears only once data has been observed for it,
+                 so a monitor that has not run yet lists none.
+            operationId: synq.monitors.segments.v1.MonitorSegmentsService.ListMonitorSegments
+            parameters:
+                - name: monitorId
+                  in: query
+                  description: |-
+                    The monitor whose segments to list: either a custom monitor id, or the
+                     Coalesce Quality path of the monitor. Both are accepted wherever this API
+                     addresses a monitor.
+                  schema:
+                    type: string
+                    title: monitor_id
+                    minLength: 1
+                    description: |-
+                        The monitor whose segments to list: either a custom monitor id, or the
+                         Coalesce Quality path of the monitor. Both are accepted wherever this API
+                         addresses a monitor.
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.monitors.segments.v1.ListMonitorSegmentsResponse'
+    /api/monitors/segments/v1/labels:
+        post:
+            tags:
+                - synq.monitors.segments.v1.MonitorSegmentsService
+            summary: BatchUpdateMonitorSegmentLabels
+            description: |-
+                Sets or clears the label of one or more segments.
+
+                 Segments are addressed by the id ListMonitorSegments returns. A segment id
+                 encodes a sanitised form of the segment value, so it cannot be constructed
+                 from that value: read the ids first, then write against them.
+            operationId: synq.monitors.segments.v1.MonitorSegmentsService.BatchUpdateMonitorSegmentLabels
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.monitors.segments.v1.BatchUpdateMonitorSegmentLabelsResponse'
     /api/orchestration/v1:
         get:
             tags:
@@ -46836,6 +47196,17 @@ tags:
     - name: synq.monitors.history.v1.HistoryService
     - name: synq.monitors.predictions.v1.MonitorPredictionsService
       description: Access to anomaly detection model predictions and raw metric timeseries.
+    - name: synq.monitors.segments.v1.MonitorSegmentsService
+      description: |-
+        Reads and names the segments of a segmented custom monitor.
+
+         A monitor configured with a segmentation expression splits the data it
+         monitors into one time series per distinct value of that expression, and each
+         of those is a segment. The label is what every downstream surface shows for a
+         segment: the name of the check it produces, the search result, the alert. A
+         segment with no label falls back to its raw value, so a monitor segmented on
+         something encoded (an id, a code, a hashed bucket) reads as that raw value
+         everywhere until the segment is named.
     - name: synq.monitors.automated_monitors.v1.DeploymentRulesService
     - name: synq.monitors.info.v1.MonitorInfoService
     - name: synq.ingest.openlineage.v1.OpenlineageService

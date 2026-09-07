@@ -309,6 +309,15 @@ message MonitorsDeploymentRule {
   }
 
   synq.v1.Source source = 8;
+  // Config ID this rule was authored from, when deployed via configuration as
+  // code. Unset for rules authored directly through this API.
+  //
+  // On a write this field is only ever set, never unset: omitting it keeps the
+  // stored value, so a full-replace update cannot detach the rule from the
+  // config that owns it. An empty string is a real config id — the one a deploy
+  // that declares no namespace uses — so sending it attaches the rule to that
+  // config rather than clearing the field. No value detaches a rule; recreating
+  // it is the only way to hand it back to the app.
   optional string config_id = 9;
 }
 

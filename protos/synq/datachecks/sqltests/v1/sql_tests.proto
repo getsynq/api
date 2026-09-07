@@ -63,7 +63,15 @@ message SqlTest {
   // required when sql_expression is not provided
   Template template = 8;
 
-  // Config ID for the SqlTest.
+  // Config ID this test was authored from, when deployed via configuration as
+  // code. Unset for tests authored directly through this API.
+  //
+  // On a write this field is only ever set, never unset: omitting it keeps the
+  // stored value, so a full-replace update cannot detach the test from the
+  // config that owns it. An empty string is a real config id — the one a deploy
+  // that declares no namespace uses — so sending it attaches the test to that
+  // config rather than clearing the field. No value detaches a test; recreating
+  // it is the only way to hand it back to the app.
   optional string config_id = 11;
 
   synq.v1.Source source = 12;

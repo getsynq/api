@@ -106,6 +106,16 @@ message BatchCreateMonitorRequest {
 
 message BatchCreateMonitorResponse {
   repeated string created_monitor_ids = 1;
+
+  // Details of a requested monitor that was not created.
+  message CreateError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested monitor that was not created, most commonly because a
+  // monitor with that id already exists. Empty when every requested monitor was
+  // created.
+  repeated CreateError errors = 2;
 }
 
 message BatchDeleteMonitorRequest {
@@ -183,6 +193,20 @@ message ListMonitorsRequest {
   ConfigsFilter configs_filter = 7;
   repeated MonitorDefinition.Source sources = 6;
 
+  // Include deleted monitors in the listing. Off by default, so an ordinary
+  // listing keeps describing only what is live.
+  //
+  // Turn it on to resolve a `monitor_ids` entry that may name a deleted monitor.
+  // The id this endpoint returns is the only reference a caller holds after
+  // creating or listing a monitor, and the monitored asset needed to address the
+  // same monitor as an entity is on the stored row and nowhere else, so a
+  // listing that excluded it left the id unresolvable.
+  //
+  // One entry per monitor either way: a monitor keeps a row per version, and the
+  // listing reports the latest one. `deleted_at` on each returned monitor is
+  // what tells a deleted monitor from a live one.
+  bool include_deleted = 8;
+
   // Pagination
   optional synq.v1.Pagination pagination = 10;
 }
@@ -226,4 +250,13 @@ message BatchUpdateMonitorRequest {
 
 message BatchUpdateMonitorResponse {
   repeated string updated_ids = 1;
+
+  // Details of a requested monitor that was not updated.
+  message UpdateError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested monitor that was not updated, most commonly because no
+  // monitor with that id exists. Empty when every requested monitor was updated.
+  repeated UpdateError errors = 2;
 }

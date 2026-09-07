@@ -54,6 +54,19 @@ message GetCoverageRequest {
   // Filter to control which checks are included in the coverage response.
   // Default (UNSPECIFIED) returns both direct and propagated checks.
   PropagationFilter propagation_filter = 2;
+
+  // Include the per-segment checks of segmented monitors.
+  //
+  // A segmented monitor publishes one check entity per distinct value of its segmentation
+  // column, so a single monitor can stand behind hundreds of them and they can outnumber an
+  // asset's other checks by an order of magnitude. They are left out by default so a coverage
+  // read stays readable, and asked for explicitly when the caller wants the individual segment
+  // ids — the same ids alerts, search results and the monitor-predictions read use.
+  //
+  // Segment checks are only ever reported on the asset the monitor runs on: they are a slice of
+  // one monitor on one asset, and never propagate downstream. The parent monitor's own check
+  // propagates as it always has, so downstream coverage is unchanged by this field.
+  bool include_segments = 3;
 }
 
 // GetCoverageResponse contains the check coverage information for the requested entity.

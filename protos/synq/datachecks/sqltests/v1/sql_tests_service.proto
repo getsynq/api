@@ -81,9 +81,14 @@ message GetSqlTestAuditResponse {
 
 message BatchUpsertSqlTestsRequest {
   // List of SqlTests to upsert.
-  // The upsert is performed based on the unique path provided for each SqlTest.
+  // Each SqlTest is matched on the `id` it carries, and on its path when it has
+  // no id, so a caller that keeps its own ids can rename or re-target a test
+  // without replacing it.
   repeated SqlTest sql_tests = 1;
-  // List of SqlTest IDs to reset. Some updates might require resetting the SqlTest to a fresh state.
+  // List of SqlTest IDs to re-arm, given as the same `id` sent above. A test has
+  // no learned state to discard: this re-arms the scheduler of a test that
+  // carries a recurrence rule, so it runs immediately rather than at its next
+  // slot, and does nothing for a test scheduled externally.
   repeated string sql_test_ids_to_reset = 2;
 }
 

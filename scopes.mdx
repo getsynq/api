@@ -421,6 +421,7 @@ View monitors and their configuration.
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and |
 
 ## Edit Automatic Monitors
 
@@ -457,6 +458,7 @@ Create, update, and delete custom monitors.
 | `BatchUpdateMonitorMode`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1/mode` |  |
 | `BatchUpdateMonitorSeverity`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1/severity` |  |
 | `ConfigChangesOverview`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`POST /api/monitors/custom-monitors/v1/config-changes` |  |
+| `BatchUpdateMonitorSegmentLabels`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`POST /api/monitors/segments/v1/labels` | Sets or clears the label of one or more segments. |
 
 ## Edit Custom SQL Monitors
 
@@ -754,6 +756,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
+| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
@@ -793,6 +796,7 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
 | `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` |  |
 | `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` |  |
+| `BatchUpdateMonitorSegmentLabels`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`POST /api/monitors/segments/v1/labels` | Sets or clears the label of one or more segments. |
 | `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. Idempotent — deleting an |
 | `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
 | `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
@@ -1251,6 +1255,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | `SCOPE_MONITORS_READ`<br/>`SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchUpdateMonitorSegmentLabels`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`POST /api/monitors/segments/v1/labels` | `SCOPE_MONITORS_CUSTOM_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |

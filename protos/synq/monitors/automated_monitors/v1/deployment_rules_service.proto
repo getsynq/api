@@ -20,7 +20,7 @@ message GetDeployOverviewResponse {
 }
 
 message GetDeployDeleteOverviewRequest {
-  string id = 1;
+  string id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message GetDeployDeleteOverviewResponse {
@@ -28,7 +28,7 @@ message GetDeployDeleteOverviewResponse {
 }
 
 message DeleteDeploymentRuleRequest {
-  string id = 1;
+  string id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message DeleteDeploymentRuleResponse {}
@@ -128,12 +128,12 @@ message BatchUpdateDeploymentRuleTitleRequest {
 message BatchUpdateDeploymentRuleTitleResponse {}
 
 message UpdateDeploymentRuleTitleRequest {
-  string id = 1;
+  string id = 1 [(buf.validate.field).string.uuid = true];
   string title = 2;
 }
 
 message BatchGetDeploymentRulesRequest {
-  repeated string ids = 1;
+  repeated string ids = 1 [(buf.validate.field).repeated.items.string.uuid = true];
 }
 
 message BatchGetDeploymentRulesResponse {

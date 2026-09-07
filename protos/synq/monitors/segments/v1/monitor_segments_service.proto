@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package synq.monitors.segments.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/monitors/segments/v1";
+
+// Reads and names the segments of a segmented custom monitor.
+//
+// A monitor configured with a segmentation expression splits the data it
+// monitors into one time series per distinct value of that expression, and each
+// of those is a segment. The label is what every downstream surface shows for a
+// segment: the name of the check it produces, the search result, the alert. A
+// segment with no label falls back to its raw value, so a monitor segmented on
+// something encoded (an id, a code, a hashed bucket) reads as that raw value
+// everywhere until the segment is named.
+service MonitorSegmentsService {
+  // Lists the segments a monitor has ingested so far, with their raw value and
+  // current label. A segment appears only once data has been observed for it,
+  // so a monitor that has not run yet lists none.
+  rpc ListMonitorSegments(ListMonitorSegmentsRequest) returns (ListMonitorSegmentsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_MONITORS_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/monitors/segments/v1"};
+  }
+
+  // Sets or clears the label of one or more segments.
+  //
+  // Segments are addressed by the id ListMonitorSegments returns. A segment id
+  // encodes a sanitised form of the segment value, so it cannot be constructed
+  // from that value: read the ids first, then write against them.
+  rpc BatchUpdateMonitorSegmentLabels(BatchUpdateMonitorSegmentLabelsRequest) returns (BatchUpdateMonitorSegmentLabelsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_MONITORS_CUSTOM_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/monitors/segments/v1/labels"
+      body: "*"
+    };
+  }
+}
+
+message MonitorSegment {
+  // Identifier of this segment. Opaque: pass it back to
+  // BatchUpdateMonitorSegmentLabels to name the segment, or to
+  // synq.monitors.predictions.v1.MonitorPredictionsService as synq_path to read
+  // this segment's predictions. Do not construct or parse it.
+  string id = 1;
+  // Id of the monitor this segment belongs to, as accepted by
+  // synq.monitors.custom_monitors.v1.CustomMonitorsService.
+  string monitor_id = 2;
+  // The monitor's segmentation expression: the column or expression whose
+  // distinct values produce the segments, for example "country".
+  string segmentation_expression = 3;
+  // The value of the segmentation expression this segment covers, exactly as it
+  // was read from the monitored data.
+  string value = 4;
+  // The name given to this segment. Unset when the segment has never been
+  // named, in which case every surface shows `value` instead.
+  optional string label = 5;
+  // What this segment is shown as: `label` when one is set, `value` otherwise.
+  // This is the name that reaches check names, search and alerts.
+  string name = 6;
+  // When this segment was first observed in the monitored data.
+  google.protobuf.Timestamp created_at = 7;
+  // When this segment was last observed in the monitored data. A segment whose
+  // value stops appearing keeps its last observation time until the monitor
+  // drops it.
+  google.protobuf.Timestamp last_ingested_at = 8;
+}
+
+message ListMonitorSegmentsRequest {
+  // The monitor whose segments to list: either a custom monitor id, or the
+  // Coalesce Quality path of the monitor. Both are accepted wherever this API
+  // addresses a monitor.
+  string monitor_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message ListMonitorSegmentsResponse {
+  // The monitor's segments, ordered by name. Empty when the monitor is not
+  // segmented, or has not ingested any data yet.
+  repeated MonitorSegment segments = 1;
+}
+
+message BatchUpdateMonitorSegmentLabelsRequest {
+  message SegmentLabel {
+    // Id of the segment to name, as returned by ListMonitorSegments.
+    string id = 1 [(buf.validate.field).string.min_len = 1];
+    // The name to give the segment. An empty string clears the label, so the
+    // segment falls back to showing its raw value.
+    string label = 2 [(buf.validate.field).string.max_len = 256];
+  }
+
+  // The segments to name. Each entry replaces that segment's label outright; a
+  // segment not listed is left alone.
+  repeated SegmentLabel segments = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message BatchUpdateMonitorSegmentLabelsResponse {
+  // The segments that were updated, in their state after the update.
+  repeated MonitorSegment segments = 1;
+
+  // Details of a requested segment that was not updated.
+  message UpdateError {
+    // The id as it was requested.
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested segment that was not updated, most commonly because
+  // no segment with that id has been ingested. Empty when every requested
+  // segment was updated.
+  repeated UpdateError errors = 2;
+}

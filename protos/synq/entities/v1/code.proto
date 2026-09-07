@@ -81,9 +81,11 @@ message Code {
   // `original_size_bytes` gives the untruncated size.
   bool is_truncated = 13;
 
-  // Size in bytes of the code before any truncation. Zero when the producer
-  // does not know the original size, which is the normal case for code that
-  // is not read from a file.
+  // Size in bytes of the code before any truncation. Read it together with
+  // `is_truncated`, which is what makes it meaningful: where `content` was cut,
+  // this is the size of the whole body, and a truncated body always has one.
+  // Zero where nothing measured the source, which is the normal case for code
+  // that is not read from a file and never happens for a truncated body.
   uint64 original_size_bytes = 14;
 }
 
@@ -111,8 +113,8 @@ enum CodeSource {
 }
 
 // CodeSourceError reports one source that could not be read while the rest of
-// the response was assembled. Its code is missing from `codes`; everything
-// else in the response is complete.
+// the response was assembled. That source's code is missing or incomplete in
+// `codes`; every other source in the response is complete.
 //
 // Retry the same request to pick the missing source up — these are transient
 // by nature. A request in which every source failed returns an error instead.

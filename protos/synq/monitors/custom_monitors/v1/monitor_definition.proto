@@ -4,6 +4,7 @@ package synq.monitors.custom_monitors.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/monitors/automated_monitors/v1/deployment_rules.proto";
@@ -192,6 +193,15 @@ message MonitorDefinition {
   Severity severity = 6;
   string name = 7 [(buf.validate.field).required = true];
   string description = 11;
+  // Config ID this monitor was authored from, when deployed via configuration
+  // as code. Unset for monitors authored directly through this API.
+  //
+  // On a write this field is only ever set, never unset: omitting it keeps the
+  // stored value, so a full-replace update cannot detach the monitor from the
+  // config that owns it. An empty string is a real config id — the one a deploy
+  // that declares no namespace uses — so sending it attaches the monitor to
+  // that config rather than clearing the field. No value detaches a monitor;
+  // recreating it is the only way to hand it back to the app.
   optional string config_id = 8;
   enum Source {
     // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
@@ -258,4 +268,9 @@ message MonitorDefinition {
   // the same full-state upsert rule described above. Its annotation fallback is
   // `quality.governance_category`.
   optional string governance_category = 52;
+
+  // When the monitor was deleted. Unset while it is live, which is every monitor
+  // an ordinary listing reports; a deleted one comes back only from a listing
+  // that asked for it. Read-only, and ignored on writes.
+  optional google.protobuf.Timestamp deleted_at = 53;
 }
