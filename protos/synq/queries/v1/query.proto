@@ -51,6 +51,9 @@ message Query {
       InDomain in_domain = 9;
       IdentitiesOf identities_of = 10;
       WithDefaultVisibleTypes with_default_visible_types = 11;
+      // Pin specific entities by the ids the API returned for them. Read back as
+      // `identifier_list`, with each id on the identifier it names.
+      EntityIds entity_ids = 12;
 
       // Nested sub-query, enabling recursive composition of filters and operands.
       Query query = 100;

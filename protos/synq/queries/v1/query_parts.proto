@@ -15,6 +15,54 @@ message IdentifierList {
   repeated synq.entities.v1.Identifier identifiers = 1;
 }
 
+// Selects exactly the entities you list, by the `entity_id` the API returned for
+// each of them.
+//
+// This is the pin-these-specific-entities part of a query: the assets a user
+// ticked in a list, the results of a search you just ran, the entities another
+// API call handed you. Because you pass the ids back as they were given, you do
+// not need to know what kind of entity each one is, or how its address in the
+// source system is spelled.
+//
+// `identifier_list` is the alternative, and the choice between them is about
+// what you have in hand:
+//   - `entity_ids`      — you are holding ids the API gave you. Pass them
+//                         through unchanged.
+//   - `identifier_list` — you are naming entities by their address in the source
+//                         system (a BigQuery project/dataset/table, a dbt model,
+//                         a Looker explore), for example because a person or a
+//                         config file wrote it down rather than an API call.
+//
+// **Reading back a selection you wrote with `entity_ids`.** Selections are always
+// returned as `identifier_list`, whichever of the two you sent — one uniform
+// shape, so integrations built before `entity_ids` existed keep reading stored
+// queries unchanged. Your ids are not lost in the process: every returned
+// identifier carries its `entity_id`, so you can match each one back to what you
+// sent, and compare a saved selection against the one you are about to save. The
+// returned id is the entity's canonical form, which can differ from an equivalent
+// spelling you sent for the same entity.
+//
+// **An id that matches nothing selects nothing**, and is not an error — so a
+// saved query keeps working after one of the entities it names is deleted or
+// renamed, rather than failing every time it is read or resolved.
+message EntityIds {
+  // The entities to select. An id may not be blank.
+  //
+  // An empty list selects no entities, exactly as an empty `identifier_list`
+  // does. Be deliberate about it, because it is not the same as leaving the part
+  // out: a part that selects nothing still counts, so it empties an AND, adds
+  // nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+  // "do not restrict on specific entities", omit the part instead of sending it
+  // empty.
+  //
+  // Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+  // where you read them from, so any id the API returned is accepted here.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated.items.string = {
+    min_len: 1
+    max_len: 1024
+  }];
+}
+
 // Resolves to all entities matching the given name search.
 message WithNameSearch {
   string search_query = 1;

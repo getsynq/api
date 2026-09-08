@@ -36,6 +36,10 @@ message EntitySelectionQuery {
       synq.queries.v1.WithAnnotation with_annotation = 4;
       // synq.queries.v1.InDataPlatform in_data_platform = 5;
       synq.queries.v1.InFolder in_folder = 6;
+      // Deploy monitors on specific entities, named by the ids the API returned
+      // for them. Read back as `identifier_list`, with each id on the identifier
+      // it names.
+      synq.queries.v1.EntityIds entity_ids = 7;
 
       EntitySelectionQuery query = 100;
       synq.queries.v1.Unsupported unsupported = 101;

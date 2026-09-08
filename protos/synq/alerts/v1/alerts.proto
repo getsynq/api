@@ -190,6 +190,9 @@ message SelectionQuery {
       synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
       // Filter by data product membership.
       synq.queries.v1.InDataproduct in_dataproduct = 8;
+      // Alert on specific entities, named by the ids the API returned for them.
+      // Read back as `identifier_list`, with each id on the identifier it names.
+      synq.queries.v1.EntityIds entity_ids = 9;
 
       // Nested selection query for complex filtering.
       SelectionQuery query = 100;

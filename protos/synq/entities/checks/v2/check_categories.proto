@@ -99,7 +99,7 @@ message CheckCategoryUpdate {
   // The check to categorise.
   string entity_id = 1 [(buf.validate.field).string = {
     min_len: 1
-    max_len: 2000
+    max_len: 1024
   }];
   // Technical category to set — what kind of check this is, mechanically.
   optional string technical = 2 [(buf.validate.field).string.max_len = 200];
@@ -117,7 +117,7 @@ message CheckCategoryDeletion {
   // The check to clear.
   string entity_id = 1 [(buf.validate.field).string = {
     min_len: 1
-    max_len: 2000
+    max_len: 1024
   }];
   // Optional optimistic-concurrency guard, with the same meaning as on
   // CheckCategoryUpdate.

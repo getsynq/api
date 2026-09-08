@@ -4039,6 +4039,16 @@ components:
             type: object
             oneOf:
                 - properties:
+                    entityIds:
+                        title: entity_ids
+                        description: |-
+                            Alert on specific entities, named by the ids the API returned for them.
+                             Read back as `identifier_list`, with each id on the identifier it names.
+                        $ref: '#/components/schemas/synq.queries.v1.EntityIds'
+                  title: entity_ids
+                  required:
+                    - entityIds
+                - properties:
                     identifierList:
                         title: identifier_list
                         description: Filter by specific entity identifiers.
@@ -9151,7 +9161,7 @@ components:
                     type: array
                     items:
                         type: string
-                        maxLength: 2000
+                        maxLength: 1024
                         minLength: 1
                         maxItems: 500
                         minItems: 1
@@ -9488,7 +9498,7 @@ components:
             properties:
                 entityId:
                     type: string
-                    maxLength: 2000
+                    maxLength: 1024
                     minLength: 1
                     description: The check to clear.
                 etag:
@@ -9506,7 +9516,7 @@ components:
             properties:
                 entityId:
                     type: string
-                    maxLength: 2000
+                    maxLength: 1024
                     minLength: 1
                     description: The check to categorise.
                 technical:
@@ -9857,7 +9867,7 @@ components:
                     type: array
                     items:
                         type: string
-                        maxLength: 2000
+                        maxLength: 1024
                         minLength: 1
                         maxItems: 500
                     maxItems: 500
@@ -14317,7 +14327,7 @@ components:
                     entityId:
                         type: string
                         title: entity_id
-                        maxLength: 2000
+                        maxLength: 1024
                         description: |-
                             Opaque id of the entity, set on every identifier the API returns. Round-trip
                              it verbatim; the format is not part of this contract and may change, and it
@@ -19955,6 +19965,17 @@ components:
             type: object
             oneOf:
                 - properties:
+                    entityIds:
+                        title: entity_ids
+                        description: |-
+                            Deploy monitors on specific entities, named by the ids the API returned
+                             for them. Read back as `identifier_list`, with each id on the identifier
+                             it names.
+                        $ref: '#/components/schemas/synq.queries.v1.EntityIds'
+                  title: entity_ids
+                  required:
+                    - entityIds
+                - properties:
                     identifierList:
                         title: identifier_list
                         $ref: '#/components/schemas/synq.queries.v1.IdentifierList'
@@ -23407,6 +23428,60 @@ components:
             description: |-
                 Authentication using a user-managed key pair.
                  The private key is stored safely as a secret. The response does not include the private key for security.
+        synq.queries.v1.EntityIds:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
+            title: EntityIds
+            additionalProperties: false
+            description: |-
+                Selects exactly the entities you list, by the `entity_id` the API returned for
+                 each of them.
+
+                 This is the pin-these-specific-entities part of a query: the assets a user
+                 ticked in a list, the results of a search you just ran, the entities another
+                 API call handed you. Because you pass the ids back as they were given, you do
+                 not need to know what kind of entity each one is, or how its address in the
+                 source system is spelled.
+
+                 `identifier_list` is the alternative, and the choice between them is about
+                 what you have in hand:
+                   - `entity_ids`      — you are holding ids the API gave you. Pass them
+                                         through unchanged.
+                   - `identifier_list` — you are naming entities by their address in the source
+                                         system (a BigQuery project/dataset/table, a dbt model,
+                                         a Looker explore), for example because a person or a
+                                         config file wrote it down rather than an API call.
+
+                 **Reading back a selection you wrote with `entity_ids`.** Selections are always
+                 returned as `identifier_list`, whichever of the two you sent — one uniform
+                 shape, so integrations built before `entity_ids` existed keep reading stored
+                 queries unchanged. Your ids are not lost in the process: every returned
+                 identifier carries its `entity_id`, so you can match each one back to what you
+                 sent, and compare a saved selection against the one you are about to save. The
+                 returned id is the entity's canonical form, which can differ from an equivalent
+                 spelling you sent for the same entity.
+
+                 **An id that matches nothing selects nothing**, and is not an error — so a
+                 saved query keeps working after one of the entities it names is deleted or
+                 renamed, rather than failing every time it is read or resolved.
         synq.queries.v1.FolderOf:
             type: object
             properties:
@@ -23622,6 +23697,16 @@ components:
         synq.queries.v1.Query.QueryPart:
             type: object
             oneOf:
+                - properties:
+                    entityIds:
+                        title: entity_ids
+                        description: |-
+                            Pin specific entities by the ids the API returned for them. Read back as
+                             `identifier_list`, with each id on the identifier it names.
+                        $ref: '#/components/schemas/synq.queries.v1.EntityIds'
+                  title: entity_ids
+                  required:
+                    - entityIds
                 - properties:
                     identifierList:
                         title: identifier_list
@@ -24901,7 +24986,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -25620,7 +25705,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -26252,7 +26337,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -27116,7 +27201,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -28103,6 +28188,39 @@ paths:
                     title: operand
                     description: Defaults to AND if not specified.
                     $ref: '#/components/schemas/synq.queries.v1.QueryOperand'
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -29070,7 +29188,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -32039,7 +32157,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -32966,7 +33084,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -33934,6 +34052,39 @@ paths:
                     type: string
                     title: domain_id
                     format: uuid
+                - name: filter.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: filter.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -34071,7 +34222,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -35039,6 +35190,39 @@ paths:
                     type: string
                     title: domain_id
                     format: uuid
+                - name: filter.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: filter.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -35169,7 +35353,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -36169,6 +36353,39 @@ paths:
                     type: string
                     title: domain_id
                     format: uuid
+                - name: query.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: query.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -36720,7 +36937,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -37948,7 +38165,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -39668,7 +39885,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -40584,7 +40801,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -41584,6 +41801,39 @@ paths:
                     type: string
                     title: domain_id
                     format: uuid
+                - name: entitiesQuery.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: entitiesQuery.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -42122,7 +42372,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -43109,6 +43359,39 @@ paths:
                     title: operand
                     description: Defaults to AND if not specified.
                     $ref: '#/components/schemas/synq.queries.v1.QueryOperand'
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.entityIds.entityIds
+                  in: query
+                  description: |-
+                    The entities to select. An id may not be blank.
+
+                     An empty list selects no entities, exactly as an empty `identifier_list`
+                     does. Be deliberate about it, because it is not the same as leaving the part
+                     out: a part that selects nothing still counts, so it empties an AND, adds
+                     nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                     "do not restrict on specific entities", omit the part instead of sending it
+                     empty.
+
+                     Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                     where you read them from, so any id the API returned is accepted here.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                    title: entity_ids
+                    description: |-
+                        The entities to select. An id may not be blank.
+
+                         An empty list selects no entities, exactly as an empty `identifier_list`
+                         does. Be deliberate about it, because it is not the same as leaving the part
+                         out: a part that selects nothing still counts, so it empties an AND, adds
+                         nothing to an OR, and removes nothing from an EXCEPT. If what you mean is
+                         "do not restrict on specific entities", omit the part instead of sending it
+                         empty.
+
+                         Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
+                         where you read them from, so any id the API returned is accepted here.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -44021,7 +44304,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -44890,7 +45173,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -46146,7 +46429,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
@@ -46778,7 +47061,7 @@ paths:
                   schema:
                     type: string
                     title: entity_id
-                    maxLength: 2000
+                    maxLength: 1024
                     description: |-
                         Opaque id of the entity, set on every identifier the API returns. Round-trip
                          it verbatim; the format is not part of this contract and may change, and it
