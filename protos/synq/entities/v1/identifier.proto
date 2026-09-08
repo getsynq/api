@@ -11,7 +11,24 @@ option go_package = "github.com/getsynq/api/entities/v1";
 // an identifier, you need to know the kind of the entity and the ids that you would normally
 // use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
 // you would need to know the project, dataset, and table names.
+//
+// Every identifier the API RETURNS also carries `entity_id`, the entity's opaque
+// id. Read it when you just need to name the entity again — it is one string for
+// every platform, where the structured variants below only cover the platforms
+// that have one.
 message Identifier {
+  // Opaque id of the entity, set on every identifier the API returns. Round-trip
+  // it verbatim; the format is not part of this contract and may change, and it
+  // is never constructed by hand.
+  //
+  // OUTPUT ONLY. On a request this field is ignored — the structured variant is
+  // what resolves. That is what lets you hand an identifier straight back
+  // unchanged, or edit its structured fields, without the two disagreeing about
+  // which entity you meant. To name an entity BY opaque id on a request, set the
+  // `synq_path` variant to that id: it carries exactly this string, and it is
+  // also how an entity whose platform has no structured variant is named.
+  string entity_id = 100 [(buf.validate.field).string.max_len = 2000];
+
   oneof id {
     option (buf.validate.oneof).required = true;
     // Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project

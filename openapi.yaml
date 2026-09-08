@@ -14312,191 +14312,209 @@ components:
             description: TopFileChange represents a significant file change within a directory.
         synq.entities.v1.Identifier:
             type: object
-            oneOf:
+            allOf:
                 - properties:
-                    airflowDag:
-                        title: airflow_dag
-                        description: Airflow DAG identifier
-                        $ref: '#/components/schemas/synq.entities.v1.AirflowDagIdentifier'
-                  title: airflow_dag
-                  required:
-                    - airflowDag
-                - properties:
-                    airflowTask:
-                        title: airflow_task
-                        description: Airflow task identifier within a given DAG
-                        $ref: '#/components/schemas/synq.entities.v1.AirflowTaskIdentifier'
-                  title: airflow_task
-                  required:
-                    - airflowTask
-                - properties:
-                    athenaTable:
-                        title: athena_table
-                        description: Amazon Athena (Glue) table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.AthenaTableIdentifier'
-                  title: athena_table
-                  required:
-                    - athenaTable
-                - properties:
-                    bigqueryTable:
-                        title: bigquery_table
-                        description: BigQuery table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.BigqueryTableIdentifier'
-                  title: bigquery_table
-                  required:
-                    - bigqueryTable
-                - properties:
-                    clickhouseTable:
-                        title: clickhouse_table
-                        description: Clickhouse table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.ClickhouseTableIdentifier'
-                  title: clickhouse_table
-                  required:
-                    - clickhouseTable
-                - properties:
-                    custom:
-                        title: custom
-                        description: Custom identifier to be used with all custom created entities
-                        $ref: '#/components/schemas/synq.entities.v1.CustomIdentifier'
-                  title: custom
-                  required:
-                    - custom
-                - properties:
-                    databricksTable:
-                        title: databricks_table
-                        description: Databricks table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.DatabricksTableIdentifier'
-                  title: databricks_table
-                  required:
-                    - databricksTable
-                - properties:
-                    dataproduct:
-                        title: dataproduct
-                        description: Dataproduct identifier
-                        $ref: '#/components/schemas/synq.entities.v1.DataproductIdentifier'
-                  title: dataproduct
-                  required:
-                    - dataproduct
-                - properties:
-                    dbtCloudNode:
-                        title: dbt_cloud_node
-                        description: Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project
-                        $ref: '#/components/schemas/synq.entities.v1.DbtCloudNodeIdentifier'
-                  title: dbt_cloud_node
-                  required:
-                    - dbtCloudNode
-                - properties:
-                    dbtCoreNode:
-                        title: dbt_core_node
-                        description: Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project
-                        $ref: '#/components/schemas/synq.entities.v1.DbtCoreNodeIdentifier'
-                  title: dbt_core_node
-                  required:
-                    - dbtCoreNode
-                - properties:
-                    fabricTable:
-                        title: fabric_table
-                        description: Microsoft Fabric table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.FabricTableIdentifier'
-                  title: fabric_table
-                  required:
-                    - fabricTable
-                - properties:
-                    monitor:
-                        title: monitor
-                        description: Monitor identifier
-                        $ref: '#/components/schemas/synq.entities.v1.MonitorIdentifier'
-                  title: monitor
-                  required:
-                    - monitor
-                - properties:
-                    mssqlTable:
-                        title: mssql_table
-                        description: SQL Server table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.MssqlTableIdentifier'
-                  title: mssql_table
-                  required:
-                    - mssqlTable
-                - properties:
-                    mysqlTable:
-                        title: mysql_table
-                        description: Mysql table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.MysqlTableIdentifier'
-                  title: mysql_table
-                  required:
-                    - mysqlTable
-                - properties:
-                    oracleTable:
-                        title: oracle_table
-                        description: Oracle table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.OracleTableIdentifier'
-                  title: oracle_table
-                  required:
-                    - oracleTable
-                - properties:
-                    postgresTable:
-                        title: postgres_table
-                        description: Postgres table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.PostgresTableIdentifier'
-                  title: postgres_table
-                  required:
-                    - postgresTable
-                - properties:
-                    redshiftTable:
-                        title: redshift_table
-                        description: Redshift table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.RedshiftTableIdentifier'
-                  title: redshift_table
-                  required:
-                    - redshiftTable
-                - properties:
-                    savedView:
-                        title: saved_view
-                        description: Saved view identifier
-                        $ref: '#/components/schemas/synq.entities.v1.SavedViewIdentifier'
-                  title: saved_view
-                  required:
-                    - savedView
-                - properties:
-                    snowflakeTable:
-                        title: snowflake_table
-                        description: Snowflake table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.SnowflakeTableIdentifier'
-                  title: snowflake_table
-                  required:
-                    - snowflakeTable
-                - properties:
-                    sqlMeshAudit:
-                        title: sql_mesh_audit
-                        description: SQLMesh Audit identifier
-                        $ref: '#/components/schemas/synq.entities.v1.SqlMeshAuditIdentifier'
-                  title: sql_mesh_audit
-                  required:
-                    - sqlMeshAudit
-                - properties:
-                    sqlMeshModel:
-                        title: sql_mesh_model
-                        description: SQLMesh Model identifier
-                        $ref: '#/components/schemas/synq.entities.v1.SqlMeshModelIdentifier'
-                  title: sql_mesh_model
-                  required:
-                    - sqlMeshModel
-                - properties:
-                    synqPath:
-                        title: synq_path
-                        description: SynqPath identifier
-                        $ref: '#/components/schemas/synq.entities.v1.SynqPathIdentifier'
-                  title: synq_path
-                  required:
-                    - synqPath
-                - properties:
-                    trinoTable:
-                        title: trino_table
-                        description: Trino table identifier
-                        $ref: '#/components/schemas/synq.entities.v1.TrinoTableIdentifier'
-                  title: trino_table
-                  required:
-                    - trinoTable
+                    entityId:
+                        type: string
+                        title: entity_id
+                        maxLength: 2000
+                        description: |-
+                            Opaque id of the entity, set on every identifier the API returns. Round-trip
+                             it verbatim; the format is not part of this contract and may change, and it
+                             is never constructed by hand.
+
+                             OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                             what resolves. That is what lets you hand an identifier straight back
+                             unchanged, or edit its structured fields, without the two disagreeing about
+                             which entity you meant. To name an entity BY opaque id on a request, set the
+                             `synq_path` variant to that id: it carries exactly this string, and it is
+                             also how an entity whose platform has no structured variant is named.
+                - oneOf:
+                    - properties:
+                        airflowDag:
+                            title: airflow_dag
+                            description: Airflow DAG identifier
+                            $ref: '#/components/schemas/synq.entities.v1.AirflowDagIdentifier'
+                      title: airflow_dag
+                      required:
+                        - airflowDag
+                    - properties:
+                        airflowTask:
+                            title: airflow_task
+                            description: Airflow task identifier within a given DAG
+                            $ref: '#/components/schemas/synq.entities.v1.AirflowTaskIdentifier'
+                      title: airflow_task
+                      required:
+                        - airflowTask
+                    - properties:
+                        athenaTable:
+                            title: athena_table
+                            description: Amazon Athena (Glue) table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.AthenaTableIdentifier'
+                      title: athena_table
+                      required:
+                        - athenaTable
+                    - properties:
+                        bigqueryTable:
+                            title: bigquery_table
+                            description: BigQuery table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.BigqueryTableIdentifier'
+                      title: bigquery_table
+                      required:
+                        - bigqueryTable
+                    - properties:
+                        clickhouseTable:
+                            title: clickhouse_table
+                            description: Clickhouse table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.ClickhouseTableIdentifier'
+                      title: clickhouse_table
+                      required:
+                        - clickhouseTable
+                    - properties:
+                        custom:
+                            title: custom
+                            description: Custom identifier to be used with all custom created entities
+                            $ref: '#/components/schemas/synq.entities.v1.CustomIdentifier'
+                      title: custom
+                      required:
+                        - custom
+                    - properties:
+                        databricksTable:
+                            title: databricks_table
+                            description: Databricks table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.DatabricksTableIdentifier'
+                      title: databricks_table
+                      required:
+                        - databricksTable
+                    - properties:
+                        dataproduct:
+                            title: dataproduct
+                            description: Dataproduct identifier
+                            $ref: '#/components/schemas/synq.entities.v1.DataproductIdentifier'
+                      title: dataproduct
+                      required:
+                        - dataproduct
+                    - properties:
+                        dbtCloudNode:
+                            title: dbt_cloud_node
+                            description: Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Cloud project
+                            $ref: '#/components/schemas/synq.entities.v1.DbtCloudNodeIdentifier'
+                      title: dbt_cloud_node
+                      required:
+                        - dbtCloudNode
+                    - properties:
+                        dbtCoreNode:
+                            title: dbt_core_node
+                            description: Dbt node that identifies one of dbt DAG nodes (model, test, etc) in dbt Core project
+                            $ref: '#/components/schemas/synq.entities.v1.DbtCoreNodeIdentifier'
+                      title: dbt_core_node
+                      required:
+                        - dbtCoreNode
+                    - properties:
+                        fabricTable:
+                            title: fabric_table
+                            description: Microsoft Fabric table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.FabricTableIdentifier'
+                      title: fabric_table
+                      required:
+                        - fabricTable
+                    - properties:
+                        monitor:
+                            title: monitor
+                            description: Monitor identifier
+                            $ref: '#/components/schemas/synq.entities.v1.MonitorIdentifier'
+                      title: monitor
+                      required:
+                        - monitor
+                    - properties:
+                        mssqlTable:
+                            title: mssql_table
+                            description: SQL Server table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.MssqlTableIdentifier'
+                      title: mssql_table
+                      required:
+                        - mssqlTable
+                    - properties:
+                        mysqlTable:
+                            title: mysql_table
+                            description: Mysql table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.MysqlTableIdentifier'
+                      title: mysql_table
+                      required:
+                        - mysqlTable
+                    - properties:
+                        oracleTable:
+                            title: oracle_table
+                            description: Oracle table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.OracleTableIdentifier'
+                      title: oracle_table
+                      required:
+                        - oracleTable
+                    - properties:
+                        postgresTable:
+                            title: postgres_table
+                            description: Postgres table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.PostgresTableIdentifier'
+                      title: postgres_table
+                      required:
+                        - postgresTable
+                    - properties:
+                        redshiftTable:
+                            title: redshift_table
+                            description: Redshift table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.RedshiftTableIdentifier'
+                      title: redshift_table
+                      required:
+                        - redshiftTable
+                    - properties:
+                        savedView:
+                            title: saved_view
+                            description: Saved view identifier
+                            $ref: '#/components/schemas/synq.entities.v1.SavedViewIdentifier'
+                      title: saved_view
+                      required:
+                        - savedView
+                    - properties:
+                        snowflakeTable:
+                            title: snowflake_table
+                            description: Snowflake table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.SnowflakeTableIdentifier'
+                      title: snowflake_table
+                      required:
+                        - snowflakeTable
+                    - properties:
+                        sqlMeshAudit:
+                            title: sql_mesh_audit
+                            description: SQLMesh Audit identifier
+                            $ref: '#/components/schemas/synq.entities.v1.SqlMeshAuditIdentifier'
+                      title: sql_mesh_audit
+                      required:
+                        - sqlMeshAudit
+                    - properties:
+                        sqlMeshModel:
+                            title: sql_mesh_model
+                            description: SQLMesh Model identifier
+                            $ref: '#/components/schemas/synq.entities.v1.SqlMeshModelIdentifier'
+                      title: sql_mesh_model
+                      required:
+                        - sqlMeshModel
+                    - properties:
+                        synqPath:
+                            title: synq_path
+                            description: SynqPath identifier
+                            $ref: '#/components/schemas/synq.entities.v1.SynqPathIdentifier'
+                      title: synq_path
+                      required:
+                        - synqPath
+                    - properties:
+                        trinoTable:
+                            title: trino_table
+                            description: Trino table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.TrinoTableIdentifier'
+                      title: trino_table
+                      required:
+                        - trinoTable
+            title: Identifier
             additionalProperties: false
             description: |-
                 Identifier is a unique reference to an entity in Coalesce Quality system. Entity identifiers
@@ -14504,6 +14522,11 @@ components:
                  an identifier, you need to know the kind of the entity and the ids that you would normally
                  use to identify it in the data platform or tool. For example, to identify a table in BigQuery,
                  you would need to know the project, dataset, and table names.
+
+                 Every identifier the API RETURNS also carries `entity_id`, the entity's opaque
+                 id. Read it when you just need to name the entity again — it is one string for
+                 every platform, where the structured variants below only cover the platforms
+                 that have one.
         synq.entities.v1.MonitorIdentifier:
             type: object
             properties:
@@ -24862,6 +24885,34 @@ paths:
                  Changes include lineage context showing upstream_distance when changes affect dependencies.
             operationId: synq.entities.changes.v1.ChangesService.List
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -25553,6 +25604,34 @@ paths:
                  that define or are part of the entity's functionality.
             operationId: synq.entities.code.v1.CodeService.ListCode
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -26157,6 +26236,34 @@ paths:
             description: Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity.
             operationId: synq.entities.constraints.v1.TableConstraintsService.GetTableConstraints
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -26993,6 +27100,34 @@ paths:
                     maxLength: 100
                     minLength: 1
                     description: Human friendly name for this rule.
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -28919,6 +29054,34 @@ paths:
             summary: BatchGetTestSuggestionsForEntities
             operationId: synq.datachecks.testsuggestions.v1.TestSuggestionsService.BatchGetTestSuggestionsForEntities
             parameters:
+                - name: identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -31860,6 +32023,34 @@ paths:
             description: Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
             operationId: synq.entities.custom.v1.EntitiesService.DeleteEntity
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -32759,6 +32950,34 @@ paths:
                          last), for example ["staging", "sales"]. Empty means the ref points at the
                          root entity itself. Folder names are kept as separate segments (not joined
                          with "/") because some platforms allow "/" inside a single folder name.
+                - name: filter.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: filter.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -33836,6 +34055,34 @@ paths:
                         $ref: '#/components/schemas/synq.entities.v1.EntityType'
                     title: types
                     description: Optional entity-type filter. Empty returns all types.
+                - name: filter.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: filter.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -34906,6 +35153,34 @@ paths:
             description: List entities matching the given filter
             operationId: synq.entities.entities.v1.EntitiesService.ListEntities
             parameters:
+                - name: query.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: query.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -36429,6 +36704,34 @@ paths:
                  - Status(es)
             operationId: synq.entities.executions.v2.EntityExecutionsService.ListExecutions
             parameters:
+                - name: entityIds.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: entityIds.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -37629,6 +37932,34 @@ paths:
                         $ref: '#/components/schemas/synq.incidents.v1.Incident.State'
                     title: states
                     description: Filter by states
+                - name: affectedEntities.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: affectedEntities.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -39321,6 +39652,34 @@ paths:
                   schema:
                     type: string
                     title: after_id
+                - name: entities.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: entities.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -40209,6 +40568,34 @@ paths:
             summary: ListIssues
             operationId: synq.issues.v2.IssuesService.ListIssues
             parameters:
+                - name: entitiesQuery.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: entitiesQuery.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -41719,6 +42106,34 @@ paths:
                     title: title
                     maxLength: 100
                     minLength: 1
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -43590,6 +44005,34 @@ paths:
             summary: MonitorInfo
             operationId: synq.monitors.info.v1.MonitorInfoService.MonitorInfo
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -44431,6 +44874,34 @@ paths:
                  downstream entities (what it orchestrates).
             operationId: synq.entities.orchestration.v1.OrchestrationService.BatchOrchestration
             parameters:
+                - name: entities.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: entities.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -45659,6 +46130,34 @@ paths:
             description: Get schema mismatches for a batch of entities by their identifiers.
             operationId: synq.entities.schemas.v1.SchemaMismatchesService.BatchSchemaMismatches
             parameters:
+                - name: ids.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: ids.dbtCoreNode.integrationId
                   in: query
                   description: |-
@@ -46263,6 +46762,34 @@ paths:
             description: Get schema of the entity its identifier.
             operationId: synq.entities.schemas.v1.SchemasService.GetSchema
             parameters:
+                - name: id.entityId
+                  in: query
+                  description: |-
+                    Opaque id of the entity, set on every identifier the API returns. Round-trip
+                     it verbatim; the format is not part of this contract and may change, and it
+                     is never constructed by hand.
+
+                     OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                     what resolves. That is what lets you hand an identifier straight back
+                     unchanged, or edit its structured fields, without the two disagreeing about
+                     which entity you meant. To name an entity BY opaque id on a request, set the
+                     `synq_path` variant to that id: it carries exactly this string, and it is
+                     also how an entity whose platform has no structured variant is named.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 2000
+                    description: |-
+                        Opaque id of the entity, set on every identifier the API returns. Round-trip
+                         it verbatim; the format is not part of this contract and may change, and it
+                         is never constructed by hand.
+
+                         OUTPUT ONLY. On a request this field is ignored — the structured variant is
+                         what resolves. That is what lets you hand an identifier straight back
+                         unchanged, or edit its structured fields, without the two disagreeing about
+                         which entity you meant. To name an entity BY opaque id on a request, set the
+                         `synq_path` variant to that id: it carries exactly this string, and it is
+                         also how an entity whose platform has no structured variant is named.
                 - name: id.dbtCoreNode.integrationId
                   in: query
                   description: |-
