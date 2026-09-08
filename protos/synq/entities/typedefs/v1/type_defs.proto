@@ -60,6 +60,11 @@ message EntityTypeDef {
   // stays the same even if you rename the type.
   //
   // Prefer this over the numeric value whenever you store a reference to a type.
+  //
+  // It is also the name a selection query spells the type by, lowercased and
+  // without the `ENTITY_TYPE_` prefix: `with_type("bq_table")` for a built-in,
+  // `with_type("custom_type_20")` for one of your own. Matching there ignores
+  // case, so this value can be passed through as it is.
   string name = 2;
 
   // The type's name without its platform: "Table", "View", "DAG". Use it where the
