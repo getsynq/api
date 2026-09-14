@@ -4,6 +4,9 @@ package synq.overlays.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/queries/v1/query.proto";
+import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/overlays/v1";
@@ -111,6 +114,87 @@ service OverlaysService {
       body: "*"
     };
   }
+
+  // List the candidate assets together with the overlays claiming each, and
+  // narrow them to what is or is not covered.
+  //
+  // This is the question behind a governance audit: of the assets you care
+  // about, which belong to no data product, and which have nobody responsible
+  // for them. You give the candidate set as a query — every asset, one
+  // platform, one folder, one domain — and each row comes back carrying the
+  // same owner and data-product lists `BatchGetEntityOverlays` returns, so a
+  // single call is both the count and the worklist.
+  //
+  // `total_count` is how many candidates match `filter` across every page, so
+  // you can say "312 of 4,190 tables are in no data product" without paging to
+  // the end.
+  //
+  // Freshness. By default this reads the same periodically recomputed
+  // membership the rest of this service reads, and tells you how old it is in
+  // `members_computed_at`. Ask for `FRESHNESS_LIVE` when the answer has to
+  // reflect every definition as of now — it re-resolves them, which is far
+  // slower and far more expensive, so keep it for a one-off audit rather than a
+  // page that refreshes.
+  //
+  // Returns PERMISSION_DENIED if your credential can read neither data products
+  // nor owners, and also if `filter` names a kind it may not read: an empty list
+  // must not be the answer to both "nothing is uncovered" and "you may not
+  // look". A kind you may not read still comes back as an empty list on each
+  // row, as it does elsewhere in this service.
+  //
+  // Returns INVALID_ARGUMENT if the selection resolves to more assets than one
+  // call will report on — see `CoverageSelection` for the limit and for how to
+  // choose a candidate set worth reading.
+  rpc ListEntityCoverage(ListEntityCoverageRequest) returns (ListEntityCoverageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERS_READ,
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/overlays/v1/coverage"
+      body: "*"
+    };
+  }
+
+  // Count coverage over one or more named candidate sets, without listing the
+  // assets themselves.
+  //
+  // The aggregate behind a coverage dashboard. Each selection you send comes
+  // back as one row of totals, keyed by the label you gave it, so a breakdown
+  // by type, platform, folder or domain is one round trip rather than one call
+  // per bucket.
+  //
+  // There is no server-side grouping, on purpose. This service knows what claims
+  // an asset, not what kind of thing the asset is, so naming the selections
+  // yourself — `with_type("dbt_model")`, `in_folder(...)`, `in_domain(...)` —
+  // keeps the buckets in your own vocabulary and costs the same.
+  //
+  // Selections are counted independently and may overlap. An asset in two of
+  // them is counted in both.
+  //
+  // Returns PERMISSION_DENIED unless your credential can read both data products
+  // and owners. Every row names both, and a zero that was never looked at is
+  // indistinguishable from a zero that was.
+  rpc GetCoverageSummary(GetCoverageSummaryRequest) returns (GetCoverageSummaryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_OWNERS_READ,
+        SCOPE_DATAPRODUCT_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/overlays/v1/coverage-summary"
+      body: "*"
+    };
+  }
 }
 
 message BatchGetEntityOverlaysRequest {
@@ -200,4 +284,208 @@ message OverlayMemberCount {
 message BatchGetOverlayMemberCountsResponse {
   // One entry per requested overlay, in the order they were requested.
   repeated OverlayMemberCount overlays = 1;
+}
+
+// CoverageSelection names the assets a coverage question is asked about.
+//
+// It is a candidate set, not a filter on overlays: nothing outside it is
+// considered, and an asset inside it is reported whether anything claims it or
+// not. `with_type("dbt_model")` asks about your models, `in_folder(...)` asks
+// about one part of the warehouse, and an empty candidate set is a valid
+// question with the answer zero.
+//
+// Choose the candidate types deliberately — it is the difference between a
+// useful answer and an unreadable one. The two dimensions want different sets.
+// Data products group the things you monitor, so a product-coverage question
+// usually asks about tables, views and models; left unrestricted the answer is
+// mostly monitors, tests and recon cases, which belong to no product by design
+// and bury the assets you were looking for. Owner coverage is the opposite: a
+// check very often should have someone responsible for it, so include those
+// types when asking about owners.
+//
+// So a governance audit is normally several narrow selections rather than one
+// broad one — which is also what `GetCoverageSummary` takes, one per bucket.
+//
+// A selection resolving to more than 100,000 assets is rejected with
+// INVALID_ARGUMENT naming the limit; narrow it and ask again.
+message CoverageSelection {
+  oneof selection {
+    option (buf.validate.oneof).required = true;
+
+    // The candidate query in resolver query language. The fuller of the two
+    // forms — everything the structured query expresses is expressible here,
+    // and several filters are only expressible here.
+    string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+
+    // The candidate query in structured form, as the filter builder produces
+    // it. Use `resolver_ql` for anything it cannot express.
+    synq.queries.v1.Query public_query = 2;
+  }
+}
+
+// CoverageFilter narrows the candidates to those in a particular coverage
+// state. It never widens them: everything it can return was in the selection.
+enum CoverageFilter {
+  // Every candidate, covered or not. The full coverage table.
+  COVERAGE_FILTER_UNSPECIFIED = 0;
+  // Candidates in no data product.
+  COVERAGE_FILTER_WITHOUT_DATAPRODUCT = 1;
+  // Candidates with no owner.
+  COVERAGE_FILTER_WITHOUT_OWNER = 2;
+  // Candidates in no data product *and* with no owner — nothing claims them at
+  // all. Narrower than either of the two above, not the union of them.
+  COVERAGE_FILTER_WITHOUT_ANY = 3;
+  // Candidates in at least one data product.
+  COVERAGE_FILTER_WITH_DATAPRODUCT = 4;
+  // Candidates with at least one owner.
+  COVERAGE_FILTER_WITH_OWNER = 5;
+}
+
+// Freshness chooses what a coverage answer is computed from.
+enum Freshness {
+  // Same as `FRESHNESS_CACHED`.
+  FRESHNESS_UNSPECIFIED = 0;
+  // The periodically recomputed membership, as everything else in this service
+  // reads it. Which overlays exist and what they are attached to is current;
+  // what each one *contains* is behind by at most one recomputation, and the
+  // response says how far in `members_computed_at`. This is what you want for
+  // anything that refreshes.
+  FRESHNESS_CACHED = 1;
+  // Re-resolve every overlay definition now. Correct as of the call, and far
+  // slower and far more expensive than `FRESHNESS_CACHED` — the cost is the
+  // whole catalog, not the candidate set. Use it for a one-off audit, or right
+  // after a bulk change whose effect you need to see immediately. Responses
+  // carry no `members_computed_at`, because nothing was read from an index.
+  //
+  // One limit worth knowing before you rely on it. This settles *whether* an
+  // asset is covered as of now; naming *which* overlays claim it still needs
+  // the recomputed membership, and that half can lag. So a row is never
+  // inconsistent with the filter that selected it — an asset this call finds
+  // uncovered comes back with empty lists whatever the index still says — but
+  // an asset that has only just started matching a rule can come back covered
+  // with nothing named yet. Counts and filters are exact either way; it is the
+  // id lists that catch up on the next recomputation.
+  FRESHNESS_LIVE = 2;
+}
+
+message ListEntityCoverageRequest {
+  // The assets to report on. Required.
+  CoverageSelection selection = 1 [(buf.validate.field).required = true];
+
+  // Which coverage state to keep. Defaults to all candidates.
+  //
+  // A filter naming a kind your credential may not read is PERMISSION_DENIED
+  // rather than an empty list.
+  CoverageFilter filter = 2 [(buf.validate.field).enum.defined_only = true];
+
+  // Where the answer is computed from. Defaults to the recomputed membership.
+  Freshness freshness = 3 [(buf.validate.field).enum.defined_only = true];
+
+  // Pagination over the candidates matching `filter`.
+  synq.v1.Pagination pagination = 4;
+}
+
+message ListEntityCoverageResponse {
+  // One page of matching candidates, each with the overlays claiming it.
+  //
+  // The same message `BatchGetEntityOverlays` returns: a row under
+  // `COVERAGE_FILTER_WITHOUT_DATAPRODUCT` has an empty
+  // `dataproduct_entity_ids` and may still name owners, which is how "owned but
+  // in no product" reads without a second call.
+  repeated EntityOverlays entities = 1;
+
+  // How many candidates match `filter` across every page. Independent of
+  // pagination — the number to show beside a list, not the length of it.
+  int64 total_count = 2;
+
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 3;
+
+  // The candidate selection rendered back to canonical resolver query language,
+  // whichever form it was sent in. Useful to log what was actually asked, and
+  // to lift a query built with the structured form into one you can hand-edit.
+  //
+  // Empty when the selection has no resolver-QL representation; the answer is
+  // unaffected.
+  string rendered_resolver_ql = 4;
+
+  // When the recomputation behind this answer last ran to completion — the
+  // start of the most recent successful pass over the workspace's overlays.
+  // Every overlay is recomputed on each pass, so this is the age of the whole
+  // answer rather than of any one overlay in it.
+  //
+  // This is the number to alert on: it stops advancing as soon as the
+  // recomputation stops succeeding, whether or not any membership has changed.
+  //
+  // Absent under `FRESHNESS_LIVE` (nothing was read from an index), and absent
+  // when no overlay of a readable kind exists in the workspace, or none has
+  // been computed yet (there is no membership to be stale).
+  optional google.protobuf.Timestamp members_computed_at = 5;
+}
+
+// NamedSelection is one candidate set and the label you want its row keyed by.
+message NamedSelection {
+  // Your own label for this selection, echoed back on the matching summary. It
+  // is never interpreted — use whatever names the bucket in your dashboard.
+  // Must be unique within the request.
+  string key = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+
+  // The assets this row counts. Required.
+  CoverageSelection selection = 2 [(buf.validate.field).required = true];
+}
+
+message GetCoverageSummaryRequest {
+  // The candidate sets to count: 1 to 20, with distinct keys.
+  repeated NamedSelection selections = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 20
+  }];
+
+  // Where the answer is computed from. Defaults to the recomputed membership.
+  //
+  // `FRESHNESS_LIVE` re-resolves every definition once for the whole request,
+  // not once per selection, so several selections cost little more than one.
+  Freshness freshness = 2 [(buf.validate.field).enum.defined_only = true];
+}
+
+// CoverageSummary is one selection's totals.
+//
+// The counts overlap rather than partition: an asset in a product and with an
+// owner is in `with_dataproduct`, in `with_owner` and in `with_both`. Only
+// `with_neither` is disjoint from the rest. So the uncovered counts are
+// `total - with_dataproduct` and `total - with_owner`, and "in a product but
+// unowned" is `with_dataproduct - with_both`.
+message CoverageSummary {
+  // The key of the selection this row answers for, echoed back.
+  string key = 1;
+
+  // Candidates in the selection.
+  int64 total = 2;
+
+  // Candidates in at least one data product.
+  int64 with_dataproduct = 3;
+
+  // Candidates with at least one owner.
+  int64 with_owner = 4;
+
+  // Candidates in at least one data product *and* with at least one owner.
+  int64 with_both = 5;
+
+  // Candidates nothing claims — the gap a coverage audit is looking for.
+  int64 with_neither = 6;
+}
+
+message GetCoverageSummaryResponse {
+  // One entry per requested selection, in the order they were requested.
+  repeated CoverageSummary summaries = 1;
+
+  // When the recomputation behind these totals last ran to completion — the
+  // start of the most recent successful pass over the workspace's overlays.
+  //
+  // Absent under `FRESHNESS_LIVE`, and absent when the workspace has no overlay
+  // of a readable kind, or none has been computed yet.
+  optional google.protobuf.Timestamp members_computed_at = 2;
 }

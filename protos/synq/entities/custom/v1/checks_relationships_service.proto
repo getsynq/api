@@ -4,6 +4,7 @@ package synq.entities.custom.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "synq/entities/custom/v1/relationships_service.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -14,6 +15,9 @@ service ChecksRelationshipsService {
   // Create or update relationships that attach a check (e.g. a SQL test) to the
   // entities it validates. Idempotent per (check, checked) pair: an existing
   // relationship is updated, otherwise it is created.
+  //
+  // The response reports what each requested relationship did, and under which
+  // (check, checked) pair of entities it was stored.
   rpc UpsertCheckRelationships(UpsertCheckRelationshipsRequest) returns (UpsertCheckRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -27,6 +31,8 @@ service ChecksRelationshipsService {
 
   // Delete relationships between checks and the entities they validate.
   // Relationships that do not exist are ignored.
+  //
+  // The response says which of them actually removed something.
   rpc DeleteCheckRelationships(DeleteCheckRelationshipsRequest) returns (DeleteCheckRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -60,13 +66,36 @@ message UpsertCheckRelationshipsRequest {
   repeated CheckRelationship check_relationships = 1 [(buf.validate.field).required = true];
 }
 
-message UpsertCheckRelationshipsResponse {}
+message UpsertCheckRelationshipsResponse {
+  // One result per check relationship in the request, in request order.
+  repeated CheckRelationshipWriteResult results = 1;
+}
 
 message DeleteCheckRelationshipsRequest {
   repeated CheckRelationship check_relationships = 1 [(buf.validate.field).required = true];
 }
 
-message DeleteCheckRelationshipsResponse {}
+message DeleteCheckRelationshipsResponse {
+  // One result per check relationship in the request, in request order.
+  repeated CheckRelationshipWriteResult results = 1;
+}
+
+// CheckRelationshipWriteResult reports what one requested check relationship
+// did to the stored graph.
+message CheckRelationshipWriteResult {
+  // The check relationship this result answers for, as sent, with `entity_id`
+  // filled in on both endpoints.
+  //
+  // The pair of entities the endpoints resolve to is what the relationship is
+  // held under, so compare these two ids rather than the identifiers you sent
+  // to tell whether two of them are the same relationship. `checked_columns`
+  // is part of the payload, not of that pair: restating the same pair with a
+  // different column list replaces the stored one.
+  CheckRelationship check_relationship = 1;
+
+  // What the write did to that relationship.
+  RelationshipWriteOutcome outcome = 2;
+}
 
 message ListCheckRelationshipsRequest {
   // Pagination. Omitting this, or sending a zero page_size, returns every

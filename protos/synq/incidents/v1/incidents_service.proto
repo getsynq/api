@@ -168,6 +168,22 @@ service IncidentsService {
       ]
     };
   }
+
+  // Delete a comment on an incident. Only the actor who posted the comment may
+  // delete it. Deleting an already-deleted comment succeeds.
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      delete: "/api/incidents/v1/{incident_id}/comment/{comment_id}"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INCIDENTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+  }
 }
 
 //
@@ -553,6 +569,26 @@ message PostCommentRequest {
     }
   }];
 }
+
+message DeleteCommentRequest {
+  // ID of the incident the comment is on.
+  string incident_id = 1 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // ID of the comment to delete, as returned by PostComment or read from the
+  // incident's comments.
+  string comment_id = 2 [(buf.validate.field) = {
+    string: {uuid: true}
+    required: true
+  }];
+
+  // Actor deleting the comment. Must match the actor that posted it.
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+}
+
+message DeleteCommentResponse {}
 
 message PostCommentResponse {
   string comment_id = 1 [(buf.validate.field) = {

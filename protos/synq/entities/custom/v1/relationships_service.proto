@@ -15,6 +15,12 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 // There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
 service RelationshipsService {
   // Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
+  //
+  // The response reports what each requested relationship did to the stored
+  // graph, and under which pair of entities it was stored. Read it: a
+  // relationship whose endpoints resolve to a pair another relationship in the
+  // same batch also resolves to is one edge, and only the last write to it
+  // survives.
   rpc UpsertRelationships(UpsertRelationshipsRequest) returns (UpsertRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -27,6 +33,9 @@ service RelationshipsService {
   }
 
   // Delete relationships between entities. If the relationship does not exist, it will be ignored.
+  //
+  // The response says which of them actually removed something, so a caller
+  // reconciling a set of edges can tell a withdrawal from a no-op.
   rpc DeleteRelationships(DeleteRelationshipsRequest) returns (DeleteRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -60,13 +69,53 @@ message UpsertRelationshipsRequest {
   repeated Relationship relationships = 1 [(buf.validate.field).required = true];
 }
 
-message UpsertRelationshipsResponse {}
+message UpsertRelationshipsResponse {
+  // One result per relationship in the request, in request order.
+  repeated RelationshipWriteResult results = 1;
+}
 
 message DeleteRelationshipsRequest {
   repeated Relationship relationships = 1 [(buf.validate.field).required = true];
 }
 
-message DeleteRelationshipsResponse {}
+message DeleteRelationshipsResponse {
+  // One result per relationship in the request, in request order.
+  repeated RelationshipWriteResult results = 1;
+}
+
+// RelationshipWriteResult reports what one requested relationship did to the
+// stored graph.
+message RelationshipWriteResult {
+  // The relationship this result answers for, as sent, with `entity_id` filled
+  // in on both endpoints.
+  //
+  // An edge is held between the two entities the endpoints resolve to, not
+  // between the identifiers as written, and one entity accepts several
+  // spellings — a warehouse name that differs only in case or punctuation
+  // usually names the same table. So compare these two ids, rather than the
+  // identifiers you sent, to tell whether two relationships are the same edge.
+  Relationship relationship = 1;
+
+  // What the write did to that edge.
+  RelationshipWriteOutcome outcome = 2;
+}
+
+// RelationshipWriteOutcome is the effect one requested write had.
+enum RelationshipWriteOutcome {
+  RELATIONSHIP_WRITE_OUTCOME_UNSPECIFIED = 0;
+
+  // Nothing joined these two entities; the relationship was created.
+  RELATIONSHIP_WRITE_OUTCOME_CREATED = 1;
+
+  // The two entities were already joined; the relationship was replaced.
+  RELATIONSHIP_WRITE_OUTCOME_UPDATED = 2;
+
+  // The relationship existed and has been removed.
+  RELATIONSHIP_WRITE_OUTCOME_DELETED = 3;
+
+  // Nothing joined these two entities, so the delete removed nothing.
+  RELATIONSHIP_WRITE_OUTCOME_NOT_FOUND = 4;
+}
 
 message Relationship {
   synq.entities.v1.Identifier upstream = 1 [(buf.validate.field).required = true];

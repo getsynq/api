@@ -68,7 +68,8 @@ message WithNameSearch {
   string search_query = 1;
 }
 
-// Resolves to all the entities that have the provided type.
+// Resolves to all the entities that have the provided type, or carry one of the
+// provided traits.
 message WithType {
   message Type {
     oneof entity_type {
@@ -81,6 +82,27 @@ message WithType {
   Type type = 1 [deprecated = true];
 
   repeated Type types = 2;
+
+  // Traits to select by, instead of — or alongside — naming types.
+  //
+  // A trait is a property a type has, so `is_monitorable` means "everything a
+  // monitor can run on" without listing the forty-odd types that satisfy it
+  // today. The list it stands for is worked out each time the selection runs,
+  // so a selection saved this way covers a new platform's tables as soon as we
+  // support them, and you never have to revisit it.
+  //
+  // Entities carrying any of the traits match. When `types` is also set the two
+  // narrow each other: the entity must be one of the named types AND carry one
+  // of the traits.
+  //
+  // Accepted values, and what each one means, come from the selection-query
+  // grammar the API publishes (`describe_resolver_ql`, or the query editor's
+  // reference). A name that is not in it selects nothing rather than being
+  // ignored, so a typo narrows the result to empty instead of widening it —
+  // check a trait against the grammar before storing a selection. In a query
+  // written as text this is `with_type(traits="is_monitorable")`, and there a
+  // name outside the grammar is rejected outright.
+  repeated string traits = 3;
 }
 
 // Resolves to all entities that contain the annotation with at least one of the provided accepted values.

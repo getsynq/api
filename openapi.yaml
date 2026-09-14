@@ -3585,6 +3585,7 @@ components:
                 CreateRequest creates a new alert configuration.
                 create_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
                 create_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
+                create_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
         synq.alerts.services.v1.CreateResponse:
             type: object
             properties:
@@ -3694,12 +3695,231 @@ components:
                  The config can be identified by either ID or FQN.
                 update_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
                 update_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
+                update_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
         synq.alerts.services.v1.UpdateResponse:
             type: object
             properties:
                 alert:
                     description: The alert configuration that was updated.
                     $ref: '#/components/schemas/synq.alerts.v1.Alert'
+            title: UpdateResponse
+            required:
+                - alert
+            additionalProperties: false
+            description: UpdateResponse returns the updated alert configuration.
+        synq.alerts.services.v2.AlertIdentifier:
+            type: object
+            oneOf:
+                - properties:
+                    fqn:
+                        type: string
+                        title: fqn
+                        maxLength: 500
+                        minLength: 1
+                        description: FQN of the alert configuration to update.
+                  title: fqn
+                  required:
+                    - fqn
+                - properties:
+                    id:
+                        type: string
+                        title: id
+                        minLength: 1
+                        description: ID of the alert configuration to update.
+                  title: id
+                  required:
+                    - id
+            additionalProperties: false
+        synq.alerts.services.v2.BatchGetRequest:
+            type: object
+            properties:
+                identifiers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                    minItems: 1
+                    description: IDs of the alerts to get.
+            title: BatchGetRequest
+            additionalProperties: false
+        synq.alerts.services.v2.BatchGetResponse:
+            type: object
+            properties:
+                alerts:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.alerts.v2.Alert'
+                    description: Alerts mapped by their identifiers.
+            title: BatchGetResponse
+            additionalProperties: false
+        synq.alerts.services.v2.BatchGetResponse.AlertsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
+            title: AlertsEntry
+            additionalProperties: false
+        synq.alerts.services.v2.CreateRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: Human-readable name for the alert configuration.
+                fqn:
+                    type: string
+                    maxLength: 500
+                    minLength: 1
+                    description: |-
+                        User-provided fully qualified name for the alert config.
+                         This is a unique identifier that users can specify to reference the alert.
+                trigger:
+                    description: Selects the entities that can trigger this alert.
+                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: Targets where alerts will be sent.
+                settings:
+                    description: Additional settings for the specific alert type.
+                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
+                owner:
+                    description: Optional owner information for the alert configuration.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
+            title: CreateRequest
+            required:
+                - trigger
+                - settings
+            additionalProperties: false
+            description: |
+                CreateRequest creates a new alert configuration.
+                create_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
+                create_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
+                create_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
+        synq.alerts.services.v2.CreateResponse:
+            type: object
+            properties:
+                alert:
+                    description: The alert configuration that was created.
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
+            title: CreateResponse
+            required:
+                - alert
+            additionalProperties: false
+            description: CreateResponse returns the created alert configuration.
+        synq.alerts.services.v2.DeleteRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to delete.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+            title: DeleteRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: |-
+                DeleteRequest specifies which alert configuration to delete.
+                 The config can be identified by either ID or FQN.
+        synq.alerts.services.v2.DeleteResponse:
+            type: object
+            title: DeleteResponse
+            additionalProperties: false
+            description: DeleteResponse confirms the deletion (empty response). Empty response - successful deletion is indicated by HTTP 200 status.
+        synq.alerts.services.v2.ListRequest:
+            type: object
+            properties:
+                owner:
+                    description: Optional filter by owner of the alert configurations.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
+            title: ListRequest
+            additionalProperties: false
+            description: ListRequest filters alert configurations to retrieve.
+        synq.alerts.services.v2.ListResponse:
+            type: object
+            properties:
+                alertsIds:
+                    type: array
+                    items:
+                        type: string
+                    description: The list of alert configurations matching the filter criteria.
+            title: ListResponse
+            additionalProperties: false
+            description: ListResponse returns the filtered list of alert configurations.
+        synq.alerts.services.v2.ToggleEnabledRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to toggle.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                isEnabled:
+                    type: boolean
+                    description: |-
+                        Whether the alert configuration should be enabled.
+                         true = enable the alert, false = disable the alert.
+            title: ToggleEnabledRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: |-
+                ToggleEnabledRequest enables or disables an alert configuration.
+                 The config can be identified by either ID or FQN.
+        synq.alerts.services.v2.ToggleEnabledResponse:
+            type: object
+            title: ToggleEnabledResponse
+            additionalProperties: false
+            description: ToggleEnabledResponse confirms the toggle operation (empty response). Empty response - successful toggle is indicated by HTTP 200 status.
+        synq.alerts.services.v2.UpdateRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to update.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                name:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: Human-readable name for the alert configuration.
+                    nullable: true
+                trigger:
+                    description: |-
+                        Selects the entities that can trigger this alert.
+                         Leave unset to keep the existing trigger.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    description: |-
+                        Targets where alerts will be sent.
+                         Leave empty to keep existing targets.
+                settings:
+                    description: Additional settings for the specific alert type.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
+            title: UpdateRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: |
+                UpdateRequest updates an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+                update_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
+                update_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
+                update_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
+        synq.alerts.services.v2.UpdateResponse:
+            type: object
+            properties:
+                alert:
+                    description: The alert configuration that was updated.
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
             title: UpdateResponse
             required:
                 - alert
@@ -3755,6 +3975,10 @@ components:
             description: |-
                 Alert represents the configuration for an alert.
                  It contains all the necessary information to trigger and send alerts.
+
+                 Deprecated: use synq.alerts.v2.Alert, whose trigger is the canonical
+                 synq.queries.v1.Query + resolver_ql selection. This message is served only by
+                 the deprecated synq.alerts.services.v1.AlertsService and is scheduled for removal.
         synq.alerts.v1.Alert.Owner:
             type: object
             properties:
@@ -3871,6 +4095,9 @@ components:
             description: |-
                 EntityGroupQuery defines a query to select a group of entities.
                  This is used to specify which entities should be monitored by an alert.
+
+                 Deprecated: the v2 trigger selects entities with synq.queries.v1.Query +
+                 resolver_ql instead. Scheduled for removal with synq.alerts.services.v1.
         synq.alerts.v1.IssueAlertSettings:
             type: object
             properties:
@@ -3930,16 +4157,24 @@ components:
             description: SystemDetected - the system automatically groups related issues.
         synq.alerts.v1.MsTeamsTarget:
             type: object
+            allOf:
+                - oneOf:
+                    - required:
+                        - channel
+                    - required:
+                        - memberId
             properties:
                 channel:
                     type: string
-                    minLength: 1
-                    description: Teams channel name or ID.
+                    description: Teams channel name or ID. Leave unset to direct-message a member instead.
+                memberId:
+                    type: string
+                    description: Microsoft Teams member id for direct-message delivery.
             title: MsTeamsTarget
             additionalProperties: false
             description: |-
                 MsTeamsTarget configures alert delivery to Microsoft Teams.
-                 Alerts are sent to a Microsoft Teams channel.
+                 Alerts are sent to either a Microsoft Teams channel or a specific member.
         synq.alerts.v1.OngoingAlertsStrategy:
             type: object
             oneOf:
@@ -4010,11 +4245,17 @@ components:
                 notifyUpstream:
                     type: boolean
                     description: Whether to notify upstream dependencies when schema changes occur.
+                ongoing:
+                    description: |-
+                        Delivery strategy. Unset or stream sends one alert per schema change; a schedule
+                         batches them into a periodic digest on the given cron cadence.
+                    $ref: '#/components/schemas/synq.alerts.v1.OngoingAlertsStrategy'
             title: SchemaChangeAlertSettings
             additionalProperties: false
-            description: |-
+            description: |
                 SchemaChangeAlertSettings configures alerts for schema changes.
                  This alert triggers when the schema of monitored entities changes.
+                schema_change_alert_settings.ongoing_disabled_unsupported // Schema change alerts do not support the disabled ongoing strategy. Leave ongoing unset for per-change streaming, or set stream or schedule.
         synq.alerts.v1.SelectionQuery:
             type: object
             properties:
@@ -4034,6 +4275,9 @@ components:
             description: |
                 SelectionQuery represents a query that selects entities based on various criteria.
                  It combines multiple query parts with a logical operand.
+
+                 Deprecated: the v2 trigger selects entities with synq.queries.v1.Query +
+                 resolver_ql instead. Scheduled for removal with synq.alerts.services.v1.
                 selection_query.except_requires_two_parts // QUERY_OPERAND_EXCEPT requires exactly 2 parts
         synq.alerts.v1.SelectionQuery.QueryPart:
             type: object
@@ -4143,6 +4387,364 @@ components:
                 SlackTarget configures alert delivery to Slack.
                  Alerts are sent to a Slack channel.
         synq.alerts.v1.WebhookTarget:
+            type: object
+            properties:
+                webhookId:
+                    type: string
+                    minLength: 1
+                    description: |-
+                        Unique identifier of the webhook to send alerts to.
+                         This references a pre-configured webhook in the system.
+            title: WebhookTarget
+            additionalProperties: false
+            description: |-
+                WebhookTarget configures alert delivery via webhook/hook integrations.
+                 This allows integration with external systems and custom notification workflows.
+        synq.alerts.v2.Alert:
+            type: object
+            properties:
+                id:
+                    type: string
+                    minLength: 1
+                    description: Unique identifier for the alert config (system-generated).
+                name:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: Human-readable name for the alert configuration.
+                fqn:
+                    type: string
+                    maxLength: 500
+                    minLength: 1
+                    description: |-
+                        User-provided fully qualified name for the alert config.
+                         This is a unique identifier that users can specify to reference the alert.
+                    nullable: true
+                trigger:
+                    description: Selects the entities that can trigger this alert.
+                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: List of targets where alerts will be sent.
+                settings:
+                    description: Additional settings for the specific alert type.
+                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
+                owner:
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
+                createdAt:
+                    description: Timestamp when the alert config was created.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                isDisabled:
+                    type: boolean
+                    description: Whether the alert config is currently disabled.
+            title: Alert
+            required:
+                - trigger
+                - settings
+                - createdAt
+            additionalProperties: false
+            description: |-
+                Alert represents the configuration for an alert.
+                 It contains all the necessary information to trigger and send alerts.
+        synq.alerts.v2.Alert.Owner:
+            type: object
+            properties:
+                ownerPath:
+                    type: string
+                    minLength: 1
+                    description: Path identifying the owner of this alert config.
+                ownershipId:
+                    type: string
+                    minLength: 1
+                    description: Ownership identifier.
+            title: Owner
+            additionalProperties: false
+            description: |-
+                Owner information for the alert configuration.
+                 If set, the alert is attributed to the specified owner and ownership.
+        synq.alerts.v2.AlertSettings:
+            type: object
+            oneOf:
+                - properties:
+                    issue:
+                        title: issue
+                        description: Unified issue alert settings.
+                        $ref: '#/components/schemas/synq.alerts.v2.IssueAlertSettings'
+                  title: issue
+                  required:
+                    - issue
+                - properties:
+                    schemaChange:
+                        title: schema_change
+                        description: Alert triggered by schema changes.
+                        $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlertSettings'
+                  title: schema_change
+                  required:
+                    - schemaChange
+            additionalProperties: false
+            description: |-
+                AlertSettings defines the properties that affect the trigger and presentation of an alert.
+                 It specifies the conditions under which an alert should be fired and how it should behave.
+        synq.alerts.v2.AlertingTarget:
+            type: object
+            oneOf:
+                - properties:
+                    email:
+                        title: email
+                        description: Send alert via email.
+                        $ref: '#/components/schemas/synq.alerts.v2.EmailTarget'
+                  title: email
+                  required:
+                    - email
+                - properties:
+                    msTeams:
+                        title: ms_teams
+                        description: Send alert to Microsoft Teams channel or member.
+                        $ref: '#/components/schemas/synq.alerts.v2.MsTeamsTarget'
+                  title: ms_teams
+                  required:
+                    - msTeams
+                - properties:
+                    owner:
+                        title: owner
+                        description: Send alert to the owner of the monitored entity.
+                        $ref: '#/components/schemas/synq.alerts.v2.OwnerTarget'
+                  title: owner
+                  required:
+                    - owner
+                - properties:
+                    slack:
+                        title: slack
+                        description: Send alert to a Slack channel or user.
+                        $ref: '#/components/schemas/synq.alerts.v2.SlackTarget'
+                  title: slack
+                  required:
+                    - slack
+                - properties:
+                    webhook:
+                        title: webhook
+                        description: Send alert via webhook integration.
+                        $ref: '#/components/schemas/synq.alerts.v2.WebhookTarget'
+                  title: webhook
+                  required:
+                    - webhook
+            additionalProperties: false
+            description: |-
+                AlertingTarget represents a destination where alert notifications will be sent.
+                 Each target type has its own specific configuration requirements.
+        synq.alerts.v2.EmailTarget:
+            type: object
+            properties:
+                recipientEmails:
+                    type: array
+                    items:
+                        type: string
+                        format: email
+                        minItems: 1
+                    minItems: 1
+                    description: |-
+                        List of email addresses that will receive the alert notifications.
+                         Each email must be a valid email address format.
+            title: EmailTarget
+            additionalProperties: false
+            description: EmailTarget configures alert delivery via email.
+        synq.alerts.v2.IssueAlertSettings:
+            type: object
+            properties:
+                severities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.v1.Severity'
+                    minItems: 1
+                    description: The severity levels that should trigger this alert.
+                notifyUpstream:
+                    type: boolean
+                    description: Whether to notify upstream dependencies when this alert triggers.
+                allowSqlTestAuditLink:
+                    type: boolean
+                    description: Whether to allow SQL test audit links in alert notifications.
+                ongoing:
+                    description: Strategy for handling ongoing/repeated alerts.
+                    $ref: '#/components/schemas/synq.alerts.v2.OngoingAlertsStrategy'
+                grouping:
+                    description: Strategy for grouping issues in alert notifications.
+                    $ref: '#/components/schemas/synq.alerts.v2.IssueGroupingStrategy'
+            title: IssueAlertSettings
+            required:
+                - ongoing
+            additionalProperties: false
+            description: IssueAlertSettings is the unified alert settings type for issue-based alerts.
+        synq.alerts.v2.IssueGroupingStrategy:
+            type: object
+            oneOf:
+                - properties:
+                    noGrouping:
+                        title: no_grouping
+                        $ref: '#/components/schemas/synq.alerts.v2.IssueGroupingStrategy.NoGrouping'
+                  title: no_grouping
+                  required:
+                    - noGrouping
+                - properties:
+                    systemDetected:
+                        title: system_detected
+                        $ref: '#/components/schemas/synq.alerts.v2.IssueGroupingStrategy.SystemDetected'
+                  title: system_detected
+                  required:
+                    - systemDetected
+            additionalProperties: false
+            description: IssueGroupingStrategy controls how issues are grouped for alerting purposes.
+        synq.alerts.v2.IssueGroupingStrategy.NoGrouping:
+            type: object
+            title: NoGrouping
+            additionalProperties: false
+            description: NoGrouping - each issue triggers a separate alert.
+        synq.alerts.v2.IssueGroupingStrategy.SystemDetected:
+            type: object
+            title: SystemDetected
+            additionalProperties: false
+            description: SystemDetected - the system automatically groups related issues.
+        synq.alerts.v2.MsTeamsTarget:
+            type: object
+            properties:
+                channel:
+                    type: string
+                    minLength: 1
+                    description: Teams channel name or ID.
+            title: MsTeamsTarget
+            additionalProperties: false
+            description: |-
+                MsTeamsTarget configures alert delivery to Microsoft Teams.
+                 Alerts are sent to a Microsoft Teams channel.
+        synq.alerts.v2.OngoingAlertsStrategy:
+            type: object
+            oneOf:
+                - properties:
+                    disabled:
+                        title: disabled
+                        $ref: '#/components/schemas/synq.alerts.v2.OngoingAlertsStrategy.Disabled'
+                  title: disabled
+                  required:
+                    - disabled
+                - properties:
+                    schedule:
+                        title: schedule
+                        $ref: '#/components/schemas/synq.alerts.v2.OngoingAlertsStrategy.Schedule'
+                  title: schedule
+                  required:
+                    - schedule
+                - properties:
+                    stream:
+                        title: stream
+                        $ref: '#/components/schemas/synq.alerts.v2.OngoingAlertsStrategy.Stream'
+                  title: stream
+                  required:
+                    - stream
+            additionalProperties: false
+            description: |-
+                OngoingAlertsStrategy defines how to handle ongoing/repeated alerts.
+                 This prevents alert spam by controlling notification frequency.
+        synq.alerts.v2.OngoingAlertsStrategy.Disabled:
+            type: object
+            title: Disabled
+            additionalProperties: false
+            description: Disabled strategy - no ongoing alerts will be sent after the initial alert. No configuration needed - alerts are simply disabled after the first one.
+        synq.alerts.v2.OngoingAlertsStrategy.Schedule:
+            type: object
+            properties:
+                cron:
+                    type: string
+                    minLength: 1
+                    description: |-
+                        Cron expression defining when ongoing alerts should be sent.
+                         Must be a valid cron expression (e.g., "0 9 * * MON" for every Monday at 9 AM).
+            title: Schedule
+            additionalProperties: false
+            description: Schedule strategy - alerts are sent on a scheduled basis.
+        synq.alerts.v2.OngoingAlertsStrategy.Stream:
+            type: object
+            title: Stream
+            additionalProperties: false
+            description: Stream strategy - alerts are sent continuously as issues persist. No configuration needed - alerts stream continuously.
+        synq.alerts.v2.OwnerTarget:
+            type: object
+            properties:
+                ownerPath:
+                    type: string
+                    minLength: 1
+                    description: |-
+                        Path that identifies the ownership context for this target.
+                         This determines how the system will resolve the actual owner.
+            title: OwnerTarget
+            additionalProperties: false
+            description: |-
+                OwnerTarget configures alert delivery to the owner of the monitored entity.
+                 This allows alerts to be automatically sent to whoever owns the data being monitored.
+        synq.alerts.v2.SchemaChangeAlertSettings:
+            type: object
+            properties:
+                notifyUpstream:
+                    type: boolean
+                    description: Whether to notify upstream dependencies when schema changes occur.
+                ongoing:
+                    description: |-
+                        Delivery strategy. Unset or stream sends one alert per schema change; a schedule
+                         batches them into a periodic digest on the given cron cadence.
+                    $ref: '#/components/schemas/synq.alerts.v2.OngoingAlertsStrategy'
+            title: SchemaChangeAlertSettings
+            additionalProperties: false
+            description: |
+                SchemaChangeAlertSettings configures alerts for schema changes.
+                 This alert triggers when the schema of monitored entities changes.
+                schema_change_alert_settings.ongoing_disabled_unsupported // Schema change alerts do not support the disabled ongoing strategy. Leave ongoing unset for per-change streaming, or set stream or schedule.
+        synq.alerts.v2.SlackTarget:
+            type: object
+            properties:
+                channel:
+                    type: string
+                    minLength: 1
+                    description: Slack channel name or ID (e.g., "#alerts" or "C1234567890").
+            title: SlackTarget
+            additionalProperties: false
+            description: |-
+                SlackTarget configures alert delivery to Slack.
+                 Alerts are sent to a Slack channel.
+        synq.alerts.v2.Trigger:
+            type: object
+            properties:
+                query:
+                    description: |-
+                        Structured selection of the entities that can trigger this alert. On write it is
+                         the selection unless `resolver_ql` is set, which takes precedence. Always populated
+                         on read, best-effort — a part with no public form is carried as `unsupported`.
+                    $ref: '#/components/schemas/synq.queries.v1.Query'
+                resolverQl:
+                    type: string
+                    maxLength: 20000
+                    description: |-
+                        ResolverQL selection string, a more expressive alternative to `query` for selections
+                         it cannot express (e.g. lineage walks, column predicates). When set on write it takes
+                         precedence and `query` is ignored. On read it is echoed back verbatim for alerts
+                         authored via ResolverQL and empty for structured alerts, so writing a read response
+                         back unchanged preserves the authored form. See `rendered_resolver_ql` for the
+                         ResolverQL form of a structured alert.
+                renderedResolverQl:
+                    type: string
+                    description: |-
+                        Output-only canonical ResolverQL rendering of this alert's selection, populated
+                         regardless of how it was authored (it equals `resolver_ql` for ResolverQL-authored
+                         alerts). Ignored on write. Empty only for selections with no ResolverQL representation.
+            title: Trigger
+            additionalProperties: false
+            description: |
+                Trigger selects the entities whose issues or schema changes fire this alert:
+                 a structured `query`, an optional ResolverQL string that takes precedence when
+                 set, and a read-only canonical rendering.
+                trigger.requires_selection // at least one of query or resolver_ql must be set
+        synq.alerts.v2.WebhookTarget:
             type: object
             properties:
                 webhookId:
@@ -5375,6 +5977,23 @@ components:
                     description: |-
                         Name of the test, resolved from its RuleTest.name (or the generated name for
                          non-business test kinds).
+                reasonCode:
+                    description: |-
+                        Why this change happens, when the reason is something other than the rule's
+                         selection. Today that is one case: SQL_TEST_SKIP_REASON_MISSING_COLUMNS on a
+                         `tests_to_delete` entry whose table lost a column the test reads, so a caller can
+                         say "column dropped: amount" rather than reporting a bare delete. Unset
+                         (SQL_TEST_SKIP_REASON_UNSPECIFIED) otherwise, including for a delete caused by the
+                         table no longer matching the rule's selection — treat unset as "no extra reason",
+                         never as a list this change cannot appear in.
+                    $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestSkipReason'
+                missingColumns:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Columns the table lacks, spelled as the test declares them, when `reason_code`
+                         is SQL_TEST_SKIP_REASON_MISSING_COLUMNS. Empty otherwise.
             title: SqlTestDeploymentChange
             additionalProperties: false
             description: |-
@@ -5530,6 +6149,26 @@ components:
             description: |-
                 SqlTestDeploymentRuleView is a SqlTestDeploymentRule together with a summary
                  of how many tests it currently has deployed.
+        synq.datachecks.sqltests.v1.SqlTestSkipReason:
+            type: string
+            title: SqlTestSkipReason
+            enum:
+                - SQL_TEST_SKIP_REASON_UNSPECIFIED
+                - SQL_TEST_SKIP_REASON_HIGHER_PRIORITY_RULE
+                - SQL_TEST_SKIP_REASON_NO_INTEGRATION
+                - SQL_TEST_SKIP_REASON_TEST_PREPARATION_FAILED
+                - SQL_TEST_SKIP_REASON_TEST_OWNED_BY_OTHER_RULE
+                - SQL_TEST_SKIP_REASON_MISSING_COLUMNS
+                - SQL_TEST_SKIP_REASON_SCHEMA_UNAVAILABLE
+            description: |-
+                SqlTestSkipReason is the checkable form of the `reason` string carried by
+                 SqlTestsDeploymentOverview.SkippedTable and .SkippedTest, mirroring the
+                 SCREAMING_SNAKE tokens documented on those fields one-for-one. It also carries
+                 the reason a SqlTestDeploymentChange deletes a test, which has no string form.
+                 The set is open by design — a producer may report a reason before this enum has
+                 a matching value for it — so a client must treat SQL_TEST_SKIP_REASON_UNSPECIFIED
+                 (and any value this client predates) as "skipped, reason unrecognised" rather
+                 than as proof nothing applies.
         synq.datachecks.sqltests.v1.SqlTestsDeploymentOverview:
             type: object
             properties:
@@ -5566,7 +6205,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestsDeploymentOverview.SkippedTest'
-                    description: Tests this rule declares that another rule already owns on the same table.
+                    description: |-
+                        Tests this rule declares that this deploy did not deploy — because another rule
+                         already owns them on the table, or because the table's columns do not support
+                         them.
+                summary:
+                    description: |-
+                        Counts over the lists above, so a rule matching thousands of tables can be
+                         reported without reading every row. Always populated.
+                    $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestsDeploymentOverviewSummary'
             title: SqlTestsDeploymentOverview
             additionalProperties: false
             description: |-
@@ -5581,7 +6228,25 @@ components:
                     description: Synq path of the skipped table or view.
                 reason:
                     type: string
-                    description: Human-readable reason the table or view was skipped.
+                    description: |-
+                        Why the table or view was skipped, as a stable SCREAMING_SNAKE token:
+
+                           SKIPPED_HIGHER_PRIORITY_RULE    an exclusive rule has carved the table out
+                           SKIPPED_NO_INTEGRATION          the table has no integration to run a test against
+                           SKIPPED_TEST_PREPARATION_FAILED the integration's configuration is unavailable,
+                                                           or the table's dialect cannot render the test
+
+                         Clients branch on these, so treat the spellings as part of this API: adding a
+                         value is safe, renaming one is a breaking change. A value not listed here may
+                         appear — fall through to "skipped, reason unrecognised" rather than assume the
+                         set is closed. `reason_code` is the checkable form.
+                reasonCode:
+                    description: |-
+                        Machine-checkable form of `reason`, so a client can branch on a value the
+                         compiler knows instead of string-matching a wire constant. `reason` remains
+                         authoritative and keeps being written unchanged; `reason_code` is
+                         SQL_TEST_SKIP_REASON_UNSPECIFIED for a `reason` this enum does not yet cover.
+                    $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestSkipReason'
             title: SkippedTable
             additionalProperties: false
             description: |-
@@ -5603,15 +6268,49 @@ components:
                     description: Name of the test, resolved the same way as in SqlTestDeploymentChange.
                 reason:
                     type: string
-                    description: Human-readable reason the test was skipped.
+                    description: |-
+                        Why the test was skipped, as a stable SCREAMING_SNAKE token:
+
+                           SKIPPED_TEST_OWNED_BY_OTHER_RULE  another rule already deploys that test
+                           SKIPPED_MISSING_COLUMNS           the table lacks a column the test reads
+                           SKIPPED_SCHEMA_UNAVAILABLE        no schema is known for the table yet
+
+                         Clients branch on these, so treat the spellings as part of this API: adding a
+                         value is safe, renaming one is a breaking change. A value not listed here may
+                         appear — fall through to "skipped, reason unrecognised" rather than assume the
+                         set is closed. `reason_code` is the checkable form.
                 ownerRuleId:
                     type: string
-                    description: Id of the deployment rule that owns the test.
+                    description: |-
+                        Id of the deployment rule that owns the test. Set only for
+                         SKIPPED_TEST_OWNED_BY_OTHER_RULE.
                 ownerRuleTitle:
                     type: string
                     description: |-
                         Title the owning rule carried when this plan was made. A title can be
                          renamed — use owner_rule_id to look the rule up.
+                reasonCode:
+                    description: |-
+                        Machine-checkable form of `reason`. Same contract as
+                         SkippedTable.reason_code: `reason` stays authoritative, and this is
+                         SQL_TEST_SKIP_REASON_UNSPECIFIED for a reason this enum does not yet cover.
+                    $ref: '#/components/schemas/synq.datachecks.sqltests.v1.SqlTestSkipReason'
+                missingColumns:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Columns the test reads that the table does not have, spelled as the test
+                         declares them. Set for SKIPPED_MISSING_COLUMNS; empty for every other reason.
+                         A test is skipped whole — `not_null[a, b]` with only `b` missing lists just
+                         `b` but deploys neither column — so this names the gap, not the test's
+                         column list.
+                referencedTablePath:
+                    type: string
+                    description: |-
+                        Synq path of the *referenced* table, for a `relationships` test skipped
+                         because that table (rather than the table under test) lacks the column.
+                         Empty otherwise.
             title: SkippedTest
             additionalProperties: false
             description: |-
@@ -5619,6 +6318,95 @@ components:
                  rather than deploying, because another rule already deployed it on that table.
                  Rules covering the same table merge additively: each deploys the tests that are
                  not there yet, and never touches a test another rule owns.
+        synq.datachecks.sqltests.v1.SqlTestsDeploymentOverviewSummary:
+            type: object
+            properties:
+                tablesMatched:
+                    type: integer
+                    format: int32
+                    description: |-
+                        Distinct tables and views this plan touches: every table_path appearing in
+                         tests_to_create, tests_to_update, tests_to_delete, tests_to_keep,
+                         skipped_tests or skipped_tables, counted once.
+                testsToCreate:
+                    type: integer
+                    format: int32
+                    description: len(tests_to_create).
+                testsToUpdate:
+                    type: integer
+                    format: int32
+                    description: len(tests_to_update).
+                testsToDelete:
+                    type: integer
+                    format: int32
+                    description: len(tests_to_delete).
+                testsToKeep:
+                    type: integer
+                    format: int32
+                    description: len(tests_to_keep).
+                testsSkipped:
+                    type: integer
+                    format: int32
+                    description: |-
+                        len(skipped_tests). Skipped *tables* are not counted here — see
+                         skipped_by_reason, which covers both lists. A test dropped because its column went
+                         away is a delete, not a skip, and counts in tests_to_delete.
+                skippedByReason:
+                    type: object
+                    additionalProperties:
+                        type: integer
+                        title: value
+                        format: int32
+                    description: |-
+                        One entry per skip across BOTH skipped_tables and skipped_tests, keyed by the
+                         SqlTestSkipReason value name (e.g. "SQL_TEST_SKIP_REASON_MISSING_COLUMNS"), and
+                         "SQL_TEST_SKIP_REASON_UNSPECIFIED" for a reason string this enum does not cover.
+                         The two lists count in different units — a skipped table is one table, a skipped
+                         test is one test — so the values sum to more than `tests_skipped` whenever a
+                         table was skipped.
+                missingColumnsHistogram:
+                    type: object
+                    additionalProperties:
+                        type: integer
+                        title: value
+                        format: int32
+                    description: |-
+                        Lowercased column name to the number of tests citing it as missing, counted over
+                         every entry carrying `missing_columns` — the skipped_tests the rule could not
+                         deploy AND the tests_to_delete it is removing because the column went away. Both
+                         answer the same question, "which columns does this rule not find", and a dropped
+                         column shows up as deletes rather than skips, so counting only one of the two
+                         reports an empty histogram for the case it exists for. A test missing two columns
+                         adds one to each. Lowercased so a column two tests spell differently is one entry.
+                         Empty when nothing cited a missing column.
+            title: SqlTestsDeploymentOverviewSummary
+            additionalProperties: false
+            description: |-
+                SqlTestsDeploymentOverviewSummary counts a SqlTestsDeploymentOverview, so a
+                 caller can render "40 tables, 78 tests, 2 skipped for a missing column" without
+                 walking lists that run to thousands of entries for a warehouse-wide rule. Every
+                 count is derived from the lists in the same message — it adds no information a
+                 reader of those lists could not compute, only the ability to skip reading them.
+        synq.datachecks.sqltests.v1.SqlTestsDeploymentOverviewSummary.MissingColumnsHistogramEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    type: integer
+                    format: int32
+            title: MissingColumnsHistogramEntry
+            additionalProperties: false
+        synq.datachecks.sqltests.v1.SqlTestsDeploymentOverviewSummary.SkippedByReasonEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    type: integer
+                    format: int32
+            title: SkippedByReasonEntry
+            additionalProperties: false
         synq.datachecks.sqltests.v1.SqlTestsExclusiveQueryConfig:
             type: object
             properties:
@@ -8890,6 +9678,65 @@ components:
             description: |-
                 AnnotationCount represents the count of entities that have a specific annotation name-value pair.
                  This is used for aggregating and reporting annotation statistics across entities.
+        synq.entities.annotations.v1.BatchGetEntityAnnotationsRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                    maxItems: 1000
+                    minItems: 1
+                    description: |-
+                        The entities to read annotations for.
+                         Each entry is validated by Identifier's own rules — its `id` oneof is
+                         `required`, and protovalidate recurses into the elements of a repeated
+                         message field — so an identifier naming nothing is refused here. There is no
+                         per-item `required` to add beside it: `repeated.items.required` is
+                         unenforceable and buf lint rejects it, and it would have nothing to catch,
+                         because an entry on the wire is always a message rather than a null.
+            title: BatchGetEntityAnnotationsRequest
+            additionalProperties: false
+            description: |-
+                BatchGetEntityAnnotationsRequest is the request message for the
+                 BatchGetEntityAnnotations method.
+        synq.entities.annotations.v1.BatchGetEntityAnnotationsResponse:
+            type: object
+            properties:
+                entityAnnotations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.annotations.v1.EntityAnnotations'
+                    description: |-
+                        One entry per requested entity that carries any annotation. An entity with
+                         none is omitted rather than returned empty, so the response says which of
+                         the requested entities are annotated at all.
+            title: BatchGetEntityAnnotationsResponse
+            additionalProperties: false
+            description: |-
+                BatchGetEntityAnnotationsResponse is the response message for the
+                 BatchGetEntityAnnotations method.
+        synq.entities.annotations.v1.EntityAnnotations:
+            type: object
+            properties:
+                id:
+                    description: The entity, echoed back in the spelling it was requested in.
+                    $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                annotations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.Annotation'
+                    description: |-
+                        Annotations the entity carries, one entry per name, ordered by name.
+
+                         Read over the entity's whole identity group rather than the one id asked
+                         for: a dbt model, the warehouse table it builds and a catalog entity
+                         virtualising the same table are one entity to a reader, and which of them
+                         an annotation was published against is a property of the producer, not of
+                         the thing being annotated.
+            title: EntityAnnotations
+            additionalProperties: false
+            description: EntityAnnotations is the annotations one entity carries.
         synq.entities.annotations.v1.ListAnnotationsRequest:
             type: object
             title: ListAnnotationsRequest
@@ -10675,6 +11522,83 @@ components:
             description: |-
                 Code feature represents a code snippet associated with the entity.
                  If support for code parsing and dependency extraction is needed use [SqlDefinition](sql_definition.proto).
+        synq.entities.custom.features.v1.ColumnEdge:
+            type: object
+            properties:
+                upstream:
+                    description: |-
+                        The entity the data comes from. Any entity: another custom entity, or a
+                         table, model or dashboard from a connected platform. An upstream that does
+                         not exist yet is remembered and the edge appears once it does.
+                    $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                upstreamColumn:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: Column of the upstream entity the data comes from.
+                column:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: Column of this entity the data flows into.
+            title: ColumnEdge
+            required:
+                - upstream
+                - upstreamColumn
+                - column
+            additionalProperties: false
+            description: |-
+                ColumnEdge is one column of one upstream entity feeding one column of the
+                 entity this feature belongs to.
+        synq.entities.custom.features.v1.ColumnLineage:
+            type: object
+            properties:
+                stateAt:
+                    description: |-
+                        Time when this lineage was declared, will default to `now` if not set. A
+                         later declaration replaces an earlier one, so an explicit time is how a
+                         backfill avoids overwriting a fresher declaration.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                edges:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.features.v1.ColumnEdge'
+                    maxItems: 10000
+                    description: |-
+                        Column-level edges into this entity. Every edge names one upstream entity
+                         and one column on each side.
+            title: ColumnLineage
+            additionalProperties: false
+            description: |-
+                ColumnLineage declares column-level lineage flowing INTO a custom entity, for
+                 the cases SQL cannot express: an upstream that is itself a custom entity, or a
+                 component whose transformation is not written in SQL at all.
+
+                 Use it when `SqlDefinition` does not fit — when there is no SQL to give at
+                 all, or when you would rather state the result than have it derived. A
+                 component whose transformation is written in Python, or a hand-maintained
+                 mapping, has no SQL for a parser to read.
+
+                 If the component DOES have SQL, prefer `SqlDefinition`: a name in it that is
+                 not a database object — another custom entity, a queue, a service — is bound
+                 to the entity it stands for with `SqlDefinition.references`, and the column
+                 lineage is then derived from the SQL and stays correct as the SQL changes.
+
+                 The declaration is complete and replaces the previous one whole: an edge
+                 missing from a write is withdrawn, and deleting the feature withdraws all of
+                 them. Only one ColumnLineage feature is allowed per entity, so re-writing it
+                 under the same `feature_id` is how it is edited.
+
+                 Declaring a column edge also declares the table-level edge it implies, so the
+                 entity appears downstream of each upstream named here whether or not a
+                 Relationship says so too. Column lineage is only ever shown along a
+                 table-level edge, which is why the two travel together.
+
+                 An entity that has BOTH this feature and a `SqlDefinition` is served from this
+                 declaration in the SQL-lineage view — an explicit statement takes precedence
+                 over lineage derived from SQL. Declare column lineage here only for what the
+                 SQL cannot say, or state the entity's whole column lineage here and treat this
+                 as the authority for it.
         synq.entities.custom.features.v1.GitFileReference:
             type: object
             properties:
@@ -10738,6 +11662,23 @@ components:
                          to the correct database instance and catalog.
                     nullable: true
                     $ref: '#/components/schemas/synq.entities.coordinates.v1.DatabaseContext'
+                references:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.features.v1.SqlTableReference'
+                    maxItems: 200
+                    description: |-
+                        Names in this SQL that are not database objects, each bound to the entity it
+                         stands for. A reference the SQL makes to one of these names resolves to that
+                         entity instead of being looked up in the database and dropped.
+
+                         Use it for the upstreams and downstreams a database cannot address: another
+                         custom entity, a queue, a service, an API. A name that IS a database object
+                         needs no binding — it resolves on its own.
+
+                         The bindings are part of the definition and replace with it: a binding
+                         dropped from a later write is gone, and the lineage it produced is
+                         withdrawn.
             title: SqlDefinition
             additionalProperties: false
             description: |-
@@ -10745,6 +11686,40 @@ components:
                  Used to generate dependencies and other metadata. If parsed successfully,
                  it will provide a code and column level lineage. Can be used to define simplified transformation
                  of data which component performs using e.g. `INSERT INTO foo SELECT * FROM bar`.
+        synq.entities.custom.features.v1.SqlTableReference:
+            type: object
+            properties:
+                instanceName:
+                    type: string
+                    maxLength: 500
+                    description: |-
+                        The name as the SQL writes it. Matched case-insensitively; a part left empty
+                         defaults from the definition's `database_context`, exactly as an unqualified
+                         table reference in the SQL does. So a binding of just `object_name:
+                         "orders_topic"` under a definition whose database is `kafka` matches both
+                         `FROM kafka.orders_topic` and `FROM orders_topic`.
+                databaseName:
+                    type: string
+                    maxLength: 500
+                schemaName:
+                    type: string
+                    maxLength: 500
+                objectName:
+                    type: string
+                    maxLength: 500
+                    minLength: 1
+                entity:
+                    description: |-
+                        The entity this name stands for. Any entity: another custom entity, or a
+                         table, model or dashboard from a connected platform. An entity that does not
+                         exist yet is remembered and the edge appears once it does.
+                    $ref: '#/components/schemas/synq.entities.v1.Identifier'
+            title: SqlTableReference
+            required:
+                - objectName
+                - entity
+            additionalProperties: false
+            description: SqlTableReference binds one name, as the SQL writes it, to the entity that name stands for.
         synq.entities.custom.v1.CheckRelationship:
             type: object
             properties:
@@ -10761,6 +11736,28 @@ components:
                 - check
                 - checked
             additionalProperties: false
+        synq.entities.custom.v1.CheckRelationshipWriteResult:
+            type: object
+            properties:
+                checkRelationship:
+                    description: |-
+                        The check relationship this result answers for, as sent, with `entity_id`
+                         filled in on both endpoints.
+
+                         The pair of entities the endpoints resolve to is what the relationship is
+                         held under, so compare these two ids rather than the identifiers you sent
+                         to tell whether two of them are the same relationship. `checked_columns`
+                         is part of the payload, not of that pair: restating the same pair with a
+                         different column list replaces the stored one.
+                    $ref: '#/components/schemas/synq.entities.custom.v1.CheckRelationship'
+                outcome:
+                    description: What the write did to that relationship.
+                    $ref: '#/components/schemas/synq.entities.custom.v1.RelationshipWriteOutcome'
+            title: CheckRelationshipWriteResult
+            additionalProperties: false
+            description: |-
+                CheckRelationshipWriteResult reports what one requested check relationship
+                 did to the stored graph.
         synq.entities.custom.v1.DeleteCheckRelationshipsRequest:
             type: object
             properties:
@@ -10774,6 +11771,12 @@ components:
             additionalProperties: false
         synq.entities.custom.v1.DeleteCheckRelationshipsResponse:
             type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.v1.CheckRelationshipWriteResult'
+                    description: One result per check relationship in the request, in request order.
             title: DeleteCheckRelationshipsResponse
             additionalProperties: false
         synq.entities.custom.v1.DeleteEntitiesGroupRequest:
@@ -10838,6 +11841,12 @@ components:
             additionalProperties: false
         synq.entities.custom.v1.DeleteRelationshipsResponse:
             type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.v1.RelationshipWriteResult'
+                    description: One result per relationship in the request, in request order.
             title: DeleteRelationshipsResponse
             additionalProperties: false
         synq.entities.custom.v1.DeleteTypeRequest:
@@ -10961,6 +11970,14 @@ components:
                       title: code
                       required:
                         - code
+                    - properties:
+                        columnLineage:
+                            title: column_lineage
+                            description: Only one feature per entity.
+                            $ref: '#/components/schemas/synq.entities.custom.features.v1.ColumnLineage'
+                      title: column_lineage
+                      required:
+                        - columnLineage
                     - properties:
                         gitFileReference:
                             title: git_file_reference
@@ -11239,6 +12256,38 @@ components:
                 - upstream
                 - downstream
             additionalProperties: false
+        synq.entities.custom.v1.RelationshipWriteOutcome:
+            type: string
+            title: RelationshipWriteOutcome
+            enum:
+                - RELATIONSHIP_WRITE_OUTCOME_UNSPECIFIED
+                - RELATIONSHIP_WRITE_OUTCOME_CREATED
+                - RELATIONSHIP_WRITE_OUTCOME_UPDATED
+                - RELATIONSHIP_WRITE_OUTCOME_DELETED
+                - RELATIONSHIP_WRITE_OUTCOME_NOT_FOUND
+            description: RelationshipWriteOutcome is the effect one requested write had.
+        synq.entities.custom.v1.RelationshipWriteResult:
+            type: object
+            properties:
+                relationship:
+                    description: |-
+                        The relationship this result answers for, as sent, with `entity_id` filled
+                         in on both endpoints.
+
+                         An edge is held between the two entities the endpoints resolve to, not
+                         between the identifiers as written, and one entity accepts several
+                         spellings — a warehouse name that differs only in case or punctuation
+                         usually names the same table. So compare these two ids, rather than the
+                         identifiers you sent, to tell whether two relationships are the same edge.
+                    $ref: '#/components/schemas/synq.entities.custom.v1.Relationship'
+                outcome:
+                    description: What the write did to that edge.
+                    $ref: '#/components/schemas/synq.entities.custom.v1.RelationshipWriteOutcome'
+            title: RelationshipWriteResult
+            additionalProperties: false
+            description: |-
+                RelationshipWriteResult reports what one requested relationship did to the
+                 stored graph.
         synq.entities.custom.v1.UpsertCheckRelationshipsRequest:
             type: object
             properties:
@@ -11252,6 +12301,12 @@ components:
             additionalProperties: false
         synq.entities.custom.v1.UpsertCheckRelationshipsResponse:
             type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.v1.CheckRelationshipWriteResult'
+                    description: One result per check relationship in the request, in request order.
             title: UpsertCheckRelationshipsResponse
             additionalProperties: false
         synq.entities.custom.v1.UpsertEntitiesGroupRequest:
@@ -11341,6 +12396,12 @@ components:
             additionalProperties: false
         synq.entities.custom.v1.UpsertRelationshipsResponse:
             type: object
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.custom.v1.RelationshipWriteResult'
+                    description: One result per relationship in the request, in request order.
             title: UpsertRelationshipsResponse
             additionalProperties: false
         synq.entities.custom.v1.UpsertTypeRequest:
@@ -15961,6 +17022,32 @@ components:
                     $ref: '#/components/schemas/synq.incidents.v1.Incident'
             title: CreateIncidentResponse
             additionalProperties: false
+        synq.incidents.v1.DeleteCommentRequest:
+            type: object
+            properties:
+                incidentId:
+                    type: string
+                    format: uuid
+                    description: ID of the incident the comment is on.
+                commentId:
+                    type: string
+                    format: uuid
+                    description: |-
+                        ID of the comment to delete, as returned by PostComment or read from the
+                         incident's comments.
+                actor:
+                    description: Actor deleting the comment. Must match the actor that posted it.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            title: DeleteCommentRequest
+            required:
+                - incidentId
+                - commentId
+                - actor
+            additionalProperties: false
+        synq.incidents.v1.DeleteCommentResponse:
+            type: object
+            title: DeleteCommentResponse
+            additionalProperties: false
         synq.incidents.v1.Incident:
             type: object
             properties:
@@ -19424,6 +20511,32 @@ components:
             type: object
             title: ClearStatusResponse
             additionalProperties: false
+        synq.issues.v2.DeleteCommentRequest:
+            type: object
+            properties:
+                issueId:
+                    type: string
+                    format: uuid
+                    description: ID of the issue the comment is on.
+                commentId:
+                    type: string
+                    format: uuid
+                    description: |-
+                        ID of the comment to delete, as returned by PostComment or read from the
+                         issue's comments.
+                actor:
+                    description: Actor deleting the comment. Must match the actor that posted it.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            title: DeleteCommentRequest
+            required:
+                - issueId
+                - commentId
+                - actor
+            additionalProperties: false
+        synq.issues.v2.DeleteCommentResponse:
+            type: object
+            title: DeleteCommentResponse
+            additionalProperties: false
         synq.issues.v2.InteractionFilter:
             type: object
             properties:
@@ -20266,7 +21379,6 @@ components:
                         type: string
                         title: title
                         maxLength: 100
-                        minLength: 1
                     source:
                         title: source
                         $ref: '#/components/schemas/synq.v1.Source'
@@ -20322,6 +21434,8 @@ components:
                         - staticConfig
             title: MonitorsDeploymentRule
             additionalProperties: false
+            description: |
+                monitors_deployment_rule.title_required_unless_selection_is_named // title is required unless the rule selects something already named (static_config / exclusive_static_config / product_config)
         synq.monitors.automated_monitors.v1.MonitorsDeploymentRuleView:
             type: object
             allOf:
@@ -22152,6 +23266,114 @@ components:
                     description: One entry per requested overlay, in the order they were requested.
             title: BatchGetOverlayMemberCountsResponse
             additionalProperties: false
+        synq.overlays.v1.CoverageFilter:
+            type: string
+            title: CoverageFilter
+            enum:
+                - COVERAGE_FILTER_UNSPECIFIED
+                - COVERAGE_FILTER_WITHOUT_DATAPRODUCT
+                - COVERAGE_FILTER_WITHOUT_OWNER
+                - COVERAGE_FILTER_WITHOUT_ANY
+                - COVERAGE_FILTER_WITH_DATAPRODUCT
+                - COVERAGE_FILTER_WITH_OWNER
+            description: |-
+                CoverageFilter narrows the candidates to those in a particular coverage
+                 state. It never widens them: everything it can return was in the selection.
+        synq.overlays.v1.CoverageSelection:
+            type: object
+            oneOf:
+                - properties:
+                    publicQuery:
+                        title: public_query
+                        description: |-
+                            The candidate query in structured form, as the filter builder produces
+                             it. Use `resolver_ql` for anything it cannot express.
+                        $ref: '#/components/schemas/synq.queries.v1.Query'
+                  title: public_query
+                  required:
+                    - publicQuery
+                - properties:
+                    resolverQl:
+                        type: string
+                        title: resolver_ql
+                        maxLength: 20000
+                        description: |-
+                            The candidate query in resolver query language. The fuller of the two
+                             forms — everything the structured query expresses is expressible here,
+                             and several filters are only expressible here.
+                  title: resolver_ql
+                  required:
+                    - resolverQl
+            additionalProperties: false
+            description: |-
+                CoverageSelection names the assets a coverage question is asked about.
+
+                 It is a candidate set, not a filter on overlays: nothing outside it is
+                 considered, and an asset inside it is reported whether anything claims it or
+                 not. `with_type("dbt_model")` asks about your models, `in_folder(...)` asks
+                 about one part of the warehouse, and an empty candidate set is a valid
+                 question with the answer zero.
+
+                 Choose the candidate types deliberately — it is the difference between a
+                 useful answer and an unreadable one. The two dimensions want different sets.
+                 Data products group the things you monitor, so a product-coverage question
+                 usually asks about tables, views and models; left unrestricted the answer is
+                 mostly monitors, tests and recon cases, which belong to no product by design
+                 and bury the assets you were looking for. Owner coverage is the opposite: a
+                 check very often should have someone responsible for it, so include those
+                 types when asking about owners.
+
+                 So a governance audit is normally several narrow selections rather than one
+                 broad one — which is also what `GetCoverageSummary` takes, one per bucket.
+
+                 A selection resolving to more than 100,000 assets is rejected with
+                 INVALID_ARGUMENT naming the limit; narrow it and ask again.
+        synq.overlays.v1.CoverageSummary:
+            type: object
+            properties:
+                key:
+                    type: string
+                    description: The key of the selection this row answers for, echoed back.
+                total:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Candidates in the selection.
+                withDataproduct:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Candidates in at least one data product.
+                withOwner:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Candidates with at least one owner.
+                withBoth:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Candidates in at least one data product *and* with at least one owner.
+                withNeither:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Candidates nothing claims — the gap a coverage audit is looking for.
+            title: CoverageSummary
+            additionalProperties: false
+            description: |-
+                CoverageSummary is one selection's totals.
+
+                 The counts overlap rather than partition: an asset in a product and with an
+                 owner is in `with_dataproduct`, in `with_owner` and in `with_both`. Only
+                 `with_neither` is disjoint from the rest. So the uncovered counts are
+                 `total - with_dataproduct` and `total - with_owner`, and "in a product but
+                 unowned" is `with_dataproduct - with_both`.
         synq.overlays.v1.EntityOverlays:
             type: object
             properties:
@@ -22188,6 +23410,145 @@ components:
                  Kinds are separate lists rather than one tagged list because what you can do
                  with an id depends on its kind: an owner id reads through the owners service, a
                  data-product id through the data-products service.
+        synq.overlays.v1.Freshness:
+            type: string
+            title: Freshness
+            enum:
+                - FRESHNESS_UNSPECIFIED
+                - FRESHNESS_CACHED
+                - FRESHNESS_LIVE
+            description: Freshness chooses what a coverage answer is computed from.
+        synq.overlays.v1.GetCoverageSummaryRequest:
+            type: object
+            properties:
+                selections:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.overlays.v1.NamedSelection'
+                    maxItems: 20
+                    minItems: 1
+                    description: 'The candidate sets to count: 1 to 20, with distinct keys.'
+                freshness:
+                    description: |-
+                        Where the answer is computed from. Defaults to the recomputed membership.
+
+                         `FRESHNESS_LIVE` re-resolves every definition once for the whole request,
+                         not once per selection, so several selections cost little more than one.
+                    $ref: '#/components/schemas/synq.overlays.v1.Freshness'
+            title: GetCoverageSummaryRequest
+            additionalProperties: false
+        synq.overlays.v1.GetCoverageSummaryResponse:
+            type: object
+            properties:
+                summaries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.overlays.v1.CoverageSummary'
+                    description: One entry per requested selection, in the order they were requested.
+                membersComputedAt:
+                    description: |-
+                        When the recomputation behind these totals last ran to completion — the
+                         start of the most recent successful pass over the workspace's overlays.
+
+                         Absent under `FRESHNESS_LIVE`, and absent when the workspace has no overlay
+                         of a readable kind, or none has been computed yet.
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: GetCoverageSummaryResponse
+            additionalProperties: false
+        synq.overlays.v1.ListEntityCoverageRequest:
+            type: object
+            properties:
+                selection:
+                    description: The assets to report on. Required.
+                    $ref: '#/components/schemas/synq.overlays.v1.CoverageSelection'
+                filter:
+                    description: |-
+                        Which coverage state to keep. Defaults to all candidates.
+
+                         A filter naming a kind your credential may not read is PERMISSION_DENIED
+                         rather than an empty list.
+                    $ref: '#/components/schemas/synq.overlays.v1.CoverageFilter'
+                freshness:
+                    description: Where the answer is computed from. Defaults to the recomputed membership.
+                    $ref: '#/components/schemas/synq.overlays.v1.Freshness'
+                pagination:
+                    description: Pagination over the candidates matching `filter`.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListEntityCoverageRequest
+            required:
+                - selection
+            additionalProperties: false
+        synq.overlays.v1.ListEntityCoverageResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.overlays.v1.EntityOverlays'
+                    description: |-
+                        One page of matching candidates, each with the overlays claiming it.
+
+                         The same message `BatchGetEntityOverlays` returns: a row under
+                         `COVERAGE_FILTER_WITHOUT_DATAPRODUCT` has an empty
+                         `dataproduct_entity_ids` and may still name owners, which is how "owned but
+                         in no product" reads without a second call.
+                totalCount:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        How many candidates match `filter` across every page. Independent of
+                         pagination — the number to show beside a list, not the length of it.
+                pageInfo:
+                    description: Pagination cursor for the next page.
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+                renderedResolverQl:
+                    type: string
+                    description: |-
+                        The candidate selection rendered back to canonical resolver query language,
+                         whichever form it was sent in. Useful to log what was actually asked, and
+                         to lift a query built with the structured form into one you can hand-edit.
+
+                         Empty when the selection has no resolver-QL representation; the answer is
+                         unaffected.
+                membersComputedAt:
+                    description: |-
+                        When the recomputation behind this answer last ran to completion — the
+                         start of the most recent successful pass over the workspace's overlays.
+                         Every overlay is recomputed on each pass, so this is the age of the whole
+                         answer rather than of any one overlay in it.
+
+                         This is the number to alert on: it stops advancing as soon as the
+                         recomputation stops succeeding, whether or not any membership has changed.
+
+                         Absent under `FRESHNESS_LIVE` (nothing was read from an index), and absent
+                         when no overlay of a readable kind exists in the workspace, or none has
+                         been computed yet (there is no membership to be stale).
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: ListEntityCoverageResponse
+            additionalProperties: false
+        synq.overlays.v1.NamedSelection:
+            type: object
+            properties:
+                key:
+                    type: string
+                    maxLength: 256
+                    minLength: 1
+                    description: |-
+                        Your own label for this selection, echoed back on the matching summary. It
+                         is never interpreted — use whatever names the bucket in your dashboard.
+                         Must be unique within the request.
+                selection:
+                    description: The assets this row counts. Required.
+                    $ref: '#/components/schemas/synq.overlays.v1.CoverageSelection'
+            title: NamedSelection
+            required:
+                - selection
+            additionalProperties: false
+            description: NamedSelection is one candidate set and the label you want its row keyed by.
         synq.overlays.v1.OverlayMemberCount:
             type: object
             properties:
@@ -23962,9 +25323,35 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.queries.v1.WithType.Type'
+                traits:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
             title: WithType
             additionalProperties: false
-            description: Resolves to all the entities that have the provided type.
+            description: |-
+                Resolves to all the entities that have the provided type, or carry one of the
+                 provided traits.
         synq.queries.v1.WithType.Type:
             type: object
             oneOf:
@@ -24959,6 +26346,130 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.alerts.services.v1.ToggleEnabledResponse'
+    /api/alerts/v2:
+        put:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: Update
+            description: |-
+                Update an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.Update
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.UpdateRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.UpdateResponse'
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: Create
+            description: Create a new alert configuration.
+            operationId: synq.alerts.services.v2.AlertsService.Create
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.CreateRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.CreateResponse'
+        delete:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: Delete
+            description: |-
+                Delete an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.Delete
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.DeleteRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.DeleteResponse'
+    /api/alerts/v2/get:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: BatchGet
+            description: Get multiple alert configurations by their identifiers.
+            operationId: synq.alerts.services.v2.AlertsService.BatchGet
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.BatchGetRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.BatchGetResponse'
+    /api/alerts/v2/list:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: List
+            description: Retrieves a list of alert configurations based on filters.
+            operationId: synq.alerts.services.v2.AlertsService.List
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.ListRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.ListResponse'
+    /api/alerts/v2/toggle:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: ToggleEnabled
+            description: |-
+                Enables or disables an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.ToggleEnabled
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.ToggleEnabledRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.ToggleEnabledResponse'
     /api/changes/v1:
         get:
             tags:
@@ -27822,6 +29333,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: deploymentRule.queryConfig.query.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: deploymentRule.queryConfig.query.parts.withAnnotation.name
                   in: query
                   schema:
@@ -31911,6 +33469,35 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.annotations.v1.ListAnnotationsResponse'
+    /api/entities/annotations/v1/batchGet:
+        post:
+            tags:
+                - synq.entities.annotations.v1.AnnotationsService
+            summary: BatchGetEntityAnnotations
+            description: |-
+                Read the annotations carried by specific entities.
+
+                 ListAnnotations answers what the workspace annotates by and how often;
+                 this answers what one entity carries. They are separate reads because an
+                 entity's annotations are not part of the entity: `synq.entities.v1.Entity`
+                 is the shape `synq.entities.custom.v1.UpsertEntity` accepts, so the
+                 `annotations` field on it is what a producer ASSERTS about an entity, and
+                 answering a read with it would make a read-edit-write round trip write one
+                 entity's annotations onto another.
+            operationId: synq.entities.annotations.v1.AnnotationsService.BatchGetEntityAnnotations
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.annotations.v1.BatchGetEntityAnnotationsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.annotations.v1.BatchGetEntityAnnotationsResponse'
     /api/entities/checks/v1/categories:
         get:
             tags:
@@ -32023,6 +33610,9 @@ paths:
                 Create or update relationships that attach a check (e.g. a SQL test) to the
                  entities it validates. Idempotent per (check, checked) pair: an existing
                  relationship is updated, otherwise it is created.
+
+                 The response reports what each requested relationship did, and under which
+                 (check, checked) pair of entities it was stored.
             operationId: synq.entities.custom.v1.ChecksRelationshipsService.UpsertCheckRelationships
             requestBody:
                 content:
@@ -32044,6 +33634,8 @@ paths:
             description: |-
                 Delete relationships between checks and the entities they validate.
                  Relationships that do not exist are ignored.
+
+                 The response says which of them actually removed something.
             operationId: synq.entities.custom.v1.ChecksRelationshipsService.DeleteCheckRelationships
             requestBody:
                 content:
@@ -32893,7 +34485,14 @@ paths:
             tags:
                 - synq.entities.custom.v1.RelationshipsService
             summary: UpsertRelationships
-            description: Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
+            description: |-
+                Create or update relationships between entities. If the relationship already exists, it will be updated, otherwise it will be created.
+
+                 The response reports what each requested relationship did to the stored
+                 graph, and under which pair of entities it was stored. Read it: a
+                 relationship whose endpoints resolve to a pair another relationship in the
+                 same batch also resolves to is one edge, and only the last write to it
+                 survives.
             operationId: synq.entities.custom.v1.RelationshipsService.UpsertRelationships
             requestBody:
                 content:
@@ -32912,7 +34511,11 @@ paths:
             tags:
                 - synq.entities.custom.v1.RelationshipsService
             summary: DeleteRelationships
-            description: Delete relationships between entities. If the relationship does not exist, it will be ignored.
+            description: |-
+                Delete relationships between entities. If the relationship does not exist, it will be ignored.
+
+                 The response says which of them actually removed something, so a caller
+                 reconciling a set of edges can tell a withdrawal from a no-op.
             operationId: synq.entities.custom.v1.RelationshipsService.DeleteRelationships
             requestBody:
                 content:
@@ -33705,6 +35308,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: filter.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: filter.parts.withAnnotation.name
                   in: query
                   schema:
@@ -34843,6 +36493,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: filter.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: filter.parts.withAnnotation.name
                   in: query
                   schema:
@@ -35974,6 +37671,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: query.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: query.parts.withAnnotation.name
                   in: query
                   schema:
@@ -39002,6 +40746,59 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.incidents.v1.PostCommentResponse'
+    /api/incidents/v1/{incident_id}/comment/{comment_id}:
+        delete:
+            tags:
+                - synq.incidents.v1.IncidentsService
+            summary: DeleteComment
+            description: |-
+                Delete a comment on an incident. Only the actor who posted the comment may
+                 delete it. Deleting an already-deleted comment succeeds.
+            operationId: synq.incidents.v1.IncidentsService.DeleteComment
+            parameters:
+                - name: incident_id
+                  in: path
+                  description: ID of the incident the comment is on.
+                  required: true
+                  schema:
+                    type: string
+                    title: incident_id
+                    format: uuid
+                    description: ID of the incident the comment is on.
+                - name: comment_id
+                  in: path
+                  description: |-
+                    ID of the comment to delete, as returned by PostComment or read from the
+                     incident's comments.
+                  required: true
+                  schema:
+                    type: string
+                    title: comment_id
+                    format: uuid
+                    description: |-
+                        ID of the comment to delete, as returned by PostComment or read from the
+                         incident's comments.
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                actor:
+                                    description: Actor deleting the comment. Must match the actor that posted it.
+                                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                            title: DeleteCommentRequest
+                            required:
+                                - actor
+                            additionalProperties: false
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.incidents.v1.DeleteCommentResponse'
     /api/incidents/v1/{incident_id}/issues:
         post:
             tags:
@@ -41422,6 +43219,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: entitiesQuery.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: entitiesQuery.parts.withAnnotation.name
                   in: query
                   schema:
@@ -42105,6 +43949,59 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.issues.v2.PostCommentResponse'
+    /api/issues/v2/{issue_id}/comment/{comment_id}:
+        delete:
+            tags:
+                - synq.issues.v2.IssuesService
+            summary: DeleteComment
+            description: |-
+                Delete a comment on an issue. Only the actor who posted the comment may
+                 delete it. Deleting an already-deleted comment succeeds.
+            operationId: synq.issues.v2.IssuesService.DeleteComment
+            parameters:
+                - name: issue_id
+                  in: path
+                  description: ID of the issue the comment is on.
+                  required: true
+                  schema:
+                    type: string
+                    title: issue_id
+                    format: uuid
+                    description: ID of the issue the comment is on.
+                - name: comment_id
+                  in: path
+                  description: |-
+                    ID of the comment to delete, as returned by PostComment or read from the
+                     issue's comments.
+                  required: true
+                  schema:
+                    type: string
+                    title: comment_id
+                    format: uuid
+                    description: |-
+                        ID of the comment to delete, as returned by PostComment or read from the
+                         issue's comments.
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                actor:
+                                    description: Actor deleting the comment. Must match the actor that posted it.
+                                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                            title: DeleteCommentRequest
+                            required:
+                                - actor
+                            additionalProperties: false
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.issues.v2.DeleteCommentResponse'
     /api/issues/v2/{issue_id}/mark-expected:
         patch:
             tags:
@@ -42355,7 +44252,6 @@ paths:
                     type: string
                     title: title
                     maxLength: 100
-                    minLength: 1
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.entityId
                   in: query
                   description: |-
@@ -42993,6 +44889,53 @@ paths:
                     title: custom
                     format: int32
                     description: Custom types as defined through synq.entities.custom.v1.TypesService
+                - name: deploymentRule.queryConfig.query.parts.withType.traits
+                  in: query
+                  description: |-
+                    Traits to select by, instead of — or alongside — naming types.
+
+                     A trait is a property a type has, so `is_monitorable` means "everything a
+                     monitor can run on" without listing the forty-odd types that satisfy it
+                     today. The list it stands for is worked out each time the selection runs,
+                     so a selection saved this way covers a new platform's tables as soon as we
+                     support them, and you never have to revisit it.
+
+                     Entities carrying any of the traits match. When `types` is also set the two
+                     narrow each other: the entity must be one of the named types AND carry one
+                     of the traits.
+
+                     Accepted values, and what each one means, come from the selection-query
+                     grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                     reference). A name that is not in it selects nothing rather than being
+                     ignored, so a typo narrows the result to empty instead of widening it —
+                     check a trait against the grammar before storing a selection. In a query
+                     written as text this is `with_type(traits="is_monitorable")`, and there a
+                     name outside the grammar is rejected outright.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                    title: traits
+                    description: |-
+                        Traits to select by, instead of — or alongside — naming types.
+
+                         A trait is a property a type has, so `is_monitorable` means "everything a
+                         monitor can run on" without listing the forty-odd types that satisfy it
+                         today. The list it stands for is worked out each time the selection runs,
+                         so a selection saved this way covers a new platform's tables as soon as we
+                         support them, and you never have to revisit it.
+
+                         Entities carrying any of the traits match. When `types` is also set the two
+                         narrow each other: the entity must be one of the named types AND carry one
+                         of the traits.
+
+                         Accepted values, and what each one means, come from the selection-query
+                         grammar the API publishes (`describe_resolver_ql`, or the query editor's
+                         reference). A name that is not in it selects nothing rather than being
+                         ignored, so a typo narrows the result to empty instead of widening it —
+                         check a trait against the grammar before storing a selection. In a query
+                         written as text this is `with_type(traits="is_monitorable")`, and there a
+                         name outside the grammar is rejected outright.
                 - name: deploymentRule.queryConfig.query.parts.withAnnotation.name
                   in: query
                   schema:
@@ -45817,6 +47760,95 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.overlays.v1.BatchGetEntityOverlaysResponse'
+    /api/overlays/v1/coverage:
+        post:
+            tags:
+                - synq.overlays.v1.OverlaysService
+            summary: ListEntityCoverage
+            description: |-
+                List the candidate assets together with the overlays claiming each, and
+                 narrow them to what is or is not covered.
+
+                 This is the question behind a governance audit: of the assets you care
+                 about, which belong to no data product, and which have nobody responsible
+                 for them. You give the candidate set as a query — every asset, one
+                 platform, one folder, one domain — and each row comes back carrying the
+                 same owner and data-product lists `BatchGetEntityOverlays` returns, so a
+                 single call is both the count and the worklist.
+
+                 `total_count` is how many candidates match `filter` across every page, so
+                 you can say "312 of 4,190 tables are in no data product" without paging to
+                 the end.
+
+                 Freshness. By default this reads the same periodically recomputed
+                 membership the rest of this service reads, and tells you how old it is in
+                 `members_computed_at`. Ask for `FRESHNESS_LIVE` when the answer has to
+                 reflect every definition as of now — it re-resolves them, which is far
+                 slower and far more expensive, so keep it for a one-off audit rather than a
+                 page that refreshes.
+
+                 Returns PERMISSION_DENIED if your credential can read neither data products
+                 nor owners, and also if `filter` names a kind it may not read: an empty list
+                 must not be the answer to both "nothing is uncovered" and "you may not
+                 look". A kind you may not read still comes back as an empty list on each
+                 row, as it does elsewhere in this service.
+
+                 Returns INVALID_ARGUMENT if the selection resolves to more assets than one
+                 call will report on — see `CoverageSelection` for the limit and for how to
+                 choose a candidate set worth reading.
+            operationId: synq.overlays.v1.OverlaysService.ListEntityCoverage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.overlays.v1.ListEntityCoverageRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.overlays.v1.ListEntityCoverageResponse'
+    /api/overlays/v1/coverage-summary:
+        post:
+            tags:
+                - synq.overlays.v1.OverlaysService
+            summary: GetCoverageSummary
+            description: |-
+                Count coverage over one or more named candidate sets, without listing the
+                 assets themselves.
+
+                 The aggregate behind a coverage dashboard. Each selection you send comes
+                 back as one row of totals, keyed by the label you gave it, so a breakdown
+                 by type, platform, folder or domain is one round trip rather than one call
+                 per bucket.
+
+                 There is no server-side grouping, on purpose. This service knows what claims
+                 an asset, not what kind of thing the asset is, so naming the selections
+                 yourself — `with_type("dbt_model")`, `in_folder(...)`, `in_domain(...)` —
+                 keeps the buckets in your own vocabulary and costs the same.
+
+                 Selections are counted independently and may overlap. An asset in two of
+                 them is counted in both.
+
+                 Returns PERMISSION_DENIED unless your credential can read both data products
+                 and owners. Every row names both, and a zero that was never looked at is
+                 indistinguishable from a zero that was.
+            operationId: synq.overlays.v1.OverlaysService.GetCoverageSummary
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.overlays.v1.GetCoverageSummaryRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.overlays.v1.GetCoverageSummaryResponse'
     /api/overlays/v1/member-counts:
         post:
             tags:
@@ -47988,65 +50020,39 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/synq.agent.sre.v1.RecordEvidenceResponse'
 tags:
-    - name: synq.incidents.v1.IncidentsService
-      description: IncidentsService is a service for managing Incidents.
-    - name: synq.auth.iam.v1.IamService
-    - name: synq.dataproducts.v1.DataproductsService
-      description: DataproductsService can be used to manage data products.
-    - name: synq.dataproducts.v2.DataproductsService
+    - name: synq.deliveries.v1.DeliveriesService
       description: |-
-        DataproductsService manages data products — named, owned groupings of data
-         assets with a membership definition, a priority and an optional folder.
+        DeliveriesService reports what was sent to your notification integrations —
+         webhooks, PagerDuty, Opsgenie — and what came back.
 
-         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
-         (a retried create converges instead of duplicating). Mutable fields are
-         optional on Upsert: a field that is set is written, a field that is omitted is
-         left unchanged. Pass the `etag` you last read to guard against overwriting a
-         concurrent edit.
+         It answers the three questions an integration owner has. "Did this event
+         reach my endpoint": list the deliveries for an event id and read the outcome
+         of each. "Why did my endpoint reject it": read the attempts, which carry the
+         request as it was sent and the response as it came back. "Why did I get
+         nothing at all": every delivery that sent nothing records a reason, so a
+         silent integration can be explained rather than guessed at.
 
-         A data product is a leaf in the reference graph — its definition may not
-         reference another data product or domain — so membership resolution always
-         terminates.
-    - name: synq.queries.v1.QueriesService
-      description: |-
-        QueriesService compiles and evaluates ResolverQL — the compact text query
-         language used across Coalesce Quality to select entities — over the public
-         API.
-
-         ResolverQL is a string DSL (for example `with_type("TABLE")` or
-         `in_folder(...)`); a structured `synq.queries.v1.Query` is its parsed,
-         machine-readable form. This service is the bridge between the two and the
-         read-only execution surface for both:
-           - `TranslateResolverQl` compiles a ResolverQL expression into a structured
-             `Query` without evaluating it — inspect it, validate it, or reuse it as a
-             filter on another API (entity listing, folder browsing, ...).
-           - `ResolveQuery` compiles a ResolverQL expression (or takes an
-             already-structured `Query`), evaluates it against the catalog, and
-             returns the matched entity ids. This is the general author -> resolve
-             loop.
-    - name: synq.queries.v1.NLQueryService
-      description: NLQueryService generates structured Query protos from natural language descriptions using an LLM.
-    - name: synq.owners.v1.OwnersService
-      description: |-
-        OwnersService manages owners and their ownerships — the "alert routing as
-         code" surface. An owner is a named responsible party with notification
-         channels (contacts); an ownership assigns a set of assets to an owner and
-         configures the alerts routed to it. Owner is the resource, ownership its
-         sub-resource: an ownership is meaningless without its owner, and deleting an
-         owner deletes its ownerships.
-
-         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent (a
-         retried create converges instead of duplicating). Mutable fields are optional
-         on the Upsert calls: a set field is written, an omitted field is left
-         unchanged. Pass the `etag` you last read to guard against overwriting a
-         concurrent edit.
-
-         Related: `synq.dataproducts.v2.DataproductsService` (an ownership can own a
-         whole data product), `synq.alerts.v1.AlertsService` (how the configured alerts
-         are reported), and `synq.users.v1.UsersService` (resolve the users behind
-         `UserContact` and Slack/Teams mentions).
+         Deliveries are kept for 90 days. Credential-bearing header values are never
+         returned, on either side of an attempt — see `Header`.
+    - name: synq.ingest.cloudwatch.v1.CloudwatchService
+    - name: synq.ingest.dwh.v1.DwhService
+    - name: synq.ingest.openlineage.v1.OpenlineageService
+    - name: synq.ingest.airflow.v1.AirflowLogsService
     - name: synq.alerts.services.v1.AlertsService
-      description: AlertsService provides operations for managing alert configurations.
+      description: |-
+        AlertsService provides operations for managing alert configurations.
+
+         Deprecated: use synq.alerts.services.v2.AlertsService. The v2 service selects
+         entities with the canonical synq.queries.v1.Query + resolver_ql trigger; this
+         v1 service, which uses the bespoke EntityGroupQuery selection, is scheduled for
+         removal. Migrate existing integrations to v2.
+    - name: synq.alerts.services.v2.AlertsService
+      description: |-
+        AlertsService provides operations for managing alert configurations.
+
+         It supersedes synq.alerts.services.v1.AlertsService: entities are selected with
+         the canonical synq.queries.v1.Query + resolver_ql trigger rather than the bespoke
+         EntityGroupQuery.
     - name: synq.entities.folders.v1.FoldersService
       description: |-
         FoldersService discovers and browses the folder / containment hierarchy of the
@@ -48066,48 +50072,41 @@ tags:
          direct children of a folder, and `ListMembers` returns only the entities
          placed directly in the folder. Set `deep = true` (or raise `Browse.depth`) to
          recurse into sub-folders.
-    - name: synq.entities.constraints.v1.TableConstraintsService
-      description: TableConstraintsService provides access to table constraint and index information.
-    - name: synq.entities.custom.v1.RelationshipsService
+    - name: synq.entities.typedefs.v1.TypeDefsService
       description: |-
-        RelationshipsService allow management of relationships between entities. Relationships can
-         be created, updated, and deleted between 2 custom entities, or between a custom entity and Coalesce Quality native entity.enum
-         There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
-    - name: synq.entities.custom.v1.TypesService
-      description: TypesService is a service for managing custom entity types.
-    - name: synq.entities.custom.v1.FeaturesService
-    - name: synq.entities.custom.v1.GroupsService
-      description: |-
-        It eliminates the need to keep state on client side to remember which assets were already created
-         and which should be deleted. The server will keep track of the current state of the group and client
-         can always send the intended new state. The server will calculate the diff and entities that are
-         no longer present in the group will be removed.
+        TypeDefsService tells you what the type values in every other endpoint mean.
 
-         Example:
-         1. group has entities A, B, C at time t1
-         2. client sends group with entities B, C, D at time t2
-         3. server will remove entity A from the system and update the current state of the group to B, C, D
+         Responses across the API describe things by enum — an entity is an
+         `ENTITY_TYPE_BQ_TABLE`, it belongs to `DATA_PLATFORM_TYPE_BIGQUERY`, a run is an
+         `EXECUTION_TYPE_DBT_INVOCATION`. This service turns each of those into a name you
+         can display and a set of facts you can act on: is this a transformation model,
+         does it live in a warehouse, can it be monitored.
 
-         The service is designed to be idempotent and can be called multiple times with the same state without
-         causing any side effects.
-    - name: synq.entities.custom.v1.EntitiesService
-      description: |-
-        custom.EntitiesService is a service for managing custom entities. Entities can represent
-         various data platform concepts such as services, consumers, applications or data pipelines
-         that are not natively available in Coalesce Quality.
+         Read it instead of keeping your own copy of the list. New entity types and new
+         platforms are added as Coalesce Quality supports more tools, and a hard-coded
+         table in your code will label them with whatever its fallback produces and miss
+         that an existing type gained a capability. Everything here comes from the server,
+         so you pick both up without changing your code.
 
-         Entities are identified by a unique identifier and can be created, updated, read and deleted.
-    - name: synq.entities.custom.v1.ChecksRelationshipsService
-    - name: synq.entities.custom.v1.EntityExecutionsService
-    - name: synq.entities.resolve.v1.IdentifierResolveService
-      description: IdentifierResolveService resolves identifiers to their Coalesce Quality paths and identities.
-    - name: synq.entities.sql_insights.v1.SqlInsightsService
-      description: |-
-        SqlInsightsService exposes analytical information about the SQL used across a
-         workspace's entities. It answers questions such as "which SQL constructs are
-         used in my warehouse, and by how many entities" and "what SQL constructs
-         does this specific entity use", without requiring the caller to re-parse any
-         SQL.
+         A typical integration calls all three once at startup, keeps them in a map, and
+         looks types up as responses arrive.
+
+         Scoping and freshness:
+
+           * ListEntityTypeDefs is per workspace, because the types you defined yourself
+             are part of your workspace's vocabulary. It returns the built-in types and
+             your own custom types together.
+           * ListPlatformDefs and ListExecutionTypeDefs are the same for everyone.
+           * The built-in half changes only when Coalesce Quality is upgraded, so caching
+             it for the life of your process is fine. You can add or edit your own custom
+             types at any time, so if a newly created type needs to appear promptly, cache
+             the entity types for minutes rather than hours, or re-read after you change
+             one.
+
+         The workspace comes from your credentials; there is nothing to pass.
+
+         Each list is small — hundreds of entries — so every call returns the whole set
+         and none of them page.
     - name: synq.entities.entities.v1.EntitiesService
       description: EntitiesService is a service for retriving any entity.
     - name: synq.entities.checks.v1.ChecksCategoriesService
@@ -48174,6 +50173,32 @@ tags:
         CodeService is a service for retrieving code associated with entities in the system.
          It provides functionality to access and manage code artifacts such as SQL queries,
          Python scripts, dbt models, and other code configurations that are part of Coalesce Quality entities.
+    - name: synq.entities.schemas.v1.SchemaMismatchesService
+      description: |-
+        SchemaMismatchesService provides access to schema drift information between
+         data platform tables and their definitions (e.g., dbt models).
+    - name: synq.entities.schemas.v1.SchemasService
+      description: EntitiesService is a service for retriving any entity.
+    - name: synq.entities.constraints.v1.TableConstraintsService
+      description: TableConstraintsService provides access to table constraint and index information.
+    - name: synq.entities.sql_insights.v1.SqlInsightsService
+      description: |-
+        SqlInsightsService exposes analytical information about the SQL used across a
+         workspace's entities. It answers questions such as "which SQL constructs are
+         used in my warehouse, and by how many entities" and "what SQL constructs
+         does this specific entity use", without requiring the caller to re-parse any
+         SQL.
+    - name: synq.entities.orchestration.v1.OrchestrationService
+      description: |-
+        OrchestrationService provides information about orchestration relationships between entities.
+         This includes relationships between Airflow tasks and transformation models (dbt, SQLMesh),
+         as well as task-to-task dependencies.
+    - name: synq.entities.resolve.v1.IdentifierResolveService
+      description: IdentifierResolveService resolves identifiers to their Coalesce Quality paths and identities.
+    - name: synq.entities.status.v1.EntityIssuesService
+      description: EntityIssuesService is the service which retrieves entity issues status.
+    - name: synq.entities.status.v1.EntityIncidentsService
+      description: EntityIncidentsService is the service which retrieves entity status.
     - name: synq.entities.changes.v1.ChangesService
       description: |-
         ChangesService provides functionality to track and retrieve all types of changes to data entities.
@@ -48192,6 +50217,47 @@ tags:
          - "What changed in the last week for table X?" → Returns git commits, schema changes, SQL changes
          - "Show me all commits affecting this dbt model" → Returns git commits with lineage context
          - "What schema changes happened to this table?" → Returns schema changes detected by Coalesce Quality
+    - name: synq.entities.annotations.v1.AnnotationsService
+      description: |-
+        AnnotationsService provides operations for managing and querying entity annotations.
+         Annotations are key-value pairs that can be attached to entities for categorization and filtering.
+    - name: synq.entities.lineage.v1.LineageService
+      description: |-
+        LineageService allows you to fetch:
+         * Entity level lineage from a starting point of one or more entities.
+         * Column Level lineage from a starting point of multiple columns of a single entity.
+    - name: synq.entities.custom.v1.EntityExecutionsService
+    - name: synq.entities.custom.v1.GroupsService
+      description: |-
+        It eliminates the need to keep state on client side to remember which assets were already created
+         and which should be deleted. The server will keep track of the current state of the group and client
+         can always send the intended new state. The server will calculate the diff and entities that are
+         no longer present in the group will be removed.
+
+         Example:
+         1. group has entities A, B, C at time t1
+         2. client sends group with entities B, C, D at time t2
+         3. server will remove entity A from the system and update the current state of the group to B, C, D
+
+         The service is designed to be idempotent and can be called multiple times with the same state without
+         causing any side effects.
+    - name: synq.entities.custom.v1.EntitiesService
+      description: |-
+        custom.EntitiesService is a service for managing custom entities. Entities can represent
+         various data platform concepts such as services, consumers, applications or data pipelines
+         that are not natively available in Coalesce Quality.
+
+         Entities are identified by a unique identifier and can be created, updated, read and deleted.
+    - name: synq.entities.custom.v1.TypesService
+      description: TypesService is a service for managing custom entity types.
+    - name: synq.entities.custom.v1.RelationshipsService
+      description: |-
+        RelationshipsService allow management of relationships between entities. Relationships can
+         be created, updated, and deleted between 2 custom entities, or between a custom entity and Coalesce Quality native entity.enum
+         There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
+    - name: synq.entities.custom.v1.ChecksRelationshipsService
+    - name: synq.entities.custom.v1.FeaturesService
+    - name: synq.entities.impact.v1.ImpactService
     - name: synq.entities.executions.v1.EntityExecutionsService
       description: 'Deprecated: Use [synq.entities.custom.v1.EntityExecutionsService] instead'
     - name: synq.entities.executions.v2.EntityExecutionsService
@@ -48205,161 +50271,8 @@ tags:
          - Filter executions by time range, status, or execution type
          - Get aggregated summaries of execution activity
          - Track execution trends and patterns
-    - name: synq.entities.typedefs.v1.TypeDefsService
-      description: |-
-        TypeDefsService tells you what the type values in every other endpoint mean.
-
-         Responses across the API describe things by enum — an entity is an
-         `ENTITY_TYPE_BQ_TABLE`, it belongs to `DATA_PLATFORM_TYPE_BIGQUERY`, a run is an
-         `EXECUTION_TYPE_DBT_INVOCATION`. This service turns each of those into a name you
-         can display and a set of facts you can act on: is this a transformation model,
-         does it live in a warehouse, can it be monitored.
-
-         Read it instead of keeping your own copy of the list. New entity types and new
-         platforms are added as Coalesce Quality supports more tools, and a hard-coded
-         table in your code will label them with whatever its fallback produces and miss
-         that an existing type gained a capability. Everything here comes from the server,
-         so you pick both up without changing your code.
-
-         A typical integration calls all three once at startup, keeps them in a map, and
-         looks types up as responses arrive.
-
-         Scoping and freshness:
-
-           * ListEntityTypeDefs is per workspace, because the types you defined yourself
-             are part of your workspace's vocabulary. It returns the built-in types and
-             your own custom types together.
-           * ListPlatformDefs and ListExecutionTypeDefs are the same for everyone.
-           * The built-in half changes only when Coalesce Quality is upgraded, so caching
-             it for the life of your process is fine. You can add or edit your own custom
-             types at any time, so if a newly created type needs to appear promptly, cache
-             the entity types for minutes rather than hours, or re-read after you change
-             one.
-
-         The workspace comes from your credentials; there is nothing to pass.
-
-         Each list is small — hundreds of entries — so every call returns the whole set
-         and none of them page.
-    - name: synq.entities.orchestration.v1.OrchestrationService
-      description: |-
-        OrchestrationService provides information about orchestration relationships between entities.
-         This includes relationships between Airflow tasks and transformation models (dbt, SQLMesh),
-         as well as task-to-task dependencies.
     - name: synq.entities.coordinates.v1.DatabaseCoordinatesService
       description: DatabaseCoordinatesService is a service for getting database coordinates of Entities.
-    - name: synq.entities.annotations.v1.AnnotationsService
-      description: |-
-        AnnotationsService provides operations for managing and querying entity annotations.
-         Annotations are key-value pairs that can be attached to entities for categorization and filtering.
-    - name: synq.entities.lineage.v1.LineageService
-      description: |-
-        LineageService allows you to fetch:
-         * Entity level lineage from a starting point of one or more entities.
-         * Column Level lineage from a starting point of multiple columns of a single entity.
-    - name: synq.entities.schemas.v1.SchemaMismatchesService
-      description: |-
-        SchemaMismatchesService provides access to schema drift information between
-         data platform tables and their definitions (e.g., dbt models).
-    - name: synq.entities.schemas.v1.SchemasService
-      description: EntitiesService is a service for retriving any entity.
-    - name: synq.entities.impact.v1.ImpactService
-    - name: synq.entities.status.v1.EntityIncidentsService
-      description: EntityIncidentsService is the service which retrieves entity status.
-    - name: synq.entities.status.v1.EntityIssuesService
-      description: EntityIssuesService is the service which retrieves entity issues status.
-    - name: synq.integrations.v1.IntegrationsService
-      description: |-
-        IntegrationsService manages connections from Coalesce Quality to your data
-         systems (warehouses, databases, and transformation tools).
-
-         Concurrency: every integration carries an opaque `etag`. Read it from
-         `GetIntegration` / `ListIntegrations`, then pass it back on
-         `UpdateIntegration` / `DeleteIntegration` to ensure you modify the version you
-         last saw. A stale etag is rejected with ABORTED (HTTP 409). Omit
-         the etag for last-write-wins.
-
-         Quota: each workspace has a limit on the number of integrations. Creating
-         beyond the limit is rejected with RESOURCE_EXHAUSTED.
-
-         Secrets: credential fields (passwords, tokens, keys) are write-only. They are
-         masked (returned empty) on every read. On update, omit a secret to keep it,
-         send a new value to rotate it, or send an explicit empty string to clear it
-         (where the field is `optional`).
-    - name: synq.datachecks.v1.TriggerService
-      description: TriggerService provides synchronous execution of datachecks on entities.
-    - name: synq.datachecks.sqltests.v1.SqlTestsService
-      description: SqlTestsService is a service for managing SqlTests.
-    - name: synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService
-      description: |-
-        SqlTestsDeploymentRulesService manages SqlTestDeploymentRules — rules that
-         dynamically deploy SQL test templates onto every table or view a query
-         matches, resyncing over time as the match set changes.
-    - name: synq.datachecks.testsuggestions.v1.TestSuggestionsService
-    - name: synq.savedviews.v1.SavedViewsService
-      description: |-
-        SavedViewsService manages saved views — named, reusable selections over your
-         entities (and other surfaces) with display configuration, sharing and
-         per-user pinning.
-
-         A saved view is owned by the user who created it. It can be kept private,
-         shared with the whole workspace, or granted to specific users. Reads return,
-         for the calling user, how each view relates to them (mine / shared / granted)
-         and what they are allowed to do with it. Workspace administrators can manage
-         any view in the workspace.
-    - name: synq.domains.v1.DomainsService
-      description: DomainsService can be used to manage domains.
-    - name: synq.domains.v2.DomainsService
-      description: |-
-        DomainsService manages data domains — named areas of ownership that group the
-         assets, data products and sub-domains belonging to one part of the business.
-
-         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
-         (a retried create converges instead of duplicating). Mutable fields are
-         optional on Upsert: a field that is set is written, a field that is omitted is
-         left unchanged. Pass the `etag` you last read to guard against overwriting a
-         concurrent edit.
-
-         A domain may contain other domains and data products, so membership resolution
-         is recursive. Every write that adds such a reference — including a change of
-         `parent_id` — is rejected if it would close a loop, so a definition can always
-         be resolved in finite time.
-    - name: synq.domains.members.v1.DomainMembersService
-      description: DomainMembersService can be used to manage domain memberships.
-    - name: synq.agent.recon.v1.SuiteDeploymentService
-      description: |-
-        SuiteDeploymentService is the platform plane of reconciliation.
-
-         SuiteConfigService is the developer/authoring sandbox (edit, version, run
-         ad-hoc with your own credentials — preview-only, no Entity, no Run, no
-         Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
-         a frozen snapshot of a suite config, mapped to workspace-level SYNQ
-         integrations, optionally scheduled or triggerable by API.
-
-         Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
-         first promote. It survives re-promotes, schedule/mapping changes, and
-         pause/resume. Downstream AssetCommand / RunCommand publication keys off
-         deployment_id so Entity identity does not fragment on promote churn.
-    - name: synq.agent.recon.v1.YamlService
-      description: |-
-        YamlService provides stateless conversion between YAML config format and proto.
-         This is useful for UI editors that need to display/edit suite configs as YAML.
-    - name: synq.agent.sre.v1.TriageService
-      description: |-
-        Service for managing issue triage operations, allowing LLM agents to conclude investigations
-         and record evidence during the triage process.
-    - name: synq.agent.sre.v1.LlmService
-      description: Service for evaluating LLM requests and producing structured output.
-    - name: synq.agent.sre.v1.FeatureRequestService
-      description: |-
-        FeatureRequestService allows MCP clients to submit feature requests when users encounter
-         missing capabilities. This is a last-resort service — it should only be used when no
-         existing tool can fulfill the user's request.
-    - name: synq.platforms.v1.PlatformsService
-      description: PlatformsService is a service for managing Platforms and Integrations.
-    - name: synq.issues.v2.IssuesService
-      description: IssuesService is a service for managing Issues.
-    - name: synq.issues.issues.v1.IssuesService
-      description: IssuesService is a service for managing Issues.
     - name: synq.overlays.v1.OverlaysService
       description: |-
         OverlaysService answers which organizational overlays claim an entity.
@@ -48403,16 +50316,12 @@ tags:
            - `synq.entities.resolve.v1.IdentifierResolveService` turns an identifier you
              already hold — a warehouse table name, a dbt model — into the `entity_id`
              these calls take.
-    - name: synq.git.commits.v1.CommitsService
-    - name: synq.schedule.v1.ScheduleService
-      description: ScheduleService provides schedule evaluation utilities.
-    - name: synq.extensions.atlan.workflows.v1.AtlanWorkflowService
-    - name: synq.extensions.atlan.integrations.v1.AtlanIntegrationService
-    - name: synq.extensions.atlan.provider.v1.AtlanProviderService
-    - name: synq.monitors.custom_monitors.v1.CustomMonitorsService
     - name: synq.monitors.history.v1.HistoryService
+    - name: synq.monitors.info.v1.MonitorInfoService
     - name: synq.monitors.predictions.v1.MonitorPredictionsService
       description: Access to anomaly detection model predictions and raw metric timeseries.
+    - name: synq.monitors.automated_monitors.v1.DeploymentRulesService
+    - name: synq.monitors.custom_monitors.v1.CustomMonitorsService
     - name: synq.monitors.segments.v1.MonitorSegmentsService
       description: |-
         Reads and names the segments of a segmented custom monitor.
@@ -48424,23 +50333,159 @@ tags:
          segment with no label falls back to its raw value, so a monitor segmented on
          something encoded (an id, a code, a hashed bucket) reads as that raw value
          everywhere until the segment is named.
-    - name: synq.monitors.automated_monitors.v1.DeploymentRulesService
-    - name: synq.monitors.info.v1.MonitorInfoService
-    - name: synq.ingest.openlineage.v1.OpenlineageService
-    - name: synq.ingest.cloudwatch.v1.CloudwatchService
-    - name: synq.ingest.airflow.v1.AirflowLogsService
-    - name: synq.ingest.dwh.v1.DwhService
-    - name: synq.deliveries.v1.DeliveriesService
+    - name: synq.queries.v1.NLQueryService
+      description: NLQueryService generates structured Query protos from natural language descriptions using an LLM.
+    - name: synq.queries.v1.QueriesService
       description: |-
-        DeliveriesService reports what was sent to your notification integrations —
-         webhooks, PagerDuty, Opsgenie — and what came back.
+        QueriesService compiles and evaluates ResolverQL — the compact text query
+         language used across Coalesce Quality to select entities — over the public
+         API.
 
-         It answers the three questions an integration owner has. "Did this event
-         reach my endpoint": list the deliveries for an event id and read the outcome
-         of each. "Why did my endpoint reject it": read the attempts, which carry the
-         request as it was sent and the response as it came back. "Why did I get
-         nothing at all": every delivery that sent nothing records a reason, so a
-         silent integration can be explained rather than guessed at.
+         ResolverQL is a string DSL (for example `with_type("TABLE")` or
+         `in_folder(...)`); a structured `synq.queries.v1.Query` is its parsed,
+         machine-readable form. This service is the bridge between the two and the
+         read-only execution surface for both:
+           - `TranslateResolverQl` compiles a ResolverQL expression into a structured
+             `Query` without evaluating it — inspect it, validate it, or reuse it as a
+             filter on another API (entity listing, folder browsing, ...).
+           - `ResolveQuery` compiles a ResolverQL expression (or takes an
+             already-structured `Query`), evaluates it against the catalog, and
+             returns the matched entity ids. This is the general author -> resolve
+             loop.
+    - name: synq.datachecks.v1.TriggerService
+      description: TriggerService provides synchronous execution of datachecks on entities.
+    - name: synq.datachecks.sqltests.v1.SqlTestsService
+      description: SqlTestsService is a service for managing SqlTests.
+    - name: synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService
+      description: |-
+        SqlTestsDeploymentRulesService manages SqlTestDeploymentRules — rules that
+         dynamically deploy SQL test templates onto every table or view a query
+         matches, resyncing over time as the match set changes.
+    - name: synq.datachecks.testsuggestions.v1.TestSuggestionsService
+    - name: synq.integrations.v1.IntegrationsService
+      description: |-
+        IntegrationsService manages connections from Coalesce Quality to your data
+         systems (warehouses, databases, and transformation tools).
 
-         Deliveries are kept for 90 days. Credential-bearing header values are never
-         returned, on either side of an attempt — see `Header`.
+         Concurrency: every integration carries an opaque `etag`. Read it from
+         `GetIntegration` / `ListIntegrations`, then pass it back on
+         `UpdateIntegration` / `DeleteIntegration` to ensure you modify the version you
+         last saw. A stale etag is rejected with ABORTED (HTTP 409). Omit
+         the etag for last-write-wins.
+
+         Quota: each workspace has a limit on the number of integrations. Creating
+         beyond the limit is rejected with RESOURCE_EXHAUSTED.
+
+         Secrets: credential fields (passwords, tokens, keys) are write-only. They are
+         masked (returned empty) on every read. On update, omit a secret to keep it,
+         send a new value to rotate it, or send an explicit empty string to clear it
+         (where the field is `optional`).
+    - name: synq.issues.issues.v1.IssuesService
+      description: IssuesService is a service for managing Issues.
+    - name: synq.issues.v2.IssuesService
+      description: IssuesService is a service for managing Issues.
+    - name: synq.dataproducts.v1.DataproductsService
+      description: DataproductsService can be used to manage data products.
+    - name: synq.dataproducts.v2.DataproductsService
+      description: |-
+        DataproductsService manages data products — named, owned groupings of data
+         assets with a membership definition, a priority and an optional folder.
+
+         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
+         (a retried create converges instead of duplicating). Mutable fields are
+         optional on Upsert: a field that is set is written, a field that is omitted is
+         left unchanged. Pass the `etag` you last read to guard against overwriting a
+         concurrent edit.
+
+         A data product is a leaf in the reference graph — its definition may not
+         reference another data product or domain — so membership resolution always
+         terminates.
+    - name: synq.schedule.v1.ScheduleService
+      description: ScheduleService provides schedule evaluation utilities.
+    - name: synq.owners.v1.OwnersService
+      description: |-
+        OwnersService manages owners and their ownerships — the "alert routing as
+         code" surface. An owner is a named responsible party with notification
+         channels (contacts); an ownership assigns a set of assets to an owner and
+         configures the alerts routed to it. Owner is the resource, ownership its
+         sub-resource: an ownership is meaningless without its owner, and deleting an
+         owner deletes its ownerships.
+
+         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent (a
+         retried create converges instead of duplicating). Mutable fields are optional
+         on the Upsert calls: a set field is written, an omitted field is left
+         unchanged. Pass the `etag` you last read to guard against overwriting a
+         concurrent edit.
+
+         Related: `synq.dataproducts.v2.DataproductsService` (an ownership can own a
+         whole data product), `synq.alerts.v1.AlertsService` (how the configured alerts
+         are reported), and `synq.users.v1.UsersService` (resolve the users behind
+         `UserContact` and Slack/Teams mentions).
+    - name: synq.agent.sre.v1.LlmService
+      description: Service for evaluating LLM requests and producing structured output.
+    - name: synq.agent.sre.v1.TriageService
+      description: |-
+        Service for managing issue triage operations, allowing LLM agents to conclude investigations
+         and record evidence during the triage process.
+    - name: synq.agent.sre.v1.FeatureRequestService
+      description: |-
+        FeatureRequestService allows MCP clients to submit feature requests when users encounter
+         missing capabilities. This is a last-resort service — it should only be used when no
+         existing tool can fulfill the user's request.
+    - name: synq.agent.recon.v1.YamlService
+      description: |-
+        YamlService provides stateless conversion between YAML config format and proto.
+         This is useful for UI editors that need to display/edit suite configs as YAML.
+    - name: synq.agent.recon.v1.SuiteDeploymentService
+      description: |-
+        SuiteDeploymentService is the platform plane of reconciliation.
+
+         SuiteConfigService is the developer/authoring sandbox (edit, version, run
+         ad-hoc with your own credentials — preview-only, no Entity, no Run, no
+         Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
+         a frozen snapshot of a suite config, mapped to workspace-level SYNQ
+         integrations, optionally scheduled or triggerable by API.
+
+         Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
+         first promote. It survives re-promotes, schedule/mapping changes, and
+         pause/resume. Downstream AssetCommand / RunCommand publication keys off
+         deployment_id so Entity identity does not fragment on promote churn.
+    - name: synq.savedviews.v1.SavedViewsService
+      description: |-
+        SavedViewsService manages saved views — named, reusable selections over your
+         entities (and other surfaces) with display configuration, sharing and
+         per-user pinning.
+
+         A saved view is owned by the user who created it. It can be kept private,
+         shared with the whole workspace, or granted to specific users. Reads return,
+         for the calling user, how each view relates to them (mine / shared / granted)
+         and what they are allowed to do with it. Workspace administrators can manage
+         any view in the workspace.
+    - name: synq.auth.iam.v1.IamService
+    - name: synq.platforms.v1.PlatformsService
+      description: PlatformsService is a service for managing Platforms and Integrations.
+    - name: synq.incidents.v1.IncidentsService
+      description: IncidentsService is a service for managing Incidents.
+    - name: synq.git.commits.v1.CommitsService
+    - name: synq.domains.v1.DomainsService
+      description: DomainsService can be used to manage domains.
+    - name: synq.domains.v2.DomainsService
+      description: |-
+        DomainsService manages data domains — named areas of ownership that group the
+         assets, data products and sub-domains belonging to one part of the business.
+
+         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
+         (a retried create converges instead of duplicating). Mutable fields are
+         optional on Upsert: a field that is set is written, a field that is omitted is
+         left unchanged. Pass the `etag` you last read to guard against overwriting a
+         concurrent edit.
+
+         A domain may contain other domains and data products, so membership resolution
+         is recursive. Every write that adds such a reference — including a change of
+         `parent_id` — is rejected if it would close a loop, so a definition can always
+         be resolved in finite time.
+    - name: synq.domains.members.v1.DomainMembersService
+      description: DomainMembersService can be used to manage domain memberships.
+    - name: synq.extensions.atlan.integrations.v1.AtlanIntegrationService
+    - name: synq.extensions.atlan.workflows.v1.AtlanWorkflowService
+    - name: synq.extensions.atlan.provider.v1.AtlanProviderService

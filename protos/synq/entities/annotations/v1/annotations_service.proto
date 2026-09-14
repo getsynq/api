@@ -2,8 +2,11 @@ syntax = "proto3";
 
 package synq.entities.annotations.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/annotations/v1/annotation_count.proto";
+import "synq/entities/v1/annotation.proto";
+import "synq/entities/v1/identifier.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/annotations/v1";
@@ -23,6 +26,30 @@ service AnnotationsService {
     };
     option (google.api.http) = {get: "/api/entities/annotations/v1"};
   }
+
+  // Read the annotations carried by specific entities.
+  //
+  // ListAnnotations answers what the workspace annotates by and how often;
+  // this answers what one entity carries. They are separate reads because an
+  // entity's annotations are not part of the entity: `synq.entities.v1.Entity`
+  // is the shape `synq.entities.custom.v1.UpsertEntity` accepts, so the
+  // `annotations` field on it is what a producer ASSERTS about an entity, and
+  // answering a read with it would make a read-edit-write round trip write one
+  // entity's annotations onto another.
+  rpc BatchGetEntityAnnotations(BatchGetEntityAnnotationsRequest) returns (BatchGetEntityAnnotationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/annotations/v1/batchGet"
+      body: "*"
+    };
+  }
 }
 
 // ListAnnotationsRequest is the request message for the ListAnnotations method.
@@ -32,4 +59,44 @@ message ListAnnotationsRequest {}
 message ListAnnotationsResponse {
   // The annotation counts grouped by name and value.
   repeated AnnotationCount annotation_counts = 1;
+}
+
+// BatchGetEntityAnnotationsRequest is the request message for the
+// BatchGetEntityAnnotations method.
+message BatchGetEntityAnnotationsRequest {
+  // The entities to read annotations for.
+  // Each entry is validated by Identifier's own rules — its `id` oneof is
+  // `required`, and protovalidate recurses into the elements of a repeated
+  // message field — so an identifier naming nothing is refused here. There is no
+  // per-item `required` to add beside it: `repeated.items.required` is
+  // unenforceable and buf lint rejects it, and it would have nothing to catch,
+  // because an entry on the wire is always a message rather than a null.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 1000
+  }];
+}
+
+// BatchGetEntityAnnotationsResponse is the response message for the
+// BatchGetEntityAnnotations method.
+message BatchGetEntityAnnotationsResponse {
+  // One entry per requested entity that carries any annotation. An entity with
+  // none is omitted rather than returned empty, so the response says which of
+  // the requested entities are annotated at all.
+  repeated EntityAnnotations entity_annotations = 1;
+}
+
+// EntityAnnotations is the annotations one entity carries.
+message EntityAnnotations {
+  // The entity, echoed back in the spelling it was requested in.
+  synq.entities.v1.Identifier id = 1;
+
+  // Annotations the entity carries, one entry per name, ordered by name.
+  //
+  // Read over the entity's whole identity group rather than the one id asked
+  // for: a dbt model, the warehouse table it builds and a catalog entity
+  // virtualising the same table are one entity to a reader, and which of them
+  // an annotation was published against is a property of the producer, not of
+  // the thing being annotated.
+  repeated synq.entities.v1.Annotation annotations = 2;
 }

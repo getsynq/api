@@ -254,6 +254,26 @@ enum SqlTestDeploymentRuleType {
   SQL_TEST_DEPLOYMENT_RULE_TYPE_EXCLUSIVE_STATIC = 4;
 }
 
+// SqlTestSkipReason is the checkable form of the `reason` string carried by
+// SqlTestsDeploymentOverview.SkippedTable and .SkippedTest, mirroring the
+// SCREAMING_SNAKE tokens documented on those fields one-for-one. It also carries
+// the reason a SqlTestDeploymentChange deletes a test, which has no string form.
+// The set is open by design — a producer may report a reason before this enum has
+// a matching value for it — so a client must treat SQL_TEST_SKIP_REASON_UNSPECIFIED
+// (and any value this client predates) as "skipped, reason unrecognised" rather
+// than as proof nothing applies.
+enum SqlTestSkipReason {
+  SQL_TEST_SKIP_REASON_UNSPECIFIED = 0;
+  SQL_TEST_SKIP_REASON_HIGHER_PRIORITY_RULE = 1;
+  SQL_TEST_SKIP_REASON_NO_INTEGRATION = 2;
+  SQL_TEST_SKIP_REASON_TEST_PREPARATION_FAILED = 3;
+  SQL_TEST_SKIP_REASON_TEST_OWNED_BY_OTHER_RULE = 4;
+  // The table's schema is known and lacks a column the test reads.
+  SQL_TEST_SKIP_REASON_MISSING_COLUMNS = 5;
+  // No schema is known for the table yet, so column tests cannot be checked.
+  SQL_TEST_SKIP_REASON_SCHEMA_UNAVAILABLE = 6;
+}
+
 // SqlTestDeploymentChange describes one test's planned or applied change for a
 // single table or view within a SqlTestsDeploymentOverview.
 message SqlTestDeploymentChange {
@@ -265,6 +285,17 @@ message SqlTestDeploymentChange {
   // Name of the test, resolved from its RuleTest.name (or the generated name for
   // non-business test kinds).
   string test_name = 3;
+  // Why this change happens, when the reason is something other than the rule's
+  // selection. Today that is one case: SQL_TEST_SKIP_REASON_MISSING_COLUMNS on a
+  // `tests_to_delete` entry whose table lost a column the test reads, so a caller can
+  // say "column dropped: amount" rather than reporting a bare delete. Unset
+  // (SQL_TEST_SKIP_REASON_UNSPECIFIED) otherwise, including for a delete caused by the
+  // table no longer matching the rule's selection — treat unset as "no extra reason",
+  // never as a list this change cannot appear in.
+  SqlTestSkipReason reason_code = 4;
+  // Columns the table lacks, spelled as the test declares them, when `reason_code`
+  // is SQL_TEST_SKIP_REASON_MISSING_COLUMNS. Empty otherwise.
+  repeated string missing_columns = 5;
 }
 
 // SqlTestsDeploymentOverview previews or reports the effect of deploying a
@@ -287,8 +318,23 @@ message SqlTestsDeploymentOverview {
   message SkippedTable {
     // Synq path of the skipped table or view.
     string table_path = 1;
-    // Human-readable reason the table or view was skipped.
+    // Why the table or view was skipped, as a stable SCREAMING_SNAKE token:
+    //
+    //   SKIPPED_HIGHER_PRIORITY_RULE    an exclusive rule has carved the table out
+    //   SKIPPED_NO_INTEGRATION          the table has no integration to run a test against
+    //   SKIPPED_TEST_PREPARATION_FAILED the integration's configuration is unavailable,
+    //                                   or the table's dialect cannot render the test
+    //
+    // Clients branch on these, so treat the spellings as part of this API: adding a
+    // value is safe, renaming one is a breaking change. A value not listed here may
+    // appear — fall through to "skipped, reason unrecognised" rather than assume the
+    // set is closed. `reason_code` is the checkable form.
     string reason = 2;
+    // Machine-checkable form of `reason`, so a client can branch on a value the
+    // compiler knows instead of string-matching a wire constant. `reason` remains
+    // authoritative and keeps being written unchanged; `reason_code` is
+    // SQL_TEST_SKIP_REASON_UNSPECIFIED for a `reason` this enum does not yet cover.
+    SqlTestSkipReason reason_code = 3;
   }
   // Tables or views this rule matched but could not deploy tests onto.
   repeated SkippedTable skipped_tables = 5;
@@ -305,14 +351,84 @@ message SqlTestsDeploymentOverview {
     string sql_test_path = 2;
     // Name of the test, resolved the same way as in SqlTestDeploymentChange.
     string test_name = 3;
-    // Human-readable reason the test was skipped.
+    // Why the test was skipped, as a stable SCREAMING_SNAKE token:
+    //
+    //   SKIPPED_TEST_OWNED_BY_OTHER_RULE  another rule already deploys that test
+    //   SKIPPED_MISSING_COLUMNS           the table lacks a column the test reads
+    //   SKIPPED_SCHEMA_UNAVAILABLE        no schema is known for the table yet
+    //
+    // Clients branch on these, so treat the spellings as part of this API: adding a
+    // value is safe, renaming one is a breaking change. A value not listed here may
+    // appear — fall through to "skipped, reason unrecognised" rather than assume the
+    // set is closed. `reason_code` is the checkable form.
     string reason = 4;
-    // Id of the deployment rule that owns the test.
+    // Id of the deployment rule that owns the test. Set only for
+    // SKIPPED_TEST_OWNED_BY_OTHER_RULE.
     string owner_rule_id = 5;
     // Title the owning rule carried when this plan was made. A title can be
     // renamed — use owner_rule_id to look the rule up.
     string owner_rule_title = 6;
+    // Machine-checkable form of `reason`. Same contract as
+    // SkippedTable.reason_code: `reason` stays authoritative, and this is
+    // SQL_TEST_SKIP_REASON_UNSPECIFIED for a reason this enum does not yet cover.
+    SqlTestSkipReason reason_code = 7;
+    // Columns the test reads that the table does not have, spelled as the test
+    // declares them. Set for SKIPPED_MISSING_COLUMNS; empty for every other reason.
+    // A test is skipped whole — `not_null[a, b]` with only `b` missing lists just
+    // `b` but deploys neither column — so this names the gap, not the test's
+    // column list.
+    repeated string missing_columns = 8;
+    // Synq path of the *referenced* table, for a `relationships` test skipped
+    // because that table (rather than the table under test) lacks the column.
+    // Empty otherwise.
+    string referenced_table_path = 9;
   }
-  // Tests this rule declares that another rule already owns on the same table.
+  // Tests this rule declares that this deploy did not deploy — because another rule
+  // already owns them on the table, or because the table's columns do not support
+  // them.
   repeated SkippedTest skipped_tests = 6;
+
+  // Counts over the lists above, so a rule matching thousands of tables can be
+  // reported without reading every row. Always populated.
+  SqlTestsDeploymentOverviewSummary summary = 7;
+}
+
+// SqlTestsDeploymentOverviewSummary counts a SqlTestsDeploymentOverview, so a
+// caller can render "40 tables, 78 tests, 2 skipped for a missing column" without
+// walking lists that run to thousands of entries for a warehouse-wide rule. Every
+// count is derived from the lists in the same message — it adds no information a
+// reader of those lists could not compute, only the ability to skip reading them.
+message SqlTestsDeploymentOverviewSummary {
+  // Distinct tables and views this plan touches: every table_path appearing in
+  // tests_to_create, tests_to_update, tests_to_delete, tests_to_keep,
+  // skipped_tests or skipped_tables, counted once.
+  int32 tables_matched = 1;
+  // len(tests_to_create).
+  int32 tests_to_create = 2;
+  // len(tests_to_update).
+  int32 tests_to_update = 3;
+  // len(tests_to_delete).
+  int32 tests_to_delete = 4;
+  // len(tests_to_keep).
+  int32 tests_to_keep = 5;
+  // len(skipped_tests). Skipped *tables* are not counted here — see
+  // skipped_by_reason, which covers both lists. A test dropped because its column went
+  // away is a delete, not a skip, and counts in tests_to_delete.
+  int32 tests_skipped = 6;
+  // One entry per skip across BOTH skipped_tables and skipped_tests, keyed by the
+  // SqlTestSkipReason value name (e.g. "SQL_TEST_SKIP_REASON_MISSING_COLUMNS"), and
+  // "SQL_TEST_SKIP_REASON_UNSPECIFIED" for a reason string this enum does not cover.
+  // The two lists count in different units — a skipped table is one table, a skipped
+  // test is one test — so the values sum to more than `tests_skipped` whenever a
+  // table was skipped.
+  map<string, int32> skipped_by_reason = 7;
+  // Lowercased column name to the number of tests citing it as missing, counted over
+  // every entry carrying `missing_columns` — the skipped_tests the rule could not
+  // deploy AND the tests_to_delete it is removing because the column went away. Both
+  // answer the same question, "which columns does this rule not find", and a dropped
+  // column shows up as deletes rather than skips, so counting only one of the two
+  // reports an empty histogram for the case it exists for. A test missing two columns
+  // adds one to each. Lowercased so a column two tests spell differently is one entry.
+  // Empty when nothing cited a missing column.
+  map<string, int32> missing_columns_histogram = 8;
 }

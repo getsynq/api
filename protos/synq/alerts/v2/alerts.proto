@@ -1,26 +1,18 @@
 syntax = "proto3";
 
-package synq.alerts.v1;
+package synq.alerts.v2;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "synq/alerts/v1/targets.proto";
+import "synq/alerts/v2/targets.proto";
 import "synq/queries/v1/query.proto";
-import "synq/queries/v1/query_operand.proto";
-import "synq/queries/v1/query_parts.proto";
 import "synq/v1/severity.proto";
 
-option go_package = "github.com/getsynq/api/alerts/v1";
+option go_package = "github.com/getsynq/api/alerts/v2";
 
 // Alert represents the configuration for an alert.
 // It contains all the necessary information to trigger and send alerts.
-//
-// Deprecated: use synq.alerts.v2.Alert, whose trigger is the canonical
-// synq.queries.v1.Query + resolver_ql selection. This message is served only by
-// the deprecated synq.alerts.services.v1.AlertsService and is scheduled for removal.
 message Alert {
-  option deprecated = true;
-
   // Unique identifier for the alert config (system-generated).
   string id = 1 [(buf.validate.field).string = {min_len: 1}];
 
@@ -37,8 +29,8 @@ message Alert {
     max_len: 500
   }];
 
-  // Query that defines which entities can trigger this alert.
-  EntityGroupQuery trigger = 4 [(buf.validate.field).required = true];
+  // Selects the entities that can trigger this alert.
+  Trigger trigger = 4 [(buf.validate.field).required = true];
 
   // List of targets where alerts will be sent.
   repeated AlertingTarget targets = 5 [(buf.validate.field).repeated = {min_items: 1}];
@@ -63,25 +55,50 @@ message Alert {
   bool is_disabled = 9;
 }
 
+// Trigger selects the entities whose issues or schema changes fire this alert:
+// a structured `query`, an optional ResolverQL string that takes precedence when
+// set, and a read-only canonical rendering.
+message Trigger {
+  option (buf.validate.message).cel = {
+    id: "trigger.requires_selection"
+    message: "at least one of query or resolver_ql must be set"
+    expression: "this.query.parts.size() > 0 || this.resolver_ql.size() > 0"
+  };
+
+  // Structured selection of the entities that can trigger this alert. On write it is
+  // the selection unless `resolver_ql` is set, which takes precedence. Always populated
+  // on read, best-effort — a part with no public form is carried as `unsupported`.
+  synq.queries.v1.Query query = 1;
+
+  // ResolverQL selection string, a more expressive alternative to `query` for selections
+  // it cannot express (e.g. lineage walks, column predicates). When set on write it takes
+  // precedence and `query` is ignored. On read it is echoed back verbatim for alerts
+  // authored via ResolverQL and empty for structured alerts, so writing a read response
+  // back unchanged preserves the authored form. See `rendered_resolver_ql` for the
+  // ResolverQL form of a structured alert.
+  string resolver_ql = 2 [(buf.validate.field).string = {max_len: 20000}];
+
+  // Output-only canonical ResolverQL rendering of this alert's selection, populated
+  // regardless of how it was authored (it equals `resolver_ql` for ResolverQL-authored
+  // alerts). Ignored on write. Empty only for selections with no ResolverQL representation.
+  string rendered_resolver_ql = 3;
+}
+
 // AlertSettings defines the properties that affect the trigger and presentation of an alert.
 // It specifies the conditions under which an alert should be fired and how it should behave.
 message AlertSettings {
-  reserved 1, 3;
-  reserved "entity_failure", "issue_lifecycle";
-
   // The specific type of alert settings. Exactly one must be specified.
   oneof settings {
     option (buf.validate.oneof).required = true;
 
     // Alert triggered by schema changes.
     SchemaChangeAlertSettings schema_change = 2;
-    // Unified issue alert settings (replaces entity_failure and issue_lifecycle).
+    // Unified issue alert settings.
     IssueAlertSettings issue = 4;
   }
 }
 
 // IssueAlertSettings is the unified alert settings type for issue-based alerts.
-// It replaces both EntityFailureAlertSettings and IssueLifecycleAlertSettings.
 message IssueAlertSettings {
   // The severity levels that should trigger this alert.
   repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
@@ -159,71 +176,5 @@ message OngoingAlertsStrategy {
     Disabled disabled = 1;
     Stream stream = 2;
     Schedule schedule = 3;
-  }
-}
-
-// EntityGroupQuery defines a query to select a group of entities.
-// This is used to specify which entities should be monitored by an alert.
-//
-// Deprecated: the v2 trigger selects entities with synq.queries.v1.Query +
-// resolver_ql instead. Scheduled for removal with synq.alerts.services.v1.
-message EntityGroupQuery {
-  option deprecated = true;
-
-  // The parts that compose this entity group query.
-  repeated SelectionQuery parts = 1 [(buf.validate.field).repeated = {min_items: 1}];
-}
-
-// SelectionQuery represents a query that selects entities based on various criteria.
-// It combines multiple query parts with a logical operand.
-//
-// Deprecated: the v2 trigger selects entities with synq.queries.v1.Query +
-// resolver_ql instead. Scheduled for removal with synq.alerts.services.v1.
-message SelectionQuery {
-  option deprecated = true;
-
-  option (buf.validate.message).cel = {
-    id: "selection_query.except_requires_two_parts"
-    message: "QUERY_OPERAND_EXCEPT requires exactly 2 parts"
-    expression: "this.operand != 3 || this.parts.size() == 2"
-  };
-
-  // The individual query parts that make up this selection.
-  repeated QueryPart parts = 1 [(buf.validate.field).repeated = {min_items: 1}];
-
-  // The logical operand used to combine the query parts (AND, OR, etc.).
-  synq.queries.v1.QueryOperand operand = 2 [(buf.validate.field).required = true];
-
-  // A single part of a selection query.
-  message QueryPart {
-    // The specific query part type. Exactly one must be specified.
-    oneof part {
-      option (buf.validate.oneof).required = true;
-
-      // Filter by specific entity identifiers.
-      synq.queries.v1.IdentifierList identifier_list = 1;
-      // Filter by name pattern search.
-      synq.queries.v1.WithNameSearch with_name_search = 2;
-      // Filter by entity type.
-      synq.queries.v1.WithType with_type = 3;
-      // Filter by annotation presence/value.
-      synq.queries.v1.WithAnnotation with_annotation = 4;
-      // Filter by data platform.
-      synq.queries.v1.InDataPlatform in_data_platform = 5;
-      // Filter by folder location.
-      synq.queries.v1.InFolder in_folder = 6;
-      // Filter by data platform type.
-      synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
-      // Filter by data product membership.
-      synq.queries.v1.InDataproduct in_dataproduct = 8;
-      // Alert on specific entities, named by the ids the API returned for them.
-      // Read back as `identifier_list`, with each id on the identifier it names.
-      synq.queries.v1.EntityIds entity_ids = 9;
-
-      // Nested selection query for complex filtering.
-      SelectionQuery query = 100;
-      // Unsupported query types for backward compatibility.
-      synq.queries.v1.Unsupported unsupported = 101;
-    }
   }
 }

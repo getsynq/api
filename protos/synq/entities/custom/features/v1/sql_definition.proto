@@ -5,6 +5,7 @@ package synq.entities.custom.features.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/coordinates/v1/database_context.proto";
+import "synq/entities/v1/identifier.proto";
 import "synq/entities/v1/sql_dialect.proto";
 
 option go_package = "github.com/getsynq/api/entities/custom/features/v1";
@@ -34,4 +35,49 @@ message SqlDefinition {
   // When provided, helps CLL resolve schema-qualified references (e.g. `PROD.TABLE_NAME`)
   // to the correct database instance and catalog.
   optional synq.entities.coordinates.v1.DatabaseContext database_context = 4;
+
+  // Names in this SQL that are not database objects, each bound to the entity it
+  // stands for. A reference the SQL makes to one of these names resolves to that
+  // entity instead of being looked up in the database and dropped.
+  //
+  // Use it for the upstreams and downstreams a database cannot address: another
+  // custom entity, a queue, a service, an API. A name that IS a database object
+  // needs no binding — it resolves on its own.
+  //
+  // The bindings are part of the definition and replace with it: a binding
+  // dropped from a later write is gone, and the lineage it produced is
+  // withdrawn.
+  repeated SqlTableReference references = 5 [(buf.validate.field) = {
+    repeated: {max_items: 200}
+  }];
+}
+
+// SqlTableReference binds one name, as the SQL writes it, to the entity that name stands for.
+message SqlTableReference {
+  // The name as the SQL writes it. Matched case-insensitively; a part left empty
+  // defaults from the definition's `database_context`, exactly as an unqualified
+  // table reference in the SQL does. So a binding of just `object_name:
+  // "orders_topic"` under a definition whose database is `kafka` matches both
+  // `FROM kafka.orders_topic` and `FROM orders_topic`.
+  string instance_name = 1 [(buf.validate.field) = {
+    string: {max_len: 500}
+  }];
+  string database_name = 2 [(buf.validate.field) = {
+    string: {max_len: 500}
+  }];
+  string schema_name = 3 [(buf.validate.field) = {
+    string: {max_len: 500}
+  }];
+  string object_name = 4 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 500
+    }
+  }];
+
+  // The entity this name stands for. Any entity: another custom entity, or a
+  // table, model or dashboard from a connected platform. An entity that does not
+  // exist yet is remembered and the edge appears once it does.
+  synq.entities.v1.Identifier entity = 5 [(buf.validate.field).required = true];
 }

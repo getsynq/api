@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/custom/features/v1/checks.proto";
 import "synq/entities/custom/features/v1/code.proto";
+import "synq/entities/custom/features/v1/column_lineage.proto";
 import "synq/entities/custom/features/v1/git_file_reference.proto";
 import "synq/entities/custom/features/v1/schema.proto";
 import "synq/entities/custom/features/v1/sql_definition.proto";
@@ -39,6 +40,8 @@ message Feature {
     synq.entities.custom.features.v1.Schema schema = 13;
     // Only one feature per entity.
     synq.entities.custom.features.v1.CheckCategory check_category = 14;
+    // Only one feature per entity.
+    synq.entities.custom.features.v1.ColumnLineage column_lineage = 15;
   }
 
   // Timestamp when the entity was created.

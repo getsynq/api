@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package synq.alerts.v1;
+package synq.alerts.v2;
 
 import "buf/validate/validate.proto";
 
-option go_package = "github.com/getsynq/api/alerts/v1";
+option go_package = "github.com/getsynq/api/alerts/v2";
 
 // AlertingTarget represents a destination where alert notifications will be sent.
 // Each target type has its own specific configuration requirements.
@@ -52,22 +52,10 @@ message OwnerTarget {
 }
 
 // MsTeamsTarget configures alert delivery to Microsoft Teams.
-// Alerts are sent to either a Microsoft Teams channel or a specific member.
+// Alerts are sent to a Microsoft Teams channel.
 message MsTeamsTarget {
-  // Exactly one of channel or member_id must be set.
-  option (buf.validate.message).oneof = {
-    fields: [
-      "channel",
-      "member_id"
-    ]
-    required: true
-  };
-
-  // Teams channel name or ID. Leave unset to direct-message a member instead.
-  string channel = 1;
-
-  // Microsoft Teams member id for direct-message delivery.
-  string member_id = 2;
+  // Teams channel name or ID.
+  string channel = 1 [(buf.validate.field).string = {min_len: 1}];
 }
 
 // WebhookTarget configures alert delivery via webhook/hook integrations.

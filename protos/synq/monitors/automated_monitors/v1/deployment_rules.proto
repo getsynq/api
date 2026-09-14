@@ -296,13 +296,26 @@ message ProductConfigSelfStrategySelection {
 }
 
 message MonitorsDeploymentRule {
+  // A rule selected by a query is addressed by its title within its config, so
+  // the title is that rule's identity and has to be supplied.
+  //
+  // The other three select something that carries a name already — one asset, or
+  // one data product — which leaves nothing for the title to name: it is a
+  // display string the server fills in, and every surface resolves the selection
+  // instead. A caller that derived one from a single asset path could only
+  // overflow max_len for a long path, with no way to shorten it, since the field
+  // it duplicates is the one the rule is keyed on. A caller naming a rule after
+  // its data product copies a string it does not own: renaming the product does
+  // not touch the rule, so the copy is whatever the product was called when the
+  // rule was last written.
+  option (buf.validate.message).cel = {
+    id: "monitors_deployment_rule.title_required_unless_selection_is_named"
+    message: "title is required unless the rule selects something already named (static_config / exclusive_static_config / product_config)"
+    expression: "this.title != '' || has(this.static_config) || has(this.exclusive_static_config) || has(this.product_config)"
+  };
+
   string id = 1 [(buf.validate.field).string.uuid = true];
-  string title = 2 [(buf.validate.field) = {
-    string: {
-      min_len: 1
-      max_len: 100
-    }
-  }];
+  string title = 2 [(buf.validate.field).string.max_len = 100];
 
   oneof config {
     QueryConfig query_config = 3;

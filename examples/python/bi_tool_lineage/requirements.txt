@@ -1,0 +1,5 @@
+--extra-index-url https://buf.build/gen/python
+getsynq-api-grpc-python
+grpcio
+protobuf
+requests

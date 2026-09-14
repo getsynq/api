@@ -23,6 +23,7 @@ Create and update data quality issues, including changing their status and assig
 | `MarkNoActionNeeded`<br/>_synq.issues.issues.v1.IssuesService_<br/>`PATCH /api/issues/v1/{issue_id}/mark-no-action-needed` | Mark issue as no action needed. |
 | `PostComment`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/{issue_id}/comment` | Post a comment on an issue. |
 | `ClearStatus`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/clear-status` | Clear the triage status of an issue, returning it to an untriaged state. |
+| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. Only the actor who posted the comment may |
 | `MarkExpected`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-expected` | Mark issue as expected. |
 | `MarkFixed`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-fixed` | Mark issue as fixed. |
 | `MarkInvestigating`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-investigating` | Mark issue as being investigated. |
@@ -56,6 +57,7 @@ Declare, update, and resolve incidents raised for confirmed issues with business
 | `CancelIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/cancel` | Cancel an incident |
 | `CloseIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/close` | Close an incident |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
+| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. Only the actor who posted the comment may |
 | `MergeIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/merge` |  |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
 | `RemoveIssuesFromIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/issues` |  |
@@ -103,6 +105,7 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GenerateConnectionsYaml`<br/>_synq.agent.dwh.v1.ConnectionsService_ | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
 | `ListConnections`<br/>_synq.agent.dwh.v1.ConnectionsService_ | ListConnections retrieves data warehouse connections for a workspace. |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
@@ -489,6 +492,10 @@ Create, update, and delete alert rules and notification channels.
 | `Delete`<br/>_synq.alerts.services.v1.AlertsService_<br/>`DELETE /api/alerts/v1` | Delete an existing alert configuration. |
 | `ToggleEnabled`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/toggle` | Enables or disables an existing alert configuration. |
 | `Update`<br/>_synq.alerts.services.v1.AlertsService_<br/>`PUT /api/alerts/v1` | Update an existing alert configuration. |
+| `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | Create a new alert configuration. |
+| `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | Delete an existing alert configuration. |
+| `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | Enables or disables an existing alert configuration. |
+| `Update`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Update an existing alert configuration. |
 
 ## Read Alerts
 
@@ -500,6 +507,8 @@ View alert rules and notification channels.
 | ------ | ----------- |
 | `BatchGet`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/get` | Get multiple alert configurations by their identifiers. |
 | `List`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/list` | Retrieves a list of alert configurations based on filters. |
+| `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | Get multiple alert configurations by their identifiers. |
+| `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | Retrieves a list of alert configurations based on filters. |
 
 ## Edit Owners
 
@@ -522,6 +531,8 @@ View owners and their notification channels.
 | ------ | ----------- |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
 
@@ -581,6 +592,8 @@ View data products and their contents.
 | `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
 
 ## Edit Domains
 
@@ -701,6 +714,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
 | `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
 | `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
+| `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
@@ -765,6 +779,8 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
@@ -798,7 +814,9 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
+| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. Only the actor who posted the comment may |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
+| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. Only the actor who posted the comment may |
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
 | `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` |  |
 | `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` |  |
@@ -1045,6 +1063,12 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `List`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/list` | `SCOPE_ALERTS_READ` |
 | `ToggleEnabled`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/toggle` | `SCOPE_ALERTS_EDIT` |
 | `Update`<br/>_synq.alerts.services.v1.AlertsService_<br/>`PUT /api/alerts/v1` | `SCOPE_ALERTS_EDIT` |
+| `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | `SCOPE_ALERTS_READ` |
+| `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
+| `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
+| `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | `SCOPE_ALERTS_READ` |
+| `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | `SCOPE_ALERTS_EDIT` |
+| `Update`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
 | `Iam`<br/>_synq.auth.iam.v1.IamService_<br/>`GET /api/iam/v1` | — |
 | `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
 | `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
@@ -1110,6 +1134,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | `SCOPE_DOMAIN_EDIT` |
 | `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | `SCOPE_DOMAIN_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
+| `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
@@ -1207,6 +1232,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `CancelIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/cancel` | `SCOPE_INCIDENTS_EDIT` |
 | `CloseIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/close` | `SCOPE_INCIDENTS_EDIT` |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` | `SCOPE_INCIDENTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | `SCOPE_INCIDENTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`GET /api/incidents/v1` | `SCOPE_INCIDENTS_READ`<br/>`SCOPE_MCP_READ` |
 | `MergeIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/merge` | `SCOPE_INCIDENTS_EDIT` |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | `SCOPE_INCIDENTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
@@ -1233,6 +1259,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `PostComment`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/{issue_id}/comment` | `SCOPE_ISSUES_EDIT` |
 | `BatchGetIssues`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/by-id` | `SCOPE_ISSUES_READ`<br/>`SCOPE_MCP_READ` |
 | `ClearStatus`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/clear-status` | `SCOPE_ISSUES_EDIT` |
+| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | `SCOPE_ISSUES_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListIssues`<br/>_synq.issues.v2.IssuesService_<br/>`GET /api/issues/v2` | `SCOPE_ISSUES_READ`<br/>`SCOPE_MCP_READ` |
 | `MarkExpected`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-expected` | `SCOPE_ISSUES_EDIT` |
 | `MarkFixed`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-fixed` | `SCOPE_ISSUES_EDIT` |
@@ -1268,6 +1295,8 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | `SCOPE_MONITORS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | `SCOPE_OWNERS_READ`<br/>`SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | `SCOPE_OWNERS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | `SCOPE_OWNERSHIP_READ`<br/>`SCOPE_MCP_READ` |
 | `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | `SCOPE_OWNERS_EDIT`<br/>`SCOPE_MCP_WRITE` |

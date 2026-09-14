@@ -1,29 +1,26 @@
 syntax = "proto3";
 
-package synq.alerts.services.v1;
+package synq.alerts.services.v2;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
-import "synq/alerts/v1/alerts.proto";
-import "synq/alerts/v1/targets.proto";
+import "synq/alerts/v2/alerts.proto";
+import "synq/alerts/v2/targets.proto";
 import "synq/v1/scope_authorization.proto";
 
-option go_package = "github.com/getsynq/api/alerts/services/v1";
+option go_package = "github.com/getsynq/api/alerts/services/v2";
 
 // AlertsService provides operations for managing alert configurations.
 //
-// Deprecated: use synq.alerts.services.v2.AlertsService. The v2 service selects
-// entities with the canonical synq.queries.v1.Query + resolver_ql trigger; this
-// v1 service, which uses the bespoke EntityGroupQuery selection, is scheduled for
-// removal. Migrate existing integrations to v2.
+// It supersedes synq.alerts.services.v1.AlertsService: entities are selected with
+// the canonical synq.queries.v1.Query + resolver_ql trigger rather than the bespoke
+// EntityGroupQuery.
 service AlertsService {
-  option deprecated = true;
-
   // Create a new alert configuration.
   rpc Create(CreateRequest) returns (CreateResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
-      post: "/api/alerts/v1"
+      post: "/api/alerts/v2"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -35,7 +32,7 @@ service AlertsService {
   rpc List(ListRequest) returns (ListResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {
-      post: "/api/alerts/v1/list"
+      post: "/api/alerts/v2/list"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -47,7 +44,7 @@ service AlertsService {
   rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {
-      post: "/api/alerts/v1/get"
+      post: "/api/alerts/v2/get"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -60,7 +57,7 @@ service AlertsService {
   rpc Update(UpdateRequest) returns (UpdateResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
-      put: "/api/alerts/v1"
+      put: "/api/alerts/v2"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -73,7 +70,7 @@ service AlertsService {
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
-      delete: "/api/alerts/v1"
+      delete: "/api/alerts/v2"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -86,7 +83,7 @@ service AlertsService {
   rpc ToggleEnabled(ToggleEnabledRequest) returns (ToggleEnabledResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
-      post: "/api/alerts/v1/toggle"
+      post: "/api/alerts/v2/toggle"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -134,23 +131,23 @@ message CreateRequest {
     max_len: 500
   }];
 
-  // Query that defines which entities can trigger this alert.
-  synq.alerts.v1.EntityGroupQuery trigger = 3 [(buf.validate.field).required = true];
+  // Selects the entities that can trigger this alert.
+  synq.alerts.v2.Trigger trigger = 3 [(buf.validate.field).required = true];
 
   // Targets where alerts will be sent.
-  repeated synq.alerts.v1.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
+  repeated synq.alerts.v2.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
 
   // Additional settings for the specific alert type.
-  synq.alerts.v1.AlertSettings settings = 5 [(buf.validate.field).required = true];
+  synq.alerts.v2.AlertSettings settings = 5 [(buf.validate.field).required = true];
 
   // Optional owner information for the alert configuration.
-  optional synq.alerts.v1.Alert.Owner owner = 6;
+  optional synq.alerts.v2.Alert.Owner owner = 6;
 }
 
 // CreateResponse returns the created alert configuration.
 message CreateResponse {
   // The alert configuration that was created.
-  synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
 }
 
 message AlertIdentifier {
@@ -203,21 +200,22 @@ message UpdateRequest {
     max_len: 255
   }];
 
-  // Query that defines which entities can trigger this alert.
-  optional synq.alerts.v1.EntityGroupQuery trigger = 3;
+  // Selects the entities that can trigger this alert.
+  // Leave unset to keep the existing trigger.
+  optional synq.alerts.v2.Trigger trigger = 3;
 
   // Targets where alerts will be sent.
   // Leave empty to keep existing targets.
-  repeated synq.alerts.v1.AlertingTarget targets = 4;
+  repeated synq.alerts.v2.AlertingTarget targets = 4;
 
   // Additional settings for the specific alert type.
-  optional synq.alerts.v1.AlertSettings settings = 5;
+  optional synq.alerts.v2.AlertSettings settings = 5;
 }
 
 // UpdateResponse returns the updated alert configuration.
 message UpdateResponse {
   // The alert configuration that was updated.
-  synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
 }
 
 // DeleteRequest specifies which alert configuration to delete.
@@ -251,7 +249,7 @@ message ToggleEnabledResponse {
 // ListRequest filters alert configurations to retrieve.
 message ListRequest {
   // Optional filter by owner of the alert configurations.
-  optional synq.alerts.v1.Alert.Owner owner = 1;
+  optional synq.alerts.v2.Alert.Owner owner = 1;
 }
 
 // ListResponse returns the filtered list of alert configurations.
@@ -267,5 +265,5 @@ message BatchGetRequest {
 
 message BatchGetResponse {
   // Alerts mapped by their identifiers.
-  map<string, synq.alerts.v1.Alert> alerts = 1;
+  map<string, synq.alerts.v2.Alert> alerts = 1;
 }

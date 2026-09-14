@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package synq.entities.custom.features.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+
+option go_package = "github.com/getsynq/api/entities/custom/features/v1";
+
+// ColumnLineage declares column-level lineage flowing INTO a custom entity, for
+// the cases SQL cannot express: an upstream that is itself a custom entity, or a
+// component whose transformation is not written in SQL at all.
+//
+// Use it when `SqlDefinition` does not fit — when there is no SQL to give at
+// all, or when you would rather state the result than have it derived. A
+// component whose transformation is written in Python, or a hand-maintained
+// mapping, has no SQL for a parser to read.
+//
+// If the component DOES have SQL, prefer `SqlDefinition`: a name in it that is
+// not a database object — another custom entity, a queue, a service — is bound
+// to the entity it stands for with `SqlDefinition.references`, and the column
+// lineage is then derived from the SQL and stays correct as the SQL changes.
+//
+// The declaration is complete and replaces the previous one whole: an edge
+// missing from a write is withdrawn, and deleting the feature withdraws all of
+// them. Only one ColumnLineage feature is allowed per entity, so re-writing it
+// under the same `feature_id` is how it is edited.
+//
+// Declaring a column edge also declares the table-level edge it implies, so the
+// entity appears downstream of each upstream named here whether or not a
+// Relationship says so too. Column lineage is only ever shown along a
+// table-level edge, which is why the two travel together.
+//
+// An entity that has BOTH this feature and a `SqlDefinition` is served from this
+// declaration in the SQL-lineage view — an explicit statement takes precedence
+// over lineage derived from SQL. Declare column lineage here only for what the
+// SQL cannot say, or state the entity's whole column lineage here and treat this
+// as the authority for it.
+message ColumnLineage {
+  // Time when this lineage was declared, will default to `now` if not set. A
+  // later declaration replaces an earlier one, so an explicit time is how a
+  // backfill avoids overwriting a fresher declaration.
+  google.protobuf.Timestamp state_at = 1;
+
+  // Column-level edges into this entity. Every edge names one upstream entity
+  // and one column on each side.
+  repeated ColumnEdge edges = 2 [(buf.validate.field) = {
+    repeated: {max_items: 10000}
+  }];
+}
+
+// ColumnEdge is one column of one upstream entity feeding one column of the
+// entity this feature belongs to.
+message ColumnEdge {
+  // The entity the data comes from. Any entity: another custom entity, or a
+  // table, model or dashboard from a connected platform. An upstream that does
+  // not exist yet is remembered and the edge appears once it does.
+  synq.entities.v1.Identifier upstream = 1 [(buf.validate.field).required = true];
+
+  // Column of the upstream entity the data comes from.
+  string upstream_column = 2 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+    }
+  }];
+
+  // Column of this entity the data flows into.
+  string column = 3 [(buf.validate.field) = {
+    required: true
+    string: {
+      min_len: 1
+      max_len: 255
+    }
+  }];
+}
