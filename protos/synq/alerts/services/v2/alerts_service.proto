@@ -4,6 +4,7 @@ package synq.alerts.services.v2;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "synq/alerts/templates/v2/templates.proto";
 import "synq/alerts/v2/alerts.proto";
 import "synq/alerts/v2/targets.proto";
 import "synq/v1/scope_authorization.proto";
@@ -52,12 +53,51 @@ service AlertsService {
     };
   }
 
-  // Update an existing alert configuration.
+  // Rename an existing alert configuration.
   // The config can be identified by either ID or FQN.
-  rpc Update(UpdateRequest) returns (UpdateResponse) {
+  rpc Rename(RenameRequest) returns (RenameResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
-      put: "/api/alerts/v2"
+      post: "/api/alerts/v2/rename"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Replace the delivery targets of an existing alert configuration.
+  // The config can be identified by either ID or FQN.
+  rpc UpdateTargets(UpdateTargetsRequest) returns (UpdateTargetsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v2/targets"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Update the trigger and/or the kind-specific settings of an alert.
+  // The config can be identified by either ID or FQN.
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v2/settings"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Set or clear the message template of an existing alert configuration.
+  // The config can be identified by either ID or FQN.
+  rpc UpdateTemplate(UpdateTemplateRequest) returns (UpdateTemplateResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v2/template"
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
@@ -90,33 +130,32 @@ service AlertsService {
       scopes: [SCOPE_ALERTS_EDIT]
     };
   }
+
+  // Turns the workspace's incident-owner alert on or off. This alert notifies
+  // each incident's owner on its configured channels and has no other
+  // configuration, so it is managed here rather than through Create / Delete and
+  // does not appear in List or BatchGet.
+  rpc ToggleIncidentOwnerAlert(ToggleIncidentOwnerAlertRequest) returns (ToggleIncidentOwnerAlertResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/alerts/v2/incident-owner"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
 }
 
-// CreateRequest creates a new alert configuration.
+// CreateRequest creates a new alert configuration. The `kind` oneof carries the
+// full specification of the alert; its target and trigger constraints are
+// enforced on the concrete kind messages.
+//
+// Incident-owner alerts are not created here — turn them on with
+// ToggleIncidentOwnerAlert.
 message CreateRequest {
-  option (buf.validate.message).cel = {
-    id: "create_request.webhook_incompatible_with_ongoing_alerts"
-    message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
-    expression:
-      "!this.targets.exists(t, has(t.webhook)) || "
-      "(!has(this.settings.issue) || !has(this.settings.issue.ongoing.schedule))"
-  };
-  option (buf.validate.message).cel = {
-    id: "create_request.webhook_incompatible_with_grouped_alerts"
-    message: "Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets."
-    expression:
-      "!this.targets.exists(t, has(t.webhook)) || "
-      "!has(this.settings.issue) || "
-      "!has(this.settings.issue.grouping) || "
-      "has(this.settings.issue.grouping.no_grouping)"
-  };
-  option (buf.validate.message).cel = {
-    id: "create_request.webhook_incompatible_with_schema_change_alerts"
-    message: "Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets."
-    expression:
-      "!this.targets.exists(t, has(t.webhook)) || "
-      "!has(this.settings.schema_change)"
-  };
+  reserved 3, 4, 5, 6;
+  reserved "trigger", "targets", "settings", "owner";
 
   // Human-readable name for the alert configuration.
   string name = 1 [(buf.validate.field).string = {
@@ -131,17 +170,21 @@ message CreateRequest {
     max_len: 500
   }];
 
-  // Selects the entities that can trigger this alert.
-  synq.alerts.v2.Trigger trigger = 3 [(buf.validate.field).required = true];
+  // Optional custom template for the rendered alert message. Common to every
+  // alert kind; currently applied only to issue alerts.
+  optional synq.alerts.templates.v2.AlertTemplate template = 7;
 
-  // Targets where alerts will be sent.
-  repeated synq.alerts.v2.AlertingTarget targets = 4 [(buf.validate.field).repeated = {min_items: 1}];
+  // The alert to create. Exactly one kind must be specified.
+  oneof kind {
+    option (buf.validate.oneof).required = true;
 
-  // Additional settings for the specific alert type.
-  synq.alerts.v2.AlertSettings settings = 5 [(buf.validate.field).required = true];
-
-  // Optional owner information for the alert configuration.
-  optional synq.alerts.v2.Alert.Owner owner = 6;
+    // An issue alert on selected entities.
+    synq.alerts.v2.IssueLifecycleAlert issue_lifecycle = 8;
+    // A schema change alert on selected entities.
+    synq.alerts.v2.SchemaChangeAlert schema_change = 9;
+    // An incident lifecycle alert.
+    synq.alerts.v2.IncidentLifecycleAlert incident_lifecycle = 10;
+  }
 }
 
 // CreateResponse returns the created alert configuration.
@@ -164,56 +207,97 @@ message AlertIdentifier {
   }
 }
 
-// UpdateRequest updates an existing alert configuration.
-// The config can be identified by either ID or FQN.
-message UpdateRequest {
+// RenameRequest changes an alert's human-readable name.
+message RenameRequest {
+  // Identifier for the config to rename.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+
+  // New human-readable name for the alert configuration.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// RenameResponse returns the renamed alert configuration.
+message RenameResponse {
+  // The alert configuration that was renamed.
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateTargetsRequest replaces an alert's delivery targets.
+message UpdateTargetsRequest {
+  // Identifier for the config to update.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+
+  // The complete set of delivery targets, replacing the existing ones. At least
+  // one target is required; the allowed target types depend on the alert's kind.
+  repeated synq.alerts.v2.AlertingTarget targets = 2;
+}
+
+// UpdateTargetsResponse returns the updated alert configuration.
+message UpdateTargetsResponse {
+  // The alert configuration that was updated.
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateSettingsRequest updates an alert's trigger and/or its kind-specific
+// settings. At least one of the two must be provided; whichever is omitted is
+// left unchanged (neither can be cleared). The provided settings must match the
+// alert's existing kind — switching an alert from one kind to another is not
+// permitted.
+message UpdateSettingsRequest {
   option (buf.validate.message).cel = {
-    id: "update_request.webhook_incompatible_with_ongoing_alerts"
-    message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
+    id: "update_settings.at_least_one_facet"
+    message: "At least one of trigger or settings must be set."
     expression:
-      "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
-      "(!has(this.settings.issue) || !has(this.settings.issue.ongoing.schedule))"
+      "has(this.trigger) || has(this.issue_lifecycle) || "
+      "has(this.schema_change) || has(this.incident_lifecycle)"
   };
   option (buf.validate.message).cel = {
-    id: "update_request.webhook_incompatible_with_grouped_alerts"
-    message: "Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets."
-    expression:
-      "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
-      "!has(this.settings.issue) || "
-      "!has(this.settings.issue.grouping) || "
-      "has(this.settings.issue.grouping.no_grouping)"
-  };
-  option (buf.validate.message).cel = {
-    id: "update_request.webhook_incompatible_with_schema_change_alerts"
-    message: "Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets."
-    expression:
-      "!this.targets.exists(t, has(t.webhook)) || !has(this.settings) || "
-      "!has(this.settings.schema_change)"
+    id: "update_settings.trigger_requires_entity"
+    message: "A trigger applies to entity alerts only and cannot be set together with incident lifecycle settings."
+    expression: "!has(this.trigger) || !has(this.incident_lifecycle)"
   };
 
   // Identifier for the config to update.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
 
-  // Human-readable name for the alert configuration.
-  optional string name = 2 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 255
-  }];
+  // New entity selection. Issue and schema change alerts only. Omit to keep the
+  // current trigger; it cannot be cleared.
+  optional synq.alerts.v2.Trigger trigger = 2;
 
-  // Selects the entities that can trigger this alert.
-  // Leave unset to keep the existing trigger.
-  optional synq.alerts.v2.Trigger trigger = 3;
-
-  // Targets where alerts will be sent.
-  // Leave empty to keep existing targets.
-  repeated synq.alerts.v2.AlertingTarget targets = 4;
-
-  // Additional settings for the specific alert type.
-  optional synq.alerts.v2.AlertSettings settings = 5;
+  // New kind-specific settings. Omit to keep the current settings. Must match
+  // the alert's existing kind.
+  oneof settings {
+    // Settings for an issue alert.
+    synq.alerts.v2.IssueAlertSettings issue_lifecycle = 3;
+    // Settings for a schema change alert.
+    synq.alerts.v2.SchemaChangeAlertSettings schema_change = 4;
+    // Settings for an incident lifecycle alert.
+    synq.alerts.v2.IncidentLifecycleAlertSettings incident_lifecycle = 5;
+  }
 }
 
-// UpdateResponse returns the updated alert configuration.
-message UpdateResponse {
+// UpdateSettingsResponse returns the updated alert configuration.
+message UpdateSettingsResponse {
+  // The alert configuration that was updated.
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateTemplateRequest sets or clears an alert's message template.
+message UpdateTemplateRequest {
+  // Identifier for the config to update.
+  AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+
+  // New custom template for the rendered alert message. Omit to clear the
+  // template and revert to the default rendering. Currently applied only to
+  // issue alerts; accepted and ignored for other kinds.
+  optional synq.alerts.templates.v2.AlertTemplate template = 2;
+}
+
+// UpdateTemplateResponse returns the updated alert configuration.
+message UpdateTemplateResponse {
   // The alert configuration that was updated.
   synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
 }
@@ -246,10 +330,25 @@ message ToggleEnabledResponse {
   // Empty response - successful toggle is indicated by HTTP 200 status.
 }
 
+// ToggleIncidentOwnerAlertRequest turns the workspace's incident-owner alert on
+// or off.
+message ToggleIncidentOwnerAlertRequest {
+  // true turns the incident-owner alert on (creating it if absent); false turns
+  // it off (removing it). Setting the current state is a no-op.
+  bool is_enabled = 1;
+}
+
+// ToggleIncidentOwnerAlertResponse reports the resulting state.
+message ToggleIncidentOwnerAlertResponse {
+  // Whether the incident-owner alert is on after the call.
+  bool is_enabled = 1;
+}
+
 // ListRequest filters alert configurations to retrieve.
 message ListRequest {
-  // Optional filter by owner of the alert configurations.
-  optional synq.alerts.v2.Alert.Owner owner = 1;
+  // Optional filter by owner of the alert configurations. Only issue and schema
+  // change alerts carry an owner; filtering by owner therefore returns those only.
+  optional synq.alerts.v2.Owner owner = 1;
 }
 
 // ListResponse returns the filtered list of alert configurations.

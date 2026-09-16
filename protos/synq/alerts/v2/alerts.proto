@@ -4,15 +4,30 @@ package synq.alerts.v2;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/alerts/templates/v2/templates.proto";
 import "synq/alerts/v2/targets.proto";
+import "synq/incidents/v1/incidents.proto";
 import "synq/queries/v1/query.proto";
 import "synq/v1/severity.proto";
 
 option go_package = "github.com/getsynq/api/alerts/v2";
 
 // Alert represents the configuration for an alert.
-// It contains all the necessary information to trigger and send alerts.
+//
+// An alert is exactly one concrete kind, distinguished by the `kind` oneof:
+//   - `issue_lifecycle`: fires on the issues of selected entities.
+//   - `schema_change`: fires on the schema changes of selected entities.
+//   - `incident_lifecycle`: fires on incident state transitions.
+// The identity, template and ownership fields are shared; everything specific to
+// how an alert triggers and delivers lives on its kind message.
+//
+// Incident-owner alerts (which notify each incident's owner) are not configurable
+// and are not represented here; they are turned on or off with
+// AlertsService.ToggleIncidentOwnerAlert.
 message Alert {
+  reserved 4, 5, 6, 7;
+  reserved "trigger", "targets", "settings", "owner";
+
   // Unique identifier for the alert config (system-generated).
   string id = 1 [(buf.validate.field).string = {min_len: 1}];
 
@@ -29,30 +44,106 @@ message Alert {
     max_len: 500
   }];
 
-  // Selects the entities that can trigger this alert.
-  Trigger trigger = 4 [(buf.validate.field).required = true];
-
-  // List of targets where alerts will be sent.
-  repeated AlertingTarget targets = 5 [(buf.validate.field).repeated = {min_items: 1}];
-
-  // Additional settings for the specific alert type.
-  AlertSettings settings = 6 [(buf.validate.field).required = true];
-
-  // Owner information for the alert configuration.
-  // If set, the alert is attributed to the specified owner and ownership.
-  message Owner {
-    // Path identifying the owner of this alert config.
-    string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
-    // Ownership identifier.
-    string ownership_id = 2 [(buf.validate.field).string = {min_len: 1}];
-  }
-  optional Owner owner = 7;
-
   // Timestamp when the alert config was created.
   google.protobuf.Timestamp created_at = 8 [(buf.validate.field).required = true];
 
   // Whether the alert config is currently disabled.
   bool is_disabled = 9;
+
+  // Optional custom template for the rendered alert message. Common to every
+  // alert kind. Currently applied only to issue alerts; on other kinds it is
+  // accepted and ignored until templating is supported for them.
+  optional synq.alerts.templates.v2.AlertTemplate template = 10;
+
+  // The alert kind. Exactly one must be specified.
+  oneof kind {
+    option (buf.validate.oneof).required = true;
+
+    // Fires on the issues of selected entities.
+    IssueLifecycleAlert issue_lifecycle = 11;
+    // Fires on the schema changes of selected entities.
+    SchemaChangeAlert schema_change = 12;
+    // Fires on incident state transitions.
+    IncidentLifecycleAlert incident_lifecycle = 13;
+  }
+}
+
+// Owner attributes an alert to an owner and ownership. Only entity-scoped alerts
+// (issue and schema change) can be owned.
+message Owner {
+  // Path identifying the owner of this alert config.
+  string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
+  // Ownership identifier.
+  string ownership_id = 2 [(buf.validate.field).string = {min_len: 1}];
+}
+
+// IssueLifecycleAlert fires on the issues of the entities its trigger selects.
+message IssueLifecycleAlert {
+  option (buf.validate.message).cel = {
+    id: "issue_lifecycle_alert.webhook_incompatible_with_ongoing_alerts"
+    message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || "
+      "!has(this.settings.ongoing.schedule)"
+  };
+  option (buf.validate.message).cel = {
+    id: "issue_lifecycle_alert.webhook_incompatible_with_grouped_alerts"
+    message: "Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets."
+    expression:
+      "!this.targets.exists(t, has(t.webhook)) || "
+      "!has(this.settings.grouping) || "
+      "has(this.settings.grouping.no_grouping)"
+  };
+
+  // Selects the entities that can trigger this alert.
+  Trigger trigger = 1 [(buf.validate.field).required = true];
+
+  // Targets where alerts will be sent. At least one is required.
+  repeated AlertingTarget targets = 2 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Issue alert settings.
+  IssueAlertSettings settings = 3 [(buf.validate.field).required = true];
+
+  // Optional owner information. The owner is fixed when the alert is created.
+  optional Owner owner = 4;
+}
+
+// SchemaChangeAlert fires on the schema changes of the entities its trigger
+// selects.
+message SchemaChangeAlert {
+  option (buf.validate.message).cel = {
+    id: "schema_change_alert.webhook_unsupported"
+    message: "Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets."
+    expression: "!this.targets.exists(t, has(t.webhook))"
+  };
+
+  // Selects the entities that can trigger this alert.
+  Trigger trigger = 1 [(buf.validate.field).required = true];
+
+  // Targets where alerts will be sent. At least one is required.
+  repeated AlertingTarget targets = 2 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Schema change alert settings.
+  SchemaChangeAlertSettings settings = 3 [(buf.validate.field).required = true];
+
+  // Optional owner information. The owner is fixed when the alert is created.
+  optional Owner owner = 4;
+}
+
+// IncidentLifecycleAlert fires when an incident transitions into one of the
+// selected states. It takes no entity selection.
+message IncidentLifecycleAlert {
+  option (buf.validate.message).cel = {
+    id: "incident_lifecycle_alert.email_or_msteams_unsupported"
+    message: "Email and Microsoft Teams targets are not supported on incident lifecycle alerts. Use Slack or webhook targets."
+    expression: "!this.targets.exists(t, has(t.email) || has(t.ms_teams))"
+  };
+
+  // Targets where alerts will be sent. At least one is required.
+  repeated AlertingTarget targets = 1 [(buf.validate.field).repeated = {min_items: 1}];
+
+  // Incident lifecycle alert settings.
+  IncidentLifecycleAlertSettings settings = 2 [(buf.validate.field).required = true];
 }
 
 // Trigger selects the entities whose issues or schema changes fire this alert:
@@ -84,18 +175,20 @@ message Trigger {
   string rendered_resolver_ql = 3;
 }
 
-// AlertSettings defines the properties that affect the trigger and presentation of an alert.
-// It specifies the conditions under which an alert should be fired and how it should behave.
-message AlertSettings {
-  // The specific type of alert settings. Exactly one must be specified.
-  oneof settings {
-    option (buf.validate.oneof).required = true;
-
-    // Alert triggered by schema changes.
-    SchemaChangeAlertSettings schema_change = 2;
-    // Unified issue alert settings.
-    IssueAlertSettings issue = 4;
-  }
+// IncidentLifecycleAlertSettings configures an alert that fires when an incident
+// enters one of the selected states.
+message IncidentLifecycleAlertSettings {
+  // Incident states whose transitions fire this alert; an empty list would
+  // create an alert that never fires.
+  repeated synq.incidents.v1.Incident.State states = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
 }
 
 // IssueAlertSettings is the unified alert settings type for issue-based alerts.
@@ -114,6 +207,26 @@ message IssueAlertSettings {
 
   // Strategy for grouping issues in alert notifications.
   IssueGroupingStrategy grouping = 5;
+
+  // Optional customisation of the sender and reply-to addresses on email alerts.
+  optional EmailCustomizationOptions email_customization_options = 6;
+}
+
+// EmailCustomizationOptions customises the addresses used when an alert is
+// delivered by email. Unset addresses fall back to the workspace defaults.
+message EmailCustomizationOptions {
+  // Sender address emails are sent from.
+  optional EmailSender from = 1;
+  // Reply-to address for emails.
+  optional EmailSender reply_to = 2;
+}
+
+// EmailSender is an email address paired with an optional display name.
+message EmailSender {
+  // Email address.
+  string email = 1 [(buf.validate.field).string = {min_len: 1}];
+  // Display name shown alongside the address.
+  string name = 2;
 }
 
 // IssueGroupingStrategy controls how issues are grouped for alerting purposes.

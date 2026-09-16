@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package synq.queries.v1;
+
+option go_package = "github.com/getsynq/api/queries/v1";
+
+// One function of the ResolverQL language, as this deployment compiles it.
+message ResolverQlFunction {
+  // The name the query writes, lowercase and canonical. Function names compile
+  // case-insensitively, so `WITH_TYPE` reaches the same function as `with_type`.
+  string name = 1;
+
+  // Which job this function does, one of the values in `categories`. Use it to
+  // group the catalog the way the product does rather than inventing an order.
+  string category = 2;
+
+  // What the function selects, in one sentence. Written for a person choosing
+  // between functions; safe to show verbatim.
+  string doc = 3;
+
+  // Whether the function accepts more arguments than it declares. A variadic
+  // function with no declared arguments — `and`, `or` — takes any number of
+  // sub-queries.
+  bool variadic = 4;
+
+  // The keyword argument a bare positional value is routed to when the call
+  // names none. Empty when the function has no such argument.
+  string default_kwarg = 5;
+
+  // Arguments in the order they are written before any `name=value` argument.
+  repeated ResolverQlArg positional = 6;
+
+  // Arguments written as `name=value`, ordered by name. An argument that can be
+  // written either way appears in `positional` only.
+  repeated ResolverQlArg kwargs = 7;
+}
+
+// One argument of a function, positional or keyword.
+message ResolverQlArg {
+  // The argument's name. For a keyword argument this is the spelling written
+  // before the `=`.
+  string name = 1;
+
+  // The value shape the argument takes — a string, a list of strings, a boolean,
+  // a nested query. Names are the language's own and are stable.
+  string type = 2;
+
+  // Whether the call fails to compile without this argument.
+  bool required = 3;
+
+  // Names an entry in `enum_domains` when the argument accepts only values from
+  // a fixed vocabulary. Empty when any value of `type` is accepted.
+  string enum_domain = 4;
+
+  // What this argument does, in one sentence. Empty when the function's own doc
+  // says all there is to say.
+  string doc = 5;
+}
+
+// The values one enum-typed argument accepts.
+message ResolverQlEnumDomain {
+  // Every value the domain enumerates, lowercase. A value is matched
+  // case-insensitively, so a caller holding an upper-case spelling can send it
+  // as it is.
+  repeated string values = 1;
+
+  // An RE2 pattern of values accepted in **addition** to `values`, matched
+  // against the lowercased value. Empty when the domain accepts nothing beyond
+  // the list.
+  //
+  // It exists because one domain is not fully enumerated: the entity types a
+  // workspace defines itself are a reserved band of the asset-type vocabulary
+  // rather than members of it, spelled `custom_type_<id>`, and `values` today
+  // holds only the built-in half. A client that validates against `values` alone
+  // rejects a query this server compiles.
+  //
+  // Keep honouring the pattern even once a domain enumerates more than it does
+  // today: it is what makes a value the list has not caught up with still
+  // acceptable.
+  string pattern = 2;
+}

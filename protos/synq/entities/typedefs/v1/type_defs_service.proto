@@ -22,15 +22,20 @@ option go_package = "github.com/getsynq/api/entities/typedefs/v1";
 // that an existing type gained a capability. Everything here comes from the server,
 // so you pick both up without changing your code.
 //
-// A typical integration calls all three once at startup, keeps them in a map, and
-// looks types up as responses arrive.
+// A typical integration calls them once at startup, keeps them in a map, and looks
+// types up as responses arrive.
+//
+// It also tells you what a selection query can ask for: ListEntityTraitDefs is the
+// vocabulary behind `traits`, which selects entities by what they are rather than
+// by naming every type.
 //
 // Scoping and freshness:
 //
 //   * ListEntityTypeDefs is per workspace, because the types you defined yourself
 //     are part of your workspace's vocabulary. It returns the built-in types and
 //     your own custom types together.
-//   * ListPlatformDefs and ListExecutionTypeDefs are the same for everyone.
+//   * ListPlatformDefs, ListExecutionTypeDefs and ListEntityTraitDefs are the same
+//     for everyone.
 //   * The built-in half changes only when Coalesce Quality is upgraded, so caching
 //     it for the life of your process is fine. You can add or edit your own custom
 //     types at any time, so if a newly created type needs to appear promptly, cache
@@ -82,6 +87,27 @@ service TypeDefsService {
     };
   }
 
+  // List every trait a selection query can filter entities by.
+  //
+  // Read it before writing a selection that uses `traits`, and to show a person
+  // what one covers. A trait name this list does not contain selects nothing, so
+  // reading the list is how you tell a trait that does not exist from one your
+  // client is too old to know about.
+  rpc ListEntityTraitDefs(ListEntityTraitDefsRequest) returns (ListEntityTraitDefsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_ENTITY_TYPE_READ,
+        SCOPE_SRE_AGENT
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/typedefs/v1/entity-traits/list"
+      body: "*"
+    };
+  }
+
   // List every kind of run Coalesce Quality records against an entity.
   //
   // A dbt invocation, a warehouse query job, a detected schema change. Use it to
@@ -116,6 +142,13 @@ message ListPlatformDefsRequest {}
 message ListPlatformDefsResponse {
   // Every platform, ordered by platform value.
   repeated PlatformDef platform_defs = 1;
+}
+
+message ListEntityTraitDefsRequest {}
+
+message ListEntityTraitDefsResponse {
+  // Every trait a selection query can filter by, ordered by name.
+  repeated EntityTraitDef entity_trait_defs = 1;
 }
 
 message ListExecutionTypeDefsRequest {}

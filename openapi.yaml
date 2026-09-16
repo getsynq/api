@@ -3763,45 +3763,63 @@ components:
             additionalProperties: false
         synq.alerts.services.v2.CreateRequest:
             type: object
-            properties:
-                name:
-                    type: string
-                    maxLength: 255
-                    minLength: 1
-                    description: Human-readable name for the alert configuration.
-                fqn:
-                    type: string
-                    maxLength: 500
-                    minLength: 1
-                    description: |-
-                        User-provided fully qualified name for the alert config.
-                         This is a unique identifier that users can specify to reference the alert.
-                trigger:
-                    description: Selects the entities that can trigger this alert.
-                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
-                targets:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
-                    minItems: 1
-                    description: Targets where alerts will be sent.
-                settings:
-                    description: Additional settings for the specific alert type.
-                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
-                owner:
-                    description: Optional owner information for the alert configuration.
-                    nullable: true
-                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
+            allOf:
+                - properties:
+                    name:
+                        type: string
+                        title: name
+                        maxLength: 255
+                        minLength: 1
+                        description: Human-readable name for the alert configuration.
+                    fqn:
+                        type: string
+                        title: fqn
+                        maxLength: 500
+                        minLength: 1
+                        description: |-
+                            User-provided fully qualified name for the alert config.
+                             This is a unique identifier that users can specify to reference the alert.
+                    template:
+                        title: template
+                        description: |-
+                            Optional custom template for the rendered alert message. Common to every
+                             alert kind; currently applied only to issue alerts.
+                        nullable: true
+                        $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
+                - oneOf:
+                    - properties:
+                        incidentLifecycle:
+                            title: incident_lifecycle
+                            description: An incident lifecycle alert.
+                            $ref: '#/components/schemas/synq.alerts.v2.IncidentLifecycleAlert'
+                      title: incident_lifecycle
+                      required:
+                        - incidentLifecycle
+                    - properties:
+                        issueLifecycle:
+                            title: issue_lifecycle
+                            description: An issue alert on selected entities.
+                            $ref: '#/components/schemas/synq.alerts.v2.IssueLifecycleAlert'
+                      title: issue_lifecycle
+                      required:
+                        - issueLifecycle
+                    - properties:
+                        schemaChange:
+                            title: schema_change
+                            description: A schema change alert on selected entities.
+                            $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlert'
+                      title: schema_change
+                      required:
+                        - schemaChange
             title: CreateRequest
-            required:
-                - trigger
-                - settings
             additionalProperties: false
-            description: |
-                CreateRequest creates a new alert configuration.
-                create_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
-                create_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
-                create_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
+            description: |-
+                CreateRequest creates a new alert configuration. The `kind` oneof carries the
+                 full specification of the alert; its target and trigger constraints are
+                 enforced on the concrete kind messages.
+
+                 Incident-owner alerts are not created here — turn them on with
+                 ToggleIncidentOwnerAlert.
         synq.alerts.services.v2.CreateResponse:
             type: object
             properties:
@@ -3835,9 +3853,11 @@ components:
             type: object
             properties:
                 owner:
-                    description: Optional filter by owner of the alert configurations.
+                    description: |-
+                        Optional filter by owner of the alert configurations. Only issue and schema
+                         change alerts carry an owner; filtering by owner therefore returns those only.
                     nullable: true
-                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
+                    $ref: '#/components/schemas/synq.alerts.v2.Owner'
             title: ListRequest
             additionalProperties: false
             description: ListRequest filters alert configurations to retrieve.
@@ -3852,6 +3872,33 @@ components:
             title: ListResponse
             additionalProperties: false
             description: ListResponse returns the filtered list of alert configurations.
+        synq.alerts.services.v2.RenameRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to rename.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                name:
+                    type: string
+                    maxLength: 255
+                    minLength: 1
+                    description: New human-readable name for the alert configuration.
+            title: RenameRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: RenameRequest changes an alert's human-readable name.
+        synq.alerts.services.v2.RenameResponse:
+            type: object
+            properties:
+                alert:
+                    description: The alert configuration that was renamed.
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
+            title: RenameResponse
+            required:
+                - alert
+            additionalProperties: false
+            description: RenameResponse returns the renamed alert configuration.
         synq.alerts.services.v2.ToggleEnabledRequest:
             type: object
             properties:
@@ -3875,56 +3922,221 @@ components:
             title: ToggleEnabledResponse
             additionalProperties: false
             description: ToggleEnabledResponse confirms the toggle operation (empty response). Empty response - successful toggle is indicated by HTTP 200 status.
-        synq.alerts.services.v2.UpdateRequest:
+        synq.alerts.services.v2.ToggleIncidentOwnerAlertRequest:
             type: object
             properties:
-                identifier:
-                    description: Identifier for the config to update.
-                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
-                name:
-                    type: string
-                    maxLength: 255
-                    minLength: 1
-                    description: Human-readable name for the alert configuration.
-                    nullable: true
-                trigger:
+                isEnabled:
+                    type: boolean
                     description: |-
-                        Selects the entities that can trigger this alert.
-                         Leave unset to keep the existing trigger.
-                    nullable: true
-                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
-                targets:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
-                    description: |-
-                        Targets where alerts will be sent.
-                         Leave empty to keep existing targets.
-                settings:
-                    description: Additional settings for the specific alert type.
-                    nullable: true
-                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
-            title: UpdateRequest
+                        true turns the incident-owner alert on (creating it if absent); false turns
+                         it off (removing it). Setting the current state is a no-op.
+            title: ToggleIncidentOwnerAlertRequest
+            additionalProperties: false
+            description: |-
+                ToggleIncidentOwnerAlertRequest turns the workspace's incident-owner alert on
+                 or off.
+        synq.alerts.services.v2.ToggleIncidentOwnerAlertResponse:
+            type: object
+            properties:
+                isEnabled:
+                    type: boolean
+                    description: Whether the incident-owner alert is on after the call.
+            title: ToggleIncidentOwnerAlertResponse
+            additionalProperties: false
+            description: ToggleIncidentOwnerAlertResponse reports the resulting state.
+        synq.alerts.services.v2.UpdateSettingsRequest:
+            type: object
+            allOf:
+                - properties:
+                    identifier:
+                        title: identifier
+                        description: Identifier for the config to update.
+                        $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                    trigger:
+                        title: trigger
+                        description: |-
+                            New entity selection. Issue and schema change alerts only. Omit to keep the
+                             current trigger; it cannot be cleared.
+                        nullable: true
+                        $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                - oneOf:
+                    - properties:
+                        incidentLifecycle:
+                            title: incident_lifecycle
+                            description: Settings for an incident lifecycle alert.
+                            $ref: '#/components/schemas/synq.alerts.v2.IncidentLifecycleAlertSettings'
+                      title: incident_lifecycle
+                      required:
+                        - incidentLifecycle
+                    - properties:
+                        issueLifecycle:
+                            title: issue_lifecycle
+                            description: Settings for an issue alert.
+                            $ref: '#/components/schemas/synq.alerts.v2.IssueAlertSettings'
+                      title: issue_lifecycle
+                      required:
+                        - issueLifecycle
+                    - properties:
+                        schemaChange:
+                            title: schema_change
+                            description: Settings for a schema change alert.
+                            $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlertSettings'
+                      title: schema_change
+                      required:
+                        - schemaChange
+            title: UpdateSettingsRequest
             required:
                 - identifier
             additionalProperties: false
             description: |
-                UpdateRequest updates an existing alert configuration.
-                 The config can be identified by either ID or FQN.
-                update_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
-                update_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
-                update_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
-        synq.alerts.services.v2.UpdateResponse:
+                UpdateSettingsRequest updates an alert's trigger and/or its kind-specific
+                 settings. At least one of the two must be provided; whichever is omitted is
+                 left unchanged (neither can be cleared). The provided settings must match the
+                 alert's existing kind — switching an alert from one kind to another is not
+                 permitted.
+                update_settings.at_least_one_facet // At least one of trigger or settings must be set.
+                update_settings.trigger_requires_entity // A trigger applies to entity alerts only and cannot be set together with incident lifecycle settings.
+        synq.alerts.services.v2.UpdateSettingsResponse:
             type: object
             properties:
                 alert:
                     description: The alert configuration that was updated.
                     $ref: '#/components/schemas/synq.alerts.v2.Alert'
-            title: UpdateResponse
+            title: UpdateSettingsResponse
             required:
                 - alert
             additionalProperties: false
-            description: UpdateResponse returns the updated alert configuration.
+            description: UpdateSettingsResponse returns the updated alert configuration.
+        synq.alerts.services.v2.UpdateTargetsRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to update.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    description: |-
+                        The complete set of delivery targets, replacing the existing ones. At least
+                         one target is required; the allowed target types depend on the alert's kind.
+            title: UpdateTargetsRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: UpdateTargetsRequest replaces an alert's delivery targets.
+        synq.alerts.services.v2.UpdateTargetsResponse:
+            type: object
+            properties:
+                alert:
+                    description: The alert configuration that was updated.
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
+            title: UpdateTargetsResponse
+            required:
+                - alert
+            additionalProperties: false
+            description: UpdateTargetsResponse returns the updated alert configuration.
+        synq.alerts.services.v2.UpdateTemplateRequest:
+            type: object
+            properties:
+                identifier:
+                    description: Identifier for the config to update.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.AlertIdentifier'
+                template:
+                    description: |-
+                        New custom template for the rendered alert message. Omit to clear the
+                         template and revert to the default rendering. Currently applied only to
+                         issue alerts; accepted and ignored for other kinds.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
+            title: UpdateTemplateRequest
+            required:
+                - identifier
+            additionalProperties: false
+            description: UpdateTemplateRequest sets or clears an alert's message template.
+        synq.alerts.services.v2.UpdateTemplateResponse:
+            type: object
+            properties:
+                alert:
+                    description: The alert configuration that was updated.
+                    $ref: '#/components/schemas/synq.alerts.v2.Alert'
+            title: UpdateTemplateResponse
+            required:
+                - alert
+            additionalProperties: false
+            description: UpdateTemplateResponse returns the updated alert configuration.
+        synq.alerts.templates.v2.AlertTemplate:
+            type: object
+            allOf:
+                - properties:
+                    title:
+                        type: string
+                        title: title
+                        description: Optional custom title for the rendered message.
+                - oneOf:
+                    - properties:
+                        plain:
+                            type: string
+                            title: plain
+                            description: Verbatim message text, rendered as-is with no templating.
+                      title: plain
+                      required:
+                        - plain
+                    - properties:
+                        structured:
+                            title: structured
+                            description: A structured, dynamically rendered body.
+                            $ref: '#/components/schemas/synq.alerts.templates.v2.StructuredTemplate'
+                      title: structured
+                      required:
+                        - structured
+            title: AlertTemplate
+            additionalProperties: false
+            description: |-
+                AlertTemplate customises the message rendered for an alert.
+
+                 The body is either verbatim text (`plain`), rendered exactly as given, or a
+                 structured template (`structured`) assembled from named blocks written in
+                 Jinja-compatible syntax and grouped by where they render.
+        synq.alerts.templates.v2.StructuredTemplate:
+            type: object
+            properties:
+                summary:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.templates.v2.TemplateBlock'
+                    description: Blocks rendered once, in the group/summary message.
+                issueDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.templates.v2.TemplateBlock'
+                    description: Blocks rendered per issue, in the per-issue attachment or card.
+            title: StructuredTemplate
+            additionalProperties: false
+            description: |-
+                StructuredTemplate is a dynamic template split into the two tiers a message
+                 renders in. Within each tier, blocks render in list order.
+
+                 A block that should appear in both tiers is listed in both `summary` and
+                 `issue_details` with the same `name`.
+        synq.alerts.templates.v2.TemplateBlock:
+            type: object
+            properties:
+                name:
+                    type: string
+                    minLength: 1
+                    description: |-
+                        Optional block name. Built-in catalog blocks (for example `headline` or
+                         `error_message`) are referenced by their fixed name; a custom block may
+                         leave this unset, in which case the server assigns and returns a stable
+                         name. The same name in both tiers refers to one block.
+                    nullable: true
+                content:
+                    type: string
+                    description: Jinja-compatible source of the block body.
+            title: TemplateBlock
+            additionalProperties: false
+            description: TemplateBlock is one unit of Jinja-compatible source.
         synq.alerts.v1.Alert:
             type: object
             properties:
@@ -4402,93 +4614,86 @@ components:
                  This allows integration with external systems and custom notification workflows.
         synq.alerts.v2.Alert:
             type: object
-            properties:
-                id:
-                    type: string
-                    minLength: 1
-                    description: Unique identifier for the alert config (system-generated).
-                name:
-                    type: string
-                    maxLength: 255
-                    minLength: 1
-                    description: Human-readable name for the alert configuration.
-                fqn:
-                    type: string
-                    maxLength: 500
-                    minLength: 1
-                    description: |-
-                        User-provided fully qualified name for the alert config.
-                         This is a unique identifier that users can specify to reference the alert.
-                    nullable: true
-                trigger:
-                    description: Selects the entities that can trigger this alert.
-                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
-                targets:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
-                    minItems: 1
-                    description: List of targets where alerts will be sent.
-                settings:
-                    description: Additional settings for the specific alert type.
-                    $ref: '#/components/schemas/synq.alerts.v2.AlertSettings'
-                owner:
-                    nullable: true
-                    $ref: '#/components/schemas/synq.alerts.v2.Alert.Owner'
-                createdAt:
-                    description: Timestamp when the alert config was created.
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                isDisabled:
-                    type: boolean
-                    description: Whether the alert config is currently disabled.
+            allOf:
+                - properties:
+                    id:
+                        type: string
+                        title: id
+                        minLength: 1
+                        description: Unique identifier for the alert config (system-generated).
+                    name:
+                        type: string
+                        title: name
+                        maxLength: 255
+                        minLength: 1
+                        description: Human-readable name for the alert configuration.
+                    fqn:
+                        type: string
+                        title: fqn
+                        maxLength: 500
+                        minLength: 1
+                        description: |-
+                            User-provided fully qualified name for the alert config.
+                             This is a unique identifier that users can specify to reference the alert.
+                        nullable: true
+                    createdAt:
+                        title: created_at
+                        description: Timestamp when the alert config was created.
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    isDisabled:
+                        type: boolean
+                        title: is_disabled
+                        description: Whether the alert config is currently disabled.
+                    template:
+                        title: template
+                        description: |-
+                            Optional custom template for the rendered alert message. Common to every
+                             alert kind. Currently applied only to issue alerts; on other kinds it is
+                             accepted and ignored until templating is supported for them.
+                        nullable: true
+                        $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
+                - oneOf:
+                    - properties:
+                        incidentLifecycle:
+                            title: incident_lifecycle
+                            description: Fires on incident state transitions.
+                            $ref: '#/components/schemas/synq.alerts.v2.IncidentLifecycleAlert'
+                      title: incident_lifecycle
+                      required:
+                        - incidentLifecycle
+                    - properties:
+                        issueLifecycle:
+                            title: issue_lifecycle
+                            description: Fires on the issues of selected entities.
+                            $ref: '#/components/schemas/synq.alerts.v2.IssueLifecycleAlert'
+                      title: issue_lifecycle
+                      required:
+                        - issueLifecycle
+                    - properties:
+                        schemaChange:
+                            title: schema_change
+                            description: Fires on the schema changes of selected entities.
+                            $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlert'
+                      title: schema_change
+                      required:
+                        - schemaChange
             title: Alert
             required:
-                - trigger
-                - settings
                 - createdAt
             additionalProperties: false
             description: |-
                 Alert represents the configuration for an alert.
-                 It contains all the necessary information to trigger and send alerts.
-        synq.alerts.v2.Alert.Owner:
-            type: object
-            properties:
-                ownerPath:
-                    type: string
-                    minLength: 1
-                    description: Path identifying the owner of this alert config.
-                ownershipId:
-                    type: string
-                    minLength: 1
-                    description: Ownership identifier.
-            title: Owner
-            additionalProperties: false
-            description: |-
-                Owner information for the alert configuration.
-                 If set, the alert is attributed to the specified owner and ownership.
-        synq.alerts.v2.AlertSettings:
-            type: object
-            oneOf:
-                - properties:
-                    issue:
-                        title: issue
-                        description: Unified issue alert settings.
-                        $ref: '#/components/schemas/synq.alerts.v2.IssueAlertSettings'
-                  title: issue
-                  required:
-                    - issue
-                - properties:
-                    schemaChange:
-                        title: schema_change
-                        description: Alert triggered by schema changes.
-                        $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlertSettings'
-                  title: schema_change
-                  required:
-                    - schemaChange
-            additionalProperties: false
-            description: |-
-                AlertSettings defines the properties that affect the trigger and presentation of an alert.
-                 It specifies the conditions under which an alert should be fired and how it should behave.
+
+                 An alert is exactly one concrete kind, distinguished by the `kind` oneof:
+                   - `issue_lifecycle`: fires on the issues of selected entities.
+                   - `schema_change`: fires on the schema changes of selected entities.
+                   - `incident_lifecycle`: fires on incident state transitions.
+                 The identity, template and ownership fields are shared; everything specific to
+                 how an alert triggers and delivers lives on its kind message.
+
+                 Incident-owner alerts (which notify each incident's owner) are not configurable
+                 and are not represented here; they are turned on or off with
+                 AlertsService.ToggleIncidentOwnerAlert.
         synq.alerts.v2.AlertingTarget:
             type: object
             oneOf:
@@ -4536,6 +4741,35 @@ components:
             description: |-
                 AlertingTarget represents a destination where alert notifications will be sent.
                  Each target type has its own specific configuration requirements.
+        synq.alerts.v2.EmailCustomizationOptions:
+            type: object
+            properties:
+                from:
+                    description: Sender address emails are sent from.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.EmailSender'
+                replyTo:
+                    description: Reply-to address for emails.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.EmailSender'
+            title: EmailCustomizationOptions
+            additionalProperties: false
+            description: |-
+                EmailCustomizationOptions customises the addresses used when an alert is
+                 delivered by email. Unset addresses fall back to the workspace defaults.
+        synq.alerts.v2.EmailSender:
+            type: object
+            properties:
+                email:
+                    type: string
+                    minLength: 1
+                    description: Email address.
+                name:
+                    type: string
+                    description: Display name shown alongside the address.
+            title: EmailSender
+            additionalProperties: false
+            description: EmailSender is an email address paired with an optional display name.
         synq.alerts.v2.EmailTarget:
             type: object
             properties:
@@ -4552,6 +4786,42 @@ components:
             title: EmailTarget
             additionalProperties: false
             description: EmailTarget configures alert delivery via email.
+        synq.alerts.v2.IncidentLifecycleAlert:
+            type: object
+            properties:
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: Targets where alerts will be sent. At least one is required.
+                settings:
+                    description: Incident lifecycle alert settings.
+                    $ref: '#/components/schemas/synq.alerts.v2.IncidentLifecycleAlertSettings'
+            title: IncidentLifecycleAlert
+            required:
+                - settings
+            additionalProperties: false
+            description: |
+                IncidentLifecycleAlert fires when an incident transitions into one of the
+                 selected states. It takes no entity selection.
+                incident_lifecycle_alert.email_or_msteams_unsupported // Email and Microsoft Teams targets are not supported on incident lifecycle alerts. Use Slack or webhook targets.
+        synq.alerts.v2.IncidentLifecycleAlertSettings:
+            type: object
+            properties:
+                states:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.incidents.v1.Incident.State'
+                    minItems: 1
+                    description: |-
+                        Incident states whose transitions fire this alert; an empty list would
+                         create an alert that never fires.
+            title: IncidentLifecycleAlertSettings
+            additionalProperties: false
+            description: |-
+                IncidentLifecycleAlertSettings configures an alert that fires when an incident
+                 enters one of the selected states.
         synq.alerts.v2.IssueAlertSettings:
             type: object
             properties:
@@ -4573,6 +4843,10 @@ components:
                 grouping:
                     description: Strategy for grouping issues in alert notifications.
                     $ref: '#/components/schemas/synq.alerts.v2.IssueGroupingStrategy'
+                emailCustomizationOptions:
+                    description: Optional customisation of the sender and reply-to addresses on email alerts.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.EmailCustomizationOptions'
             title: IssueAlertSettings
             required:
                 - ongoing
@@ -4607,6 +4881,34 @@ components:
             title: SystemDetected
             additionalProperties: false
             description: SystemDetected - the system automatically groups related issues.
+        synq.alerts.v2.IssueLifecycleAlert:
+            type: object
+            properties:
+                trigger:
+                    description: Selects the entities that can trigger this alert.
+                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: Targets where alerts will be sent. At least one is required.
+                settings:
+                    description: Issue alert settings.
+                    $ref: '#/components/schemas/synq.alerts.v2.IssueAlertSettings'
+                owner:
+                    description: Optional owner information. The owner is fixed when the alert is created.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Owner'
+            title: IssueLifecycleAlert
+            required:
+                - trigger
+                - settings
+            additionalProperties: false
+            description: |
+                IssueLifecycleAlert fires on the issues of the entities its trigger selects.
+                issue_lifecycle_alert.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
+                issue_lifecycle_alert.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
         synq.alerts.v2.MsTeamsTarget:
             type: object
             properties:
@@ -4669,6 +4971,22 @@ components:
             title: Stream
             additionalProperties: false
             description: Stream strategy - alerts are sent continuously as issues persist. No configuration needed - alerts stream continuously.
+        synq.alerts.v2.Owner:
+            type: object
+            properties:
+                ownerPath:
+                    type: string
+                    minLength: 1
+                    description: Path identifying the owner of this alert config.
+                ownershipId:
+                    type: string
+                    minLength: 1
+                    description: Ownership identifier.
+            title: Owner
+            additionalProperties: false
+            description: |-
+                Owner attributes an alert to an owner and ownership. Only entity-scoped alerts
+                 (issue and schema change) can be owned.
         synq.alerts.v2.OwnerTarget:
             type: object
             properties:
@@ -4683,6 +5001,34 @@ components:
             description: |-
                 OwnerTarget configures alert delivery to the owner of the monitored entity.
                  This allows alerts to be automatically sent to whoever owns the data being monitored.
+        synq.alerts.v2.SchemaChangeAlert:
+            type: object
+            properties:
+                trigger:
+                    description: Selects the entities that can trigger this alert.
+                    $ref: '#/components/schemas/synq.alerts.v2.Trigger'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: Targets where alerts will be sent. At least one is required.
+                settings:
+                    description: Schema change alert settings.
+                    $ref: '#/components/schemas/synq.alerts.v2.SchemaChangeAlertSettings'
+                owner:
+                    description: Optional owner information. The owner is fixed when the alert is created.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.alerts.v2.Owner'
+            title: SchemaChangeAlert
+            required:
+                - trigger
+                - settings
+            additionalProperties: false
+            description: |
+                SchemaChangeAlert fires on the schema changes of the entities its trigger
+                 selects.
+                schema_change_alert.webhook_unsupported // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
         synq.alerts.v2.SchemaChangeAlertSettings:
             type: object
             properties:
@@ -14010,6 +14356,48 @@ components:
                 - ISSUE_STATUS_WARN
                 - ISSUE_STATUS_ERROR
                 - ISSUE_STATUS_CRITICAL
+        synq.entities.typedefs.v1.EntityTraitDef:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The trait's name, and the exact string a query carries: `is_monitorable`.
+                         Stable and safe to store. Matching ignores case.
+                shortName:
+                    type: string
+                    description: 'The trait''s name for display: "Monitorable", "Warehouse table".'
+                description:
+                    type: string
+                    description: A sentence explaining what the trait means and what selecting on it gets you.
+                entityTypes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.EntityType'
+                    description: |-
+                        Every entity type that carries this trait today.
+
+                         It is this server's current answer, not a definition — the point of selecting
+                         by trait is that this set grows without your query changing. Use it to show or
+                         preview what a selection covers, never to expand a trait into types and store
+                         that instead.
+            title: EntityTraitDef
+            additionalProperties: false
+            description: |-
+                EntityTraitDef describes one trait a selection query can filter entities by.
+
+                 A trait names a property a type has rather than a type itself, so a selection can
+                 ask for "everything a monitor can run on" instead of listing the forty-odd types
+                 that satisfy it today. The set of types it stands for is worked out each time the
+                 query runs, so a selection saved this way covers a new platform's types as soon
+                 as Coalesce Quality supports them, and you never have to revisit it.
+
+                 In a query written as text this is `with_type(traits="is_monitorable")`; in a
+                 structured query it is the `traits` field on `synq.queries.v1.WithType`.
+
+                 Read this list rather than keeping your own. Traits are added as the platform
+                 grows, and a name that is not in the list selects NOTHING — so a stale copy
+                 narrows a selection to empty rather than failing where you would notice.
         synq.entities.typedefs.v1.EntityTypeDef:
             type: object
             properties:
@@ -14135,6 +14523,20 @@ components:
                  entity — a dbt invocation, a warehouse query job, a detected schema change.
 
                  Use it to name the `execution_type` that execution and run endpoints return.
+        synq.entities.typedefs.v1.ListEntityTraitDefsRequest:
+            type: object
+            title: ListEntityTraitDefsRequest
+            additionalProperties: false
+        synq.entities.typedefs.v1.ListEntityTraitDefsResponse:
+            type: object
+            properties:
+                entityTraitDefs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.typedefs.v1.EntityTraitDef'
+                    description: Every trait a selection query can filter by, ordered by name.
+            title: ListEntityTraitDefsResponse
+            additionalProperties: false
         synq.entities.typedefs.v1.ListEntityTypeDefsRequest:
             type: object
             title: ListEntityTypeDefsRequest
@@ -24789,6 +25191,45 @@ components:
             description: |-
                 Authentication using a user-managed key pair.
                  The private key is stored safely as a secret. The response does not include the private key for security.
+        synq.queries.v1.DescribeResolverQlRequest:
+            type: object
+            title: DescribeResolverQlRequest
+            additionalProperties: false
+        synq.queries.v1.DescribeResolverQlResponse:
+            type: object
+            properties:
+                functions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.queries.v1.ResolverQlFunction'
+                    description: Every function the language has, ordered by name.
+                categories:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        The categories a function's `category` names, in the order the product
+                         presents them. Group the catalog by this rather than sorting the names.
+                enumDomains:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.queries.v1.ResolverQlEnumDomain'
+                    description: |-
+                        The accepted values of every enum-typed argument, keyed by the name an
+                         argument's `enum_domain` carries. A domain absent here places no
+                         restriction on the argument beyond its type.
+            title: DescribeResolverQlResponse
+            additionalProperties: false
+        synq.queries.v1.DescribeResolverQlResponse.EnumDomainsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.queries.v1.ResolverQlEnumDomain'
+            title: EnumDomainsEntry
+            additionalProperties: false
         synq.queries.v1.EntityIds:
             type: object
             properties:
@@ -25226,6 +25667,109 @@ components:
                          selection has no ResolverQL representation.
             title: ResolveQueryResponse
             additionalProperties: false
+        synq.queries.v1.ResolverQlArg:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The argument's name. For a keyword argument this is the spelling written
+                         before the `=`.
+                type:
+                    type: string
+                    description: |-
+                        The value shape the argument takes — a string, a list of strings, a boolean,
+                         a nested query. Names are the language's own and are stable.
+                required:
+                    type: boolean
+                    description: Whether the call fails to compile without this argument.
+                enumDomain:
+                    type: string
+                    description: |-
+                        Names an entry in `enum_domains` when the argument accepts only values from
+                         a fixed vocabulary. Empty when any value of `type` is accepted.
+                doc:
+                    type: string
+                    description: |-
+                        What this argument does, in one sentence. Empty when the function's own doc
+                         says all there is to say.
+            title: ResolverQlArg
+            additionalProperties: false
+            description: One argument of a function, positional or keyword.
+        synq.queries.v1.ResolverQlEnumDomain:
+            type: object
+            properties:
+                values:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Every value the domain enumerates, lowercase. A value is matched
+                         case-insensitively, so a caller holding an upper-case spelling can send it
+                         as it is.
+                pattern:
+                    type: string
+                    description: |-
+                        An RE2 pattern of values accepted in **addition** to `values`, matched
+                         against the lowercased value. Empty when the domain accepts nothing beyond
+                         the list.
+
+                         It exists because one domain is not fully enumerated: the entity types a
+                         workspace defines itself are a reserved band of the asset-type vocabulary
+                         rather than members of it, spelled `custom_type_<id>`, and `values` today
+                         holds only the built-in half. A client that validates against `values` alone
+                         rejects a query this server compiles.
+
+                         Keep honouring the pattern even once a domain enumerates more than it does
+                         today: it is what makes a value the list has not caught up with still
+                         acceptable.
+            title: ResolverQlEnumDomain
+            additionalProperties: false
+            description: The values one enum-typed argument accepts.
+        synq.queries.v1.ResolverQlFunction:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The name the query writes, lowercase and canonical. Function names compile
+                         case-insensitively, so `WITH_TYPE` reaches the same function as `with_type`.
+                category:
+                    type: string
+                    description: |-
+                        Which job this function does, one of the values in `categories`. Use it to
+                         group the catalog the way the product does rather than inventing an order.
+                doc:
+                    type: string
+                    description: |-
+                        What the function selects, in one sentence. Written for a person choosing
+                         between functions; safe to show verbatim.
+                variadic:
+                    type: boolean
+                    description: |-
+                        Whether the function accepts more arguments than it declares. A variadic
+                         function with no declared arguments — `and`, `or` — takes any number of
+                         sub-queries.
+                defaultKwarg:
+                    type: string
+                    description: |-
+                        The keyword argument a bare positional value is routed to when the call
+                         names none. Empty when the function has no such argument.
+                positional:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.queries.v1.ResolverQlArg'
+                    description: Arguments in the order they are written before any `name=value` argument.
+                kwargs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.queries.v1.ResolverQlArg'
+                    description: |-
+                        Arguments written as `name=value`, ordered by name. An argument that can be
+                         written either way appears in `positional` only.
+            title: ResolverQlFunction
+            additionalProperties: false
+            description: One function of the ResolverQL language, as this deployment compiles it.
         synq.queries.v1.TranslateResolverQlRequest:
             type: object
             properties:
@@ -26347,27 +26891,6 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/synq.alerts.services.v1.ToggleEnabledResponse'
     /api/alerts/v2:
-        put:
-            tags:
-                - synq.alerts.services.v2.AlertsService
-            summary: Update
-            description: |-
-                Update an existing alert configuration.
-                 The config can be identified by either ID or FQN.
-            operationId: synq.alerts.services.v2.AlertsService.Update
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/synq.alerts.services.v2.UpdateRequest'
-                required: true
-            responses:
-                "200":
-                    description: Success
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/synq.alerts.services.v2.UpdateResponse'
         post:
             tags:
                 - synq.alerts.services.v2.AlertsService
@@ -26428,6 +26951,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.alerts.services.v2.BatchGetResponse'
+    /api/alerts/v2/incident-owner:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: ToggleIncidentOwnerAlert
+            description: |-
+                Turns the workspace's incident-owner alert on or off. This alert notifies
+                 each incident's owner on its configured channels and has no other
+                 configuration, so it is managed here rather than through Create / Delete and
+                 does not appear in List or BatchGet.
+            operationId: synq.alerts.services.v2.AlertsService.ToggleIncidentOwnerAlert
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.ToggleIncidentOwnerAlertRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.ToggleIncidentOwnerAlertResponse'
     /api/alerts/v2/list:
         post:
             tags:
@@ -26448,6 +26995,94 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.alerts.services.v2.ListResponse'
+    /api/alerts/v2/rename:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: Rename
+            description: |-
+                Rename an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.Rename
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.RenameRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.RenameResponse'
+    /api/alerts/v2/settings:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: UpdateSettings
+            description: |-
+                Update the trigger and/or the kind-specific settings of an alert.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.UpdateSettings
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.UpdateSettingsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.UpdateSettingsResponse'
+    /api/alerts/v2/targets:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: UpdateTargets
+            description: |-
+                Replace the delivery targets of an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.UpdateTargets
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.UpdateTargetsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.UpdateTargetsResponse'
+    /api/alerts/v2/template:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: UpdateTemplate
+            description: |-
+                Set or clear the message template of an existing alert configuration.
+                 The config can be identified by either ID or FQN.
+            operationId: synq.alerts.services.v2.AlertsService.UpdateTemplate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.UpdateTemplateRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.UpdateTemplateResponse'
     /api/alerts/v2/toggle:
         post:
             tags:
@@ -36952,6 +37587,32 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.folders.v1.ListMembersResponse'
+    /api/entities/typedefs/v1/entity-traits/list:
+        post:
+            tags:
+                - synq.entities.typedefs.v1.TypeDefsService
+            summary: ListEntityTraitDefs
+            description: |-
+                List every trait a selection query can filter entities by.
+
+                 Read it before writing a selection that uses `traits`, and to show a person
+                 what one covers. A trait name this list does not contain selects nothing, so
+                 reading the list is how you tell a trait that does not exist from one your
+                 client is too old to know about.
+            operationId: synq.entities.typedefs.v1.TypeDefsService.ListEntityTraitDefs
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.typedefs.v1.ListEntityTraitDefsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.typedefs.v1.ListEntityTraitDefsResponse'
     /api/entities/typedefs/v1/entity-types/list:
         post:
             tags:
@@ -48177,6 +48838,49 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.platforms.v1.SetPlatformAuthenticationResponse'
+    /api/queries/v1/describe-resolver-ql:
+        post:
+            tags:
+                - synq.queries.v1.QueriesService
+            summary: DescribeResolverQl
+            description: |-
+                Describe the ResolverQL this deployment accepts: every function with its
+                 arguments and documentation, the category order to group them by, and the
+                 accepted values of every enum-typed argument.
+
+                 Read it before authoring a selection, and validate against it rather than
+                 against a copy compiled into your client. The language gains functions and
+                 accepted values as Coalesce Quality supports more, and a client working from
+                 its own table both misses what was added and refuses a query this server
+                 would compile.
+
+                 Nothing is passed, and no permission is needed beyond being authenticated —
+                 so a client holding a narrow credential, one that may write a deployment
+                 rule but cannot read entities, can still find out how to write the selection
+                 it is being asked for.
+
+                 Read it as an answer for your workspace, not as a constant. Most of it is
+                 the same for everyone, but the entity types you defined yourself are part of
+                 the language too: today they are reachable only through
+                 `ResolverQlEnumDomain.pattern`, which is why that field exists, and named by
+                 `synq.entities.typedefs.v1.TypeDefsService.ListEntityTypeDefs`.
+
+                 Caching it for the life of your process is fine; re-read it after you add or
+                 rename an entity type of your own.
+            operationId: synq.queries.v1.QueriesService.DescribeResolverQl
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.queries.v1.DescribeResolverQlRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.queries.v1.DescribeResolverQlResponse'
     /api/queries/v1/generate:
         post:
             tags:
@@ -50088,15 +50792,20 @@ tags:
          that an existing type gained a capability. Everything here comes from the server,
          so you pick both up without changing your code.
 
-         A typical integration calls all three once at startup, keeps them in a map, and
-         looks types up as responses arrive.
+         A typical integration calls them once at startup, keeps them in a map, and looks
+         types up as responses arrive.
+
+         It also tells you what a selection query can ask for: ListEntityTraitDefs is the
+         vocabulary behind `traits`, which selects entities by what they are rather than
+         by naming every type.
 
          Scoping and freshness:
 
            * ListEntityTypeDefs is per workspace, because the types you defined yourself
              are part of your workspace's vocabulary. It returns the built-in types and
              your own custom types together.
-           * ListPlatformDefs and ListExecutionTypeDefs are the same for everyone.
+           * ListPlatformDefs, ListExecutionTypeDefs and ListEntityTraitDefs are the same
+             for everyone.
            * The built-in half changes only when Coalesce Quality is upgraded, so caching
              it for the life of your process is fine. You can add or edit your own custom
              types at any time, so if a newly created type needs to appear promptly, cache
@@ -50352,6 +51061,13 @@ tags:
              already-structured `Query`), evaluates it against the catalog, and
              returns the matched entity ids. This is the general author -> resolve
              loop.
+           - `DescribeResolverQl` returns the language itself — every function, every
+             accepted enum value — so you author against what this deployment compiles
+             rather than against a table baked into your client.
+
+         All three authenticate and resolve your workspace from your credentials.
+         `DescribeResolverQl` additionally needs no permission of its own, so any
+         credential can read it; the other two read the catalog and are scoped.
     - name: synq.datachecks.v1.TriggerService
       description: TriggerService provides synchronous execution of datachecks on entities.
     - name: synq.datachecks.sqltests.v1.SqlTestsService

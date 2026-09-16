@@ -131,6 +131,7 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | List every trait a selection query can filter entities by. |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
 | `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
@@ -161,6 +162,7 @@ View entity type definitions.
 | Method | Description |
 | ------ | ----------- |
 | `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | List all entities. |
+| `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | List every trait a selection query can filter entities by. |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
 | `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
@@ -1204,6 +1206,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_ | `SCOPE_STATUS_READ` |
+| `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
@@ -1307,6 +1310,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | `SCOPE_OWNERSHIP_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | `SCOPE_ENTITY_READ` |
+| `DescribeResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/describe-resolver-ql` | — |
 | `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |

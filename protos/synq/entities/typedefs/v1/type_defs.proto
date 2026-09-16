@@ -117,6 +117,40 @@ message EntityTypeDef {
   int32 type_id = 10;
 }
 
+// EntityTraitDef describes one trait a selection query can filter entities by.
+//
+// A trait names a property a type has rather than a type itself, so a selection can
+// ask for "everything a monitor can run on" instead of listing the forty-odd types
+// that satisfy it today. The set of types it stands for is worked out each time the
+// query runs, so a selection saved this way covers a new platform's types as soon
+// as Coalesce Quality supports them, and you never have to revisit it.
+//
+// In a query written as text this is `with_type(traits="is_monitorable")`; in a
+// structured query it is the `traits` field on `synq.queries.v1.WithType`.
+//
+// Read this list rather than keeping your own. Traits are added as the platform
+// grows, and a name that is not in the list selects NOTHING — so a stale copy
+// narrows a selection to empty rather than failing where you would notice.
+message EntityTraitDef {
+  // The trait's name, and the exact string a query carries: `is_monitorable`.
+  // Stable and safe to store. Matching ignores case.
+  string name = 1;
+
+  // The trait's name for display: "Monitorable", "Warehouse table".
+  string short_name = 2;
+
+  // A sentence explaining what the trait means and what selecting on it gets you.
+  string description = 3;
+
+  // Every entity type that carries this trait today.
+  //
+  // It is this server's current answer, not a definition — the point of selecting
+  // by trait is that this set grows without your query changing. Use it to show or
+  // preview what a selection covers, never to expand a trait into types and store
+  // that instead.
+  repeated synq.entities.v1.EntityType entity_types = 4;
+}
+
 // PlatformDef describes one platform Coalesce Quality connects to — a warehouse, a
 // BI tool, an orchestrator, a transformation framework.
 //

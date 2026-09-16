@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package synq.alerts.templates.v2;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/alerts/templates/v2";
+
+// AlertTemplate customises the message rendered for an alert.
+//
+// The body is either verbatim text (`plain`), rendered exactly as given, or a
+// structured template (`structured`) assembled from named blocks written in
+// Jinja-compatible syntax and grouped by where they render.
+message AlertTemplate {
+  // Optional custom title for the rendered message.
+  string title = 1;
+
+  // The message body. Exactly one form must be set.
+  oneof body {
+    option (buf.validate.oneof).required = true;
+
+    // Verbatim message text, rendered as-is with no templating.
+    string plain = 2;
+
+    // A structured, dynamically rendered body.
+    StructuredTemplate structured = 3;
+  }
+}
+
+// StructuredTemplate is a dynamic template split into the two tiers a message
+// renders in. Within each tier, blocks render in list order.
+//
+// A block that should appear in both tiers is listed in both `summary` and
+// `issue_details` with the same `name`.
+message StructuredTemplate {
+  // Blocks rendered once, in the group/summary message.
+  repeated TemplateBlock summary = 1;
+
+  // Blocks rendered per issue, in the per-issue attachment or card.
+  repeated TemplateBlock issue_details = 2;
+}
+
+// TemplateBlock is one unit of Jinja-compatible source.
+message TemplateBlock {
+  // Optional block name. Built-in catalog blocks (for example `headline` or
+  // `error_message`) are referenced by their fixed name; a custom block may
+  // leave this unset, in which case the server assigns and returns a stable
+  // name. The same name in both tiers refers to one block.
+  optional string name = 1 [(buf.validate.field).string.min_len = 1];
+
+  // Jinja-compatible source of the block body.
+  string content = 2;
+}

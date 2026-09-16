@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/identifier.proto";
 import "synq/queries/v1/query.proto";
+import "synq/queries/v1/resolver_ql_grammar.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -26,7 +27,45 @@ option go_package = "github.com/getsynq/api/queries/v1";
 //     already-structured `Query`), evaluates it against the catalog, and
 //     returns the matched entity ids. This is the general author -> resolve
 //     loop.
+//   - `DescribeResolverQl` returns the language itself — every function, every
+//     accepted enum value — so you author against what this deployment compiles
+//     rather than against a table baked into your client.
+//
+// All three authenticate and resolve your workspace from your credentials.
+// `DescribeResolverQl` additionally needs no permission of its own, so any
+// credential can read it; the other two read the catalog and are scoped.
 service QueriesService {
+  // Describe the ResolverQL this deployment accepts: every function with its
+  // arguments and documentation, the category order to group them by, and the
+  // accepted values of every enum-typed argument.
+  //
+  // Read it before authoring a selection, and validate against it rather than
+  // against a copy compiled into your client. The language gains functions and
+  // accepted values as Coalesce Quality supports more, and a client working from
+  // its own table both misses what was added and refuses a query this server
+  // would compile.
+  //
+  // Nothing is passed, and no permission is needed beyond being authenticated —
+  // so a client holding a narrow credential, one that may write a deployment
+  // rule but cannot read entities, can still find out how to write the selection
+  // it is being asked for.
+  //
+  // Read it as an answer for your workspace, not as a constant. Most of it is
+  // the same for everyone, but the entity types you defined yourself are part of
+  // the language too: today they are reachable only through
+  // `ResolverQlEnumDomain.pattern`, which is why that field exists, and named by
+  // `synq.entities.typedefs.v1.TypeDefsService.ListEntityTypeDefs`.
+  //
+  // Caching it for the life of your process is fine; re-read it after you add or
+  // rename an entity type of your own.
+  rpc DescribeResolverQl(DescribeResolverQlRequest) returns (DescribeResolverQlResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/queries/v1/describe-resolver-ql"
+      body: "*"
+    };
+  }
+
   // Compile a ResolverQL expression into a structured public `Query`. Unlike
   // `ResolveQuery`, it does not evaluate the query against the catalog. A
   // syntactically invalid or uncompilable expression fails with
@@ -63,6 +102,22 @@ service QueriesService {
       body: "*"
     };
   }
+}
+
+message DescribeResolverQlRequest {}
+
+message DescribeResolverQlResponse {
+  // Every function the language has, ordered by name.
+  repeated ResolverQlFunction functions = 1;
+
+  // The categories a function's `category` names, in the order the product
+  // presents them. Group the catalog by this rather than sorting the names.
+  repeated string categories = 2;
+
+  // The accepted values of every enum-typed argument, keyed by the name an
+  // argument's `enum_domain` carries. A domain absent here places no
+  // restriction on the argument beyond its type.
+  map<string, ResolverQlEnumDomain> enum_domains = 3;
 }
 
 message TranslateResolverQlRequest {
