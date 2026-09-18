@@ -3899,6 +3899,72 @@ components:
                 - alert
             additionalProperties: false
             description: RenameResponse returns the renamed alert configuration.
+        synq.alerts.services.v2.SendTestAlertRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 255
+                    description: |-
+                        Alert name shown in the test message. Optional — leave empty while an alert
+                         is still being created; the message then omits the name.
+                kind:
+                    description: |-
+                        The alert kind the test stands in for. Optional; selects the message wording
+                         only, so an unspecified kind produces a generic test message.
+                    $ref: '#/components/schemas/synq.alerts.services.v2.TestAlertKind'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                    minItems: 1
+                    description: |-
+                        The targets to deliver the test message to. At least one is required. Owner
+                         targets are expanded to each owner's configured channels.
+            title: SendTestAlertRequest
+            additionalProperties: false
+            description: SendTestAlertRequest delivers a static test message to the given targets.
+        synq.alerts.services.v2.SendTestAlertResponse:
+            type: object
+            properties:
+                dispatches:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.alerts.services.v2.TestAlertDispatch'
+                    description: |-
+                        One entry per delivered target, in the order they were resolved. Owner
+                         targets contribute one entry per resolved channel.
+            title: SendTestAlertResponse
+            additionalProperties: false
+            description: SendTestAlertResponse reports the per-target outcome of the test send.
+        synq.alerts.services.v2.TestAlertDispatch:
+            type: object
+            properties:
+                target:
+                    description: The resolved target this outcome refers to.
+                    $ref: '#/components/schemas/synq.alerts.v2.AlertingTarget'
+                dispatched:
+                    type: boolean
+                    description: |-
+                        True once the message was handed to the delivery channel; the delivery
+                         itself is asynchronous, so this does not confirm the recipient received it.
+                error:
+                    type: string
+                    description: Why this target was not dispatched; empty when dispatched is true.
+            title: TestAlertDispatch
+            additionalProperties: false
+            description: TestAlertDispatch is the outcome of delivering the test message to one target.
+        synq.alerts.services.v2.TestAlertKind:
+            type: string
+            title: TestAlertKind
+            enum:
+                - TEST_ALERT_KIND_UNSPECIFIED
+                - TEST_ALERT_KIND_ISSUE_LIFECYCLE
+                - TEST_ALERT_KIND_SCHEMA_CHANGE
+                - TEST_ALERT_KIND_INCIDENT_LIFECYCLE
+            description: |-
+                The alert kind a test message stands in for. It only selects the wording of
+                 the message; the targets receive the same static test regardless.
         synq.alerts.services.v2.ToggleEnabledRequest:
             type: object
             properties:
@@ -4126,10 +4192,11 @@ components:
                     type: string
                     minLength: 1
                     description: |-
-                        Optional block name. Built-in catalog blocks (for example `headline` or
-                         `error_message`) are referenced by their fixed name; a custom block may
-                         leave this unset, in which case the server assigns and returns a stable
-                         name. The same name in both tiers refers to one block.
+                        Optional block name. A block listed in both `summary` and `issue_details`
+                         under the same name is one shared block. Leave it unset and the server
+                         assigns and returns a stable name. Names reserved for built-in catalog
+                         blocks render under the server's own layout rather than emitting your
+                         content verbatim, so give a custom block a distinct name.
                     nullable: true
                 content:
                     type: string
@@ -5454,6 +5521,12 @@ components:
                          Template.identifier still anchors the test to a primary table for
                          ownership, alerts, and UI grouping.
 
+                         Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                         qualified name, quoted for the warehouse — the matched table when the test
+                         is deployed by a deployment rule, which is how one query covers every table
+                         the rule matches instead of being copied onto each of them. It is the only
+                         supported placeholder; any other `{{ name }}` token is rejected.
+
                          Note: this test does not expose a `select_columns` option. The author
                          controls the SELECT shape directly in `sql_query`.
             title: BusinessQueryTest
@@ -5476,6 +5549,18 @@ components:
 
                          Example: "total_amount != subtotal + tax" reports rows where totals
                          disagree. Use BusinessQueryTest for SELECT / GROUP BY / multi-table logic.
+
+                         Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                         qualified name, quoted for the warehouse — the matched table when the test
+                         is deployed by a deployment rule. It is the only supported placeholder;
+                         any other `{{ name }}` token is rejected. It renders a table name, so it
+                         belongs where a table name goes — the FROM clause of a subquery of your own:
+                         "total > (SELECT max(total) FROM {{ table }})".
+
+                         It is not a column qualifier. The generated FROM clause carries no alias, and
+                         on BigQuery the fully qualified name is a single quoted identifier, so
+                         "{{ table }}.id" does not resolve. To name the anchor's columns, use
+                         BusinessQueryTest, where you write the FROM clause and can alias it.
                 selectColumns:
                     type: array
                     items:
@@ -27083,6 +27168,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.alerts.services.v2.UpdateTemplateResponse'
+    /api/alerts/v2/test:
+        post:
+            tags:
+                - synq.alerts.services.v2.AlertsService
+            summary: SendTestAlert
+            description: |-
+                Delivers a static test message to the given targets so you can confirm that
+                 delivery reaches each channel before relying on a real alert. Nothing is
+                 stored and the targets need not belong to a saved alert, so this can be
+                 called while an alert is still being authored.
+            operationId: synq.alerts.services.v2.AlertsService.SendTestAlert
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.alerts.services.v2.SendTestAlertRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.alerts.services.v2.SendTestAlertResponse'
     /api/alerts/v2/toggle:
         post:
             tags:
@@ -30767,6 +30876,18 @@ paths:
 
                      Example: "total_amount != subtotal + tax" reports rows where totals
                      disagree. Use BusinessQueryTest for SELECT / GROUP BY / multi-table logic.
+
+                     Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                     qualified name, quoted for the warehouse — the matched table when the test
+                     is deployed by a deployment rule. It is the only supported placeholder;
+                     any other `{{ name }}` token is rejected. It renders a table name, so it
+                     belongs where a table name goes — the FROM clause of a subquery of your own:
+                     "total > (SELECT max(total) FROM {{ table }})".
+
+                     It is not a column qualifier. The generated FROM clause carries no alias, and
+                     on BigQuery the fully qualified name is a single quoted identifier, so
+                     "{{ table }}.id" does not resolve. To name the anchor's columns, use
+                     BusinessQueryTest, where you write the FROM clause and can alias it.
                   required: true
                   schema:
                     type: string
@@ -30782,6 +30903,18 @@ paths:
 
                          Example: "total_amount != subtotal + tax" reports rows where totals
                          disagree. Use BusinessQueryTest for SELECT / GROUP BY / multi-table logic.
+
+                         Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                         qualified name, quoted for the warehouse — the matched table when the test
+                         is deployed by a deployment rule. It is the only supported placeholder;
+                         any other `{{ name }}` token is rejected. It renders a table name, so it
+                         belongs where a table name goes — the FROM clause of a subquery of your own:
+                         "total > (SELECT max(total) FROM {{ table }})".
+
+                         It is not a column qualifier. The generated FROM clause carries no alias, and
+                         on BigQuery the fully qualified name is a single quoted identifier, so
+                         "{{ table }}.id" does not resolve. To name the anchor's columns, use
+                         BusinessQueryTest, where you write the FROM clause and can alias it.
                 - name: deploymentRule.queryConfig.tests.businessRuleTest.selectColumns
                   in: query
                   description: |-
@@ -30932,6 +31065,12 @@ paths:
                      Template.identifier still anchors the test to a primary table for
                      ownership, alerts, and UI grouping.
 
+                     Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                     qualified name, quoted for the warehouse — the matched table when the test
+                     is deployed by a deployment rule, which is how one query covers every table
+                     the rule matches instead of being copied onto each of them. It is the only
+                     supported placeholder; any other `{{ name }}` token is rejected.
+
                      Note: this test does not expose a `select_columns` option. The author
                      controls the SELECT shape directly in `sql_query`.
                   required: true
@@ -30955,6 +31094,12 @@ paths:
 
                          Template.identifier still anchors the test to a primary table for
                          ownership, alerts, and UI grouping.
+
+                         Placeholder: `{{ table }}` is substituted with the anchor table's fully
+                         qualified name, quoted for the warehouse — the matched table when the test
+                         is deployed by a deployment rule, which is how one query covers every table
+                         the rule matches instead of being copied onto each of them. It is the only
+                         supported placeholder; any other `{{ name }}` token is rejected.
 
                          Note: this test does not expose a `select_columns` option. The author
                          controls the SELECT shape directly in `sql_query`.

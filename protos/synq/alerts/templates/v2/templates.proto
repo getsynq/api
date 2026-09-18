@@ -42,10 +42,11 @@ message StructuredTemplate {
 
 // TemplateBlock is one unit of Jinja-compatible source.
 message TemplateBlock {
-  // Optional block name. Built-in catalog blocks (for example `headline` or
-  // `error_message`) are referenced by their fixed name; a custom block may
-  // leave this unset, in which case the server assigns and returns a stable
-  // name. The same name in both tiers refers to one block.
+  // Optional block name. A block listed in both `summary` and `issue_details`
+  // under the same name is one shared block. Leave it unset and the server
+  // assigns and returns a stable name. Names reserved for built-in catalog
+  // blocks render under the server's own layout rather than emitting your
+  // content verbatim, so give a custom block a distinct name.
   optional string name = 1 [(buf.validate.field).string.min_len = 1];
 
   // Jinja-compatible source of the block body.

@@ -395,6 +395,18 @@ message BusinessRuleTest {
   //
   // Example: "total_amount != subtotal + tax" reports rows where totals
   // disagree. Use BusinessQueryTest for SELECT / GROUP BY / multi-table logic.
+  //
+  // Placeholder: `{{ table }}` is substituted with the anchor table's fully
+  // qualified name, quoted for the warehouse — the matched table when the test
+  // is deployed by a deployment rule. It is the only supported placeholder;
+  // any other `{{ name }}` token is rejected. It renders a table name, so it
+  // belongs where a table name goes — the FROM clause of a subquery of your own:
+  // "total > (SELECT max(total) FROM {{ table }})".
+  //
+  // It is not a column qualifier. The generated FROM clause carries no alias, and
+  // on BigQuery the fully qualified name is a single quoted identifier, so
+  // "{{ table }}.id" does not resolve. To name the anchor's columns, use
+  // BusinessQueryTest, where you write the FROM clause and can alias it.
   string sql_expression = 1 [(buf.validate.field).required = true];
   // Optional list of columns to include in the SELECT clause of the generated SQL.
   // When empty (default), SELECT * is used — all columns are returned.
@@ -418,6 +430,12 @@ message BusinessQueryTest {
   //
   // Template.identifier still anchors the test to a primary table for
   // ownership, alerts, and UI grouping.
+  //
+  // Placeholder: `{{ table }}` is substituted with the anchor table's fully
+  // qualified name, quoted for the warehouse — the matched table when the test
+  // is deployed by a deployment rule, which is how one query covers every table
+  // the rule matches instead of being copied onto each of them. It is the only
+  // supported placeholder; any other `{{ name }}` token is rejected.
   //
   // Note: this test does not expose a `select_columns` option. The author
   // controls the SELECT shape directly in `sql_query`.

@@ -145,6 +145,22 @@ service AlertsService {
       scopes: [SCOPE_ALERTS_EDIT]
     };
   }
+
+  // Delivers a static test message to the given targets so you can confirm that
+  // delivery reaches each channel before relying on a real alert. Nothing is
+  // stored and the targets need not belong to a saved alert, so this can be
+  // called while an alert is still being authored.
+  rpc SendTestAlert(SendTestAlertRequest) returns (SendTestAlertResponse) {
+    // Every call sends real messages, so a retry sends again.
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (google.api.http) = {
+      post: "/api/alerts/v2/test"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
 }
 
 // CreateRequest creates a new alert configuration. The `kind` oneof carries the
@@ -365,4 +381,52 @@ message BatchGetRequest {
 message BatchGetResponse {
   // Alerts mapped by their identifiers.
   map<string, synq.alerts.v2.Alert> alerts = 1;
+}
+
+// The alert kind a test message stands in for. It only selects the wording of
+// the message; the targets receive the same static test regardless.
+enum TestAlertKind {
+  // Generic wording ("your alerts will be sent here").
+  TEST_ALERT_KIND_UNSPECIFIED = 0;
+  // Wording for an alert on issues.
+  TEST_ALERT_KIND_ISSUE_LIFECYCLE = 1;
+  // Wording for an alert on schema changes.
+  TEST_ALERT_KIND_SCHEMA_CHANGE = 2;
+  // Wording for an alert on incidents.
+  TEST_ALERT_KIND_INCIDENT_LIFECYCLE = 3;
+}
+
+// SendTestAlertRequest delivers a static test message to the given targets.
+message SendTestAlertRequest {
+  // Alert name shown in the test message. Optional — leave empty while an alert
+  // is still being created; the message then omits the name.
+  string name = 1 [(buf.validate.field).string.max_len = 255];
+
+  // The alert kind the test stands in for. Optional; selects the message wording
+  // only, so an unspecified kind produces a generic test message.
+  TestAlertKind kind = 2 [(buf.validate.field).enum.defined_only = true];
+
+  // The targets to deliver the test message to. At least one is required. Owner
+  // targets are expanded to each owner's configured channels.
+  repeated synq.alerts.v2.AlertingTarget targets = 3 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// SendTestAlertResponse reports the per-target outcome of the test send.
+message SendTestAlertResponse {
+  // One entry per delivered target, in the order they were resolved. Owner
+  // targets contribute one entry per resolved channel.
+  repeated TestAlertDispatch dispatches = 1;
+}
+
+// TestAlertDispatch is the outcome of delivering the test message to one target.
+message TestAlertDispatch {
+  // The resolved target this outcome refers to.
+  synq.alerts.v2.AlertingTarget target = 1;
+
+  // True once the message was handed to the delivery channel; the delivery
+  // itself is asynchronous, so this does not confirm the recipient received it.
+  bool dispatched = 2;
+
+  // Why this target was not dispatched; empty when dispatched is true.
+  string error = 3;
 }
