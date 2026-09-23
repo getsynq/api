@@ -134,7 +134,8 @@ service AlertsService {
   // Turns the workspace's incident-owner alert on or off. This alert notifies
   // each incident's owner on its configured channels and has no other
   // configuration, so it is managed here rather than through Create / Delete and
-  // does not appear in List or BatchGet.
+  // does not appear in List or BatchGet. Read its current state with
+  // GetIncidentOwnerAlert.
   rpc ToggleIncidentOwnerAlert(ToggleIncidentOwnerAlertRequest) returns (ToggleIncidentOwnerAlertResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
@@ -143,6 +144,17 @@ service AlertsService {
     };
     option (synq.v1.scope_authorization) = {
       scopes: [SCOPE_ALERTS_EDIT]
+    };
+  }
+
+  // Reports whether the workspace's incident-owner alert is on. This alert has
+  // no other configuration and does not appear in List or BatchGet; turn it on
+  // or off with ToggleIncidentOwnerAlert.
+  rpc GetIncidentOwnerAlert(GetIncidentOwnerAlertRequest) returns (GetIncidentOwnerAlertResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/alerts/v2/incident-owner"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ALERTS_READ]
     };
   }
 
@@ -360,6 +372,15 @@ message ToggleIncidentOwnerAlertResponse {
   bool is_enabled = 1;
 }
 
+// GetIncidentOwnerAlertRequest reads the workspace's incident-owner alert state.
+message GetIncidentOwnerAlertRequest {}
+
+// GetIncidentOwnerAlertResponse reports the current state.
+message GetIncidentOwnerAlertResponse {
+  // Whether the incident-owner alert is on.
+  bool is_enabled = 1;
+}
+
 // ListRequest filters alert configurations to retrieve.
 message ListRequest {
   // Optional filter by owner of the alert configurations. Only issue and schema
@@ -406,9 +427,12 @@ message SendTestAlertRequest {
   // only, so an unspecified kind produces a generic test message.
   TestAlertKind kind = 2 [(buf.validate.field).enum.defined_only = true];
 
-  // The targets to deliver the test message to. At least one is required. Owner
-  // targets are expanded to each owner's configured channels.
-  repeated synq.alerts.v2.AlertingTarget targets = 3 [(buf.validate.field).repeated.min_items = 1];
+  // The targets to deliver the test message to. At least one and at most 20 per
+  // request. Owner targets are expanded to each owner's configured channels.
+  repeated synq.alerts.v2.AlertingTarget targets = 3 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 20
+  }];
 }
 
 // SendTestAlertResponse reports the per-target outcome of the test send.

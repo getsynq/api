@@ -38,5 +38,6 @@ message Connection {
     synq.agent.dwh.v1.DuckDBConf duckdb = 60;
     synq.agent.dwh.v1.AthenaConf athena = 61;
     synq.agent.dwh.v1.FabricConf fabric = 62;
+    synq.agent.dwh.v1.Db2Conf db2 = 63;
   }
 }

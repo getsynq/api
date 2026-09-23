@@ -131,6 +131,15 @@ message BatchDeleteMonitorRequest {
 
 message BatchDeleteMonitorResponse {
   repeated string deleted_ids = 1;
+
+  // Details of a requested monitor that was not deleted.
+  message DeleteError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested monitor that was not deleted, most commonly because no
+  // monitor with that id exists. Empty when every requested monitor was deleted.
+  repeated DeleteError errors = 2;
 }
 
 message BatchUpdateMonitorModeRequest {
@@ -150,6 +159,15 @@ message BatchUpdateMonitorModeRequest {
 
 message BatchUpdateMonitorModeResponse {
   repeated string updated_ids = 1;
+
+  // Details of a requested monitor whose mode was not updated.
+  message UpdateError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested monitor that was not updated, most commonly because no
+  // monitor with that id exists. Empty when every requested monitor was updated.
+  repeated UpdateError errors = 2;
 }
 
 message BatchUpdateMonitorSeverityRequest {
@@ -166,6 +184,15 @@ message BatchUpdateMonitorSeverityRequest {
 
 message BatchUpdateMonitorSeverityResponse {
   repeated string updated_ids = 1;
+
+  // Details of a requested monitor whose severity was not updated.
+  message UpdateError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested monitor that was not updated, most commonly because no
+  // monitor with that id exists. Empty when every requested monitor was updated.
+  repeated UpdateError errors = 2;
 }
 
 message ListConfigsMonitorsRequest {

@@ -7,9 +7,9 @@ import (
 	"os"
 	"slices"
 
-	alertsservicesv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/alerts/services/v1/servicesv1grpc"
-	alertsservicesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/services/v1"
-	alertsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v1"
+	alertsservicesv2grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/alerts/services/v2/servicesv2grpc"
+	alertsservicesv2 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/services/v2"
+	alertsv2 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v2"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	queriesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/queries/v1"
 	synqv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/v1"
@@ -60,12 +60,11 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	alertsApi := alertsservicesv1grpc.NewAlertsServiceClient(conn)
+	alertsApi := alertsservicesv2grpc.NewAlertsServiceClient(conn)
 
 	// Define the FQN
 	alertFQN := "example.alerts.critical-failures"
 	var alertId string // To store created alert ID
-	var originalAlert *alertsv1.Alert
 
 	// ========================================
 	// STEP 1: CREATE ALERT
@@ -73,70 +72,68 @@ func main() {
 	{
 		fmt.Println("=== Step 1: Creating Alert ===")
 
-		// Create entity query using WithType to match ClickHouse tables
-		entityQuery := &alertsv1.EntityGroupQuery{
-			Parts: []*alertsv1.SelectionQuery{
-				{
-					Parts: []*alertsv1.SelectionQuery_QueryPart{
-						{
-							Part: &alertsv1.SelectionQuery_QueryPart_WithType{
-								WithType: &queriesv1.WithType{
-									Types: []*queriesv1.WithType_Type{
-										{
-											EntityType: &queriesv1.WithType_Type_Default{
-												Default: entitiesv1.EntityType_ENTITY_TYPE_CLICKHOUSE_TABLE,
-											},
+		// A structured query trigger; owned_alert shows the ResolverQL alternative.
+		trigger := &alertsv2.Trigger{
+			Query: &queriesv1.Query{
+				Parts: []*queriesv1.Query_QueryPart{
+					{
+						Part: &queriesv1.Query_QueryPart_WithType{
+							WithType: &queriesv1.WithType{
+								Types: []*queriesv1.WithType_Type{
+									{
+										EntityType: &queriesv1.WithType_Type_Default{
+											Default: entitiesv1.EntityType_ENTITY_TYPE_CLICKHOUSE_TABLE,
 										},
 									},
 								},
 							},
 						},
 					},
-					Operand: queriesv1.QueryOperand_QUERY_OPERAND_AND,
 				},
+				Operand: queriesv1.QueryOperand_QUERY_OPERAND_AND,
 			},
 		}
 
 		// Configure alert for FATAL severity failures only
-		alertSettings := &alertsv1.AlertSettings{
-			Settings: &alertsv1.AlertSettings_Issue{
-				Issue: &alertsv1.IssueAlertSettings{
-					Severities: []synqv1.Severity{
-						synqv1.Severity_SEVERITY_FATAL,
-					},
-					NotifyUpstream:        false,
-					AllowSqlTestAuditLink: true,
-					Ongoing: &alertsv1.OngoingAlertsStrategy{
-						Strategy: &alertsv1.OngoingAlertsStrategy_Disabled_{
-							Disabled: &alertsv1.OngoingAlertsStrategy_Disabled{},
-						},
-					},
-					Grouping: &alertsv1.IssueGroupingStrategy{
-						Strategy: &alertsv1.IssueGroupingStrategy_SystemDetected_{
-							SystemDetected: &alertsv1.IssueGroupingStrategy_SystemDetected{},
-						},
-					},
+		settings := &alertsv2.IssueAlertSettings{
+			Severities: []synqv1.Severity{
+				synqv1.Severity_SEVERITY_FATAL,
+			},
+			NotifyUpstream:        false,
+			AllowSqlTestAuditLink: true,
+			Ongoing: &alertsv2.OngoingAlertsStrategy{
+				Strategy: &alertsv2.OngoingAlertsStrategy_Disabled_{
+					Disabled: &alertsv2.OngoingAlertsStrategy_Disabled{},
+				},
+			},
+			Grouping: &alertsv2.IssueGroupingStrategy{
+				Strategy: &alertsv2.IssueGroupingStrategy_SystemDetected_{
+					SystemDetected: &alertsv2.IssueGroupingStrategy_SystemDetected{},
 				},
 			},
 		}
 
 		// Configure Slack target
-		targets := []*alertsv1.AlertingTarget{
+		targets := []*alertsv2.AlertingTarget{
 			{
-				Target: &alertsv1.AlertingTarget_Slack{
-					Slack: &alertsv1.SlackTarget{
+				Target: &alertsv2.AlertingTarget_Slack{
+					Slack: &alertsv2.SlackTarget{
 						Channel: slackChannel,
 					},
 				},
 			},
 		}
 
-		resp, err := alertsApi.Create(ctx, &alertsservicesv1.CreateRequest{
-			Name:     "Critical Failures Alert",
-			Fqn:      alertFQN,
-			Trigger:  entityQuery,
-			Targets:  targets,
-			Settings: alertSettings,
+		resp, err := alertsApi.Create(ctx, &alertsservicesv2.CreateRequest{
+			Name: "Critical Failures Alert",
+			Fqn:  alertFQN,
+			Kind: &alertsservicesv2.CreateRequest_IssueLifecycle{
+				IssueLifecycle: &alertsv2.IssueLifecycleAlert{
+					Trigger:  trigger,
+					Targets:  targets,
+					Settings: settings,
+				},
+			},
 		})
 		if err != nil {
 			panic(fmt.Sprintf("Failed to create alert: %v", err))
@@ -144,13 +141,16 @@ func main() {
 
 		alertId = resp.Alert.Id
 		fmt.Printf("✓ Created alert: %s\n", resp.Alert.Id)
+
+		// The structured selection reads back as canonical ResolverQL.
+		fmt.Printf("  Selection (ResolverQL): %s\n", resp.Alert.GetIssueLifecycle().GetTrigger().GetRenderedResolverQl())
 	}
 
 	// List all alerts and find the one we created
 	{
 		fmt.Println("\n--- Listing All Alerts ---")
 
-		resp, err := alertsApi.List(ctx, &alertsservicesv1.ListRequest{})
+		resp, err := alertsApi.List(ctx, &alertsservicesv2.ListRequest{})
 		if err != nil {
 			panic(fmt.Sprintf("Failed to list alerts: %v", err))
 		}
@@ -167,10 +167,10 @@ func main() {
 		fmt.Println("\n=== Step 2: Updating Alert ===")
 
 		// First, get the alert by FQN
-		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},
@@ -183,53 +183,51 @@ func main() {
 		if resp.Alerts == nil || resp.Alerts[alertFQN] == nil {
 			panic(fmt.Sprintf("No alert found with FQN: %s", alertFQN))
 		}
-		originalAlert = resp.Alerts[alertFQN]
+		originalAlert := resp.Alerts[alertFQN]
 		fmt.Printf("✓ Retrieved alert: %s\n", originalAlert.Id)
 
-		// Update to include both FATAL and ERROR severities
-		updatedSettings := originalAlert.Settings.GetIssue()
-		if updatedSettings == nil {
-			panic("Alert is not an Issue alert")
-		}
-		updatedSettings.Severities = append(updatedSettings.Severities, synqv1.Severity_SEVERITY_ERROR)
-
-		// Update with new name to reflect both severities
 		updatedName := "Critical and Error Failures Alert"
-
-		updateResp, err := alertsApi.Update(ctx, &alertsservicesv1.UpdateRequest{
-			Identifier: &alertsservicesv1.AlertIdentifier{
-				Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+		if _, err := alertsApi.Rename(ctx, &alertsservicesv2.RenameRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 					Fqn: alertFQN,
 				},
 			},
-			Name: &updatedName,
-			Settings: &alertsv1.AlertSettings{
-				Settings: &alertsv1.AlertSettings_Issue{
-					Issue: updatedSettings,
+			Name: updatedName,
+		}); err != nil {
+			panic(fmt.Sprintf("Failed to rename alert: %v", err))
+		}
+		fmt.Println("✓ Renamed alert")
+
+		// UpdateSettings is intent-specific: it leaves the trigger unchanged.
+		updatedSettings := originalAlert.GetIssueLifecycle().GetSettings()
+		if updatedSettings == nil {
+			panic("Alert is not an issue lifecycle alert")
+		}
+		updatedSettings.Severities = append(updatedSettings.Severities, synqv1.Severity_SEVERITY_ERROR)
+
+		updateResp, err := alertsApi.UpdateSettings(ctx, &alertsservicesv2.UpdateSettingsRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
+					Fqn: alertFQN,
 				},
+			},
+			Settings: &alertsservicesv2.UpdateSettingsRequest_IssueLifecycle{
+				IssueLifecycle: updatedSettings,
 			},
 		})
 		if err != nil {
-			panic(fmt.Sprintf("Failed to update alert: %v", err))
+			panic(fmt.Sprintf("Failed to update alert settings: %v", err))
 		}
-		updatedAlert := updateResp.Alert
-		fmt.Printf("✓ Updated alert: %s\n", updatedAlert.Id)
+		fmt.Printf("✓ Updated alert: %s\n", updateResp.Alert.Id)
 
 		// Validate that updated alert has both severities
-		issueSettings := updatedAlert.Settings.GetIssue()
+		issueSettings := updateResp.Alert.GetIssueLifecycle().GetSettings()
 		if issueSettings == nil {
-			panic("Updated alert is not an Issue alert")
+			panic("Updated alert is not an issue lifecycle alert")
 		}
-		hasFatal := false
-		hasError := false
-		for _, severity := range issueSettings.Severities {
-			if severity == synqv1.Severity_SEVERITY_FATAL {
-				hasFatal = true
-			}
-			if severity == synqv1.Severity_SEVERITY_ERROR {
-				hasError = true
-			}
-		}
+		hasFatal := slices.Contains(issueSettings.Severities, synqv1.Severity_SEVERITY_FATAL)
+		hasError := slices.Contains(issueSettings.Severities, synqv1.Severity_SEVERITY_ERROR)
 		if !hasFatal || !hasError {
 			panic("Updated alert does not have both FATAL and ERROR severities")
 		}
@@ -244,9 +242,9 @@ func main() {
 
 		// Disable the alert
 		fmt.Println("\n--- Disabling Alert ---")
-		_, err := alertsApi.ToggleEnabled(ctx, &alertsservicesv1.ToggleEnabledRequest{
-			Identifier: &alertsservicesv1.AlertIdentifier{
-				Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+		_, err := alertsApi.ToggleEnabled(ctx, &alertsservicesv2.ToggleEnabledRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 					Fqn: alertFQN,
 				},
 			},
@@ -257,10 +255,10 @@ func main() {
 		}
 
 		// Verify disabled
-		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},
@@ -280,9 +278,9 @@ func main() {
 
 		// Re-enable the alert
 		fmt.Println("\n--- Re-enabling Alert ---")
-		_, err = alertsApi.ToggleEnabled(ctx, &alertsservicesv1.ToggleEnabledRequest{
-			Identifier: &alertsservicesv1.AlertIdentifier{
-				Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+		_, err = alertsApi.ToggleEnabled(ctx, &alertsservicesv2.ToggleEnabledRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 					Fqn: alertFQN,
 				},
 			},
@@ -293,10 +291,10 @@ func main() {
 		}
 
 		// Verify enabled
-		resp, err = alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err = alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},
@@ -322,10 +320,10 @@ func main() {
 		fmt.Println("\n=== Step 4: Deleting Alert ===")
 
 		// Verify alert exists before deletion
-		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},
@@ -341,9 +339,9 @@ func main() {
 		}
 
 		// Delete the alert by FQN
-		_, err = alertsApi.Delete(ctx, &alertsservicesv1.DeleteRequest{
-			Identifier: &alertsservicesv1.AlertIdentifier{
-				Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+		_, err = alertsApi.Delete(ctx, &alertsservicesv2.DeleteRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 					Fqn: alertFQN,
 				},
 			},
@@ -355,10 +353,10 @@ func main() {
 		fmt.Println("✓ Alert deleted successfully")
 
 		// Verify alert is deleted
-		resp, err = alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err = alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},

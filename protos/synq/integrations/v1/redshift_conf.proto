@@ -29,6 +29,8 @@ message RedshiftCloudConf {
   optional bool fetch_query_logs = 6;
   // Estimate table freshness from query logs (SYS_QUERY_DETAIL).
   optional bool freshness_from_query_logs = 7;
-  // Fully-qualified table for storing SQL test audit logs.
+  // Table name for storing SQL test audit logs (e.g., 'sql_test_audit').
+  // Auto-creation quotes the value as a single identifier, so a schema-qualified
+  // name only works against a table you have created yourself.
   optional string audit_table_fqn = 8;
 }

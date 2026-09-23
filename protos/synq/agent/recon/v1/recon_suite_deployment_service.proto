@@ -257,6 +257,11 @@ enum UnresolvedConnectionReason {
   // Integration exists but the allow_reconciliation_adhoc /
   // allow_reconciliation_deploy capability gate is disabled for it.
   UNRESOLVED_CONNECTION_REASON_CAPABILITY_DISABLED = 4;
+  // The connection is named after a workspace integration, and the mapping
+  // binds it to an integration on a different platform (a Snowflake
+  // connection mapped to a Postgres integration). The suite's SQL for that
+  // side is written for the platform it names.
+  UNRESOLVED_CONNECTION_REASON_PLATFORM_MISMATCH = 5;
 }
 
 // One entry per connection name the server failed to resolve. Returned

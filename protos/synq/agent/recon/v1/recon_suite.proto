@@ -78,6 +78,36 @@ message ReconciliationSuite {
   // list is exposed on PromotedReconSuiteMetadata / PromotedReconCaseMetadata
   // and surfaced to the rest of the SYNQ platform via EntityAnnotations.
   repeated synq.entities.v1.Annotation annotations = 11;
+
+  // How runs of this suite execute: the wall-clock budget of a run and how
+  // many reconciliations run at the same time. Read by every run of the
+  // suite, local or server-side; a run-level override (a CLI flag, the
+  // execution_timeout on a trigger or on a deployment) takes precedence.
+  optional ExecutionConfig execution = 12;
+}
+
+// ExecutionConfig holds the suite's execution settings. Every field is
+// optional, and an absent field leaves the runner's default in place.
+message ExecutionConfig {
+  // Maximum wall-clock time for a single run of the suite (the quick check
+  // plus any bisection drill). A run that exceeds it is cancelled and the
+  // reconciliations still running are reported as failed. Server-side runs
+  // clamp the value to a supported range.
+  //
+  // Precedence, most specific first: the per-run override, the deployment's
+  // execution_timeout, this field, the runner default.
+  optional google.protobuf.Duration timeout = 1 [(buf.validate.field).duration = {
+    gt: {}
+  }];
+
+  // Maximum number of reconciliations run in parallel. 1 (the default) runs
+  // them one after another. Each parallel reconciliation issues its own
+  // queries, so this multiplies the load on the source and target
+  // warehouses. Server-side runs clamp the value to a supported maximum.
+  optional int32 concurrency = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 64
+  }];
 }
 
 // ConnectionQueries associates SQL queries with a specific connection.

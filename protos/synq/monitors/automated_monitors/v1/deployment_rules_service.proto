@@ -125,7 +125,21 @@ message BatchUpdateDeploymentRuleTitleRequest {
   repeated UpdateDeploymentRuleTitleRequest deployment_rules = 1;
 }
 
-message BatchUpdateDeploymentRuleTitleResponse {}
+message BatchUpdateDeploymentRuleTitleResponse {
+  // IDs of the deployment rules whose title was updated. Optional and additive:
+  // an older server leaves it unset even though it did rename the rules.
+  repeated string updated_ids = 1;
+
+  // Details of a requested deployment rule that was not updated.
+  message UpdateError {
+    string id = 1;
+    string reason = 2;
+  }
+  // One entry per requested deployment rule that was not updated, most commonly
+  // because no rule with that id exists. Empty when every requested rule was
+  // updated. A rule missing from both lists was not renamed.
+  repeated UpdateError errors = 2;
+}
 
 message UpdateDeploymentRuleTitleRequest {
   string id = 1 [(buf.validate.field).string.uuid = true];

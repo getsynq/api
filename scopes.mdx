@@ -496,8 +496,13 @@ Create, update, and delete alert rules and notification channels.
 | `Update`<br/>_synq.alerts.services.v1.AlertsService_<br/>`PUT /api/alerts/v1` | Update an existing alert configuration. |
 | `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | Create a new alert configuration. |
 | `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | Delete an existing alert configuration. |
+| `Rename`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/rename` | Rename an existing alert configuration. |
+| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | Delivers a static test message to the given targets so you can confirm that |
 | `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | Enables or disables an existing alert configuration. |
-| `Update`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Update an existing alert configuration. |
+| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. This alert notifies |
+| `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | Update the trigger and/or the kind-specific settings of an alert. |
+| `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | Replace the delivery targets of an existing alert configuration. |
+| `UpdateTemplate`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/template` | Set or clear the message template of an existing alert configuration. |
 
 ## Read Alerts
 
@@ -510,6 +515,7 @@ View alert rules and notification channels.
 | `BatchGet`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/get` | Get multiple alert configurations by their identifiers. |
 | `List`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/list` | Retrieves a list of alert configurations based on filters. |
 | `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | Get multiple alert configurations by their identifiers. |
+| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | Reports whether the workspace's incident-owner alert is on. This alert has |
 | `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | Retrieves a list of alert configurations based on filters. |
 
 ## Edit Owners
@@ -1068,9 +1074,15 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | `SCOPE_ALERTS_READ` |
 | `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
 | `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
+| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | `SCOPE_ALERTS_READ` |
 | `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | `SCOPE_ALERTS_READ` |
+| `Rename`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/rename` | `SCOPE_ALERTS_EDIT` |
+| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | `SCOPE_ALERTS_EDIT` |
 | `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | `SCOPE_ALERTS_EDIT` |
-| `Update`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | `SCOPE_ALERTS_EDIT` |
+| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | `SCOPE_ALERTS_EDIT` |
+| `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | `SCOPE_ALERTS_EDIT` |
+| `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | `SCOPE_ALERTS_EDIT` |
+| `UpdateTemplate`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/template` | `SCOPE_ALERTS_EDIT` |
 | `Iam`<br/>_synq.auth.iam.v1.IamService_<br/>`GET /api/iam/v1` | — |
 | `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
 | `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |

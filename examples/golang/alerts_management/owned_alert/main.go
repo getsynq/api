@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	alertsservicesv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/alerts/services/v1/servicesv1grpc"
-	alertsservicesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/services/v1"
-	alertsv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v1"
-	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
-	queriesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/queries/v1"
+	alertsservicesv2grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/alerts/services/v2/servicesv2grpc"
+	alertsservicesv2 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/services/v2"
+	alertsv2 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/alerts/v2"
 	synqv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/v1"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2/clientcredentials"
@@ -60,7 +58,7 @@ func main() {
 
 	fmt.Printf("Connected to API...\n\n")
 
-	alertsApi := alertsservicesv1grpc.NewAlertsServiceClient(conn)
+	alertsApi := alertsservicesv2grpc.NewAlertsServiceClient(conn)
 
 	// Define alert properties with owner
 	alertFQN := "example.alerts.owned-alert"
@@ -75,74 +73,55 @@ func main() {
 		fmt.Printf("Owner Path: %s\n", ownerPath)
 		fmt.Printf("Ownership ID: %s\n\n", ownershipID)
 
-		// Create entity query that matches ClickHouse tables
-		entityQuery := &alertsv1.EntityGroupQuery{
-			Parts: []*alertsv1.SelectionQuery{
-				{
-					Parts: []*alertsv1.SelectionQuery_QueryPart{
-						{
-							Part: &alertsv1.SelectionQuery_QueryPart_WithType{
-								WithType: &queriesv1.WithType{
-									Types: []*queriesv1.WithType_Type{
-										{
-											EntityType: &queriesv1.WithType_Type_Default{
-												Default: entitiesv1.EntityType_ENTITY_TYPE_CLICKHOUSE_TABLE,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					Operand: queriesv1.QueryOperand_QUERY_OPERAND_AND,
-				},
-			},
+		// A ResolverQL trigger, the alternative to global_alert's structured query; it takes precedence when both are set.
+		trigger := &alertsv2.Trigger{
+			ResolverQl: `with_type("clickhouse_table")`,
 		}
 
 		// Configure alert for FATAL severity failures
-		alertSettings := &alertsv1.AlertSettings{
-			Settings: &alertsv1.AlertSettings_Issue{
-				Issue: &alertsv1.IssueAlertSettings{
-					Severities: []synqv1.Severity{
-						synqv1.Severity_SEVERITY_FATAL,
-					},
-					NotifyUpstream:        false,
-					AllowSqlTestAuditLink: true,
-					Ongoing: &alertsv1.OngoingAlertsStrategy{
-						Strategy: &alertsv1.OngoingAlertsStrategy_Disabled_{
-							Disabled: &alertsv1.OngoingAlertsStrategy_Disabled{},
-						},
-					},
-					Grouping: &alertsv1.IssueGroupingStrategy{
-						Strategy: &alertsv1.IssueGroupingStrategy_SystemDetected_{
-							SystemDetected: &alertsv1.IssueGroupingStrategy_SystemDetected{},
-						},
-					},
+		settings := &alertsv2.IssueAlertSettings{
+			Severities: []synqv1.Severity{
+				synqv1.Severity_SEVERITY_FATAL,
+			},
+			NotifyUpstream:        false,
+			AllowSqlTestAuditLink: true,
+			Ongoing: &alertsv2.OngoingAlertsStrategy{
+				Strategy: &alertsv2.OngoingAlertsStrategy_Disabled_{
+					Disabled: &alertsv2.OngoingAlertsStrategy_Disabled{},
+				},
+			},
+			Grouping: &alertsv2.IssueGroupingStrategy{
+				Strategy: &alertsv2.IssueGroupingStrategy_SystemDetected_{
+					SystemDetected: &alertsv2.IssueGroupingStrategy_SystemDetected{},
 				},
 			},
 		}
 
 		// Configure Slack target
-		targets := []*alertsv1.AlertingTarget{
+		targets := []*alertsv2.AlertingTarget{
 			{
-				Target: &alertsv1.AlertingTarget_Slack{
-					Slack: &alertsv1.SlackTarget{
+				Target: &alertsv2.AlertingTarget_Slack{
+					Slack: &alertsv2.SlackTarget{
 						Channel: slackChannel,
 					},
 				},
 			},
 		}
 
-		// Create the alert with owner information
-		resp, err := alertsApi.Create(ctx, &alertsservicesv1.CreateRequest{
-			Name:     "Owned Alert Example",
-			Fqn:      alertFQN,
-			Trigger:  entityQuery,
-			Targets:  targets,
-			Settings: alertSettings,
-			Owner: &alertsv1.Alert_Owner{
-				OwnerPath:   ownerPath,
-				OwnershipId: ownershipID,
+		// The owner lives on the alert kind, fixed at creation time.
+		resp, err := alertsApi.Create(ctx, &alertsservicesv2.CreateRequest{
+			Name: "Owned Alert Example",
+			Fqn:  alertFQN,
+			Kind: &alertsservicesv2.CreateRequest_IssueLifecycle{
+				IssueLifecycle: &alertsv2.IssueLifecycleAlert{
+					Trigger:  trigger,
+					Targets:  targets,
+					Settings: settings,
+					Owner: &alertsv2.Owner{
+						OwnerPath:   ownerPath,
+						OwnershipId: ownershipID,
+					},
+				},
 			},
 		})
 		if err != nil {
@@ -152,12 +131,13 @@ func main() {
 		createdAlertID = resp.Alert.Id
 		fmt.Printf("✓ Alert created successfully: %s\n", createdAlertID)
 
-		if resp.Alert.Owner == nil {
+		owner := resp.Alert.GetIssueLifecycle().GetOwner()
+		if owner == nil {
 			panic("Alert was created but owner was not set")
 		}
 
-		fmt.Printf("  Owner Path: %s\n", resp.Alert.Owner.OwnerPath)
-		fmt.Printf("  Ownership ID: %s\n\n", resp.Alert.Owner.OwnershipId)
+		fmt.Printf("  Owner Path: %s\n", owner.OwnerPath)
+		fmt.Printf("  Ownership ID: %s\n\n", owner.OwnershipId)
 	}
 
 	// List alerts filtered by owner
@@ -165,8 +145,8 @@ func main() {
 		fmt.Println("=== Listing Alerts by Owner ===")
 		fmt.Printf("Filtering by owner: %s (ownership: %s)\n\n", ownerPath, ownershipID)
 
-		resp, err := alertsApi.List(ctx, &alertsservicesv1.ListRequest{
-			Owner: &alertsv1.Alert_Owner{
+		resp, err := alertsApi.List(ctx, &alertsservicesv2.ListRequest{
+			Owner: &alertsv2.Owner{
 				OwnerPath:   ownerPath,
 				OwnershipId: ownershipID,
 			},
@@ -201,10 +181,10 @@ func main() {
 	{
 		fmt.Println("=== Verifying Alert Owner ===")
 
-		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},
@@ -219,30 +199,31 @@ func main() {
 			panic("Alert not found")
 		}
 
-		if alert.Owner == nil {
+		owner := alert.GetIssueLifecycle().GetOwner()
+		if owner == nil {
 			panic("Alert has no owner")
 		}
 
-		if alert.Owner.OwnerPath != ownerPath {
-			panic(fmt.Sprintf("Owner path mismatch: expected %s, got %s", ownerPath, alert.Owner.OwnerPath))
+		if owner.OwnerPath != ownerPath {
+			panic(fmt.Sprintf("Owner path mismatch: expected %s, got %s", ownerPath, owner.OwnerPath))
 		}
 
-		if alert.Owner.OwnershipId != ownershipID {
-			panic(fmt.Sprintf("Ownership ID mismatch: expected %s, got %s", ownershipID, alert.Owner.OwnershipId))
+		if owner.OwnershipId != ownershipID {
+			panic(fmt.Sprintf("Ownership ID mismatch: expected %s, got %s", ownershipID, owner.OwnershipId))
 		}
 
 		fmt.Println("✓ Alert owner verified successfully")
-		fmt.Printf("  Owner Path: %s\n", alert.Owner.OwnerPath)
-		fmt.Printf("  Ownership ID: %s\n\n", alert.Owner.OwnershipId)
+		fmt.Printf("  Owner Path: %s\n", owner.OwnerPath)
+		fmt.Printf("  Ownership ID: %s\n\n", owner.OwnershipId)
 	}
 
 	// Delete the created alert
 	{
 		fmt.Println("=== Cleaning Up: Deleting Alert ===")
 
-		_, err := alertsApi.Delete(ctx, &alertsservicesv1.DeleteRequest{
-			Identifier: &alertsservicesv1.AlertIdentifier{
-				Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+		_, err := alertsApi.Delete(ctx, &alertsservicesv2.DeleteRequest{
+			Identifier: &alertsservicesv2.AlertIdentifier{
+				Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 					Fqn: alertFQN,
 				},
 			},
@@ -258,10 +239,10 @@ func main() {
 	{
 		fmt.Println("\n=== Verifying Deletion ===")
 
-		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv1.BatchGetRequest{
-			Identifiers: []*alertsservicesv1.AlertIdentifier{
+		resp, err := alertsApi.BatchGet(ctx, &alertsservicesv2.BatchGetRequest{
+			Identifiers: []*alertsservicesv2.AlertIdentifier{
 				{
-					Identifier: &alertsservicesv1.AlertIdentifier_Fqn{
+					Identifier: &alertsservicesv2.AlertIdentifier_Fqn{
 						Fqn: alertFQN,
 					},
 				},

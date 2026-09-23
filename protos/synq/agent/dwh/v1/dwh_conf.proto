@@ -576,3 +576,92 @@ message FabricConf {
     expression: "this in ['', 'service_principal', 'azure_cli', 'default', 'managed_identity']"
   }];
 }
+
+// IBM Db2 for Linux, UNIX and Windows (Db2 LUW) configuration.
+//
+// Each connection opens one database, the one you would name in
+// `CONNECT TO <database>`. An instance can hold several databases, each with
+// its own SYSCAT catalog views, so add a connection for every database you
+// want to monitor.
+//
+// The keyword in parentheses after each field is the matching keyword of a
+// Db2 CLI connection string, db2cli.ini or db2dsdriver.cfg. Values are the
+// same, so you can copy them from a data source you already use. You don't
+// need to install a Db2 client, Data Server Driver or clidriver. Db2 for z/OS
+// and Db2 for i are not supported.
+message Db2Conf {
+  option (buf.validate.message).cel = {
+    id: "db2_ssl_server_certificate"
+    message: "Set ssl_server_certificate_file or ssl_server_certificate_pem, not both"
+    expression: "this.ssl_server_certificate_file == '' || this.ssl_server_certificate_pem == ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "db2_ssl_server_certificate_needs_ssl"
+    message: "A server certificate needs security set to SSL"
+    expression: "(this.ssl_server_certificate_file == '' && this.ssl_server_certificate_pem == '') || this.security in ['SSL', 'ssl']"
+  };
+
+  // Host name or IP address of the Db2 server (HOSTNAME).
+  string hostname = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // TCP/IP port of the instance (PORT): the value of the SVCENAME database
+  // manager configuration parameter, or SSL_SVCENAME when security is "SSL"
+  // (`db2 get dbm cfg`). Defaults to 50000, or 50001 when security is "SSL".
+  int32 port = 2 [(buf.validate.field) = {
+    int32: {
+      gte: 0
+      lte: 65535
+    }
+  }];
+  // Database name or alias (DATABASE), as in `CONNECT TO <database>`.
+  string database = 3 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Authorization ID to connect with (UID). Db2 checks it through the
+  // instance's security plugin: against the server's operating system by
+  // default, or against LDAP when an LDAP plugin is configured.
+  string user = 4 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Password of the authorization ID (PWD).
+  string password = 5 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+  // Set to "SSL" to connect over SSL/TLS (SECURITY=SSL). The instance needs
+  // SSL_SVCENAME set and SSL listed in DB2COMM. Leave empty for a plain TCP/IP
+  // connection.
+  string security = 6 [(buf.validate.field).cel = {
+    id: "db2_security"
+    message: "security must be empty or SSL"
+    expression: "this in ['', 'SSL', 'ssl']"
+  }];
+  // Path to the server's certificate, or the certificate of the CA that
+  // signed it, in PEM format (SSLServerCertificate). The .arm file you get
+  // from the instance's keystore with `gsk8capicmd_64 -cert -extract` works
+  // as is. The file must exist on the machine that connects to Db2. When it
+  // can't, paste the certificate into ssl_server_certificate_pem instead.
+  // Needs security set to "SSL". Leave both empty to check the server
+  // against the system trust store.
+  string ssl_server_certificate_file = 7;
+  // Content of the same certificate, starting with
+  // "-----BEGIN CERTIFICATE-----", for when you can't point to a file. Needs
+  // security set to "SSL".
+  string ssl_server_certificate_pem = 8;
+  // How the authorization ID and password travel to the server
+  // (AUTHENTICATION). The values match the database manager configuration
+  // parameter of the same name:
+  //   - "SERVER" (default): sent unencrypted. Use it with security "SSL"
+  //     on an untrusted network.
+  //   - "SERVER_ENCRYPT": sent encrypted. The instance's AUTHENTICATION must
+  //     accept encrypted credentials, for example SERVER_ENCRYPT.
+  string authentication = 9 [(buf.validate.field).cel = {
+    id: "db2_authentication"
+    message: "authentication must be empty, SERVER or SERVER_ENCRYPT"
+    expression: "this in ['', 'SERVER', 'SERVER_ENCRYPT', 'server', 'server_encrypt']"
+  }];
+}

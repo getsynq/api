@@ -21,13 +21,14 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from auth import TokenSource, TokenAuth
-from synq.alerts.services.v1 import (
+from synq.alerts.services.v2 import (
     alerts_service_pb2,
     alerts_service_pb2_grpc,
 )
-from synq.alerts.v1 import alerts_pb2, targets_pb2
+from synq.alerts.v2 import alerts_pb2, targets_pb2
 from synq.entities.v1 import entity_types_pb2
-from synq.queries.v1 import query_parts_pb2, query_operand_pb2
+from synq.queries.v1 import query_pb2, query_parts_pb2, query_operand_pb2
+from synq.v1 import severity_pb2
 
 load_dotenv()
 
@@ -72,36 +73,35 @@ with grpc.secure_channel(
     # ========================================
     print("=== Step 1: Creating Alert ===")
 
-    # Create entity query to match ClickHouse tables
-    entity_query = alerts_pb2.EntityGroupQuery(
-        parts=[
-            alerts_pb2.SelectionQuery(
-                parts=[
-                    alerts_pb2.SelectionQuery.QueryPart(
-                        with_type=query_parts_pb2.WithType(
-                            types=[
-                                query_parts_pb2.WithType.Type(
-                                    default=entity_types_pb2.ENTITY_TYPE_CLICKHOUSE_TABLE
-                                )
-                            ]
-                        )
+    # A structured query trigger; owned_alert.py shows the ResolverQL alternative.
+    trigger = alerts_pb2.Trigger(
+        query=query_pb2.Query(
+            parts=[
+                query_pb2.Query.QueryPart(
+                    with_type=query_parts_pb2.WithType(
+                        types=[
+                            query_parts_pb2.WithType.Type(
+                                default=entity_types_pb2.ENTITY_TYPE_CLICKHOUSE_TABLE
+                            )
+                        ]
                     )
-                ],
-                operand=query_operand_pb2.QUERY_OPERAND_AND,
-            )
-        ]
+                )
+            ],
+            operand=query_operand_pb2.QUERY_OPERAND_AND,
+        )
     )
 
     # Configure alert for FATAL severity failures only
-    alert_settings = alerts_pb2.AlertSettings(
-        entity_failure=alerts_pb2.EntityFailureAlertSettings(
-            severities=[alerts_pb2.EntityFailureAlertSettings.SEVERITY_FATAL],
-            notify_upstream=False,
-            allow_sql_test_audit_link=True,
-            ongoing=alerts_pb2.OngoingAlertsStrategy(
-                disabled=alerts_pb2.OngoingAlertsStrategy.Disabled()
-            ),
-        )
+    settings = alerts_pb2.IssueAlertSettings(
+        severities=[severity_pb2.SEVERITY_FATAL],
+        notify_upstream=False,
+        allow_sql_test_audit_link=True,
+        ongoing=alerts_pb2.OngoingAlertsStrategy(
+            disabled=alerts_pb2.OngoingAlertsStrategy.Disabled()
+        ),
+        grouping=alerts_pb2.IssueGroupingStrategy(
+            system_detected=alerts_pb2.IssueGroupingStrategy.SystemDetected()
+        ),
     )
 
     # Configure Slack target
@@ -116,13 +116,19 @@ with grpc.secure_channel(
             alerts_service_pb2.CreateRequest(
                 name="Critical Failures Alert",
                 fqn=ALERT_FQN,
-                trigger=entity_query,
-                targets=targets,
-                settings=alert_settings,
+                issue_lifecycle=alerts_pb2.IssueLifecycleAlert(
+                    trigger=trigger,
+                    targets=targets,
+                    settings=settings,
+                ),
             )
         )
         alert_id = create_response.alert.id
         print(f"✓ Created alert: {alert_id}")
+
+        # The structured selection reads back as canonical ResolverQL.
+        rendered = create_response.alert.issue_lifecycle.trigger.rendered_resolver_ql
+        print(f"  Selection (ResolverQL): {rendered}")
     except grpc.RpcError as e:
         print(f"Failed to create alert: {e}")
         sys.exit(1)
@@ -159,28 +165,39 @@ with grpc.secure_channel(
         print(f"Failed to get alert: {e}")
         sys.exit(1)
 
-    # Update to include both FATAL and ERROR severities
-    updated_settings = alerts_pb2.EntityFailureAlertSettings()
-    updated_settings.CopyFrom(original_alert.settings.entity_failure)
-    updated_settings.severities.append(alerts_pb2.EntityFailureAlertSettings.SEVERITY_ERROR)
-
     updated_name = "Critical and Error Failures Alert"
-
     try:
-        update_response = stub.Update(
-            alerts_service_pb2.UpdateRequest(
+        stub.Rename(
+            alerts_service_pb2.RenameRequest(
                 identifier=alerts_service_pb2.AlertIdentifier(fqn=ALERT_FQN),
                 name=updated_name,
-                settings=alerts_pb2.AlertSettings(entity_failure=updated_settings),
+            )
+        )
+        print("✓ Renamed alert")
+    except grpc.RpcError as e:
+        print(f"Failed to rename alert: {e}")
+        sys.exit(1)
+
+    # UpdateSettings is intent-specific: it leaves the trigger unchanged.
+    updated_settings = alerts_pb2.IssueAlertSettings()
+    updated_settings.CopyFrom(original_alert.issue_lifecycle.settings)
+    updated_settings.severities.append(severity_pb2.SEVERITY_ERROR)
+
+    try:
+        update_response = stub.UpdateSettings(
+            alerts_service_pb2.UpdateSettingsRequest(
+                identifier=alerts_service_pb2.AlertIdentifier(fqn=ALERT_FQN),
+                issue_lifecycle=updated_settings,
             )
         )
         updated_alert = update_response.alert
         print(f"✓ Updated alert: {updated_alert.id}")
 
         # Validate that updated alert has both severities
-        has_fatal = alerts_pb2.EntityFailureAlertSettings.SEVERITY_FATAL in updated_alert.settings.entity_failure.severities
-        has_error = alerts_pb2.EntityFailureAlertSettings.SEVERITY_ERROR in updated_alert.settings.entity_failure.severities
-        
+        severities = updated_alert.issue_lifecycle.settings.severities
+        has_fatal = severity_pb2.SEVERITY_FATAL in severities
+        has_error = severity_pb2.SEVERITY_ERROR in severities
+
         if not has_fatal or not has_error:
             print("✗ Updated alert does not have both FATAL and ERROR severities")
             sys.exit(1)

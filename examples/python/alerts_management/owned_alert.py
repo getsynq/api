@@ -14,6 +14,7 @@ Prerequisites:
 
 import os
 import sys
+import uuid
 import grpc
 from dotenv import load_dotenv
 
@@ -21,13 +22,12 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from auth import TokenSource, TokenAuth
-from synq.alerts.services.v1 import (
+from synq.alerts.services.v2 import (
     alerts_service_pb2,
     alerts_service_pb2_grpc,
 )
-from synq.alerts.v1 import alerts_pb2, targets_pb2
-from synq.entities.v1 import entity_types_pb2
-from synq.queries.v1 import query_parts_pb2, query_operand_pb2
+from synq.alerts.v2 import alerts_pb2, targets_pb2
+from synq.v1 import severity_pb2
 
 load_dotenv()
 
@@ -46,7 +46,7 @@ if SLACK_CHANNEL is None:
 # Define alert properties with owner
 ALERT_FQN = "example.alerts.owned-alert"
 OWNER_PATH = "team.data-platform"
-OWNERSHIP_ID = "example-ownership-id"
+OWNERSHIP_ID = str(uuid.uuid4())
 
 # Initialize authorization
 token_source = TokenSource(CLIENT_ID, CLIENT_SECRET, API_ENDPOINT)
@@ -76,36 +76,20 @@ with grpc.secure_channel(
     print(f"Owner Path: {OWNER_PATH}")
     print(f"Ownership ID: {OWNERSHIP_ID}\n")
 
-    # Create entity query that matches ClickHouse tables
-    entity_query = alerts_pb2.EntityGroupQuery(
-        parts=[
-            alerts_pb2.SelectionQuery(
-                parts=[
-                    alerts_pb2.SelectionQuery.QueryPart(
-                        with_type=query_parts_pb2.WithType(
-                            types=[
-                                query_parts_pb2.WithType.Type(
-                                    default=entity_types_pb2.ENTITY_TYPE_CLICKHOUSE_TABLE
-                                )
-                            ]
-                        )
-                    )
-                ],
-                operand=query_operand_pb2.QUERY_OPERAND_AND,
-            )
-        ]
-    )
+    # A ResolverQL trigger, the alternative to global_alert.py's structured query; it takes precedence when both are set.
+    trigger = alerts_pb2.Trigger(resolver_ql='with_type("clickhouse_table")')
 
     # Configure alert for FATAL severity failures
-    alert_settings = alerts_pb2.AlertSettings(
-        entity_failure=alerts_pb2.EntityFailureAlertSettings(
-            severities=[alerts_pb2.EntityFailureAlertSettings.SEVERITY_FATAL],
-            notify_upstream=False,
-            allow_sql_test_audit_link=True,
-            ongoing=alerts_pb2.OngoingAlertsStrategy(
-                disabled=alerts_pb2.OngoingAlertsStrategy.Disabled()
-            ),
-        )
+    settings = alerts_pb2.IssueAlertSettings(
+        severities=[severity_pb2.SEVERITY_FATAL],
+        notify_upstream=False,
+        allow_sql_test_audit_link=True,
+        ongoing=alerts_pb2.OngoingAlertsStrategy(
+            disabled=alerts_pb2.OngoingAlertsStrategy.Disabled()
+        ),
+        grouping=alerts_pb2.IssueGroupingStrategy(
+            system_detected=alerts_pb2.IssueGroupingStrategy.SystemDetected()
+        ),
     )
 
     # Configure Slack target
@@ -115,30 +99,33 @@ with grpc.secure_channel(
         )
     ]
 
-    # Create the alert with owner information
+    # Create the alert; the owner lives on the alert kind, fixed at creation time.
     try:
         create_response = stub.Create(
             alerts_service_pb2.CreateRequest(
                 name="Owned Alert Example",
                 fqn=ALERT_FQN,
-                trigger=entity_query,
-                targets=targets,
-                settings=alert_settings,
-                owner=alerts_pb2.Alert.Owner(
-                    owner_path=OWNER_PATH,
-                    ownership_id=OWNERSHIP_ID,
+                issue_lifecycle=alerts_pb2.IssueLifecycleAlert(
+                    trigger=trigger,
+                    targets=targets,
+                    settings=settings,
+                    owner=alerts_pb2.Owner(
+                        owner_path=OWNER_PATH,
+                        ownership_id=OWNERSHIP_ID,
+                    ),
                 ),
             )
         )
         created_alert_id = create_response.alert.id
         print(f"✓ Alert created successfully: {created_alert_id}")
 
-        if not create_response.alert.HasField("owner"):
+        if not create_response.alert.issue_lifecycle.HasField("owner"):
             print("✗ Alert was created but owner was not set")
             sys.exit(1)
 
-        print(f"  Owner Path: {create_response.alert.owner.owner_path}")
-        print(f"  Ownership ID: {create_response.alert.owner.ownership_id}\n")
+        owner = create_response.alert.issue_lifecycle.owner
+        print(f"  Owner Path: {owner.owner_path}")
+        print(f"  Ownership ID: {owner.ownership_id}\n")
     except grpc.RpcError as e:
         print(f"Failed to create alert with owner: {e}")
         sys.exit(1)
@@ -152,7 +139,7 @@ with grpc.secure_channel(
     try:
         list_response = stub.List(
             alerts_service_pb2.ListRequest(
-                owner=alerts_pb2.Alert.Owner(
+                owner=alerts_pb2.Owner(
                     owner_path=OWNER_PATH,
                     ownership_id=OWNERSHIP_ID,
                 )
@@ -192,21 +179,22 @@ with grpc.secure_channel(
 
         alert = batch_get_response.alerts[ALERT_FQN]
 
-        if not alert.HasField("owner"):
+        if not alert.issue_lifecycle.HasField("owner"):
             print("✗ Alert has no owner")
             sys.exit(1)
 
-        if alert.owner.owner_path != OWNER_PATH:
-            print(f"✗ Owner path mismatch: expected {OWNER_PATH}, got {alert.owner.owner_path}")
+        owner = alert.issue_lifecycle.owner
+        if owner.owner_path != OWNER_PATH:
+            print(f"✗ Owner path mismatch: expected {OWNER_PATH}, got {owner.owner_path}")
             sys.exit(1)
 
-        if alert.owner.ownership_id != OWNERSHIP_ID:
-            print(f"✗ Ownership ID mismatch: expected {OWNERSHIP_ID}, got {alert.owner.ownership_id}")
+        if owner.ownership_id != OWNERSHIP_ID:
+            print(f"✗ Ownership ID mismatch: expected {OWNERSHIP_ID}, got {owner.ownership_id}")
             sys.exit(1)
 
         print("✓ Alert owner verified successfully")
-        print(f"  Owner Path: {alert.owner.owner_path}")
-        print(f"  Ownership ID: {alert.owner.ownership_id}\n")
+        print(f"  Owner Path: {owner.owner_path}")
+        print(f"  Ownership ID: {owner.ownership_id}\n")
     except grpc.RpcError as e:
         print(f"Failed to get alert: {e}")
         sys.exit(1)
