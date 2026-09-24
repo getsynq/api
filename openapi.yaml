@@ -858,8 +858,12 @@ components:
             properties:
                 queryTimeout:
                     description: |-
-                        Per-query timeout. When a query exceeds this duration, it is cancelled.
-                         Default: no per-query limit (only the global run timeout applies).
+                        Per-query timeout. When a query exceeds this duration, it is cancelled
+                         and fails with a timeout error. It is not retried, since a query that took
+                         this long will usually take it again. Covers setup and teardown statements
+                         too. To bound the whole reconciliation rather than each query, use its
+                         timeout or the suite's execution.reconciliation_timeout.
+                         Default: no per-query limit.
                     nullable: true
                     $ref: '#/components/schemas/google.protobuf.Duration'
                 maxRetries:
@@ -868,7 +872,8 @@ components:
                     minimum: 0
                     format: int32
                     description: |-
-                        Maximum retry attempts for transient query failures.
+                        Maximum retry attempts for transient query failures. Setup and teardown
+                         statements are never retried, since they need not be safe to run twice.
                          The total number of attempts is max_retries + 1 (initial + retries).
                          Default: 2.
                     nullable: true
@@ -924,6 +929,23 @@ components:
                          queries, so this multiplies the load on the source and target
                          warehouses. Server-side runs clamp the value to a supported maximum.
                     nullable: true
+                reconciliationTimeout:
+                    description: |
+                        Maximum wall-clock time for a single reconciliation of the suite: its
+                         setup, quick check and any drill. A reconciliation that exceeds it is
+                         stopped and recorded as failed with a timeout error, and the run moves on
+                         to the next one, so one slow query cannot use up the whole run's timeout.
+                         It never extends the run: whichever of the two runs out first applies.
+
+                         A reconciliation's own timeout takes precedence. Unset means only the
+                         run's timeout bounds a reconciliation.
+                        duration.gt = 0s
+                        duration.gt_lt = 0s
+                        duration.gt_lt_exclusive = 0s
+                        duration.gt_lte = 0s
+                        duration.gt_lte_exclusive = 0s
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Duration'
             title: ExecutionConfig
             additionalProperties: false
             description: |-
@@ -1487,6 +1509,21 @@ components:
                         Case-level annotations. Merged with suite-level annotations and
                          deployment-level annotations at promote time, then exposed on the
                          case asset (PromotedReconCaseMetadata).
+                timeout:
+                    description: |
+                        Maximum wall-clock time for this reconciliation: its setup, quick check
+                         and any drill. Overrides the suite's execution.reconciliation_timeout.
+                         A reconciliation that exceeds it is recorded as failed with a timeout
+                         error and the run moves on to the next one. It never extends the run's
+                         own timeout. For a bound on each individual query, use
+                         error_handling.query_timeout.
+                        duration.gt = 0s
+                        duration.gt_lt = 0s
+                        duration.gt_lt_exclusive = 0s
+                        duration.gt_lte = 0s
+                        duration.gt_lte_exclusive = 0s
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Duration'
             title: Reconciliation
             required:
                 - name
@@ -15145,6 +15182,29 @@ components:
             required:
                 - id
             additionalProperties: false
+        synq.entities.v1.Db2TableIdentifier:
+            type: object
+            properties:
+                host:
+                    type: string
+                    description: Host name of the Db2 server
+                database:
+                    type: string
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                schema:
+                    type: string
+                    description: Db2 schema (e.g. "DB2INST1")
+                table:
+                    type: string
+                    description: Db2 table or view
+            title: Db2TableIdentifier
+            required:
+                - host
+                - database
+                - schema
+                - table
+            additionalProperties: false
+            description: IBM Db2 for Linux, UNIX and Windows table identifier.
         synq.entities.v1.DbtCloudNodeIdentifier:
             type: object
             properties:
@@ -15439,6 +15499,8 @@ components:
                 - ENTITY_TYPE_ATHENA_VIEW
                 - ENTITY_TYPE_FABRIC_TABLE
                 - ENTITY_TYPE_FABRIC_VIEW
+                - ENTITY_TYPE_DB2_TABLE
+                - ENTITY_TYPE_DB2_VIEW
                 - ENTITY_TYPE_CUSTOM_ENTITY_GENERIC
                 - ENTITY_TYPE_CUSTOM_ENTITY_CUSTOM_TYPE_MIN
                 - ENTITY_TYPE_CUSTOM_ENTITY_CUSTOM_TYPE_MAX
@@ -16013,6 +16075,14 @@ components:
                       title: dataproduct
                       required:
                         - dataproduct
+                    - properties:
+                        db2Table:
+                            title: db2_table
+                            description: IBM Db2 LUW table identifier
+                            $ref: '#/components/schemas/synq.entities.v1.Db2TableIdentifier'
+                      title: db2_table
+                      required:
+                        - db2Table
                     - properties:
                         dbtCloudNode:
                             title: dbt_cloud_node
@@ -16598,6 +16668,7 @@ components:
                 - SQL_DIALECT_ORACLE
                 - SQL_DIALECT_ATHENA
                 - SQL_DIALECT_FABRIC
+                - SQL_DIALECT_DB2
         synq.entities.v1.SqlMeshAuditIdentifier:
             type: object
             properties:
@@ -19358,6 +19429,104 @@ components:
             title: DatabricksOAuthM2M
             additionalProperties: false
             description: Databricks OAuth 2.0 machine-to-machine (service principal) credentials.
+        synq.integrations.v1.Db2CloudConf:
+            type: object
+            properties:
+                hostname:
+                    type: string
+                    minLength: 1
+                    description: Host name or IP address of the Db2 server (HOSTNAME).
+                    nullable: true
+                port:
+                    type: integer
+                    maximum: 65535
+                    minimum: 1
+                    format: int32
+                    description: |-
+                        TCP/IP port of the instance (PORT): the value of the SVCENAME database
+                         manager configuration parameter, or SSL_SVCENAME when security is "SSL"
+                         (`db2 get dbm cfg`). Defaults to 50000, or 50001 when security is "SSL".
+                    nullable: true
+                database:
+                    type: string
+                    description: Database name or alias (DATABASE), as in `CONNECT TO <database>`.
+                    nullable: true
+                user:
+                    type: string
+                    description: |-
+                        Authorization ID to connect with (UID). Db2 checks it through the
+                         instance's security plugin: against the server's operating system by
+                         default, or against LDAP when an LDAP plugin is configured.
+                    nullable: true
+                password:
+                    type: string
+                    description: Password of the authorization ID (PWD). Write-only, masked on reads.
+                    nullable: true
+                security:
+                    type: string
+                    enum:
+                        - ""
+                        - SSL
+                        - ssl
+                    description: |-
+                        Set to "SSL" to connect over SSL/TLS (SECURITY=SSL). The instance needs
+                         SSL_SVCENAME set and SSL listed in DB2COMM. Leave empty for a plain TCP/IP
+                         connection.
+                    nullable: true
+                sslServerCertificatePem:
+                    type: string
+                    description: |-
+                        The server's certificate, or the certificate of the CA that signed it, in
+                         PEM format: the text starting with "-----BEGIN CERTIFICATE-----". The .arm
+                         file you get from the instance's keystore with
+                         `gsk8capicmd_64 -cert -extract` holds exactly this. Needs security set to
+                         "SSL". Leave empty to check the server against the public certificate
+                         authorities.
+                    nullable: true
+                authentication:
+                    type: string
+                    enum:
+                        - ""
+                        - SERVER
+                        - SERVER_ENCRYPT
+                        - server
+                        - server_encrypt
+                    description: |-
+                        How the authorization ID and password travel to the server
+                         (AUTHENTICATION). The values match the database manager configuration
+                         parameter of the same name:
+                           - "SERVER" (default): sent unencrypted. Use it with security "SSL" on an
+                             untrusted network.
+                           - "SERVER_ENCRYPT": sent encrypted. The instance's AUTHENTICATION must
+                             accept encrypted credentials, for example SERVER_ENCRYPT.
+                    nullable: true
+                fetchQueryLogs:
+                    type: boolean
+                    description: |-
+                        Read query history from the package cache (MON_GET_PKG_CACHE_STMT). The
+                         authorization ID needs EXECUTE on that table function.
+                    nullable: true
+                auditTableFqn:
+                    type: string
+                    description: Fully qualified table for storing SQL test audit logs.
+                    nullable: true
+            title: Db2CloudConf
+            additionalProperties: false
+            description: |
+                IBM Db2 for Linux, UNIX and Windows (Db2 LUW) connection. Each integration
+                 opens one database, the one you would name in `CONNECT TO <database>`. An
+                 instance can hold several databases, each with its own SYSCAT catalog views,
+                 so add an integration for every database you want to monitor.
+
+                 The keyword in parentheses after each field is the matching keyword of a Db2
+                 CLI connection string, db2cli.ini or db2dsdriver.cfg, and values are the
+                 same, so you can copy them from a data source you already use. Db2 for z/OS
+                 and Db2 for i are not supported.
+
+                 Fields are optional so an update can carry only what changes (omit = leave
+                 unchanged). The password is write-only (masked on reads); omit it to keep the
+                 stored one or send a new value to rotate it.
+                db2_ssl_server_certificate_needs_ssl // A server certificate needs security set to SSL
         synq.integrations.v1.DbtCloudConf:
             type: object
             properties:
@@ -19749,6 +19918,14 @@ components:
                   title: databricks
                   required:
                     - databricks
+                - properties:
+                    db2:
+                        title: db2
+                        description: IBM Db2 for Linux, UNIX and Windows connection.
+                        $ref: '#/components/schemas/synq.integrations.v1.Db2CloudConf'
+                  title: db2
+                  required:
+                    - db2
                 - properties:
                     dbtCloud:
                         title: dbt_cloud
@@ -21422,7 +21599,27 @@ components:
             additionalProperties: false
         synq.monitors.automated_monitors.v1.BatchDeleteDeploymentRulesResponse:
             type: object
+            properties:
+                deletedIds:
+                    type: array
+                    items:
+                        type: string
+                    description: IDs for which DeploymentRules were deleted without error.
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.BatchDeleteDeploymentRulesResponse.DeleteError'
+                    description: Errors raised while deleting. This list will be empty if there were no errors.
             title: BatchDeleteDeploymentRulesResponse
+            additionalProperties: false
+        synq.monitors.automated_monitors.v1.BatchDeleteDeploymentRulesResponse.DeleteError:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
+            title: DeleteError
             additionalProperties: false
         synq.monitors.automated_monitors.v1.BatchDeployDeploymentRulesRequest:
             type: object
@@ -25000,6 +25197,13 @@ components:
                   required:
                     - databricks
                 - properties:
+                    db2:
+                        title: db2
+                        $ref: '#/components/schemas/synq.platforms.v1.Db2Identifier'
+                  title: db2
+                  required:
+                    - db2
+                - properties:
                     dbtCloud:
                         title: dbt_cloud
                         $ref: '#/components/schemas/synq.platforms.v1.DbtCloudIdentifier'
@@ -25128,6 +25332,7 @@ components:
                 - DATA_PLATFORM_TYPE_ORACLE
                 - DATA_PLATFORM_TYPE_ATHENA
                 - DATA_PLATFORM_TYPE_FABRIC
+                - DATA_PLATFORM_TYPE_DB2
                 - DATA_PLATFORM_TYPE_SYNQ
         synq.platforms.v1.DatabricksIdentifier:
             type: object
@@ -25139,6 +25344,23 @@ components:
             required:
                 - workspace
             additionalProperties: false
+        synq.platforms.v1.Db2Identifier:
+            type: object
+            properties:
+                host:
+                    type: string
+                    description: Host name of the Db2 server
+                database:
+                    type: string
+                    description: Database name or alias, as in `CONNECT TO <database>`
+            title: Db2Identifier
+            required:
+                - host
+                - database
+            additionalProperties: false
+            description: |-
+                IBM Db2 for Linux, UNIX and Windows. An integration connects to one
+                 database, so host and database together identify it.
         synq.platforms.v1.DbtCloudIdentifier:
             type: object
             properties:
@@ -27980,6 +28202,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -28699,6 +28953,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -29331,6 +29617,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -30195,6 +30513,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -30605,6 +30955,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -32265,6 +32631,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -35268,6 +35666,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -36206,6 +36636,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: filter.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -36552,6 +37014,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: filter.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: filter.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: filter.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -37391,6 +37869,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: filter.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -37737,6 +38247,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: filter.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: filter.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: filter.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -38595,6 +39121,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -38941,6 +39499,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: query.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: query.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: query.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -40226,6 +40800,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: entityIds.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: entityIds.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: entityIds.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: entityIds.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: entityIds.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -41454,6 +42060,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: affectedEntities.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: affectedEntities.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: affectedEntities.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: affectedEntities.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: affectedEntities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -43227,6 +43865,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: entities.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: entities.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: entities.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: entities.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: entities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -44143,6 +44813,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -44489,6 +45191,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: entitiesQuery.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: entitiesQuery.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: entitiesQuery.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -45813,6 +46531,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -46223,6 +46973,22 @@ paths:
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`
                          alongside workspace_id. Optional: empty when the host isn't a standard
                          Fabric endpoint.
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.db2.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.db2.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.synqIntegrationId
                   in: query
                   description: Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
@@ -47792,6 +48558,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -48661,6 +49459,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: entities.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: entities.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: entities.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: entities.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: entities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -50049,6 +50879,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: ids.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: ids.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: ids.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: ids.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: ids.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -50681,6 +51543,38 @@ paths:
                     description: |-
                         Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
                          Optional and informational, like workspace_id.
+                - name: id.monitor.monitoredId.db2Table.host
+                  in: query
+                  description: Host name of the Db2 server
+                  required: true
+                  schema:
+                    type: string
+                    title: host
+                    description: Host name of the Db2 server
+                - name: id.monitor.monitoredId.db2Table.database
+                  in: query
+                  description: Database name or alias, as in `CONNECT TO <database>`
+                  required: true
+                  schema:
+                    type: string
+                    title: database
+                    description: Database name or alias, as in `CONNECT TO <database>`
+                - name: id.monitor.monitoredId.db2Table.schema
+                  in: query
+                  description: Db2 schema (e.g. "DB2INST1")
+                  required: true
+                  schema:
+                    type: string
+                    title: schema
+                    description: Db2 schema (e.g. "DB2INST1")
+                - name: id.monitor.monitoredId.db2Table.table
+                  in: query
+                  description: Db2 table or view
+                  required: true
+                  schema:
+                    type: string
+                    title: table
+                    description: Db2 table or view
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor

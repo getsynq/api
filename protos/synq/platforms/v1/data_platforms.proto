@@ -26,6 +26,7 @@ message DataPlatformIdentifier {
     OracleIdentifier oracle = 14;
     AthenaIdentifier athena = 15;
     FabricIdentifier fabric = 16;
+    Db2Identifier db2 = 17;
 
     // Coalesce Quality integration ID maps to the created integration on the Coalesce Quality platform.
     string synq_integration_id = 101;
@@ -147,4 +148,13 @@ message FabricIdentifier {
   // alongside workspace_id. Optional: empty when the host isn't a standard
   // Fabric endpoint.
   string tenant_id = 3;
+}
+
+// IBM Db2 for Linux, UNIX and Windows. An integration connects to one
+// database, so host and database together identify it.
+message Db2Identifier {
+  // Host name of the Db2 server
+  string host = 1 [(buf.validate.field).required = true];
+  // Database name or alias, as in `CONNECT TO <database>`
+  string database = 2 [(buf.validate.field).required = true];
 }

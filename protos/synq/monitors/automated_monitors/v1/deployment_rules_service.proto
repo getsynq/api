@@ -179,7 +179,17 @@ message BatchDeleteDeploymentRulesRequest {
   repeated string ids = 1;
 }
 
-message BatchDeleteDeploymentRulesResponse {}
+message BatchDeleteDeploymentRulesResponse {
+  // IDs for which DeploymentRules were deleted without error.
+  repeated string deleted_ids = 1;
+
+  message DeleteError {
+    string id = 1;
+    string reason = 2;
+  }
+  // Errors raised while deleting. This list will be empty if there were no errors.
+  repeated DeleteError errors = 2;
+}
 
 service DeploymentRulesService {
   rpc GetDeployOverview(GetDeployOverviewRequest) returns (GetDeployOverviewResponse) {

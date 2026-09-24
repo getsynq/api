@@ -9,6 +9,7 @@ import "synq/integrations/v1/athena_conf.proto";
 import "synq/integrations/v1/bigquery_conf.proto";
 import "synq/integrations/v1/clickhouse_conf.proto";
 import "synq/integrations/v1/databricks_conf.proto";
+import "synq/integrations/v1/db2_conf.proto";
 import "synq/integrations/v1/dbt_cloud_conf.proto";
 import "synq/integrations/v1/duckdb_conf.proto";
 import "synq/integrations/v1/fabric_conf.proto";
@@ -64,6 +65,8 @@ message IntegrationConfig {
     DbtCloudConf dbt_cloud = 13;
     // Microsoft Fabric connection.
     FabricCloudConf fabric = 14;
+    // IBM Db2 for Linux, UNIX and Windows connection.
+    Db2CloudConf db2 = 15;
   }
 }
 

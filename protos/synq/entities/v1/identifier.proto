@@ -99,6 +99,9 @@ message Identifier {
 
     // Microsoft Fabric table identifier
     FabricTableIdentifier fabric_table = 23;
+
+    // IBM Db2 LUW table identifier
+    Db2TableIdentifier db2_table = 24;
   }
 }
 
@@ -333,6 +336,21 @@ message FabricTableIdentifier {
   // Entra (Azure AD) tenant GUID, decoded from the endpoint host in `instance`.
   // Optional and informational, like workspace_id.
   string tenant_id = 6;
+}
+
+// IBM Db2 for Linux, UNIX and Windows table identifier.
+message Db2TableIdentifier {
+  // Host name of the Db2 server
+  string host = 1 [(buf.validate.field).required = true];
+
+  // Database name or alias, as in `CONNECT TO <database>`
+  string database = 2 [(buf.validate.field).required = true];
+
+  // Db2 schema (e.g. "DB2INST1")
+  string schema = 3 [(buf.validate.field).required = true];
+
+  // Db2 table or view
+  string table = 4 [(buf.validate.field).required = true];
 }
 
 message AirflowDagIdentifier {

@@ -108,6 +108,18 @@ message ExecutionConfig {
     gte: 1
     lte: 64
   }];
+
+  // Maximum wall-clock time for a single reconciliation of the suite: its
+  // setup, quick check and any drill. A reconciliation that exceeds it is
+  // stopped and recorded as failed with a timeout error, and the run moves on
+  // to the next one, so one slow query cannot use up the whole run's timeout.
+  // It never extends the run: whichever of the two runs out first applies.
+  //
+  // A reconciliation's own timeout takes precedence. Unset means only the
+  // run's timeout bounds a reconciliation.
+  optional google.protobuf.Duration reconciliation_timeout = 3 [(buf.validate.field).duration = {
+    gt: {}
+  }];
 }
 
 // ConnectionQueries associates SQL queries with a specific connection.
@@ -249,6 +261,16 @@ message Reconciliation {
   // deployment-level annotations at promote time, then exposed on the
   // case asset (PromotedReconCaseMetadata).
   repeated synq.entities.v1.Annotation annotations = 21;
+
+  // Maximum wall-clock time for this reconciliation: its setup, quick check
+  // and any drill. Overrides the suite's execution.reconciliation_timeout.
+  // A reconciliation that exceeds it is recorded as failed with a timeout
+  // error and the run moves on to the next one. It never extends the run's
+  // own timeout. For a bound on each individual query, use
+  // error_handling.query_timeout.
+  optional google.protobuf.Duration timeout = 23 [(buf.validate.field).duration = {
+    gt: {}
+  }];
 }
 
 // ReconciliationFailureImpact controls whether a reconciliation case's referenced
@@ -498,11 +520,16 @@ message Measure {
 // ErrorHandlingConfig controls retry and timeout behavior for database queries.
 // Applies to all queries within a reconciliation (setup, comparison, teardown).
 message ErrorHandlingConfig {
-  // Per-query timeout. When a query exceeds this duration, it is cancelled.
-  // Default: no per-query limit (only the global run timeout applies).
+  // Per-query timeout. When a query exceeds this duration, it is cancelled
+  // and fails with a timeout error. It is not retried, since a query that took
+  // this long will usually take it again. Covers setup and teardown statements
+  // too. To bound the whole reconciliation rather than each query, use its
+  // timeout or the suite's execution.reconciliation_timeout.
+  // Default: no per-query limit.
   optional google.protobuf.Duration query_timeout = 1;
 
-  // Maximum retry attempts for transient query failures.
+  // Maximum retry attempts for transient query failures. Setup and teardown
+  // statements are never retried, since they need not be safe to run twice.
   // The total number of attempts is max_retries + 1 (initial + retries).
   // Default: 2.
   optional int32 max_retries = 2 [(buf.validate.field) = {

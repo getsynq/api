@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package synq.integrations.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/integrations/v1";
+
+// IBM Db2 for Linux, UNIX and Windows (Db2 LUW) connection. Each integration
+// opens one database, the one you would name in `CONNECT TO <database>`. An
+// instance can hold several databases, each with its own SYSCAT catalog views,
+// so add an integration for every database you want to monitor.
+//
+// The keyword in parentheses after each field is the matching keyword of a Db2
+// CLI connection string, db2cli.ini or db2dsdriver.cfg, and values are the
+// same, so you can copy them from a data source you already use. Db2 for z/OS
+// and Db2 for i are not supported.
+//
+// Fields are optional so an update can carry only what changes (omit = leave
+// unchanged). The password is write-only (masked on reads); omit it to keep the
+// stored one or send a new value to rotate it.
+message Db2CloudConf {
+  // An update may leave security out and keep the stored value, so this only
+  // refuses a request that sets both and contradicts itself. The stored
+  // configuration is checked again once the update is merged into it.
+  option (buf.validate.message).cel = {
+    id: "db2_ssl_server_certificate_needs_ssl"
+    message: "A server certificate needs security set to SSL"
+    expression: "!has(this.ssl_server_certificate_pem) || this.ssl_server_certificate_pem == '' || !has(this.security) || this.security in ['SSL', 'ssl']"
+  };
+
+  // Host name or IP address of the Db2 server (HOSTNAME).
+  optional string hostname = 1 [(buf.validate.field).string.min_len = 1];
+  // TCP/IP port of the instance (PORT): the value of the SVCENAME database
+  // manager configuration parameter, or SSL_SVCENAME when security is "SSL"
+  // (`db2 get dbm cfg`). Defaults to 50000, or 50001 when security is "SSL".
+  optional int32 port = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // Database name or alias (DATABASE), as in `CONNECT TO <database>`.
+  optional string database = 3;
+  // Authorization ID to connect with (UID). Db2 checks it through the
+  // instance's security plugin: against the server's operating system by
+  // default, or against LDAP when an LDAP plugin is configured.
+  optional string user = 4;
+  // Password of the authorization ID (PWD). Write-only, masked on reads.
+  optional string password = 5;
+  // Set to "SSL" to connect over SSL/TLS (SECURITY=SSL). The instance needs
+  // SSL_SVCENAME set and SSL listed in DB2COMM. Leave empty for a plain TCP/IP
+  // connection.
+  optional string security = 6 [(buf.validate.field).string = {
+    in: [
+      "",
+      "SSL",
+      "ssl"
+    ]
+  }];
+  // The server's certificate, or the certificate of the CA that signed it, in
+  // PEM format: the text starting with "-----BEGIN CERTIFICATE-----". The .arm
+  // file you get from the instance's keystore with
+  // `gsk8capicmd_64 -cert -extract` holds exactly this. Needs security set to
+  // "SSL". Leave empty to check the server against the public certificate
+  // authorities.
+  optional string ssl_server_certificate_pem = 7;
+  // How the authorization ID and password travel to the server
+  // (AUTHENTICATION). The values match the database manager configuration
+  // parameter of the same name:
+  //   - "SERVER" (default): sent unencrypted. Use it with security "SSL" on an
+  //     untrusted network.
+  //   - "SERVER_ENCRYPT": sent encrypted. The instance's AUTHENTICATION must
+  //     accept encrypted credentials, for example SERVER_ENCRYPT.
+  optional string authentication = 8 [(buf.validate.field).string = {
+    in: [
+      "",
+      "SERVER",
+      "SERVER_ENCRYPT",
+      "server",
+      "server_encrypt"
+    ]
+  }];
+  // Read query history from the package cache (MON_GET_PKG_CACHE_STMT). The
+  // authorization ID needs EXECUTE on that table function.
+  optional bool fetch_query_logs = 9;
+  // Fully qualified table for storing SQL test audit logs.
+  optional string audit_table_fqn = 10;
+}
