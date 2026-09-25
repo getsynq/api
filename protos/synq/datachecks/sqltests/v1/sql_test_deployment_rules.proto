@@ -83,16 +83,20 @@ message SqlTestsQueryConfig {
   // `query`. ResolverQL is a superset of the structured `query`: use it for
   // selections `query` cannot express (e.g. lineage walks, column predicates).
   // When set (non-empty) on write, `resolver_ql` is the source of truth and the
-  // structured `query` is ignored. On read it is echoed back VERBATIM (exactly
-  // as written, not normalized) for rules authored via ResolverQL, and is empty
-  // for rules authored via the structured `query` — so writing a read response
-  // back unchanged preserves the rule's authored form. To read the ResolverQL
-  // form of a structured rule, use `rendered_resolver_ql`. `query` is always
-  // populated regardless.
+  // structured `query` is ignored. The selection is compiled when it is written
+  // and stored in that form, so the text itself is not kept: two spellings of the
+  // same selection store the same rule, and a type alias such as "table" is
+  // expanded to the types it names at the time of the write. On read this field
+  // carries the canonical rendering of the stored selection, equal to
+  // `rendered_resolver_ql`, whichever way the rule was written, and is empty when
+  // the selection has no ResolverQL representation. Writing a read response back
+  // unchanged stores the same selection. `query` is always populated.
   string resolver_ql = 2;
   // Canonical ResolverQL rendering of this rule's selection, populated for every
   // rule regardless of how it was authored. OUTPUT ONLY — it is ignored on
-  // write; set `resolver_ql` to author a selection in ResolverQL.
+  // write; set `resolver_ql` to author a selection in ResolverQL. Compare
+  // selections by this field rather than by the text a rule was written with,
+  // which may be spelled differently.
   string rendered_resolver_ql = 3;
   // Tests deployed onto every table or view this rule's selection matches.
   repeated RuleTest tests = 4 [(buf.validate.field).repeated.min_items = 1];
@@ -132,9 +136,9 @@ message SqlTestsExclusiveQueryConfig {
   synq.monitors.automated_monitors.v1.EntitySelectionQuery query = 1;
   // ResolverQL selection string for the exclusion set. Same semantics as
   // SqlTestsQueryConfig.resolver_ql: when set on write it takes precedence over
-  // `query`; on read it is echoed back VERBATIM for ResolverQL-authored rules
-  // and is empty for structured-`query` rules (whose ResolverQL form is in
-  // `rendered_resolver_ql`). `query` is always populated.
+  // `query` and is stored compiled; on read it carries the canonical rendering
+  // of the stored selection, equal to `rendered_resolver_ql`. `query` is always
+  // populated.
   string resolver_ql = 2;
   // Canonical ResolverQL rendering of the exclusion selection. OUTPUT ONLY,
   // populated for every rule, ignored on write.

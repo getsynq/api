@@ -102,6 +102,15 @@ message WithType {
   // check a trait against the grammar before storing a selection. In a query
   // written as text this is `with_type(traits="is_monitorable")`, and there a
   // name outside the grammar is rejected outright.
+  //
+  // A trait may also be a type alias, spelled `alias:<name>` where `<name>` is
+  // one of the aliases the grammar lists among the entity types, e.g.
+  // `alias:table`. It selects every type the alias stands for, worked out each
+  // time the selection runs like any other trait. A selection written as
+  // `with_type("table")` is stored this way and reads back with
+  // `traits: ["alias:table"]`; writing that back keeps the same selection. In a
+  // query written as text an alias is always `with_type("table")`, never
+  // `traits="alias:table"`.
   repeated string traits = 3;
 }
 
