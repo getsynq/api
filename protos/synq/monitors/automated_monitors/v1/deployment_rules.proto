@@ -185,7 +185,9 @@ message QueryConfig {
     }
   ];
   bool keep_deleted_monitors = 5;
-  repeated MetricOption metric_options = 6; // NEW - optional per-metric config
+  // NEW - optional per-metric config. Returned sorted by metric_id — a client
+  // can rely on that ordering rather than re-sorting.
+  repeated MetricOption metric_options = 6;
   // ResolverQL selection string — an advanced, more expressive alternative to
   // `query`. ResolverQL is a superset of the structured `query`: use it for
   // selections `query` cannot express (e.g. lineage walks, column predicates).
@@ -240,7 +242,9 @@ message StaticConfig {
       not_in: [0]
     }
   ];
-  repeated MetricOption metric_options = 5; // NEW
+  // NEW. Returned sorted by metric_id — a client can rely on that ordering
+  // rather than re-sorting.
+  repeated MetricOption metric_options = 5;
   // How the delay and volume_change_delay metrics model the expected arrival time of new
   // data. Unset leaves the stored value unchanged.
   synq.monitors.v1.DelayModel delay_model = 6;
@@ -268,7 +272,9 @@ message ProductConfig {
   ProductConfigUpstreamStrategy upstream = 5;
   ProductConfigSelfStrategy self = 6;
   bool keep_deleted_monitors = 7;
-  repeated MetricOption metric_options = 8; // NEW
+  // NEW. Returned sorted by metric_id — a client can rely on that ordering
+  // rather than re-sorting.
+  repeated MetricOption metric_options = 8;
   // How the delay and volume_change_delay metrics model the expected arrival time of new
   // data. Unset leaves the stored value unchanged.
   synq.monitors.v1.DelayModel delay_model = 9;

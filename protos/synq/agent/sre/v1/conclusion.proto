@@ -86,6 +86,10 @@ message IssueConclusion {
   // Indicates that this is final conclusion and SRE agent won't change it unless new evidence is provided to change it.
   bool is_final_conclusion = 5;
 
+  // How this conclusion used the retriage instructions a person gave for the issue.
+  // Set only when the triage that produced it was given instructions.
+  optional synq.agent.sre.v1.RetriageInstructionResponse retriage_instruction_response = 7;
+
   // The specific type of conclusion reached during the investigation.
   // Each type has different implications and requirements for evidence.
   oneof conclusion {
@@ -104,6 +108,18 @@ message IssueConclusion {
     // Conclusion that the issue cannot be explained and needs urgent human attention.
     synq.agent.sre.v1.UnexplainedConclusion unexplained = 106;
   }
+}
+
+// RetriageInstructionResponse ties a conclusion to the retriage instructions that produced it,
+// so the instructions and what the agent did with them are read side by side.
+message RetriageInstructionResponse {
+  // The instructions the triage was given, verbatim, in the order they were submitted.
+  repeated string instructions = 1;
+
+  // Markdown statement of how the instructions changed the analysis, or why they did not,
+  // including the answer when an instruction asked a question. Empty when the agent
+  // concluded without addressing them.
+  string response = 2;
 }
 
 message IssueConclusionWithEvidence {

@@ -3142,6 +3142,13 @@ components:
                         type: boolean
                         title: is_final_conclusion
                         description: Indicates that this is final conclusion and SRE agent won't change it unless new evidence is provided to change it.
+                    retriageInstructionResponse:
+                        title: retriage_instruction_response
+                        description: |-
+                            How this conclusion used the retriage instructions a person gave for the issue.
+                             Set only when the triage that produced it was given instructions.
+                        nullable: true
+                        $ref: '#/components/schemas/synq.agent.sre.v1.RetriageInstructionResponse'
                 - oneOf:
                     - properties:
                         addToIncident:
@@ -3477,6 +3484,25 @@ components:
                  - The agent has collected some evidence but cannot make a definitive conclusion
                  - The issue requires human judgment or expertise
                  - The impact is unclear or needs human assessment
+        synq.agent.sre.v1.RetriageInstructionResponse:
+            type: object
+            properties:
+                instructions:
+                    type: array
+                    items:
+                        type: string
+                    description: The instructions the triage was given, verbatim, in the order they were submitted.
+                response:
+                    type: string
+                    description: |-
+                        Markdown statement of how the instructions changed the analysis, or why they did not,
+                         including the answer when an instruction asked a question. Empty when the agent
+                         concluded without addressing them.
+            title: RetriageInstructionResponse
+            additionalProperties: false
+            description: |-
+                RetriageInstructionResponse ties a conclusion to the retriage instructions that produced it,
+                 so the instructions and what the agent did with them are read side by side.
         synq.agent.sre.v1.RootCauseEvidence:
             type: object
             properties:
@@ -22307,7 +22333,9 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.MetricOption'
-                    description: NEW
+                    description: |-
+                        NEW. Returned sorted by metric_id — a client can rely on that ordering
+                         rather than re-sorting.
                 delayModel:
                     description: |-
                         How the delay and volume_change_delay metrics model the expected arrival time of new
@@ -22397,7 +22425,9 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.MetricOption'
-                    description: NEW - optional per-metric config
+                    description: |-
+                        NEW - optional per-metric config. Returned sorted by metric_id — a client
+                         can rely on that ordering rather than re-sorting.
                 resolverQl:
                     type: string
                     description: |-
@@ -22524,7 +22554,9 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.MetricOption'
-                    description: NEW
+                    description: |-
+                        NEW. Returned sorted by metric_id — a client can rely on that ordering
+                         rather than re-sorting.
                 delayModel:
                     description: |-
                         How the delay and volume_change_delay metrics model the expected arrival time of new
