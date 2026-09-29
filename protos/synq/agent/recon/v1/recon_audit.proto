@@ -339,6 +339,11 @@ message QuickCheckStageResult {
   bool match = 5;
   int64 count_difference = 6;
   string error = 7;
+
+  // Threshold evaluation of the row count difference, keyed by the measure
+  // "COUNT(*)". Set only in ROW_COUNT mode with row_count.thresholds
+  // configured. A difference that is not exceeded is within tolerance.
+  ThresholdEvaluation threshold_evaluation = 8;
 }
 
 // BisectionStageResult is the result for a bisection_drill stage.

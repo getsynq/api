@@ -407,7 +407,8 @@ components:
                         type: string
                     description: |-
                         Columns defining the drill-down hierarchy for aggregate comparison.
-                         Falls back to key_column if not set.
+                         Falls back to the key columns if not set. With no key columns either, the
+                         whole dataset is compared as a single group, with no GROUP BY.
 
                          Single column: flat GROUP BY comparison.
                            group_columns: ["region"]
@@ -1408,8 +1409,8 @@ components:
                          range-filters on the column tuple so the engine can prune via a matching
                          primary key / index. A single-element list is equivalent to setting
                          key_column. Required for ROW_CHECKSUM and ROW_COUNT modes (this or the
-                         deprecated key_column). Optional in AGGREGATE mode when group_columns
-                         provides the grouping key.
+                         deprecated key_column). Optional in AGGREGATE mode, where it only stands in
+                         for group_columns when those are unset.
                 mode:
                     not:
                         enum:
@@ -1524,6 +1525,12 @@ components:
                         duration.gt_lte_exclusive = 0s
                     nullable: true
                     $ref: '#/components/schemas/google.protobuf.Duration'
+                rowCount:
+                    description: |-
+                        Row count comparison settings. Only used when mode is ROW_COUNT.
+                         Sets the tolerance a difference in row counts may stay within.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.agent.recon.v1.RowCountConfig'
             title: Reconciliation
             required:
                 - name
@@ -1768,6 +1775,25 @@ components:
                     $ref: '#/components/schemas/synq.agent.recon.v1.SuiteDeployment'
             title: ResumeDeploymentResponse
             additionalProperties: false
+        synq.agent.recon.v1.RowCountConfig:
+            type: object
+            properties:
+                thresholds:
+                    description: |-
+                        Tolerance for the difference between the source and target row counts.
+                         A difference within it reports MISMATCHED_WITHIN_THRESHOLD instead of
+                         MISMATCHED, and no drill runs for it. Same semantics as aggregate
+                         thresholds, applied to COUNT(*): a difference is accepted when it is within
+                         absolute or within percentage, computed against percentage_basis.
+                         When not set, the counts must be equal.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.agent.recon.v1.ThresholdConfig'
+            title: RowCountConfig
+            additionalProperties: false
+            description: |
+                RowCountConfig defines row count comparison settings.
+                 Used when mode is ROW_COUNT.
+                row_count_thresholds_no_overrides // row_count thresholds take absolute, percentage and percentage_basis only, per_column and per_measure apply to aggregate mode
         synq.agent.recon.v1.SegmentationStrategy:
             type: string
             title: SegmentationStrategy
@@ -2240,7 +2266,7 @@ components:
             title: ThresholdConfig
             additionalProperties: false
             description: |-
-                ThresholdConfig defines tolerance thresholds for aggregate comparisons.
+                ThresholdConfig defines tolerance thresholds for aggregate and row count comparisons.
                  A difference is reported as a mismatch only when it exceeds ALL configured
                  thresholds (AND logic: both absolute AND percentage must be exceeded).
 

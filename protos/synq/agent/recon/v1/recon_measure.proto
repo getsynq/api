@@ -47,7 +47,7 @@ enum PercentageBasis {
   PERCENTAGE_BASIS_SYMMETRIC = 3;
 }
 
-// ThresholdConfig defines tolerance thresholds for aggregate comparisons.
+// ThresholdConfig defines tolerance thresholds for aggregate and row count comparisons.
 // A difference is reported as a mismatch only when it exceeds ALL configured
 // thresholds (AND logic: both absolute AND percentage must be exceeded).
 //
