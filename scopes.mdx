@@ -384,7 +384,9 @@ Manage workspace members, including inviting users and updating their roles.
 
 | Method | Description |
 | ------ | ----------- |
+| `AddUserRole`<br/>_synq.users.v1.UsersService_ | Grants a role to a user in the workspace. |
 | `DeleteUserAliases`<br/>_synq.users.v1.UsersService_ |  |
+| `RemoveUserRole`<br/>_synq.users.v1.UsersService_ | Withdraws a role from a user in the workspace. |
 | `UpsertUserAliases`<br/>_synq.users.v1.UsersService_ |  |
 
 ## Read Users
@@ -1331,6 +1333,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `PreviewSchedules`<br/>_synq.schedule.v1.ScheduleService_<br/>`POST /api/schedule/v1/preview` | — |
+| `AddUserRole`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
 | `BatchGetUsers`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
 | `DeleteUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
 | `GetByAlias`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
@@ -1338,5 +1341,6 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
 | `GetUserIdentities`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
 | `ListUsers`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
+| `RemoveUserRole`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
 | `UpsertUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
 

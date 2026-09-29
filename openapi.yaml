@@ -27123,8 +27123,48 @@ components:
                         Canonical identity strings for this user.
                          Includes "synq:<user_id>" and all linked aliases (email, slack, msteams).
                          Can be passed to ListIssues(interacted_by_identities) to filter issues this user interacted with.
+                roles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.users.v1.UserRole'
+                    description: |-
+                        Roles the user holds in the workspace. Empty when the user holds no role
+                         that can be managed through this API.
+                status:
+                    description: Whether the user has accepted their invitation to the workspace.
+                    $ref: '#/components/schemas/synq.users.v1.UserStatus'
+                lastLoginAt:
+                    description: |-
+                        Most recent interactive sign-in. Unset when the user has not signed in
+                         since sign-ins began being recorded. Token refreshes and API calls do not
+                         count as sign-ins.
+                    nullable: true
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                createdAt:
+                    description: When the user account was created.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
             title: User
             additionalProperties: false
+        synq.users.v1.UserRole:
+            type: string
+            title: UserRole
+            enum:
+                - USER_ROLE_UNSPECIFIED
+                - USER_ROLE_ADMIN
+                - USER_ROLE_DEVELOPER
+                - USER_ROLE_ANALYST
+                - USER_ROLE_BUSINESS_USER
+            description: |-
+                UserRole is a role a member holds in the workspace. Names match the roles
+                 shown in Settings → Team.
+        synq.users.v1.UserStatus:
+            type: string
+            title: UserStatus
+            enum:
+                - USER_STATUS_UNSPECIFIED
+                - USER_STATUS_ACTIVE
+                - USER_STATUS_INVITED
+            description: UserStatus is where a member is in the invitation lifecycle of the workspace.
         synq.v1.PageInfo:
             type: object
             properties:
