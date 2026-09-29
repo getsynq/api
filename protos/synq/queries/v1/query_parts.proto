@@ -116,6 +116,7 @@ message WithType {
 
 // Resolves to all entities that contain the annotation with at least one of the provided accepted values.
 // In case of no given accepted values, all entities that carry the given annotation are returned.
+// The name and the values match case-insensitively.
 message WithAnnotation {
   string name = 1;
   optional string accepted_value = 2 [deprecated = true];

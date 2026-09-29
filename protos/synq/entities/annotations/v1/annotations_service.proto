@@ -57,7 +57,9 @@ message ListAnnotationsRequest {}
 
 // ListAnnotationsResponse is the response message for the ListAnnotations method.
 message ListAnnotationsResponse {
-  // The annotation counts grouped by name and value.
+  // The annotation counts grouped by name and value. Spellings of a name or a
+  // value that differ only in case are counted together and returned under one
+  // of the spellings entities carry, the same for every value of a name.
   repeated AnnotationCount annotation_counts = 1;
 }
 

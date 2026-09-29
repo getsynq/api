@@ -10305,7 +10305,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.annotations.v1.AnnotationCount'
-                    description: The annotation counts grouped by name and value.
+                    description: |-
+                        The annotation counts grouped by name and value. Spellings of a name or a
+                         value that differ only in case are counted together and returned under one
+                         of the spellings entities carry, the same for every value of a name.
             title: ListAnnotationsResponse
             additionalProperties: false
             description: ListAnnotationsResponse is the response message for the ListAnnotations method.
@@ -26313,6 +26316,7 @@ components:
             description: |-
                 Resolves to all entities that contain the annotation with at least one of the provided accepted values.
                  In case of no given accepted values, all entities that carry the given annotation are returned.
+                 The name and the values match case-insensitively.
         synq.queries.v1.WithDataPlatformType:
             type: object
             properties:
