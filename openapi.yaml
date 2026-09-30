@@ -27135,9 +27135,10 @@ components:
                     $ref: '#/components/schemas/synq.users.v1.UserStatus'
                 lastLoginAt:
                     description: |-
-                        Most recent interactive sign-in. Unset when the user has not signed in
-                         since sign-ins began being recorded. Token refreshes and API calls do not
-                         count as sign-ins.
+                        Most recent interactive sign-in to the workspace, or to any workspace when
+                         no sign-in to this one has been recorded. Unset when the user has not
+                         signed in since sign-ins began being recorded. Token refreshes and API
+                         calls do not count as sign-ins.
                     nullable: true
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
                 createdAt:

@@ -25,7 +25,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -37,7 +40,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_READ]
+      scopes: [
+        SCOPE_ALERTS_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -49,7 +55,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_READ]
+      scopes: [
+        SCOPE_ALERTS_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -62,7 +71,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -75,7 +87,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -88,7 +103,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -114,7 +132,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -127,7 +148,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -143,7 +167,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -154,7 +181,10 @@ service AlertsService {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {get: "/api/alerts/v2/incident-owner"};
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_READ]
+      scopes: [
+        SCOPE_ALERTS_READ,
+        SCOPE_MCP_READ
+      ]
     };
   }
 
@@ -170,7 +200,10 @@ service AlertsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ALERTS_EDIT]
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 }

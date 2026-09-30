@@ -48,9 +48,10 @@ message User {
   // Whether the user has accepted their invitation to the workspace.
   UserStatus status = 7;
 
-  // Most recent interactive sign-in. Unset when the user has not signed in
-  // since sign-ins began being recorded. Token refreshes and API calls do not
-  // count as sign-ins.
+  // Most recent interactive sign-in to the workspace, or to any workspace when
+  // no sign-in to this one has been recorded. Unset when the user has not
+  // signed in since sign-ins began being recorded. Token refreshes and API
+  // calls do not count as sign-ins.
   optional google.protobuf.Timestamp last_login_at = 8;
 
   // When the user account was created.
