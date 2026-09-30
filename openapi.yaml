@@ -5194,8 +5194,9 @@ components:
                     description: Path identifying the owner of this alert config.
                 ownershipId:
                     type: string
-                    minLength: 1
-                    description: Ownership identifier.
+                    description: |-
+                        Ownership identifier. Empty for an alert scoped to the owner as a whole
+                         rather than to one of its ownerships.
             title: Owner
             additionalProperties: false
             description: |-
