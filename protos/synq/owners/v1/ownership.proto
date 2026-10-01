@@ -18,8 +18,8 @@ option go_package = "github.com/getsynq/api/owners/v1";
 message Ownership {
   // Opaque id of the ownership (a UUID) supplied by the caller on create, which
   // makes UpsertOwnership idempotent. This is the same value
-  // `synq.alerts.v1.AlertsService` reports as the ownership reference
-  // (`synq.alerts.v1.Alert.Owner.ownership_id`) on an alert attributed to this
+  // `synq.alerts.services.v2.AlertsService` reports as the ownership reference
+  // (`synq.alerts.v2.Owner.ownership_id`) on an alert attributed to this
   // owner.
   string id = 1;
 
@@ -113,7 +113,7 @@ message OwnershipQuery {
 }
 
 // How alerts fire for the assets an ownership covers. Deliberately mirrors the
-// settings on the public alerts API (`synq.alerts.v1`) so alerting behaviour
+// settings on the public alerts API (`synq.alerts.v2`) so alerting behaviour
 // reads the same across SYNQ.
 message AlertConfig {
   // Failure severities that fire an alert (Warning / Error / Fatal). Empty

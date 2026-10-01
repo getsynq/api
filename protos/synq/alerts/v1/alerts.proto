@@ -48,7 +48,11 @@ message Alert {
 
   // Owner information for the alert configuration.
   // If set, the alert is attributed to the specified owner and ownership.
+  //
+  // Deprecated: use synq.alerts.v2.Owner.
   message Owner {
+    option deprecated = true;
+
     // Path identifying the owner of this alert config.
     string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
     // Ownership identifier.
@@ -65,7 +69,12 @@ message Alert {
 
 // AlertSettings defines the properties that affect the trigger and presentation of an alert.
 // It specifies the conditions under which an alert should be fired and how it should behave.
+//
+// Deprecated: synq.alerts.v2.Alert carries its settings per alert type
+// (synq.alerts.v2.IssueLifecycleAlert, synq.alerts.v2.SchemaChangeAlert).
 message AlertSettings {
+  option deprecated = true;
+
   reserved 1, 3;
   reserved "entity_failure", "issue_lifecycle";
 
@@ -82,7 +91,11 @@ message AlertSettings {
 
 // IssueAlertSettings is the unified alert settings type for issue-based alerts.
 // It replaces both EntityFailureAlertSettings and IssueLifecycleAlertSettings.
+//
+// Deprecated: use synq.alerts.v2.IssueAlertSettings.
 message IssueAlertSettings {
+  option deprecated = true;
+
   // The severity levels that should trigger this alert.
   repeated synq.v1.Severity severities = 1 [(buf.validate.field).repeated = {min_items: 1}];
 
@@ -100,7 +113,11 @@ message IssueAlertSettings {
 }
 
 // IssueGroupingStrategy controls how issues are grouped for alerting purposes.
+//
+// Deprecated: use synq.alerts.v2.IssueGroupingStrategy.
 message IssueGroupingStrategy {
+  option deprecated = true;
+
   // NoGrouping - each issue triggers a separate alert.
   message NoGrouping {}
   // SystemDetected - the system automatically groups related issues.
@@ -117,7 +134,11 @@ message IssueGroupingStrategy {
 
 // SchemaChangeAlertSettings configures alerts for schema changes.
 // This alert triggers when the schema of monitored entities changes.
+//
+// Deprecated: use synq.alerts.v2.SchemaChangeAlertSettings.
 message SchemaChangeAlertSettings {
+  option deprecated = true;
+
   option (buf.validate.message).cel = {
     id: "schema_change_alert_settings.ongoing_disabled_unsupported"
     message: "Schema change alerts do not support the disabled ongoing strategy. Leave ongoing unset for per-change streaming, or set stream or schedule."

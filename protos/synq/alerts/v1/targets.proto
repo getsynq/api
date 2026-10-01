@@ -8,7 +8,11 @@ option go_package = "github.com/getsynq/api/alerts/v1";
 
 // AlertingTarget represents a destination where alert notifications will be sent.
 // Each target type has its own specific configuration requirements.
+//
+// Deprecated: use synq.alerts.v2.AlertingTarget.
 message AlertingTarget {
+  option deprecated = true;
+
   // The specific target type. Exactly one must be specified.
   oneof target {
     option (buf.validate.oneof).required = true;
@@ -28,13 +32,21 @@ message AlertingTarget {
 
 // SlackTarget configures alert delivery to Slack.
 // Alerts are sent to a Slack channel.
+//
+// Deprecated: use synq.alerts.v2.SlackTarget.
 message SlackTarget {
+  option deprecated = true;
+
   // Slack channel name or ID (e.g., "#alerts" or "C1234567890").
   string channel = 1 [(buf.validate.field).string = {min_len: 1}];
 }
 
 // EmailTarget configures alert delivery via email.
+//
+// Deprecated: use synq.alerts.v2.EmailTarget.
 message EmailTarget {
+  option deprecated = true;
+
   // List of email addresses that will receive the alert notifications.
   // Each email must be a valid email address format.
   repeated string recipient_emails = 1 [
@@ -45,7 +57,11 @@ message EmailTarget {
 
 // OwnerTarget configures alert delivery to the owner of the monitored entity.
 // This allows alerts to be automatically sent to whoever owns the data being monitored.
+//
+// Deprecated: use synq.alerts.v2.OwnerTarget.
 message OwnerTarget {
+  option deprecated = true;
+
   // Path that identifies the ownership context for this target.
   // This determines how the system will resolve the actual owner.
   string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
@@ -53,7 +69,11 @@ message OwnerTarget {
 
 // MsTeamsTarget configures alert delivery to Microsoft Teams.
 // Alerts are sent to either a Microsoft Teams channel or a specific member.
+//
+// Deprecated: use synq.alerts.v2.MsTeamsTarget.
 message MsTeamsTarget {
+  option deprecated = true;
+
   // Exactly one of channel or member_id must be set.
   option (buf.validate.message).oneof = {
     fields: [
@@ -72,7 +92,11 @@ message MsTeamsTarget {
 
 // WebhookTarget configures alert delivery via webhook/hook integrations.
 // This allows integration with external systems and custom notification workflows.
+//
+// Deprecated: use synq.alerts.v2.WebhookTarget.
 message WebhookTarget {
+  option deprecated = true;
+
   // Unique identifier of the webhook to send alerts to.
   // This references a pre-configured webhook in the system.
   string webhook_id = 1 [(buf.validate.field).string = {min_len: 1}];

@@ -22,8 +22,8 @@ message Owner {
   // Stable, opaque platform identifier of this owner (of the form
   // "owner-<uuid>"). Output-only — the server derives it; never construct it by
   // hand. This is the exact value other SYNQ APIs accept as an owner reference
-  // (for example the `synq.alerts.v1.AlertsService` owner path — see
-  // `synq.alerts.v1.Alert.Owner`), so read it here and pass it there to point at
+  // (for example the `synq.alerts.services.v2.AlertsService` owner path — see
+  // `synq.alerts.v2.Owner`), so read it here and pass it there to point at
   // the same owner without needing to know how it is formed.
   string entity_id = 2;
 

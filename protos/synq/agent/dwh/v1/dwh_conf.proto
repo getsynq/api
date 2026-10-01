@@ -286,11 +286,17 @@ message TrinoConf {
 //   1. access_token: pre-acquired Azure AD OAuth token
 //   2. fed_auth: Azure AD federated authentication (with optional username/password)
 //   3. username + password: standard SQL Server Authentication
+//   4. integrated_auth: the Windows or Kerberos identity of the machine running the connection
 message MSSQLConf {
   option (buf.validate.message).cel = {
     id: "mssql_auth"
-    message: "Provide access_token, fed_auth method, or both username and password"
-    expression: "this.access_token != '' || this.fed_auth != '' || (this.username != '' && this.password != '')"
+    message: "Provide access_token, fed_auth method, integrated_auth, or both username and password"
+    expression: "this.access_token != '' || this.fed_auth != '' || this.integrated_auth || (this.username != '' && this.password != '')"
+  };
+  option (buf.validate.message).cel = {
+    id: "mssql_integrated_auth_no_credentials"
+    message: "integrated_auth signs in as the current Windows or Kerberos identity, so leave username, password, access_token and fed_auth empty"
+    expression: "!this.integrated_auth || (this.username == '' && this.password == '' && this.access_token == '' && this.fed_auth == '')"
   };
 
   // Host address or IP.
@@ -332,6 +338,15 @@ message MSSQLConf {
   // Azure AD Application (Client) ID.
   // Used with ActiveDirectoryServicePrincipal and user-assigned MSI.
   string application_client_id = 10;
+
+  // Sign in with the identity of the user running the connection instead of a
+  // SQL Server login, the same as `sqlcmd -E` (Windows Authentication).
+  // On Windows this uses the logged-in user's credentials (SSPI).
+  // On macOS and Linux it uses the Kerberos ticket from `kinit`: the credential
+  // cache named by KRB5CCNAME (a file), or /tmp/krb5cc_<uid>, with the Kerberos
+  // configuration from KRB5_CONFIG or /etc/krb5.conf.
+  // Leave username, password, access_token and fed_auth empty.
+  bool integrated_auth = 11;
 }
 
 // DuckDB / MotherDuck specific configuration.

@@ -96,7 +96,11 @@ service AlertsService {
 }
 
 // CreateRequest creates a new alert configuration.
+//
+// Deprecated: use synq.alerts.services.v2.CreateRequest.
 message CreateRequest {
+  option deprecated = true;
+
   option (buf.validate.message).cel = {
     id: "create_request.webhook_incompatible_with_ongoing_alerts"
     message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
@@ -148,12 +152,19 @@ message CreateRequest {
 }
 
 // CreateResponse returns the created alert configuration.
+//
+// Deprecated: use synq.alerts.services.v2.CreateResponse.
 message CreateResponse {
+  option deprecated = true;
+
   // The alert configuration that was created.
   synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
 }
 
+// Deprecated: use synq.alerts.services.v2.AlertIdentifier.
 message AlertIdentifier {
+  option deprecated = true;
+
   oneof identifier {
     option (buf.validate.oneof).required = true;
 
@@ -169,7 +180,12 @@ message AlertIdentifier {
 
 // UpdateRequest updates an existing alert configuration.
 // The config can be identified by either ID or FQN.
+//
+// Deprecated: use the intent-specific requests on synq.alerts.services.v2
+// (RenameRequest, UpdateTargetsRequest, UpdateSettingsRequest, UpdateTemplateRequest).
 message UpdateRequest {
+  option deprecated = true;
+
   option (buf.validate.message).cel = {
     id: "update_request.webhook_incompatible_with_ongoing_alerts"
     message: "Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets."
@@ -215,26 +231,42 @@ message UpdateRequest {
 }
 
 // UpdateResponse returns the updated alert configuration.
+//
+// Deprecated: use the intent-specific responses on synq.alerts.services.v2.
 message UpdateResponse {
+  option deprecated = true;
+
   // The alert configuration that was updated.
   synq.alerts.v1.Alert alert = 1 [(buf.validate.field).required = true];
 }
 
 // DeleteRequest specifies which alert configuration to delete.
 // The config can be identified by either ID or FQN.
+//
+// Deprecated: use synq.alerts.services.v2.DeleteRequest.
 message DeleteRequest {
+  option deprecated = true;
+
   // Identifier for the config to delete.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
 }
 
 // DeleteResponse confirms the deletion (empty response).
+//
+// Deprecated: use synq.alerts.services.v2.DeleteResponse.
 message DeleteResponse {
+  option deprecated = true;
+
   // Empty response - successful deletion is indicated by HTTP 200 status.
 }
 
 // ToggleEnabledRequest enables or disables an alert configuration.
 // The config can be identified by either ID or FQN.
+//
+// Deprecated: use synq.alerts.services.v2.ToggleEnabledRequest.
 message ToggleEnabledRequest {
+  option deprecated = true;
+
   // Identifier for the config to toggle.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
 
@@ -244,28 +276,46 @@ message ToggleEnabledRequest {
 }
 
 // ToggleEnabledResponse confirms the toggle operation (empty response).
+//
+// Deprecated: use synq.alerts.services.v2.ToggleEnabledResponse.
 message ToggleEnabledResponse {
+  option deprecated = true;
+
   // Empty response - successful toggle is indicated by HTTP 200 status.
 }
 
 // ListRequest filters alert configurations to retrieve.
+//
+// Deprecated: use synq.alerts.services.v2.ListRequest.
 message ListRequest {
+  option deprecated = true;
+
   // Optional filter by owner of the alert configurations.
   optional synq.alerts.v1.Alert.Owner owner = 1;
 }
 
 // ListResponse returns the filtered list of alert configurations.
+//
+// Deprecated: use synq.alerts.services.v2.ListResponse.
 message ListResponse {
+  option deprecated = true;
+
   // The list of alert configurations matching the filter criteria.
   repeated string alerts_ids = 1;
 }
 
+// Deprecated: use synq.alerts.services.v2.BatchGetRequest.
 message BatchGetRequest {
+  option deprecated = true;
+
   // IDs of the alerts to get.
   repeated AlertIdentifier identifiers = 1 [(buf.validate.field).repeated = {min_items: 1}];
 }
 
+// Deprecated: use synq.alerts.services.v2.BatchGetResponse.
 message BatchGetResponse {
+  option deprecated = true;
+
   // Alerts mapped by their identifiers.
   map<string, synq.alerts.v1.Alert> alerts = 1;
 }

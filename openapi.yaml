@@ -3646,6 +3646,7 @@ components:
                   required:
                     - id
             additionalProperties: false
+            description: 'Deprecated: use synq.alerts.services.v2.AlertIdentifier.'
         synq.alerts.services.v1.BatchGetRequest:
             type: object
             properties:
@@ -3657,6 +3658,7 @@ components:
                     description: IDs of the alerts to get.
             title: BatchGetRequest
             additionalProperties: false
+            description: 'Deprecated: use synq.alerts.services.v2.BatchGetRequest.'
         synq.alerts.services.v1.BatchGetResponse:
             type: object
             properties:
@@ -3668,6 +3670,7 @@ components:
                     description: Alerts mapped by their identifiers.
             title: BatchGetResponse
             additionalProperties: false
+            description: 'Deprecated: use synq.alerts.services.v2.BatchGetResponse.'
         synq.alerts.services.v1.BatchGetResponse.AlertsEntry:
             type: object
             properties:
@@ -3715,6 +3718,8 @@ components:
             additionalProperties: false
             description: |
                 CreateRequest creates a new alert configuration.
+
+                 Deprecated: use synq.alerts.services.v2.CreateRequest.
                 create_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
                 create_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
                 create_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
@@ -3728,7 +3733,10 @@ components:
             required:
                 - alert
             additionalProperties: false
-            description: CreateResponse returns the created alert configuration.
+            description: |-
+                CreateResponse returns the created alert configuration.
+
+                 Deprecated: use synq.alerts.services.v2.CreateResponse.
         synq.alerts.services.v1.DeleteRequest:
             type: object
             properties:
@@ -3742,11 +3750,16 @@ components:
             description: |-
                 DeleteRequest specifies which alert configuration to delete.
                  The config can be identified by either ID or FQN.
+
+                 Deprecated: use synq.alerts.services.v2.DeleteRequest.
         synq.alerts.services.v1.DeleteResponse:
             type: object
             title: DeleteResponse
             additionalProperties: false
-            description: DeleteResponse confirms the deletion (empty response). Empty response - successful deletion is indicated by HTTP 200 status.
+            description: |-
+                DeleteResponse confirms the deletion (empty response).
+
+                 Deprecated: use synq.alerts.services.v2.DeleteResponse.
         synq.alerts.services.v1.ListRequest:
             type: object
             properties:
@@ -3756,7 +3769,10 @@ components:
                     $ref: '#/components/schemas/synq.alerts.v1.Alert.Owner'
             title: ListRequest
             additionalProperties: false
-            description: ListRequest filters alert configurations to retrieve.
+            description: |-
+                ListRequest filters alert configurations to retrieve.
+
+                 Deprecated: use synq.alerts.services.v2.ListRequest.
         synq.alerts.services.v1.ListResponse:
             type: object
             properties:
@@ -3767,7 +3783,10 @@ components:
                     description: The list of alert configurations matching the filter criteria.
             title: ListResponse
             additionalProperties: false
-            description: ListResponse returns the filtered list of alert configurations.
+            description: |-
+                ListResponse returns the filtered list of alert configurations.
+
+                 Deprecated: use synq.alerts.services.v2.ListResponse.
         synq.alerts.services.v1.ToggleEnabledRequest:
             type: object
             properties:
@@ -3786,11 +3805,16 @@ components:
             description: |-
                 ToggleEnabledRequest enables or disables an alert configuration.
                  The config can be identified by either ID or FQN.
+
+                 Deprecated: use synq.alerts.services.v2.ToggleEnabledRequest.
         synq.alerts.services.v1.ToggleEnabledResponse:
             type: object
             title: ToggleEnabledResponse
             additionalProperties: false
-            description: ToggleEnabledResponse confirms the toggle operation (empty response). Empty response - successful toggle is indicated by HTTP 200 status.
+            description: |-
+                ToggleEnabledResponse confirms the toggle operation (empty response).
+
+                 Deprecated: use synq.alerts.services.v2.ToggleEnabledResponse.
         synq.alerts.services.v1.UpdateRequest:
             type: object
             properties:
@@ -3825,6 +3849,9 @@ components:
             description: |
                 UpdateRequest updates an existing alert configuration.
                  The config can be identified by either ID or FQN.
+
+                 Deprecated: use the intent-specific requests on synq.alerts.services.v2
+                 (RenameRequest, UpdateTargetsRequest, UpdateSettingsRequest, UpdateTemplateRequest).
                 update_request.webhook_incompatible_with_grouped_alerts // Webhook targets are not compatible with grouped alerts. Use the no_grouping strategy when sending alerts to webhook targets.
                 update_request.webhook_incompatible_with_ongoing_alerts // Webhook targets are not compatible with the schedule ongoing strategy. Use the disabled or stream ongoing strategy when sending alerts to webhook targets.
                 update_request.webhook_incompatible_with_schema_change_alerts // Webhook targets are not supported on schema change alerts. Use email, Slack, or Microsoft Teams targets.
@@ -3838,7 +3865,10 @@ components:
             required:
                 - alert
             additionalProperties: false
-            description: UpdateResponse returns the updated alert configuration.
+            description: |-
+                UpdateResponse returns the updated alert configuration.
+
+                 Deprecated: use the intent-specific responses on synq.alerts.services.v2.
         synq.alerts.services.v2.AlertIdentifier:
             type: object
             oneOf:
@@ -4421,6 +4451,8 @@ components:
             description: |-
                 Owner information for the alert configuration.
                  If set, the alert is attributed to the specified owner and ownership.
+
+                 Deprecated: use synq.alerts.v2.Owner.
         synq.alerts.v1.AlertSettings:
             type: object
             oneOf:
@@ -4444,6 +4476,9 @@ components:
             description: |-
                 AlertSettings defines the properties that affect the trigger and presentation of an alert.
                  It specifies the conditions under which an alert should be fired and how it should behave.
+
+                 Deprecated: synq.alerts.v2.Alert carries its settings per alert type
+                 (synq.alerts.v2.IssueLifecycleAlert, synq.alerts.v2.SchemaChangeAlert).
         synq.alerts.v1.AlertingTarget:
             type: object
             oneOf:
@@ -4491,6 +4526,8 @@ components:
             description: |-
                 AlertingTarget represents a destination where alert notifications will be sent.
                  Each target type has its own specific configuration requirements.
+
+                 Deprecated: use synq.alerts.v2.AlertingTarget.
         synq.alerts.v1.EmailTarget:
             type: object
             properties:
@@ -4506,7 +4543,10 @@ components:
                          Each email must be a valid email address format.
             title: EmailTarget
             additionalProperties: false
-            description: EmailTarget configures alert delivery via email.
+            description: |-
+                EmailTarget configures alert delivery via email.
+
+                 Deprecated: use synq.alerts.v2.EmailTarget.
         synq.alerts.v1.EntityGroupQuery:
             type: object
             properties:
@@ -4552,6 +4592,8 @@ components:
             description: |-
                 IssueAlertSettings is the unified alert settings type for issue-based alerts.
                  It replaces both EntityFailureAlertSettings and IssueLifecycleAlertSettings.
+
+                 Deprecated: use synq.alerts.v2.IssueAlertSettings.
         synq.alerts.v1.IssueGroupingStrategy:
             type: object
             oneOf:
@@ -4570,7 +4612,10 @@ components:
                   required:
                     - systemDetected
             additionalProperties: false
-            description: IssueGroupingStrategy controls how issues are grouped for alerting purposes.
+            description: |-
+                IssueGroupingStrategy controls how issues are grouped for alerting purposes.
+
+                 Deprecated: use synq.alerts.v2.IssueGroupingStrategy.
         synq.alerts.v1.IssueGroupingStrategy.NoGrouping:
             type: object
             title: NoGrouping
@@ -4601,6 +4646,8 @@ components:
             description: |-
                 MsTeamsTarget configures alert delivery to Microsoft Teams.
                  Alerts are sent to either a Microsoft Teams channel or a specific member.
+
+                 Deprecated: use synq.alerts.v2.MsTeamsTarget.
         synq.alerts.v1.OngoingAlertsStrategy:
             type: object
             oneOf:
@@ -4665,6 +4712,8 @@ components:
             description: |-
                 OwnerTarget configures alert delivery to the owner of the monitored entity.
                  This allows alerts to be automatically sent to whoever owns the data being monitored.
+
+                 Deprecated: use synq.alerts.v2.OwnerTarget.
         synq.alerts.v1.SchemaChangeAlertSettings:
             type: object
             properties:
@@ -4681,6 +4730,8 @@ components:
             description: |
                 SchemaChangeAlertSettings configures alerts for schema changes.
                  This alert triggers when the schema of monitored entities changes.
+
+                 Deprecated: use synq.alerts.v2.SchemaChangeAlertSettings.
                 schema_change_alert_settings.ongoing_disabled_unsupported // Schema change alerts do not support the disabled ongoing strategy. Leave ongoing unset for per-change streaming, or set stream or schedule.
         synq.alerts.v1.SelectionQuery:
             type: object
@@ -4812,6 +4863,8 @@ components:
             description: |-
                 SlackTarget configures alert delivery to Slack.
                  Alerts are sent to a Slack channel.
+
+                 Deprecated: use synq.alerts.v2.SlackTarget.
         synq.alerts.v1.WebhookTarget:
             type: object
             properties:
@@ -4826,6 +4879,8 @@ components:
             description: |-
                 WebhookTarget configures alert delivery via webhook/hook integrations.
                  This allows integration with external systems and custom notification workflows.
+
+                 Deprecated: use synq.alerts.v2.WebhookTarget.
         synq.alerts.v2.Alert:
             type: object
             allOf:
@@ -24496,7 +24551,7 @@ components:
             additionalProperties: false
             description: |-
                 How alerts fire for the assets an ownership covers. Deliberately mirrors the
-                 settings on the public alerts API (`synq.alerts.v1`) so alerting behaviour
+                 settings on the public alerts API (`synq.alerts.v2`) so alerting behaviour
                  reads the same across SYNQ.
         synq.owners.v1.BatchGetOwnersRequest:
             type: object
@@ -24818,8 +24873,8 @@ components:
                         Stable, opaque platform identifier of this owner (of the form
                          "owner-<uuid>"). Output-only — the server derives it; never construct it by
                          hand. This is the exact value other SYNQ APIs accept as an owner reference
-                         (for example the `synq.alerts.v1.AlertsService` owner path — see
-                         `synq.alerts.v1.Alert.Owner`), so read it here and pass it there to point at
+                         (for example the `synq.alerts.services.v2.AlertsService` owner path — see
+                         `synq.alerts.v2.Owner`), so read it here and pass it there to point at
                          the same owner without needing to know how it is formed.
                 title:
                     type: string
@@ -24877,8 +24932,8 @@ components:
                     description: |-
                         Opaque id of the ownership (a UUID) supplied by the caller on create, which
                          makes UpsertOwnership idempotent. This is the same value
-                         `synq.alerts.v1.AlertsService` reports as the ownership reference
-                         (`synq.alerts.v1.Alert.Owner.ownership_id`) on an alert attributed to this
+                         `synq.alerts.services.v2.AlertsService` reports as the ownership reference
+                         (`synq.alerts.v2.Owner.ownership_id`) on an alert attributed to this
                          owner.
                 ownerId:
                     type: string
@@ -52570,7 +52625,7 @@ tags:
          concurrent edit.
 
          Related: `synq.dataproducts.v2.DataproductsService` (an ownership can own a
-         whole data product), `synq.alerts.v1.AlertsService` (how the configured alerts
+         whole data product), `synq.alerts.services.v2.AlertsService` (how the configured alerts
          are reported), and `synq.users.v1.UsersService` (resolve the users behind
          `UserContact` and Slack/Teams mentions).
     - name: synq.agent.sre.v1.LlmService

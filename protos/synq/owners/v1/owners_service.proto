@@ -27,7 +27,7 @@ option go_package = "github.com/getsynq/api/owners/v1";
 // concurrent edit.
 //
 // Related: `synq.dataproducts.v2.DataproductsService` (an ownership can own a
-// whole data product), `synq.alerts.v1.AlertsService` (how the configured alerts
+// whole data product), `synq.alerts.services.v2.AlertsService` (how the configured alerts
 // are reported), and `synq.users.v1.UsersService` (resolve the users behind
 // `UserContact` and Slack/Teams mentions).
 service OwnersService {
