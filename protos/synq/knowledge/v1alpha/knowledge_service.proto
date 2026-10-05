@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package synq.knowledge.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/knowledge/v1alpha";
+
+// KnowledgeService reads the knowledge a team keeps about its data: knowledge
+// pages written or imported by the team, and the descriptions people write for
+// entities.
+//
+// Knowledge pages form a tree, and pages and entities are pinned to each
+// other. Nothing here is the description an entity's own source reports, which
+// `synq.entities.entities.v1.EntitiesService` reads.
+//
+// This API is in alpha: its shape may change without notice.
+service KnowledgeService {
+  // Read the knowledge held about entities: the description people wrote for
+  // each one, and the knowledge pages pinned to it.
+  //
+  // An entity with no knowledge is absent from the response, as is an id that
+  // names no entity. Returns UNAVAILABLE when the knowledge could not be read,
+  // which is worth retrying.
+  rpc BatchGetEntityKnowledge(BatchGetEntityKnowledgeRequest) returns (BatchGetEntityKnowledgeResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/knowledge/v1alpha/entities/by-id"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // List the ids of knowledge pages, ordered by name, optionally narrowed by a
+  // part of their name and by certification. Deprecated pages are left out
+  // unless asked for. Read the pages with `BatchGetKnowledgePages`.
+  rpc ListKnowledgePages(ListKnowledgePagesRequest) returns (ListKnowledgePagesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/knowledge/v1alpha/pages"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // Read knowledge pages by id: their content, where they sit in the tree,
+  // who owns them and how they are tagged. A page that does not exist, or was
+  // deleted, is absent from the response. Set `skip_content` to read
+  // everything but the content, for showing a listing.
+  rpc BatchGetKnowledgePages(BatchGetKnowledgePagesRequest) returns (BatchGetKnowledgePagesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/knowledge/v1alpha/pages/by-id"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
+  // List what is pinned to a knowledge page, in either direction: the ids of
+  // the entities and of the other knowledge pages.
+  rpc ListKnowledgePageLinks(ListKnowledgePageLinksRequest) returns (ListKnowledgePageLinksResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/knowledge/v1alpha/pages/{page_id}/links"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+}
+
+message BatchGetEntityKnowledgeRequest {
+  // Entities to read (1–100, unique), by the opaque entity id other APIs
+  // return. A caller holding structured coordinates converts them once with
+  // `synq.entities.resolve.v1.IdentifierResolveService.BatchResolveIdentifiers`.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+}
+
+message BatchGetEntityKnowledgeResponse {
+  // Knowledge keyed by entity id. Entities with no knowledge are absent.
+  map<string, EntityKnowledge> knowledge = 1;
+}
+
+// The knowledge held about an entity.
+message EntityKnowledge {
+  // The description people wrote for the entity. Unset when nobody wrote
+  // one. The description the asset's own source carries, such as a
+  // warehouse comment or a dbt description, is not repeated here: the entity
+  // itself reports it.
+  optional KnowledgeDescription description = 1;
+  // The knowledge pages pinned to the entity or pinning it, ordered by name.
+  // Read their content with `BatchGetKnowledgePages`.
+  repeated KnowledgePageRef pages = 2;
+}
+
+// A description people wrote for an entity.
+message KnowledgeDescription {
+  // The description, as Markdown.
+  string markdown = 1;
+  // Whether it was generated rather than written by a person.
+  bool generated = 2;
+}
+
+message ListKnowledgePagesRequest {
+  // Keep pages whose name contains this, ignoring case.
+  optional string name_contains = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+  // Keep only certified pages (true) or only uncertified ones (false).
+  optional bool certified = 2;
+  // Include deprecated pages, which are left out by default.
+  bool include_deprecated = 3;
+  // Pages per response, 1–100. Defaults to 50.
+  int32 page_size = 4 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
+  // `next_page_token` of the previous response, to read the next one.
+  string page_token = 5 [(buf.validate.field).string.max_len = 64];
+}
+
+message ListKnowledgePagesResponse {
+  // Knowledge page ids, ordered by the pages' names.
+  repeated string page_ids = 1;
+  // Pass as `page_token` to read on. Empty on the last response.
+  string next_page_token = 2;
+  // How many pages match, across every response.
+  int32 total_count = 3;
+}
+
+message BatchGetKnowledgePagesRequest {
+  // Knowledge pages to read (1–100, unique), by id.
+  repeated string page_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Leave each page's `markdown` out. Everything else is read as usual.
+  bool skip_content = 2;
+}
+
+message BatchGetKnowledgePagesResponse {
+  // Pages keyed by id. Pages that do not exist or were deleted are absent.
+  map<string, KnowledgePage> pages = 1;
+}
+
+message ListKnowledgePageLinksRequest {
+  // The knowledge page, by id.
+  string page_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+message ListKnowledgePageLinksResponse {
+  // Entities pinned to the page or pinning it, sorted.
+  repeated string entity_ids = 1;
+  // Other knowledge pages pinned to the page or pinning it, ordered by name.
+  repeated string page_ids = 2;
+}
+
+// Names a knowledge page.
+message KnowledgePageRef {
+  // The page's id.
+  string id = 1;
+  string name = 2;
+}
+
+// A knowledge page: a document the team wrote, or imported from a tool such
+// as Confluence or Notion.
+message KnowledgePage {
+  // The page's id.
+  string id = 1;
+  string name = 2;
+  // The page's content, as Markdown. Empty when the page has none, or when it
+  // was read with `skip_content`.
+  string markdown = 3;
+  // Whether the content was generated rather than written by a person.
+  bool generated = 4;
+  // Where the page was imported from. Unset for a page written here.
+  optional string url = 5;
+  // When the page last changed.
+  google.protobuf.Timestamp updated_at = 6;
+  // The pages above this one, from the top of the tree down to its parent.
+  // Empty for a page at the top.
+  repeated KnowledgePageRef ancestors = 7;
+  // The pages directly under this one, ordered by name.
+  repeated KnowledgePageRef children = 8;
+  // Whether someone certified the page as trustworthy.
+  bool certified = 9;
+  bool deprecated = 10;
+  // The people and teams who own the page.
+  repeated KnowledgeOwner owners = 11;
+  // The page's tags, sorted.
+  repeated string tags = 12;
+}
+
+// Someone who owns a knowledge page.
+message KnowledgeOwner {
+  // The person's full name, or the team's name.
+  string name = 1;
+  // The person's or team's email, when known.
+  optional string email = 2;
+  // Whether the owner is a team rather than a person.
+  bool team = 3;
+}

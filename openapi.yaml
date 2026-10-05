@@ -5374,6 +5374,18 @@ components:
             description: |-
                 WebhookTarget configures alert delivery via webhook/hook integrations.
                  This allows integration with external systems and custom notification workflows.
+        synq.auth.iam.v1.CatalogAccount:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Catalog's id of the account.
+                name:
+                    type: string
+                    description: Name of the account in Coalesce Catalog.
+            title: CatalogAccount
+            additionalProperties: false
+            description: A Coalesce Catalog account linked to a Coalesce Quality workspace.
         synq.auth.iam.v1.IamRequest:
             type: object
             title: IamRequest
@@ -5423,6 +5435,13 @@ components:
                          tied to a Coalesce Quality user (i.e. `synq_user_id` is set); empty for
                          workspace-level or third-party tokens.
                     nullable: true
+                catalogAccount:
+                    description: |-
+                        Coalesce Catalog account the workspace is linked to. Unset when the
+                         workspace has no Catalog account, so nothing Catalog-backed (knowledge
+                         pages, Catalog-written descriptions) has anything to answer.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.auth.iam.v1.CatalogAccount'
             title: IamResponse
             additionalProperties: false
         synq.common.v1.ScopeFilter:
@@ -18173,9 +18192,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/google.protobuf.Struct'
+                    description: Request bodies of a DataHub REST emitter, each in the shape of `request`.
                 action:
                     type: string
+                    description: The emitter's `action` query parameter, for example `ingestProposal`.
                     nullable: true
+                request:
+                    description: 'The request body of a DataHub REST emitter, for example `{"proposal": {...}}`.'
+                    $ref: '#/components/schemas/google.protobuf.Struct'
             title: IngestDatahubAspectsRequest
             additionalProperties: false
         synq.ingest.airflow.v1.IngestDatahubAspectsResponse:
@@ -21683,6 +21707,273 @@ components:
             required:
                 - commentId
             additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetEntityKnowledgeRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 100
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 100
+                    minItems: 1
+                    uniqueItems: true
+                    description: |-
+                        Entities to read (1–100, unique), by the opaque entity id other APIs
+                         return. A caller holding structured coordinates converts them once with
+                         `synq.entities.resolve.v1.IdentifierResolveService.BatchResolveIdentifiers`.
+            title: BatchGetEntityKnowledgeRequest
+            additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetEntityKnowledgeResponse:
+            type: object
+            properties:
+                knowledge:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.EntityKnowledge'
+                    description: Knowledge keyed by entity id. Entities with no knowledge are absent.
+            title: BatchGetEntityKnowledgeResponse
+            additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetEntityKnowledgeResponse.KnowledgeEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.knowledge.v1alpha.EntityKnowledge'
+            title: KnowledgeEntry
+            additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetKnowledgePagesRequest:
+            type: object
+            properties:
+                pageIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 64
+                        minLength: 1
+                        maxItems: 100
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 100
+                    minItems: 1
+                    uniqueItems: true
+                    description: Knowledge pages to read (1–100, unique), by id.
+                skipContent:
+                    type: boolean
+                    description: Leave each page's `markdown` out. Everything else is read as usual.
+            title: BatchGetKnowledgePagesRequest
+            additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetKnowledgePagesResponse:
+            type: object
+            properties:
+                pages:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgePage'
+                    description: Pages keyed by id. Pages that do not exist or were deleted are absent.
+            title: BatchGetKnowledgePagesResponse
+            additionalProperties: false
+        synq.knowledge.v1alpha.BatchGetKnowledgePagesResponse.PagesEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgePage'
+            title: PagesEntry
+            additionalProperties: false
+        synq.knowledge.v1alpha.EntityKnowledge:
+            type: object
+            properties:
+                description:
+                    description: |-
+                        The description people wrote for the entity. Unset when nobody wrote
+                         one. The description the asset's own source carries, such as a
+                         warehouse comment or a dbt description, is not repeated here: the entity
+                         itself reports it.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgeDescription'
+                pages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgePageRef'
+                    description: |-
+                        The knowledge pages pinned to the entity or pinning it, ordered by name.
+                         Read their content with `BatchGetKnowledgePages`.
+            title: EntityKnowledge
+            additionalProperties: false
+            description: The knowledge held about an entity.
+        synq.knowledge.v1alpha.KnowledgeDescription:
+            type: object
+            properties:
+                markdown:
+                    type: string
+                    description: The description, as Markdown.
+                generated:
+                    type: boolean
+                    description: Whether it was generated rather than written by a person.
+            title: KnowledgeDescription
+            additionalProperties: false
+            description: A description people wrote for an entity.
+        synq.knowledge.v1alpha.KnowledgeOwner:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The person's full name, or the team's name.
+                email:
+                    type: string
+                    description: The person's or team's email, when known.
+                    nullable: true
+                team:
+                    type: boolean
+                    description: Whether the owner is a team rather than a person.
+            title: KnowledgeOwner
+            additionalProperties: false
+            description: Someone who owns a knowledge page.
+        synq.knowledge.v1alpha.KnowledgePage:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: The page's id.
+                name:
+                    type: string
+                markdown:
+                    type: string
+                    description: |-
+                        The page's content, as Markdown. Empty when the page has none, or when it
+                         was read with `skip_content`.
+                generated:
+                    type: boolean
+                    description: Whether the content was generated rather than written by a person.
+                url:
+                    type: string
+                    description: Where the page was imported from. Unset for a page written here.
+                    nullable: true
+                updatedAt:
+                    description: When the page last changed.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                ancestors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgePageRef'
+                    description: |-
+                        The pages above this one, from the top of the tree down to its parent.
+                         Empty for a page at the top.
+                children:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgePageRef'
+                    description: The pages directly under this one, ordered by name.
+                certified:
+                    type: boolean
+                    description: Whether someone certified the page as trustworthy.
+                deprecated:
+                    type: boolean
+                owners:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.knowledge.v1alpha.KnowledgeOwner'
+                    description: The people and teams who own the page.
+                tags:
+                    type: array
+                    items:
+                        type: string
+                    description: The page's tags, sorted.
+            title: KnowledgePage
+            additionalProperties: false
+            description: |-
+                A knowledge page: a document the team wrote, or imported from a tool such
+                 as Confluence or Notion.
+        synq.knowledge.v1alpha.KnowledgePageRef:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: The page's id.
+                name:
+                    type: string
+            title: KnowledgePageRef
+            additionalProperties: false
+            description: Names a knowledge page.
+        synq.knowledge.v1alpha.ListKnowledgePageLinksRequest:
+            type: object
+            properties:
+                pageId:
+                    type: string
+                    maxLength: 64
+                    minLength: 1
+                    description: The knowledge page, by id.
+            title: ListKnowledgePageLinksRequest
+            additionalProperties: false
+        synq.knowledge.v1alpha.ListKnowledgePageLinksResponse:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                    description: Entities pinned to the page or pinning it, sorted.
+                pageIds:
+                    type: array
+                    items:
+                        type: string
+                    description: Other knowledge pages pinned to the page or pinning it, ordered by name.
+            title: ListKnowledgePageLinksResponse
+            additionalProperties: false
+        synq.knowledge.v1alpha.ListKnowledgePagesRequest:
+            type: object
+            properties:
+                nameContains:
+                    type: string
+                    maxLength: 256
+                    minLength: 1
+                    description: Keep pages whose name contains this, ignoring case.
+                    nullable: true
+                certified:
+                    type: boolean
+                    description: Keep only certified pages (true) or only uncertified ones (false).
+                    nullable: true
+                includeDeprecated:
+                    type: boolean
+                    description: Include deprecated pages, which are left out by default.
+                pageSize:
+                    type: integer
+                    maximum: 100
+                    minimum: 0
+                    format: int32
+                    description: Pages per response, 1–100. Defaults to 50.
+                pageToken:
+                    type: string
+                    maxLength: 64
+                    description: '`next_page_token` of the previous response, to read the next one.'
+            title: ListKnowledgePagesRequest
+            additionalProperties: false
+        synq.knowledge.v1alpha.ListKnowledgePagesResponse:
+            type: object
+            properties:
+                pageIds:
+                    type: array
+                    items:
+                        type: string
+                    description: Knowledge page ids, ordered by the pages' names.
+                nextPageToken:
+                    type: string
+                    description: Pass as `page_token` to read on. Empty on the last response.
+                totalCount:
+                    type: integer
+                    format: int32
+                    description: How many pages match, across every response.
+            title: ListKnowledgePagesResponse
+            additionalProperties: false
         synq.monitors.automated_monitors.v1.AutomatedMonitorSettings:
             type: object
             properties:
@@ -23077,6 +23368,9 @@ components:
             properties:
                 metricAggregation:
                     type: string
+                neverNegative:
+                    type: boolean
+                    description: The aggregation is never negative, so the anomaly engine never forecasts below 0.
             title: MonitorCustomNumeric
             additionalProperties: false
         synq.monitors.custom_monitors.v1.MonitorDefinition:
@@ -26501,6 +26795,442 @@ components:
                   required:
                     - default
             additionalProperties: false
+        synq.recommendations.v1.AppDestination:
+            type: string
+            title: AppDestination
+            enum:
+                - APP_DESTINATION_UNSPECIFIED
+                - APP_DESTINATION_PROMPT_SUGGESTIONS
+            description: |-
+                AppDestination is a place in the Coalesce Quality app a recommendation can
+                 send you to. A client that does not know a value offers no button for it.
+        synq.recommendations.v1.BatchGetRecommendationsRequest:
+            type: object
+            properties:
+                recommendationIds:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 200
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 200
+                    minItems: 1
+                    uniqueItems: true
+                    description: Ids of the recommendations (UUIDs).
+            title: BatchGetRecommendationsRequest
+            additionalProperties: false
+            description: Request to fetch recommendations by id.
+        synq.recommendations.v1.BatchGetRecommendationsResponse:
+            type: object
+            properties:
+                recommendations:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.recommendations.v1.Recommendation'
+            title: BatchGetRecommendationsResponse
+            additionalProperties: false
+            description: Response with the recommendations found, keyed by id.
+        synq.recommendations.v1.BatchGetRecommendationsResponse.RecommendationsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.recommendations.v1.Recommendation'
+            title: RecommendationsEntry
+            additionalProperties: false
+        synq.recommendations.v1.DismissRecommendationRequest:
+            type: object
+            properties:
+                recommendationId:
+                    type: string
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+                actor:
+                    description: |-
+                        Who is deciding. Optional: identity is completed from the calling
+                         credentials.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            title: DismissRecommendationRequest
+            required:
+                - recommendationId
+            additionalProperties: false
+            description: Request to dismiss a recommendation.
+        synq.recommendations.v1.DismissRecommendationResponse:
+            type: object
+            properties:
+                recommendation:
+                    $ref: '#/components/schemas/synq.recommendations.v1.Recommendation'
+            title: DismissRecommendationResponse
+            additionalProperties: false
+            description: Response with the recommendation as stored after the call.
+        synq.recommendations.v1.EditIntegrationAction:
+            type: object
+            properties:
+                integrationId:
+                    type: string
+                    format: uuid
+                    description: Id of the integration (UUID).
+                configFields:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 64
+                        pattern: ^[a-z][a-z0-9_]*$
+                        maxItems: 10
+                        uniqueItems: true
+                    maxItems: 10
+                    uniqueItems: true
+                    description: |-
+                        The configuration fields to change, named as in the integration's
+                         configuration message (`job_ids` on a dbt Cloud integration), so a client
+                         can take you straight to them. Empty when the change is not about
+                         particular fields.
+            title: EditIntegrationAction
+            required:
+                - integrationId
+            additionalProperties: false
+            description: |-
+                EditIntegrationAction opens an integration's settings, where the change is
+                 made through `synq.integrations.v1.IntegrationsService.UpdateIntegration` or
+                 the app.
+        synq.recommendations.v1.IgnoreRecommendationRequest:
+            type: object
+            properties:
+                recommendationId:
+                    type: string
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+                actor:
+                    description: |-
+                        Who is deciding. Optional: identity is completed from the calling
+                         credentials.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            title: IgnoreRecommendationRequest
+            required:
+                - recommendationId
+            additionalProperties: false
+            description: Request to ignore a recommendation.
+        synq.recommendations.v1.IgnoreRecommendationResponse:
+            type: object
+            properties:
+                recommendation:
+                    $ref: '#/components/schemas/synq.recommendations.v1.Recommendation'
+            title: IgnoreRecommendationResponse
+            additionalProperties: false
+            description: Response with the recommendation as stored after the call.
+        synq.recommendations.v1.IntegrationTarget:
+            type: object
+            properties:
+                integrationId:
+                    type: string
+                    format: uuid
+                    description: |-
+                        Id of the integration (UUID), as `synq.integrations.v1.IntegrationsService`
+                         knows it.
+            title: IntegrationTarget
+            required:
+                - integrationId
+            additionalProperties: false
+            description: IntegrationTarget is one integration of the workspace.
+        synq.recommendations.v1.LinkAction:
+            type: object
+            properties:
+                title:
+                    type: string
+                    maxLength: 100
+                    description: |-
+                        What the link is about ("Selecting dbt Cloud jobs", "Snowflake: GRANT
+                         privileges"), to show as the link text. Always set.
+                url:
+                    type: string
+                    maxLength: 2000
+                    format: uri
+                    description: |
+                        Absolute https URL of the page.
+                        string.prefix = "https://"
+                platform:
+                    description: |-
+                        Which system the page belongs to, to show that platform's icon beside the
+                         link. Unspecified for Coalesce Quality documentation or where no platform
+                         fits.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+            title: LinkAction
+            required:
+                - title
+                - url
+            additionalProperties: false
+            description: |-
+                LinkAction is a page that explains how to make the change: Coalesce Quality
+                 documentation, or the documentation of a system the workspace connects to.
+        synq.recommendations.v1.ListRecommendationsRequest:
+            type: object
+            properties:
+                targetKinds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.recommendations.v1.RecommendationTargetKind'
+                    uniqueItems: true
+                    description: Limit the list to these kinds of target. Empty lists every kind.
+                integrationIds:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 200
+                        uniqueItems: true
+                    maxItems: 200
+                    uniqueItems: true
+                    description: |-
+                        Limit the list to recommendations about these integrations (UUIDs).
+                         Implies the integration target kind. Empty applies no integration filter.
+                states:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.recommendations.v1.RecommendationState'
+                    uniqueItems: true
+                    description: |-
+                        Limit the list to recommendations in these states. Empty lists every
+                         state; pass `RECOMMENDATION_STATE_OPEN` for the ones still in front of
+                         you.
+                pagination:
+                    description: |-
+                        Cursor-based pagination. Omit to get every id in one response; set it
+                         without a `page_size` for pages of the default size.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListRecommendationsRequest
+            additionalProperties: false
+            description: Request to list recommendation ids.
+        synq.recommendations.v1.ListRecommendationsResponse:
+            type: object
+            properties:
+                recommendationIds:
+                    type: array
+                    items:
+                        type: string
+                pageInfo:
+                    description: Pass `page_info.last_id` as the next cursor. Empty once there are no more.
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+            title: ListRecommendationsResponse
+            additionalProperties: false
+            description: Response with a page of recommendation ids.
+        synq.recommendations.v1.OpenInAppAction:
+            type: object
+            properties:
+                destination:
+                    not:
+                        enum:
+                            - 0
+                    $ref: '#/components/schemas/synq.recommendations.v1.AppDestination'
+            title: OpenInAppAction
+            additionalProperties: false
+            description: |-
+                OpenInAppAction opens a place in the Coalesce Quality app. The place is
+                 named rather than given as a URL, so a client builds the link for its own
+                 routes.
+        synq.recommendations.v1.Recommendation:
+            type: object
+            properties:
+                recommendationId:
+                    type: string
+                    description: |-
+                        Stable id of the recommendation (UUID). The same recommendation for the
+                         same target always has the same id, also after it disappeared and came
+                         back, so a dismissal or an ignore keeps applying to it.
+                target:
+                    description: What the recommendation is about.
+                    $ref: '#/components/schemas/synq.recommendations.v1.RecommendationTarget'
+                code:
+                    type: string
+                    description: |-
+                        Stable identifier of the kind of recommendation (`stale_job_selection`),
+                         lower snake_case. It never changes for a given kind, so it is safe to
+                         filter or group on; the wording of `message` and `remediation` may
+                         improve.
+                subject:
+                    type: string
+                    description: |-
+                        What within the target the recommendation is about, when one target can
+                         carry the same kind of recommendation about several things ("job
+                         selection", a database name). Empty when it concerns the target as a
+                         whole.
+                message:
+                    type: string
+                    description: What was found, as one sentence.
+                remediation:
+                    type: string
+                    description: What to change, and where.
+                details:
+                    type: array
+                    items:
+                        type: string
+                    description: The objects the recommendation concerns, one per entry.
+                detailsOmitted:
+                    type: integer
+                    format: int32
+                    description: |-
+                        How many further objects exist beyond `details`. Zero when `details` lists
+                         all of them.
+                actions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.recommendations.v1.RecommendationAction'
+                    description: |-
+                        What you can do about it, most useful first, for a client to offer as
+                         buttons beside `remediation`. Empty when `remediation` is all there is to
+                         go on.
+                firstStatedAt:
+                    description: When the condition was first found, without it clearing in between.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                changedAt:
+                    description: |-
+                        When what is reported last changed: a new object, a different
+                         remediation, a reworded message, different actions.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                state:
+                    description: |-
+                        Whether the recommendation is in front of you, after any dismissal or
+                         ignore.
+                    $ref: '#/components/schemas/synq.recommendations.v1.RecommendationState'
+                decision:
+                    description: |-
+                        The dismissal or ignore standing against the recommendation. Still
+                         present when it reopened because something new was found since it was
+                         dismissed. Absent when nobody decided.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.recommendations.v1.RecommendationDecision'
+            title: Recommendation
+            additionalProperties: false
+            description: |-
+                Recommendation is a change Coalesce Quality recommends you make: a grant an
+                 integration's role is missing, a setting that stopped matching what runs, a
+                 feature worth enabling, a review waiting for you. Nothing is broken; making
+                 the change gets you more, or better, out of the product.
+
+                 A recommendation stays for as long as the condition holds, and disappears on
+                 its own once it no longer does. You can dismiss it until something new is
+                 found, or ignore it for good.
+        synq.recommendations.v1.RecommendationAction:
+            type: object
+            oneOf:
+                - properties:
+                    editIntegration:
+                        title: edit_integration
+                        description: Open an integration's settings.
+                        $ref: '#/components/schemas/synq.recommendations.v1.EditIntegrationAction'
+                  title: edit_integration
+                  required:
+                    - editIntegration
+                - properties:
+                    link:
+                        title: link
+                        description: Open a page that explains the change.
+                        $ref: '#/components/schemas/synq.recommendations.v1.LinkAction'
+                  title: link
+                  required:
+                    - link
+                - properties:
+                    openInApp:
+                        title: open_in_app
+                        description: Open a place in the Coalesce Quality app.
+                        $ref: '#/components/schemas/synq.recommendations.v1.OpenInAppAction'
+                  title: open_in_app
+                  required:
+                    - openInApp
+            additionalProperties: false
+            description: RecommendationAction is one thing you can do about a recommendation.
+        synq.recommendations.v1.RecommendationDecision:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.recommendations.v1.RecommendationDecisionKind'
+                decidedAt:
+                    description: When the decision was made.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                decidedBy:
+                    description: Who made it. Absent when the request identified no one.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            title: RecommendationDecision
+            additionalProperties: false
+            description: RecommendationDecision is a dismissal or an ignore.
+        synq.recommendations.v1.RecommendationDecisionKind:
+            type: string
+            title: RecommendationDecisionKind
+            enum:
+                - RECOMMENDATION_DECISION_KIND_UNSPECIFIED
+                - RECOMMENDATION_DECISION_KIND_DISMISSED
+                - RECOMMENDATION_DECISION_KIND_IGNORED
+            description: RecommendationDecisionKind is what was decided about a recommendation.
+        synq.recommendations.v1.RecommendationState:
+            type: string
+            title: RecommendationState
+            enum:
+                - RECOMMENDATION_STATE_UNSPECIFIED
+                - RECOMMENDATION_STATE_OPEN
+                - RECOMMENDATION_STATE_DISMISSED
+                - RECOMMENDATION_STATE_IGNORED
+            description: RecommendationState is whether a recommendation is in front of you.
+        synq.recommendations.v1.RecommendationTarget:
+            type: object
+            oneOf:
+                - properties:
+                    integration:
+                        title: integration
+                        description: 'One integration: a grant its role lacks, a setting to change.'
+                        $ref: '#/components/schemas/synq.recommendations.v1.IntegrationTarget'
+                  title: integration
+                  required:
+                    - integration
+                - properties:
+                    workspace:
+                        title: workspace
+                        description: 'The workspace as a whole: a feature to enable, a review waiting.'
+                        $ref: '#/components/schemas/synq.recommendations.v1.WorkspaceTarget'
+                  title: workspace
+                  required:
+                    - workspace
+            additionalProperties: false
+            description: RecommendationTarget is what a recommendation is about.
+        synq.recommendations.v1.RecommendationTargetKind:
+            type: string
+            title: RecommendationTargetKind
+            enum:
+                - RECOMMENDATION_TARGET_KIND_UNSPECIFIED
+                - RECOMMENDATION_TARGET_KIND_WORKSPACE
+                - RECOMMENDATION_TARGET_KIND_INTEGRATION
+            description: RecommendationTargetKind names a kind of target, for filtering.
+        synq.recommendations.v1.RestoreRecommendationRequest:
+            type: object
+            properties:
+                recommendationId:
+                    type: string
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+            title: RestoreRecommendationRequest
+            required:
+                - recommendationId
+            additionalProperties: false
+            description: Request to restore a recommendation.
+        synq.recommendations.v1.RestoreRecommendationResponse:
+            type: object
+            properties:
+                recommendation:
+                    $ref: '#/components/schemas/synq.recommendations.v1.Recommendation'
+            title: RestoreRecommendationResponse
+            additionalProperties: false
+            description: Response with the recommendation as stored after the call.
+        synq.recommendations.v1.WorkspaceTarget:
+            type: object
+            title: WorkspaceTarget
+            additionalProperties: false
+            description: WorkspaceTarget is the workspace as a whole.
         synq.savedviews.v1.BatchGetRequest:
             type: object
             properties:
@@ -27334,6 +28064,8 @@ components:
                 - SCOPE_FOLDERS_EDIT
                 - SCOPE_DELIVERY_READ
                 - SCOPE_DELIVERY_EDIT
+                - SCOPE_RECOMMENDATIONS_READ
+                - SCOPE_RECOMMENDATIONS_EDIT
         synq.v1.Severity:
             type: string
             title: Severity
@@ -43046,21 +43778,60 @@ paths:
             tags:
                 - synq.ingest.airflow.v1.AirflowLogsService
             summary: IngestDatahubAspects
+            description: |-
+                Accepts what a DataHub REST emitter sends when its server is set to
+                 `<public API>/api/ingest/airflow/v1`: it posts to `{server}/aspects?action=ingestProposal`.
             operationId: synq.ingest.airflow.v1.AirflowLogsService.IngestDatahubAspects
             parameters:
-                - name: action
+                - name: aspects.fields.key
                   in: query
                   schema:
                     type: string
+                    title: key
+                - name: aspects.fields.value.nullValue
+                  in: query
+                  description: Represents a null value.
+                  schema:
+                    title: null_value
+                    description: Represents a null value.
+                    $ref: '#/components/schemas/google.protobuf.NullValue'
+                - name: aspects.fields.value.numberValue
+                  in: query
+                  description: Represents a double value.
+                  schema:
+                    type: number
+                    title: number_value
+                    format: double
+                    description: Represents a double value.
+                - name: aspects.fields.value.stringValue
+                  in: query
+                  description: Represents a string value.
+                  schema:
+                    type: string
+                    title: string_value
+                    description: Represents a string value.
+                - name: aspects.fields.value.boolValue
+                  in: query
+                  description: Represents a boolean value.
+                  schema:
+                    type: boolean
+                    title: bool_value
+                    description: Represents a boolean value.
+                - name: action
+                  in: query
+                  description: The emitter's `action` query parameter, for example `ingestProposal`.
+                  schema:
+                    type: string
                     title: action
+                    description: The emitter's `action` query parameter, for example `ingestProposal`.
             requestBody:
+                description: 'The request body of a DataHub REST emitter, for example `{"proposal": {...}}`.'
                 content:
                     application/json:
                         schema:
-                            type: array
-                            items:
-                                $ref: '#/components/schemas/google.protobuf.Struct'
-                            title: aspects
+                            title: request
+                            description: 'The request body of a DataHub REST emitter, for example `{"proposal": {...}}`.'
+                            $ref: '#/components/schemas/google.protobuf.Struct'
             responses:
                 "200":
                     description: Success
@@ -46171,6 +46942,142 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.issues.v2.MarkNoActionNeededResponse'
+    /api/knowledge/v1alpha/entities/by-id:
+        post:
+            tags:
+                - synq.knowledge.v1alpha.KnowledgeService
+            summary: BatchGetEntityKnowledge
+            description: |-
+                Read the knowledge held about entities: the description people wrote for
+                 each one, and the knowledge pages pinned to it.
+
+                 An entity with no knowledge is absent from the response, as is an id that
+                 names no entity. Returns UNAVAILABLE when the knowledge could not be read,
+                 which is worth retrying.
+            operationId: synq.knowledge.v1alpha.KnowledgeService.BatchGetEntityKnowledge
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.knowledge.v1alpha.BatchGetEntityKnowledgeRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.knowledge.v1alpha.BatchGetEntityKnowledgeResponse'
+    /api/knowledge/v1alpha/pages:
+        get:
+            tags:
+                - synq.knowledge.v1alpha.KnowledgeService
+            summary: ListKnowledgePages
+            description: |-
+                List the ids of knowledge pages, ordered by name, optionally narrowed by a
+                 part of their name and by certification. Deprecated pages are left out
+                 unless asked for. Read the pages with `BatchGetKnowledgePages`.
+            operationId: synq.knowledge.v1alpha.KnowledgeService.ListKnowledgePages
+            parameters:
+                - name: nameContains
+                  in: query
+                  description: Keep pages whose name contains this, ignoring case.
+                  schema:
+                    type: string
+                    title: name_contains
+                    maxLength: 256
+                    minLength: 1
+                    description: Keep pages whose name contains this, ignoring case.
+                - name: certified
+                  in: query
+                  description: Keep only certified pages (true) or only uncertified ones (false).
+                  schema:
+                    type: boolean
+                    title: certified
+                    description: Keep only certified pages (true) or only uncertified ones (false).
+                - name: includeDeprecated
+                  in: query
+                  description: Include deprecated pages, which are left out by default.
+                  schema:
+                    type: boolean
+                    title: include_deprecated
+                    description: Include deprecated pages, which are left out by default.
+                - name: pageSize
+                  in: query
+                  description: Pages per response, 1–100. Defaults to 50.
+                  schema:
+                    type: integer
+                    title: page_size
+                    maximum: 100
+                    minimum: 0
+                    format: int32
+                    description: Pages per response, 1–100. Defaults to 50.
+                - name: pageToken
+                  in: query
+                  description: '`next_page_token` of the previous response, to read the next one.'
+                  schema:
+                    type: string
+                    title: page_token
+                    maxLength: 64
+                    description: '`next_page_token` of the previous response, to read the next one.'
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.knowledge.v1alpha.ListKnowledgePagesResponse'
+    /api/knowledge/v1alpha/pages/by-id:
+        post:
+            tags:
+                - synq.knowledge.v1alpha.KnowledgeService
+            summary: BatchGetKnowledgePages
+            description: |-
+                Read knowledge pages by id: their content, where they sit in the tree,
+                 who owns them and how they are tagged. A page that does not exist, or was
+                 deleted, is absent from the response. Set `skip_content` to read
+                 everything but the content, for showing a listing.
+            operationId: synq.knowledge.v1alpha.KnowledgeService.BatchGetKnowledgePages
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.knowledge.v1alpha.BatchGetKnowledgePagesRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.knowledge.v1alpha.BatchGetKnowledgePagesResponse'
+    /api/knowledge/v1alpha/pages/{page_id}/links:
+        get:
+            tags:
+                - synq.knowledge.v1alpha.KnowledgeService
+            summary: ListKnowledgePageLinks
+            description: |-
+                List what is pinned to a knowledge page, in either direction: the ids of
+                 the entities and of the other knowledge pages.
+            operationId: synq.knowledge.v1alpha.KnowledgeService.ListKnowledgePageLinks
+            parameters:
+                - name: page_id
+                  in: path
+                  description: The knowledge page, by id.
+                  required: true
+                  schema:
+                    type: string
+                    title: page_id
+                    maxLength: 64
+                    minLength: 1
+                    description: The knowledge page, by id.
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.knowledge.v1alpha.ListKnowledgePageLinksResponse'
     /api/lineage/v1:
         post:
             tags:
@@ -50376,6 +51283,240 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.queries.v1.TranslateResolverQlResponse'
+    /api/recommendations/v1:
+        get:
+            tags:
+                - synq.recommendations.v1.RecommendationsService
+            summary: ListRecommendations
+            description: |-
+                List the ids of the workspace's recommendations, optionally limited by
+                 target and state. Fetch the recommendations themselves with
+                 `BatchGetRecommendations`. Ids are returned in a stable order, so paging
+                 is consistent while recommendations are added or removed.
+
+                 Returns INVALID_ARGUMENT for a malformed cursor.
+            operationId: synq.recommendations.v1.RecommendationsService.ListRecommendations
+            parameters:
+                - name: targetKinds
+                  in: query
+                  description: Limit the list to these kinds of target. Empty lists every kind.
+                  schema:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.recommendations.v1.RecommendationTargetKind'
+                    title: target_kinds
+                    uniqueItems: true
+                    description: Limit the list to these kinds of target. Empty lists every kind.
+                - name: integrationIds
+                  in: query
+                  description: |-
+                    Limit the list to recommendations about these integrations (UUIDs).
+                     Implies the integration target kind. Empty applies no integration filter.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 200
+                        uniqueItems: true
+                    title: integration_ids
+                    maxItems: 200
+                    uniqueItems: true
+                    description: |-
+                        Limit the list to recommendations about these integrations (UUIDs).
+                         Implies the integration target kind. Empty applies no integration filter.
+                - name: states
+                  in: query
+                  description: |-
+                    Limit the list to recommendations in these states. Empty lists every
+                     state; pass `RECOMMENDATION_STATE_OPEN` for the ones still in front of
+                     you.
+                  schema:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.recommendations.v1.RecommendationState'
+                    title: states
+                    uniqueItems: true
+                    description: |-
+                        Limit the list to recommendations in these states. Empty lists every
+                         state; pass `RECOMMENDATION_STATE_OPEN` for the ones still in front of
+                         you.
+                - name: pagination.cursor
+                  in: query
+                  description: |-
+                    Opaque cursor token for the next page of results. If not provided, returns the first page.
+                     This is an encoded token that should be passed as-is from the previous PageInfo.last_id.
+                  schema:
+                    type: string
+                    title: cursor
+                    description: |-
+                        Opaque cursor token for the next page of results. If not provided, returns the first page.
+                         This is an encoded token that should be passed as-is from the previous PageInfo.last_id.
+                - name: pagination.pageSize
+                  in: query
+                  description: Maximum number of items to return in a single page. If not provided, defaults vary per API.
+                  schema:
+                    type: integer
+                    title: page_size
+                    minimum: 0
+                    format: int32
+                    description: Maximum number of items to return in a single page. If not provided, defaults vary per API.
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.recommendations.v1.ListRecommendationsResponse'
+    /api/recommendations/v1/by-id:
+        post:
+            tags:
+                - synq.recommendations.v1.RecommendationsService
+            summary: BatchGetRecommendations
+            description: |-
+                Fetch recommendations by id. Ids that are unknown, belong to another
+                 workspace, no longer exist because the condition cleared, or concern an
+                 integration the credential cannot read are omitted from the response
+                 rather than erroring.
+            operationId: synq.recommendations.v1.RecommendationsService.BatchGetRecommendations
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.recommendations.v1.BatchGetRecommendationsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.recommendations.v1.BatchGetRecommendationsResponse'
+    /api/recommendations/v1/{recommendation_id}/dismiss:
+        post:
+            tags:
+                - synq.recommendations.v1.RecommendationsService
+            summary: DismissRecommendation
+            description: |-
+                Dismiss a recommendation until something new is found about it. Replaces
+                 an ignore. Dismissing again records the recommendation as it reads now,
+                 so it stays hidden until something newer than that is found.
+
+                 Returns NOT_FOUND when the recommendation does not exist in the
+                 workspace, and PERMISSION_DENIED when it concerns an integration the
+                 credential cannot edit.
+            operationId: synq.recommendations.v1.RecommendationsService.DismissRecommendation
+            parameters:
+                - name: recommendation_id
+                  in: path
+                  description: Id of the recommendation (UUID).
+                  required: true
+                  schema:
+                    type: string
+                    title: recommendation_id
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                actor:
+                                    description: |-
+                                        Who is deciding. Optional: identity is completed from the calling
+                                         credentials.
+                                    nullable: true
+                                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                            title: DismissRecommendationRequest
+                            additionalProperties: false
+                            description: Request to dismiss a recommendation.
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.recommendations.v1.DismissRecommendationResponse'
+    /api/recommendations/v1/{recommendation_id}/ignore:
+        post:
+            tags:
+                - synq.recommendations.v1.RecommendationsService
+            summary: IgnoreRecommendation
+            description: |-
+                Ignore a recommendation for good, whatever is found about it later.
+                 Replaces a dismissal. Ignoring an ignored recommendation succeeds without
+                 change.
+
+                 Returns NOT_FOUND when the recommendation does not exist in the
+                 workspace, and PERMISSION_DENIED when it concerns an integration the
+                 credential cannot edit.
+            operationId: synq.recommendations.v1.RecommendationsService.IgnoreRecommendation
+            parameters:
+                - name: recommendation_id
+                  in: path
+                  description: Id of the recommendation (UUID).
+                  required: true
+                  schema:
+                    type: string
+                    title: recommendation_id
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                actor:
+                                    description: |-
+                                        Who is deciding. Optional: identity is completed from the calling
+                                         credentials.
+                                    nullable: true
+                                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                            title: IgnoreRecommendationRequest
+                            additionalProperties: false
+                            description: Request to ignore a recommendation.
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.recommendations.v1.IgnoreRecommendationResponse'
+    /api/recommendations/v1/{recommendation_id}/restore:
+        post:
+            tags:
+                - synq.recommendations.v1.RecommendationsService
+            summary: RestoreRecommendation
+            description: |-
+                Remove the dismissal or ignore standing against a recommendation, so it
+                 is open again. Restoring a recommendation nobody decided about succeeds
+                 without change.
+
+                 Returns NOT_FOUND when the recommendation does not exist in the
+                 workspace, and PERMISSION_DENIED when it concerns an integration the
+                 credential cannot edit.
+            operationId: synq.recommendations.v1.RecommendationsService.RestoreRecommendation
+            parameters:
+                - name: recommendation_id
+                  in: path
+                  description: Id of the recommendation (UUID).
+                  required: true
+                  schema:
+                    type: string
+                    title: recommendation_id
+                    format: uuid
+                    description: Id of the recommendation (UUID).
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.recommendations.v1.RestoreRecommendationResponse'
     /api/recon/v1/deployments/trigger:
         post:
             tags:
@@ -52610,6 +53751,17 @@ tags:
          terminates.
     - name: synq.schedule.v1.ScheduleService
       description: ScheduleService provides schedule evaluation utilities.
+    - name: synq.knowledge.v1alpha.KnowledgeService
+      description: |-
+        KnowledgeService reads the knowledge a team keeps about its data: knowledge
+         pages written or imported by the team, and the descriptions people write for
+         entities.
+
+         Knowledge pages form a tree, and pages and entities are pinned to each
+         other. Nothing here is the description an entity's own source reports, which
+         `synq.entities.entities.v1.EntitiesService` reads.
+
+         This API is in alpha: its shape may change without notice.
     - name: synq.owners.v1.OwnersService
       description: |-
         OwnersService manages owners and their ownerships — the "alert routing as
@@ -52669,6 +53821,32 @@ tags:
          for the calling user, how each view relates to them (mine / shared / granted)
          and what they are allowed to do with it. Workspace administrators can manage
          any view in the workspace.
+    - name: synq.recommendations.v1.RecommendationsService
+      description: |-
+        RecommendationsService lists the changes Coalesce Quality recommends you
+         make, and records what you decided about them. See `Recommendation` for
+         what a recommendation is.
+
+         Recommendations are created and removed by Coalesce Quality itself: one
+         appears when something only you can change is found, and disappears once
+         it no longer holds. What you can do is decide whether a recommendation
+         stays in front of you:
+
+           - Dismiss hides it until something new is found about it: an object it
+             did not list before, or a different remediation.
+           - Ignore hides it for good.
+           - Restore undoes either.
+
+         Decisions are kept by recommendation id, so they keep applying when a
+         recommendation disappears and comes back.
+
+         A recommendation about an integration is also governed by that
+         integration's permissions: reading it needs a credential that can read
+         integrations, and deciding about it one that can edit them. One that cannot
+         does not see it listed.
+
+         Related services: `synq.integrations.v1.IntegrationsService` manages the
+         integrations recommendations can be about.
     - name: synq.auth.iam.v1.IamService
     - name: synq.platforms.v1.PlatformsService
       description: PlatformsService is a service for managing Platforms and Integrations.

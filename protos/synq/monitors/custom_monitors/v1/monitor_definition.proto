@@ -87,6 +87,8 @@ message MonitorFreshness {
 
 message MonitorCustomNumeric {
   string metric_aggregation = 1;
+  // The aggregation is never negative, so the anomaly engine never forecasts below 0.
+  bool never_negative = 2;
 }
 
 message MonitorVolume {}

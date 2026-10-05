@@ -39,4 +39,16 @@ message IamResponse {
   // tied to a Coalesce Quality user (i.e. `synq_user_id` is set); empty for
   // workspace-level or third-party tokens.
   optional string user_email = 9;
+  // Coalesce Catalog account the workspace is linked to. Unset when the
+  // workspace has no Catalog account, so nothing Catalog-backed (knowledge
+  // pages, Catalog-written descriptions) has anything to answer.
+  optional CatalogAccount catalog_account = 10;
+}
+
+// A Coalesce Catalog account linked to a Coalesce Quality workspace.
+message CatalogAccount {
+  // Catalog's id of the account.
+  string id = 1;
+  // Name of the account in Coalesce Catalog.
+  string name = 2;
 }

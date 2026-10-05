@@ -262,6 +262,10 @@ enum UnresolvedConnectionReason {
   // connection mapped to a Postgres integration). The suite's SQL for that
   // side is written for the platform it names.
   UNRESOLVED_CONNECTION_REASON_PLATFORM_MISMATCH = 5;
+  // Reconciliation (ad-hoc or deployed, whichever was asked for) is turned
+  // off for the whole workspace, for every integration and every credential.
+  // No mapping resolves it.
+  UNRESOLVED_CONNECTION_REASON_DISABLED_FOR_WORKSPACE = 6;
 }
 
 // One entry per connection name the server failed to resolve. Returned

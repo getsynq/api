@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package synq.recommendations.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/recommendations/v1";
+
+// Recommendation is a change Coalesce Quality recommends you make: a grant an
+// integration's role is missing, a setting that stopped matching what runs, a
+// feature worth enabling, a review waiting for you. Nothing is broken; making
+// the change gets you more, or better, out of the product.
+//
+// A recommendation stays for as long as the condition holds, and disappears on
+// its own once it no longer does. You can dismiss it until something new is
+// found, or ignore it for good.
+message Recommendation {
+  // Stable id of the recommendation (UUID). The same recommendation for the
+  // same target always has the same id, also after it disappeared and came
+  // back, so a dismissal or an ignore keeps applying to it.
+  string recommendation_id = 1;
+  // What the recommendation is about.
+  RecommendationTarget target = 2;
+  // Stable identifier of the kind of recommendation (`stale_job_selection`),
+  // lower snake_case. It never changes for a given kind, so it is safe to
+  // filter or group on; the wording of `message` and `remediation` may
+  // improve.
+  string code = 3;
+  // What within the target the recommendation is about, when one target can
+  // carry the same kind of recommendation about several things ("job
+  // selection", a database name). Empty when it concerns the target as a
+  // whole.
+  string subject = 4;
+  // What was found, as one sentence.
+  string message = 5;
+  // What to change, and where.
+  string remediation = 6;
+  // The objects the recommendation concerns, one per entry.
+  repeated string details = 7;
+  // How many further objects exist beyond `details`. Zero when `details` lists
+  // all of them.
+  int32 details_omitted = 8;
+  // What you can do about it, most useful first, for a client to offer as
+  // buttons beside `remediation`. Empty when `remediation` is all there is to
+  // go on.
+  repeated RecommendationAction actions = 9;
+  // When the condition was first found, without it clearing in between.
+  google.protobuf.Timestamp first_stated_at = 10;
+  // When what is reported last changed: a new object, a different
+  // remediation, a reworded message, different actions.
+  google.protobuf.Timestamp changed_at = 11;
+  // Whether the recommendation is in front of you, after any dismissal or
+  // ignore.
+  RecommendationState state = 12;
+  // The dismissal or ignore standing against the recommendation. Still
+  // present when it reopened because something new was found since it was
+  // dismissed. Absent when nobody decided.
+  optional RecommendationDecision decision = 13;
+}
+
+// RecommendationTarget is what a recommendation is about.
+message RecommendationTarget {
+  oneof target {
+    option (buf.validate.oneof).required = true;
+    // The workspace as a whole: a feature to enable, a review waiting.
+    WorkspaceTarget workspace = 1;
+    // One integration: a grant its role lacks, a setting to change.
+    IntegrationTarget integration = 2;
+  }
+}
+
+// WorkspaceTarget is the workspace as a whole.
+message WorkspaceTarget {}
+
+// IntegrationTarget is one integration of the workspace.
+message IntegrationTarget {
+  // Id of the integration (UUID), as `synq.integrations.v1.IntegrationsService`
+  // knows it.
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// RecommendationTargetKind names a kind of target, for filtering.
+enum RecommendationTargetKind {
+  RECOMMENDATION_TARGET_KIND_UNSPECIFIED = 0;
+  // `RecommendationTarget.workspace`.
+  RECOMMENDATION_TARGET_KIND_WORKSPACE = 1;
+  // `RecommendationTarget.integration`.
+  RECOMMENDATION_TARGET_KIND_INTEGRATION = 2;
+}
+
+// RecommendationAction is one thing you can do about a recommendation.
+message RecommendationAction {
+  oneof action {
+    option (buf.validate.oneof).required = true;
+    // Open an integration's settings.
+    EditIntegrationAction edit_integration = 1;
+    // Open a page that explains the change.
+    LinkAction link = 2;
+    // Open a place in the Coalesce Quality app.
+    OpenInAppAction open_in_app = 3;
+  }
+}
+
+// EditIntegrationAction opens an integration's settings, where the change is
+// made through `synq.integrations.v1.IntegrationsService.UpdateIntegration` or
+// the app.
+message EditIntegrationAction {
+  // Id of the integration (UUID).
+  string integration_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // The configuration fields to change, named as in the integration's
+  // configuration message (`job_ids` on a dbt Cloud integration), so a client
+  // can take you straight to them. Empty when the change is not about
+  // particular fields.
+  repeated string config_fields = 2 [(buf.validate.field).repeated = {
+    max_items: 10
+    unique: true
+    items: {
+      string: {
+        max_len: 64
+        pattern: "^[a-z][a-z0-9_]*$"
+      }
+    }
+  }];
+}
+
+// LinkAction is a page that explains how to make the change: Coalesce Quality
+// documentation, or the documentation of a system the workspace connects to.
+message LinkAction {
+  // What the link is about ("Selecting dbt Cloud jobs", "Snowflake: GRANT
+  // privileges"), to show as the link text. Always set.
+  string title = 1 [(buf.validate.field) = {
+    required: true
+    string: {max_len: 100}
+  }];
+  // Absolute https URL of the page.
+  string url = 2 [(buf.validate.field) = {
+    required: true
+    string: {
+      uri: true
+      prefix: "https://"
+      max_len: 2000
+    }
+  }];
+  // Which system the page belongs to, to show that platform's icon beside the
+  // link. Unspecified for Coalesce Quality documentation or where no platform
+  // fits.
+  synq.platforms.v1.DataPlatformType platform = 3 [(buf.validate.field).enum.defined_only = true];
+}
+
+// OpenInAppAction opens a place in the Coalesce Quality app. The place is
+// named rather than given as a URL, so a client builds the link for its own
+// routes.
+message OpenInAppAction {
+  AppDestination destination = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+// AppDestination is a place in the Coalesce Quality app a recommendation can
+// send you to. A client that does not know a value offers no button for it.
+enum AppDestination {
+  APP_DESTINATION_UNSPECIFIED = 0;
+  // The review of the AI agent's prompt suggestions.
+  APP_DESTINATION_PROMPT_SUGGESTIONS = 1;
+}
+
+// RecommendationState is whether a recommendation is in front of you.
+enum RecommendationState {
+  RECOMMENDATION_STATE_UNSPECIFIED = 0;
+  // Nobody dismissed or ignored it, or something new was found since it was
+  // dismissed.
+  RECOMMENDATION_STATE_OPEN = 1;
+  // Dismissed, and nothing new was found since: no object it did not already
+  // list, and the same remediation. An object disappearing, the message being
+  // reworded or the actions changing keep it dismissed.
+  RECOMMENDATION_STATE_DISMISSED = 2;
+  // Ignored. Stays hidden whatever is found later.
+  RECOMMENDATION_STATE_IGNORED = 3;
+}
+
+// RecommendationDecision is a dismissal or an ignore.
+message RecommendationDecision {
+  RecommendationDecisionKind kind = 1;
+  // When the decision was made.
+  google.protobuf.Timestamp decided_at = 2;
+  // Who made it. Absent when the request identified no one.
+  optional synq.issues.actor.v1.Actor decided_by = 3;
+}
+
+// RecommendationDecisionKind is what was decided about a recommendation.
+enum RecommendationDecisionKind {
+  RECOMMENDATION_DECISION_KIND_UNSPECIFIED = 0;
+  // Hidden until something new is found.
+  RECOMMENDATION_DECISION_KIND_DISMISSED = 1;
+  // Hidden for good.
+  RECOMMENDATION_DECISION_KIND_IGNORED = 2;
+}

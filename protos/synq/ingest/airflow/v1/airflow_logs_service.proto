@@ -21,6 +21,8 @@ service AirflowLogsService {
     };
   }
 
+  // Accepts what a DataHub REST emitter sends when its server is set to
+  // `<public API>/api/ingest/airflow/v1`: it posts to `{server}/aspects?action=ingestProposal`.
   rpc IngestDatahubAspects(IngestDatahubAspectsRequest) returns (IngestDatahubAspectsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -28,7 +30,7 @@ service AirflowLogsService {
     };
     option (google.api.http) = {
       post: "/api/ingest/airflow/v1/aspects"
-      body: "aspects"
+      body: "request"
     };
   }
 }
@@ -45,8 +47,12 @@ message IngestLogRequest {
 message IngestLogResponse {}
 
 message IngestDatahubAspectsRequest {
+  // Request bodies of a DataHub REST emitter, each in the shape of `request`.
   repeated google.protobuf.Struct aspects = 1;
+  // The emitter's `action` query parameter, for example `ingestProposal`.
   optional string action = 2;
+  // The request body of a DataHub REST emitter, for example `{"proposal": {...}}`.
+  google.protobuf.Struct request = 3;
 }
 
 message IngestDatahubAspectsResponse {}

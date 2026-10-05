@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 56 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 58 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -136,6 +136,10 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
 | `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
+| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for |
+| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, |
+| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of |
+| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
 | `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | GenerateQuery generates a Query from a natural language description. |
@@ -780,6 +784,10 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`GET /api/issues/v1` |  |
 | `BatchGetIssues`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/by-id` |  |
 | `ListIssues`<br/>_synq.issues.v2.IssuesService_<br/>`GET /api/issues/v2` |  |
+| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for |
+| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, |
+| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of |
+| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a |
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
 | `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` |  |
 | `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` |  |
@@ -1024,6 +1032,31 @@ Send a test notification to an integration and replay an earlier delivery.
 | ------ | ----------- |
 | `Redeliver`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/{delivery_id}/redeliver` | Send an earlier delivery again, to the same integration, with the same |
 | `SendTestDelivery`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/test` | Send a test delivery to an integration, to confirm the endpoint is reachable |
+
+## Read Recommendations
+
+`SCOPE_RECOMMENDATIONS_READ`
+
+View the changes Coalesce Quality recommends making in your workspace and the systems it connects to, and what was decided about them.
+
+| Method | Description |
+| ------ | ----------- |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
+
+## Manage Recommendations
+
+`SCOPE_RECOMMENDATIONS_EDIT`
+
+Dismiss, ignore and restore recommendations.
+
+| Method | Description |
+| ------ | ----------- |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. Replaces |
+| `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | Ignore a recommendation for good, whatever is found about it later. |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it |
 
 ## Endpoint reference
 
@@ -1294,6 +1327,10 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `MarkInvestigating`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-investigating` | `SCOPE_ISSUES_EDIT` |
 | `MarkNoActionNeeded`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-no-action-needed` | `SCOPE_ISSUES_EDIT` |
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | `SCOPE_ISSUES_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchDeleteDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchDeployDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/batch/deployed` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
 | `BatchGetDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |
@@ -1338,6 +1375,11 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `DescribeResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/describe-resolver-ql` | — |
 | `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT` |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | `SCOPE_RECOMMENDATIONS_EDIT` |
+| `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | `SCOPE_RECOMMENDATIONS_EDIT` |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT` |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | `SCOPE_RECOMMENDATIONS_EDIT` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |

@@ -1,0 +1,238 @@
+syntax = "proto3";
+
+package synq.recommendations.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/recommendations/v1/recommendation.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/recommendations/v1";
+
+// RecommendationsService lists the changes Coalesce Quality recommends you
+// make, and records what you decided about them. See `Recommendation` for
+// what a recommendation is.
+//
+// Recommendations are created and removed by Coalesce Quality itself: one
+// appears when something only you can change is found, and disappears once
+// it no longer holds. What you can do is decide whether a recommendation
+// stays in front of you:
+//
+//   - Dismiss hides it until something new is found about it: an object it
+//     did not list before, or a different remediation.
+//   - Ignore hides it for good.
+//   - Restore undoes either.
+//
+// Decisions are kept by recommendation id, so they keep applying when a
+// recommendation disappears and comes back.
+//
+// A recommendation about an integration is also governed by that
+// integration's permissions: reading it needs a credential that can read
+// integrations, and deciding about it one that can edit them. One that cannot
+// does not see it listed.
+//
+// Related services: `synq.integrations.v1.IntegrationsService` manages the
+// integrations recommendations can be about.
+service RecommendationsService {
+  // List the ids of the workspace's recommendations, optionally limited by
+  // target and state. Fetch the recommendations themselves with
+  // `BatchGetRecommendations`. Ids are returned in a stable order, so paging
+  // is consistent while recommendations are added or removed.
+  //
+  // Returns INVALID_ARGUMENT for a malformed cursor.
+  rpc ListRecommendations(ListRecommendationsRequest) returns (ListRecommendationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/recommendations/v1"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECOMMENDATIONS_READ,
+        SCOPE_RECOMMENDATIONS_EDIT
+      ]
+    };
+  }
+
+  // Fetch recommendations by id. Ids that are unknown, belong to another
+  // workspace, no longer exist because the condition cleared, or concern an
+  // integration the credential cannot read are omitted from the response
+  // rather than erroring.
+  rpc BatchGetRecommendations(BatchGetRecommendationsRequest) returns (BatchGetRecommendationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/recommendations/v1/by-id"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECOMMENDATIONS_READ,
+        SCOPE_RECOMMENDATIONS_EDIT
+      ]
+    };
+  }
+
+  // Dismiss a recommendation until something new is found about it. Replaces
+  // an ignore. Dismissing again records the recommendation as it reads now,
+  // so it stays hidden until something newer than that is found.
+  //
+  // Returns NOT_FOUND when the recommendation does not exist in the
+  // workspace, and PERMISSION_DENIED when it concerns an integration the
+  // credential cannot edit.
+  rpc DismissRecommendation(DismissRecommendationRequest) returns (DismissRecommendationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/recommendations/v1/{recommendation_id}/dismiss"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+    };
+  }
+
+  // Ignore a recommendation for good, whatever is found about it later.
+  // Replaces a dismissal. Ignoring an ignored recommendation succeeds without
+  // change.
+  //
+  // Returns NOT_FOUND when the recommendation does not exist in the
+  // workspace, and PERMISSION_DENIED when it concerns an integration the
+  // credential cannot edit.
+  rpc IgnoreRecommendation(IgnoreRecommendationRequest) returns (IgnoreRecommendationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/recommendations/v1/{recommendation_id}/ignore"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+    };
+  }
+
+  // Remove the dismissal or ignore standing against a recommendation, so it
+  // is open again. Restoring a recommendation nobody decided about succeeds
+  // without change.
+  //
+  // Returns NOT_FOUND when the recommendation does not exist in the
+  // workspace, and PERMISSION_DENIED when it concerns an integration the
+  // credential cannot edit.
+  rpc RestoreRecommendation(RestoreRecommendationRequest) returns (RestoreRecommendationResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      post: "/api/recommendations/v1/{recommendation_id}/restore"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+    };
+  }
+}
+
+// Request to list recommendation ids.
+message ListRecommendationsRequest {
+  // Limit the list to these kinds of target. Empty lists every kind.
+  repeated RecommendationTargetKind target_kinds = 1 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // Limit the list to recommendations about these integrations (UUIDs).
+  // Implies the integration target kind. Empty applies no integration filter.
+  repeated string integration_ids = 2 [(buf.validate.field).repeated = {
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+  // Limit the list to recommendations in these states. Empty lists every
+  // state; pass `RECOMMENDATION_STATE_OPEN` for the ones still in front of
+  // you.
+  repeated RecommendationState states = 3 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // Cursor-based pagination. Omit to get every id in one response; set it
+  // without a `page_size` for pages of the default size.
+  optional synq.v1.Pagination pagination = 4;
+}
+
+// Response with a page of recommendation ids.
+message ListRecommendationsResponse {
+  repeated string recommendation_ids = 1;
+  // Pass `page_info.last_id` as the next cursor. Empty once there are no more.
+  synq.v1.PageInfo page_info = 2;
+}
+
+// Request to fetch recommendations by id.
+message BatchGetRecommendationsRequest {
+  // Ids of the recommendations (UUIDs).
+  repeated string recommendation_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+}
+
+// Response with the recommendations found, keyed by id.
+message BatchGetRecommendationsResponse {
+  map<string, Recommendation> recommendations = 1;
+}
+
+// Request to dismiss a recommendation.
+message DismissRecommendationRequest {
+  // Id of the recommendation (UUID).
+  string recommendation_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // Who is deciding. Optional: identity is completed from the calling
+  // credentials.
+  optional synq.issues.actor.v1.Actor actor = 2;
+}
+
+// Response with the recommendation as stored after the call.
+message DismissRecommendationResponse {
+  Recommendation recommendation = 1;
+}
+
+// Request to ignore a recommendation.
+message IgnoreRecommendationRequest {
+  // Id of the recommendation (UUID).
+  string recommendation_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+  // Who is deciding. Optional: identity is completed from the calling
+  // credentials.
+  optional synq.issues.actor.v1.Actor actor = 2;
+}
+
+// Response with the recommendation as stored after the call.
+message IgnoreRecommendationResponse {
+  Recommendation recommendation = 1;
+}
+
+// Request to restore a recommendation.
+message RestoreRecommendationRequest {
+  // Id of the recommendation (UUID).
+  string recommendation_id = 1 [(buf.validate.field) = {
+    required: true
+    string: {uuid: true}
+  }];
+}
+
+// Response with the recommendation as stored after the call.
+message RestoreRecommendationResponse {
+  Recommendation recommendation = 1;
+}
