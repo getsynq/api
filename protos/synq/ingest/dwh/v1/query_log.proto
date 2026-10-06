@@ -60,6 +60,11 @@ message QueryLog {
 
   // Native lineage from the platform (if available)
   optional QueryLogNativeLineage native_lineage = 19;
+
+  // The platform's id for the unit of work the query ran in: the session, or for a statement
+  // of a BigQuery script run outside a session the script job. Queries that share one ran one
+  // after another on one connection or in one script. Empty if the platform has none.
+  optional string session_id = 20;
 }
 
 // QueryLogDwhContext represents the execution context of a query.

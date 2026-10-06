@@ -77,4 +77,10 @@ enum SqlConstruct {
   //Set when the SQL could not be parsed. Lets unparseable entities be
   //filtered without inspecting the underlying parse error.
   SQL_CONSTRUCT_UNSUPPORTED_SQL_SYNTAX = 100;
+  //Set when the parser read at least one column comparison from the SQL: a
+  //join key, or a comparison relating two columns without joining them.
+  SQL_CONSTRUCT_HAS_JOIN_PREDICATES = 101;
+  //Set when at least one join key compares two columns that both belong to
+  //known entities and are declared in their schemas.
+  SQL_CONSTRUCT_HAS_JOIN_PAIRS = 102;
 }

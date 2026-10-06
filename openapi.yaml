@@ -16760,6 +16760,8 @@ components:
                 - SQL_CONSTRUCT_HAS_AGGREGATE_FUNCTION
                 - SQL_CONSTRUCT_HAS_WINDOW_FUNCTION
                 - SQL_CONSTRUCT_UNSUPPORTED_SQL_SYNTAX
+                - SQL_CONSTRUCT_HAS_JOIN_PREDICATES
+                - SQL_CONSTRUCT_HAS_JOIN_PAIRS
             description: |-
                 SqlConstruct enumerates the SQL features detected in an entity's query.
                  Multiple values can be set on a single statement (e.g. a query with both a
@@ -18841,6 +18843,13 @@ components:
                     description: Native lineage from the platform (if available)
                     nullable: true
                     $ref: '#/components/schemas/synq.ingest.dwh.v1.QueryLogNativeLineage'
+                sessionId:
+                    type: string
+                    description: |-
+                        The platform's id for the unit of work the query ran in: the session, or for a statement
+                         of a BigQuery script run outside a session the script job. Queries that share one ran one
+                         after another on one connection or in one script. Empty if the platform has none.
+                    nullable: true
             title: QueryLog
             required:
                 - queryId
