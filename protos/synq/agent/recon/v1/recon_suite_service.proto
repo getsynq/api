@@ -21,6 +21,12 @@ service SuiteConfigService {
   // Upsert a managed suite config. Creates if new, updates with new version if exists.
   // The suite_id equals the suite name (from ReconciliationSuite.name).
   // Validates the ReconciliationSuite proto. Does NOT validate connections exist.
+  // A suite with `reporting.level: detailed` gets INVALID_ARGUMENT with a
+  // SuiteValidationFailure detail. To find all other problems before you save,
+  // call YamlService.ValidateSuite.
+  //
+  // Use expected_state_at or create_only to save only when a condition is
+  // true. Without them, the save replaces the suite that is stored.
   rpc UpsertSuiteConfig(UpsertSuiteConfigRequest) returns (UpsertSuiteConfigResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -105,6 +111,12 @@ service SuiteConfigService {
 // --- Managed suite requests ---
 
 message UpsertSuiteConfigRequest {
+  option (buf.validate.message).cel = {
+    id: "create_only_without_expected_state_at"
+    message: "do not set create_only and expected_state_at together: a new suite has no version to expect"
+    expression: "!this.create_only || !has(this.expected_state_at)"
+  };
+
   // The suite configuration to store. suite_id will equal suite.name.
   ReconciliationSuite suite = 1 [(buf.validate.field).required = true];
 
@@ -113,6 +125,29 @@ message UpsertSuiteConfigRequest {
 
   // Actor performing the upsert. Required.
   synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
+
+  // Save the suite only if this is still its latest version. Set it to the
+  // `state_at` of the SuiteConfig that the edit started from.
+  //
+  // If a different save changed the suite after that version, or if someone
+  // deleted the suite, the request does not save. It gets FAILED_PRECONDITION
+  // with a SuiteConfigConflict detail, which has the latest version.
+  //
+  // If you do not set it, the save replaces the latest version.
+  optional google.protobuf.Timestamp expected_state_at = 5;
+
+  // Save the suite only if no suite has this name. This prevents an upload
+  // that replaces a suite by accident. If the name is in use, the request gets
+  // ALREADY_EXISTS. You can use the name of a deleted suite.
+  bool create_only = 6;
+}
+
+// The error details of the FAILED_PRECONDITION error that an
+// UpsertSuiteConfigRequest gets when expected_state_at is not the latest
+// version of the suite.
+message SuiteConfigConflict {
+  // The latest version of the suite. It is not set when the suite was deleted.
+  optional SuiteConfig current = 1;
 }
 
 message UpsertSuiteConfigResponse {
@@ -383,10 +418,20 @@ message SuiteConfig {
   repeated ReconciliationConfigSummary reconciliation_summaries = 9;
 
   // Who last updated this config.
+  //
+  // `updated_by.via` tells where the save came from. It is VIA_API for a save
+  // through the public API, for example from `synq-recon upload-config`. It is
+  // VIA_UNSPECIFIED for a save in the Coalesce Quality app.
   optional synq.issues.actor.v1.Actor updated_by = 10;
 
-  // When this version was created.
+  // When this version was created. To save an edit of this version only if
+  // no other save changed the suite, send this value as
+  // UpsertSuiteConfigRequest.expected_state_at.
   google.protobuf.Timestamp state_at = 11;
+
+  // The summary of the change that the save gave. It is not set when the save
+  // gave no summary.
+  optional string change_summary = 12;
 }
 
 // SuiteConfigVersion represents a historical version of a suite config.

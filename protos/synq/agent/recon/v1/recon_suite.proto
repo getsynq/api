@@ -84,6 +84,10 @@ message ReconciliationSuite {
   // suite, local or server-side; a run-level override (a CLI flag, the
   // execution_timeout on a trigger or on a deployment) takes precedence.
   optional ExecutionConfig execution = 12;
+
+  // Default comparison settings for every reconciliation in the suite. A
+  // reconciliation's own comparison settings take precedence, field by field.
+  optional ComparisonConfig comparison = 13;
 }
 
 // ExecutionConfig holds the suite's execution settings. Every field is
@@ -275,6 +279,68 @@ message Reconciliation {
   // Row count comparison settings. Only used when mode is ROW_COUNT.
   // Sets the tolerance a difference in row counts may stay within.
   optional RowCountConfig row_count = 24;
+
+  // How column values are compared in ROW_CHECKSUM mode. Overrides the suite's
+  // comparison settings. When not set, the suite's apply, and without those
+  // every column is compared at the precision its types on both sides allow.
+  optional ComparisonConfig comparison = 25;
+}
+
+// ComparisonConfig controls how column values are compared in ROW_CHECKSUM
+// mode. It has no effect in ROW_COUNT and AGGREGATE modes.
+message ComparisonConfig {
+  option (buf.validate.message).cel = {
+    id: "comparison_columns_unique"
+    message: "each column may appear once in comparison columns"
+    expression: "this.columns.all(c, this.columns.filter(d, d.column.lowerAscii() == c.column.lowerAscii()).size() == 1)"
+  };
+
+  // How many decimal places decimal and floating-point columns are compared
+  // at, or exact. When not set, a decimal column is compared at the scale both
+  // sides share, and a floating-point column at the digits both sides hold.
+  // Integer, text, timestamp and other columns are not affected.
+  optional NumericScale numeric_scale = 1;
+
+  // Settings for individual columns, overriding numeric_scale above.
+  repeated ColumnComparison columns = 2;
+}
+
+// ColumnComparison holds the comparison settings of one column.
+message ColumnComparison {
+  // Column name as the source side reports it, matched case-insensitively.
+  // With a column_mapping, this is the source column of the pair.
+  string column = 1 [(buf.validate.field) = {
+    required: true
+    string: {min_len: 1}
+  }];
+
+  // How many decimal places this column is compared at, or exact. Overrides
+  // the reconciliation's and the suite's numeric_scale.
+  optional NumericScale numeric_scale = 2;
+}
+
+// NumericScale is the precision a numeric column is compared at.
+message NumericScale {
+  oneof value {
+    option (buf.validate.oneof).required = true;
+
+    // Round both sides to this many decimal places before comparing, whatever
+    // their types. A value that differs only beyond the last place matches.
+    // Use it to tolerate a known rounding by a loader, or to compare a
+    // floating-point column with a decimal one.
+    int32 places = 1 [(buf.validate.field).int32 = {
+      gte: 0
+      lte: 18
+    }];
+
+    // Compare at the full precision the column holds. A decimal is compared
+    // at its declared scale, which must be known and the same on both sides,
+    // otherwise the reconciliation fails rather than rounding either side. A
+    // floating-point column is compared digit for digit, which needs both sides
+    // on the same kind of database: across two different ones the run fails
+    // with a message instead. Must be true when set.
+    bool exact = 2 [(buf.validate.field).bool.const = true];
+  }
 }
 
 // RowCountConfig defines row count comparison settings.

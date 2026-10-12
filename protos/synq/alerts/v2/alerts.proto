@@ -66,6 +66,16 @@ message Alert {
     // Fires on incident state transitions.
     IncidentLifecycleAlert incident_lifecycle = 13;
   }
+
+  // Config ID this alert was deployed from through configuration as code, unset
+  // otherwise. Immutable after creation; an empty string is the config of a
+  // deploy that declares no namespace. To move an alert to another config,
+  // delete it and recreate it under the same `fqn`.
+  optional string config_id = 14;
+
+  // Output-only opaque tag, changed by every write. Pass it back as `etag` on a
+  // write to guard against overwriting a concurrent change.
+  string etag = 15;
 }
 
 // Owner attributes an alert to an owner and ownership. Only entity-scoped alerts

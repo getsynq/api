@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package synq.entities.sql_insights.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/sql_insights/v1/join_types.proto";
 import "synq/entities/v1/sql_construct.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -10,9 +13,9 @@ option go_package = "github.com/getsynq/api/entities/sql_insights/v1";
 
 // SqlInsightsService exposes analytical information about the SQL used across a
 // workspace's entities. It answers questions such as "which SQL constructs are
-// used in my warehouse, and by how many entities" and "what SQL constructs
-// does this specific entity use", without requiring the caller to re-parse any
-// SQL.
+// used in my warehouse, and by how many entities", "what SQL constructs does
+// this specific entity use" and "which columns does building this entity join
+// on", without requiring the caller to re-parse any SQL.
 service SqlInsightsService {
   // ListSqlConstructs returns the distribution of SQL constructs across all
   // entities in the workspace. Every count is a number of entities, not a number
@@ -33,11 +36,12 @@ service SqlInsightsService {
     option (google.api.http) = {get: "/api/sql-insights/v1/constructs"};
   }
 
-  // BatchSqlDetails returns the SQL details (currently the set of detected SQL
-  // constructs) for each of the requested entities, keyed by their synq path.
-  // Every requested path appears in the response, including a path with no SQL
+  // BatchSqlDetails returns the SQL details for each of the requested entities,
+  // keyed by their synq path: the set of detected SQL constructs and, when the
+  // request asks for them, the joins that building the entity makes. Every
+  // requested path appears in the response, including a path with no SQL
   // details and a path matching no entity; both are returned with an empty set
-  // of constructs.
+  // of constructs and no joins.
   rpc BatchSqlDetails(BatchSqlDetailsRequest) returns (BatchSqlDetailsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -52,6 +56,191 @@ service SqlInsightsService {
       body: "*"
     };
   }
+
+  // ListJoinPatterns lists how other SQL joins a table, or one of its columns:
+  // every join key that the SQL of a table, view or model in the workspace
+  // uses to join the requested entity, read from the requested entity's side,
+  // and which SQL makes it. It is the reverse of `BatchSqlDetails` joins, which
+  // say how building one entity joins others: here the requested entity is the
+  // one being joined.
+  //
+  // The requested entity is taken together with every entity that is the same
+  // object, like a dbt model, the table it builds and that table in a
+  // catalog, so asking about any of them returns the joins on all of them.
+  rpc ListJoinPatterns(ListJoinPatternsRequest) returns (ListJoinPatternsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/sql-insights/v1/join-patterns"};
+  }
+}
+
+// ListJoinPatternsRequest names the table to list join patterns for.
+message ListJoinPatternsRequest {
+  // The synq path of the table, view or model to list the join patterns of,
+  // as the `paths` of `BatchSqlDetailsRequest` take it.
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1,
+    max_len: 4096
+  }];
+  // Set to return only the patterns whose key compares this column of the
+  // entity, like `customer_id`. Matched case-insensitively. Leave empty for
+  // every column.
+  string column = 2 [(buf.validate.field).string.max_len = 4096];
+  // Set to return only how the entity is joined with this other entity, which
+  // answers "how do I join these two tables". A key that also compares a third
+  // table keeps only its comparisons with this one. Like `entity_id`, it
+  // matches every entity that is the same object. Leave empty for joins with
+  // any entity.
+  string other_entity_id = 3 [(buf.validate.field).string.max_len = 4096];
+  // Set to also list the joins that queries in the warehouse's query history
+  // made in a window, with QUERY_LOG evidence. Leave unset for the joins that
+  // SQL definitions make only.
+  JoinQueryLogRequest query_log = 4;
+  // Set to return only the patterns whose every side is a plain column, with
+  // no expression around it, like `lower(email)` or a cast.
+  bool bare_only = 5;
+}
+
+// JoinQueryLogRequest says which hours of query history to read joins from,
+// and which joins seen only there to leave out.
+message JoinQueryLogRequest {
+  option (buf.validate.message).cel = {
+    id: "join_query_log_request.from_before_to"
+    message: "from must be before to"
+    expression: "this.from < this.to"
+  };
+  // The window, from `from` up to but not including `to`. Each end is taken
+  // at the start of its UTC hour. It spans at most 92 days.
+  google.protobuf.Timestamp from = 1 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp to = 2 [(buf.validate.field).required = true];
+  // A pattern seen only in the query history is listed when it reaches any
+  // of these thresholds that is set. 0 sets none, and with none set every
+  // pattern is listed. A pattern that a SQL definition makes is always
+  // listed.
+  uint64 min_queries = 3;
+  uint32 min_logins = 4;
+}
+
+// ListJoinPatternsResponse lists the join patterns of the requested entity.
+message ListJoinPatternsResponse {
+  // The join patterns. Those that a SQL definition makes come first, then
+  // those of the query history only, by distinct logins, the last hour seen
+  // and queries. Empty when no SQL in the workspace joins the entity, or none
+  // was parsed yet.
+  repeated JoinPattern patterns = 1;
+  // How many hours of the `query_log` window the query history covered in
+  // full. 0 with no QUERY_LOG pattern means that no query history was read
+  // for the window, not that no query made a join.
+  uint32 query_log_covered_hours = 2;
+}
+
+// JoinPattern is one way to join the requested entity: a join key, and the
+// SQL that joins on it. The same key written in several SQL definitions is
+// one pattern listing each of them.
+message JoinPattern {
+  // The comparisons of the key, read from the requested entity's side and
+  // ordered by its column. More than one is a composite key: a row matches
+  // when every comparison holds. Never empty.
+  repeated JoinKeyPart key = 1;
+  // The comparisons between a column and a literal that the same ON clauses
+  // add, as SQL, like `c.status = 'active'`. They make the join conditional.
+  // Each is listed once, in the order first seen.
+  repeated string filters = 2 [(buf.validate.field).repeated.items.string.max_len = 100000];
+  // Where the pattern was seen.
+  repeated JoinEvidenceKind evidence_kinds = 3;
+  // Each join, in the SQL of a table, view or model in the workspace, that
+  // joins on this key. Ordered by `entity_id`. Entities that are the same
+  // object are listed once: a join both a dbt model and the view it builds
+  // make is listed from the model, as `BatchSqlDetails` reads it.
+  repeated JoinPatternSource sources = 4;
+  // How queries in the query history made the join in the requested window.
+  // Set when `evidence_kinds` holds QUERY_LOG.
+  JoinQueryLogEvidence query_log = 5;
+}
+
+// JoinQueryLogEvidence sums the queries that made a join in the requested
+// window. A query counts once per join, also for a composite key.
+message JoinQueryLogEvidence {
+  // The queries that made the join.
+  uint64 queries = 1;
+  // The distinct warehouse users that ran them. A query that names no user
+  // adds none.
+  uint32 distinct_logins = 2;
+  // The first and the last hour the join was seen in, each the start of its
+  // UTC hour.
+  google.protobuf.Timestamp first_hour = 3;
+  google.protobuf.Timestamp last_hour = 4;
+  // Who ran the queries, most queries first.
+  repeated JoinIssuer issuers = 5;
+  // The warehouse's id of a query of the last hour that made the join.
+  string sample_query_id = 6 [(buf.validate.field).string.max_len = 4096];
+}
+
+// JoinIssuer is one tool, or one entity of a tool, that ran queries making a
+// join. An issuer entity, like a dbt model or a Looker dashboard, has the
+// role that the entity of a SQL definition has in `sources`.
+message JoinIssuer {
+  // The tool that ran the queries, from the query's tag, as the lowercase
+  // platform name, like `looker` or `dbt_cloud`. Empty when no tag names a
+  // tool: people, or a tool that is not recognized.
+  string platform = 1 [(buf.validate.field).string.max_len = 256];
+  // The entity that ran the queries, when the tag names one. Empty
+  // otherwise. It is the same opaque identifier the request's `entity_id`
+  // takes.
+  string entity_id = 2 [(buf.validate.field).string.max_len = 4096];
+  // The queries it ran that made the join.
+  uint64 queries = 3;
+  // The distinct warehouse users that ran them.
+  uint32 distinct_logins = 4;
+}
+
+// JoinKeyPart is one comparison of a join key, read from the side of the
+// requested entity: `column` belongs to the requested entity, or to an entity
+// that is the same object, and `other` to the entity it is joined with.
+message JoinKeyPart {
+  // The requested entity's side of the comparison.
+  JoinColumn column = 1;
+  // The side it is compared with.
+  JoinColumn other = 2;
+  // The kind of join, seen from `column`'s side. A join the SQL writes as
+  // `other RIGHT JOIN column` reads as LEFT_OUTER here, as it keeps every row
+  // of `column`'s table.
+  JoinKind kind = 3;
+  // The comparison, read as `column <operator> other`.
+  JoinOperator operator = 4;
+  // Set for the side with a role of its own in an ASOF, UPDATE_FROM,
+  // DELETE_USING or MERGE join: the side whose rows look for a match in an
+  // ASOF join, or the table the statement writes to.
+  bool leads = 5;
+}
+
+// JoinPatternSource is one join in the SQL of one entity that joins on the
+// pattern's key.
+message JoinPatternSource {
+  // The entity whose SQL makes the join. It is the same opaque identifier the
+  // request's `entity_id` takes.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 4096];
+  // Index of the statement the join is in, among the SQL statements of
+  // `entity_id`, counting from 0.
+  uint32 statement_index = 2;
+  // Index of the join within its statement, counting from 0. It is the
+  // `join_index` of the same join in `BatchSqlDetails` for `entity_id`.
+  uint32 join_index = 3;
+}
+
+// JoinEvidenceKind says where a join pattern was seen.
+enum JoinEvidenceKind {
+  JOIN_EVIDENCE_KIND_UNSPECIFIED = 0;
+  // The SQL that builds a table, view or model joins on the key.
+  JOIN_EVIDENCE_KIND_SQL_DEFINITION = 1;
+  // Queries in the warehouse's query history made the join.
+  JOIN_EVIDENCE_KIND_QUERY_LOG = 2;
 }
 
 // ListSqlConstructsRequest has no fields: the result is scoped to the workspace
@@ -79,12 +268,19 @@ message BatchSqlDetailsRequest {
   // uniquely identifies an entity and can be obtained from the `synq_paths`
   // field of other entity responses.
   repeated string paths = 1;
+  reserved 2;
+  reserved "include_join_pairs";
+  // Set to return each entity's joins in `SqlDetails.joins`. Off by default:
+  // most callers want only the constructs, and an entity whose SQL joins many
+  // tables carries every column it joins on.
+  bool include_joins = 3;
 }
 
 // BatchSqlDetailsResponse maps each requested synq path to its SQL details.
 message BatchSqlDetailsResponse {
-  // SQL details keyed by synq path. Every requested path is present; a path
-  // with no SQL details has an empty set of constructs.
+  // SQL details keyed by synq path, exactly as requested. Every requested path
+  // is present; a path with no SQL details has an empty set of constructs and
+  // no joins.
   map<string, SqlDetails> sql_details = 1;
 }
 
@@ -96,4 +292,103 @@ message SqlDetails {
   // can be present on a single entity (e.g. a query with both a CTE and an
   // INNER JOIN reports HAS_CTE, HAS_ANY_JOIN and INNER_JOIN).
   repeated synq.entities.v1.SqlConstruct sql_constructs = 2;
+  reserved 3;
+  reserved "join_pairs";
+  // How building this entity joins other tables: every join whose key compares
+  // a column of one known entity with a column of another. A join is left out
+  // when none of its key's comparisons can be tied to one column of a known
+  // entity on both sides, and a comparison that cannot is left out of its
+  // join's `conditions`.
+  //
+  // The joins come from the entity's own SQL and from the SQL of every entity
+  // that is the same object, like a dbt model, the table it builds and that
+  // table in a catalog. Each of them is answered with the same list. A join
+  // found in more than one of those SQLs is listed once: two joins are the
+  // same when their conditions compare the same columns with the same
+  // operators and the same expressions, a column of the dbt model and the same
+  // column of the table it builds counting as one. The join kind does not tell
+  // joins apart.
+  //
+  // A model's or a node's joins come first, in the order its SQL makes them,
+  // then the joins only a warehouse's definition of the same object makes.
+  //
+  // Empty unless the request set `include_joins`, and for an entity whose SQL
+  // was not parsed yet or joins nothing.
+  repeated Join joins = 4;
+}
+
+// Join is one join in a SQL statement, like
+// `LEFT JOIN customers c ON o.customer_id = c.id AND c.status = 'active'`.
+message Join {
+  // The entity whose SQL the join was read from: the requested entity, or one
+  // that is the same object. `statement_index`, `join_index` and each
+  // condition's `location` address that entity's SQL, which can differ from
+  // the requested entity's. A join that both a model's or a node's SQL and the
+  // warehouse's definition of what it builds make is read from the model or
+  // the node, as a warehouse reports its own wrapping around the SQL a model
+  // runs. It is the same opaque identifier the request's `paths` take.
+  string source_entity_id = 1 [(buf.validate.field).string.max_len = 4096];
+  // The kind of join, like INNER or LEFT_OUTER, as the SQL wrote it. Which
+  // table it keeps every row of follows the order of the tables in the FROM
+  // clause, not the order of a condition's `left` and `right`.
+  JoinKind kind = 2;
+  // The comparisons the join matches rows on, in the order the SQL wrote them,
+  // like `o.customer_id = c.id`. More than one is a composite key: a row
+  // matches when every condition holds. Never empty.
+  repeated JoinCondition conditions = 3;
+  // The comparisons of the same ON clause between a column and a literal, as
+  // SQL, like `c.status = 'active'`. They make the join conditional. Empty for
+  // a join written with USING, NATURAL or in a WHERE clause.
+  repeated string filters = 4 [(buf.validate.field).repeated.items.string.max_len = 100000];
+  // Index of the statement the join was read from, among the SQL statements of
+  // `source_entity_id`, counting from 0.
+  uint32 statement_index = 5;
+  // Index of the join within its statement, counting from 0. Together with
+  // `source_entity_id` and `statement_index` it identifies the join.
+  uint32 join_index = 6;
+}
+
+// JoinCondition is one comparison a join matches rows on: a column of one table
+// compared to a column of another.
+message JoinCondition {
+  // The operand the SQL wrote first. For an UPDATE, DELETE or MERGE it is the
+  // table the statement writes to.
+  JoinColumn left = 1;
+  // The operand the SQL wrote second.
+  JoinColumn right = 2;
+  // The comparison made between the two sides.
+  JoinOperator operator = 3;
+  // Where the comparison is in the SQL of the join's `source_entity_id`: the
+  // text `synq.entities.code.v1.CodeService.ListCode` returns for that entity
+  // under `CODE_SOURCE_SQL_DEFINITION`. Unset when the parser recorded no
+  // position.
+  SqlLocation location = 4;
+}
+
+// JoinColumn is one side of a join condition: a column of a known entity, as
+// the SQL reads it.
+message JoinColumn {
+  // The entity the column belongs to. It is the same opaque identifier the
+  // request's `paths` take, so it can be passed back to look that entity up.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 4096];
+  // The column name, lowercased.
+  string column = 2 [(buf.validate.field).string.max_len = 4096];
+  // How the column reaches the comparison.
+  JoinSideDerivation derivation = 3;
+  // The side's SQL when `derivation` is TRANSFORMED, like `lower(c.email)`.
+  // For an OTHER operator, the whole comparison. Empty otherwise.
+  string expression = 4 [(buf.validate.field).string.max_len = 100000];
+}
+
+// SqlLocation is a range of SQL text. Lines and columns are 1-based and
+// inclusive.
+message SqlLocation {
+  // First line of the range.
+  int64 start_line = 1;
+  // Column of the first character on the first line.
+  int64 start_column = 2;
+  // Last line of the range.
+  int64 end_line = 3;
+  // Column of the last character on the last line.
+  int64 end_column = 4;
 }

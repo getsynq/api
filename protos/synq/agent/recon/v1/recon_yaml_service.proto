@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package synq.agent.recon.v1;
 
+import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
+import "synq/agent/recon/v1/recon_suite_validation.proto";
 
 option go_package = "github.com/getsynq/api/agent/recon/v1";
 
@@ -12,6 +14,13 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 service YamlService {
   // ParseYaml parses a YAML config string into a ReconciliationSuite proto.
   // Only the suite configuration fields are extracted (connections are ignored).
+  //
+  // ParseYaml refuses two types of suite with INVALID_ARGUMENT and a
+  // SuiteValidationFailure detail:
+  //   - A suite with `setup_file` or `teardown_file`. These fields refer to
+  //     files that the server cannot read.
+  //   - A suite with `reporting.level: detailed`.
+  // To find all other problems in a suite, use ValidateSuite.
   rpc ParseYaml(ParseYamlRequest) returns (ParseYamlResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {
@@ -28,6 +37,59 @@ service YamlService {
       body: "*"
     };
   }
+
+  // ValidateSuite checks a suite and gives all the problems that it finds.
+  // Each problem has the path of its field. ValidateSuite does not save the
+  // suite, so an editor can call it after each change.
+  //
+  // ValidateSuite does the same checks as `synq-recon check-config` without
+  // `--db`. It also does the checks that apply only to suites that run in
+  // Coalesce Quality.
+  //
+  // ValidateSuite does not connect to a warehouse. Thus it does not find a
+  // query that refers to a table that does not exist.
+  //
+  // ValidateSuite does not compare the connection names with the integrations
+  // of the workspace. A suite gets its integrations when it runs or when you
+  // promote it.
+  rpc ValidateSuite(ValidateSuiteRequest) returns (ValidateSuiteResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      post: "/api/agent/recon/v1/yaml/validate"
+      body: "*"
+    };
+  }
+}
+
+message ValidateSuiteRequest {
+  // The suite to check.
+  oneof input {
+    option (buf.validate.oneof).required = true;
+
+    // A suite in the YAML format of synq-recon. Each issue then has the
+    // position of its problem in the YAML text.
+    string yaml = 1 [(buf.validate.field).string.min_len = 1];
+
+    // A suite in the format that Coalesce Quality stores. The request does not
+    // apply the validation rules of ReconciliationSuite. Thus an incorrect
+    // suite gets to ValidateSuite, and the response has one issue for each
+    // rule that the suite does not obey.
+    ReconciliationSuite suite = 2 [(buf.validate.field).ignore = IGNORE_ALWAYS];
+  }
+}
+
+message ValidateSuiteResponse {
+  // True when no issue has the ERROR severity. A suite with only warnings is
+  // valid.
+  bool valid = 1;
+
+  // All the problems in the suite. The errors come first, then the warnings.
+  // Empty when the suite has no problems.
+  repeated SuiteValidationIssue issues = 2;
+
+  // The suite from the yaml input. It is not set when the request gives the
+  // suite as a proto, or when the YAML text does not give a suite.
+  optional ReconciliationSuite suite = 3;
 }
 
 message ParseYamlRequest {

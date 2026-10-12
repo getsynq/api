@@ -61,6 +61,9 @@ for folder in $EXAMPLES_FOLDER/*/; do
     elif [[ "${lang}" == "python" ]]; then
         extension="py"
         codelang="python"
+    elif [[ "${lang}" == "http" ]]; then
+        extension="sh"
+        codelang="bash"
     else
         continue
     fi

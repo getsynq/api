@@ -129,7 +129,8 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
-| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
+| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, |
+| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
 | `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | List every trait a selection query can filter entities by. |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
@@ -388,10 +389,10 @@ Manage workspace members, including inviting users and updating their roles.
 
 | Method | Description |
 | ------ | ----------- |
-| `AddUserRole`<br/>_synq.users.v1.UsersService_ | Grants a role to a user in the workspace. |
-| `DeleteUserAliases`<br/>_synq.users.v1.UsersService_ |  |
-| `RemoveUserRole`<br/>_synq.users.v1.UsersService_ | Withdraws a role from a user in the workspace. |
-| `UpsertUserAliases`<br/>_synq.users.v1.UsersService_ |  |
+| `AddUserRole`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/roles` | Grants a role to a user in the workspace. |
+| `DeleteUserAliases`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/aliases/delete` |  |
+| `RemoveUserRole`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/roles/remove` | Withdraws a role from a user in the workspace. |
+| `UpsertUserAliases`<br/>_synq.users.v1.UsersService_<br/>`PUT /api/users/v1/aliases` |  |
 
 ## Read Users
 
@@ -404,12 +405,12 @@ View workspace members and their roles.
 | `ListDomainMembers`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/{domain_id}/members` | List domain members. |
 | `ListUserDomains`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`GET /api/domains/members/v1/users/{user_id}/domains` | List domains for the given user. |
 | `SetDefaultUserDomain`<br/>_synq.domains.members.v1.DomainMembersService_<br/>`POST /api/domains/members/v1/{domain_id}/default-for-user` | Set default domain for user. |
-| `BatchGetUsers`<br/>_synq.users.v1.UsersService_ |  |
-| `GetByAlias`<br/>_synq.users.v1.UsersService_ |  |
-| `GetByEmail`<br/>_synq.users.v1.UsersService_ |  |
-| `GetUserAliases`<br/>_synq.users.v1.UsersService_ |  |
-| `GetUserIdentities`<br/>_synq.users.v1.UsersService_ | Returns all canonical identity strings for a user. |
-| `ListUsers`<br/>_synq.users.v1.UsersService_ |  |
+| `BatchGetUsers`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/batch-get` |  |
+| `GetByAlias`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/by-alias` |  |
+| `GetByEmail`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/by-email` |  |
+| `GetUserAliases`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/aliases` |  |
+| `GetUserIdentities`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/identities` | Returns all canonical identity strings for a user. |
+| `ListUsers`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1` |  |
 
 ## Assign Users
 
@@ -509,6 +510,7 @@ Create, update, and delete alert rules and notification channels.
 | `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | Update the trigger and/or the kind-specific settings of an alert. |
 | `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | Replace the delivery targets of an existing alert configuration. |
 | `UpdateTemplate`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/template` | Set or clear the message template of an existing alert configuration. |
+| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored |
 
 ## Read Alerts
 
@@ -771,7 +773,8 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
-| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details (currently the set of detected SQL |
+| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, |
+| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
 | `BatchGetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_<br/>`POST /api/status/v1/incidents/by-id` | Get multiple entity statuses by their identifiers. |
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | Get specific entity status by its identifier. |
@@ -811,9 +814,9 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
-| `GetByEmail`<br/>_synq.users.v1.UsersService_ |  |
-| `GetUserIdentities`<br/>_synq.users.v1.UsersService_ | Returns all canonical identity strings for a user. |
-| `ListUsers`<br/>_synq.users.v1.UsersService_ |  |
+| `GetByEmail`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/by-email` |  |
+| `GetUserIdentities`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/identities` | Returns all canonical identity strings for a user. |
+| `ListUsers`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1` |  |
 
 ## MCP Write Access
 
@@ -831,6 +834,7 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. This alert notifies |
 | `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | Update the trigger and/or the kind-specific settings of an alert. |
 | `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | Replace the delivery targets of an existing alert configuration. |
+| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored |
 | `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
 | `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests |
 | `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
@@ -1129,6 +1133,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | `SCOPE_ALERTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | `SCOPE_ALERTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpdateTemplate`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/template` | `SCOPE_ALERTS_EDIT` |
+| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | `SCOPE_ALERTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `Iam`<br/>_synq.auth.iam.v1.IamService_<br/>`GET /api/iam/v1` | — |
 | `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
 | `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` | `SCOPE_DATACHECKS_SQLTESTS_EDIT` |
@@ -1259,6 +1264,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_<br/>`POST /api/status/v1/incidents/by-id` | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
@@ -1386,14 +1392,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `PreviewSchedules`<br/>_synq.schedule.v1.ScheduleService_<br/>`POST /api/schedule/v1/preview` | — |
-| `AddUserRole`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
-| `BatchGetUsers`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
-| `DeleteUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
-| `GetByAlias`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
-| `GetByEmail`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
-| `GetUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ` |
-| `GetUserIdentities`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
-| `ListUsers`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
-| `RemoveUserRole`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
-| `UpsertUserAliases`<br/>_synq.users.v1.UsersService_ | `SCOPE_USER_EDIT` |
+| `AddUserRole`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/roles` | `SCOPE_USER_EDIT` |
+| `BatchGetUsers`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/batch-get` | `SCOPE_USER_READ` |
+| `DeleteUserAliases`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/aliases/delete` | `SCOPE_USER_EDIT` |
+| `GetByAlias`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/by-alias` | `SCOPE_USER_READ` |
+| `GetByEmail`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/by-email` | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
+| `GetUserAliases`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/aliases` | `SCOPE_USER_READ` |
+| `GetUserIdentities`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/identities` | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
+| `ListUsers`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1` | `SCOPE_USER_READ`<br/>`SCOPE_MCP_READ` |
+| `RemoveUserRole`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/roles/remove` | `SCOPE_USER_EDIT` |
+| `UpsertUserAliases`<br/>_synq.users.v1.UsersService_<br/>`PUT /api/users/v1/aliases` | `SCOPE_USER_EDIT` |
 

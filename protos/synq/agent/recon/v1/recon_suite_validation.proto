@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package synq.agent.recon.v1;
+
+option go_package = "github.com/getsynq/api/agent/recon/v1";
+
+// The severity of a SuiteValidationIssue.
+enum SuiteValidationSeverity {
+  SUITE_VALIDATION_SEVERITY_UNSPECIFIED = 0;
+
+  // The suite has a problem that you must correct before you save or run it.
+  SUITE_VALIDATION_SEVERITY_ERROR = 1;
+
+  // The suite can run, but the result is possibly not what you want. Examples
+  // are a query that reads the current time, a window that filters no rows,
+  // and a duration that is too long to be correct. You can save a suite that
+  // has warnings.
+  SUITE_VALIDATION_SEVERITY_WARNING = 2;
+}
+
+// A line and a column in a YAML document. Both start at 1.
+message YamlPosition {
+  int32 line = 1;
+  int32 column = 2;
+}
+
+// One problem in a reconciliation suite.
+message SuiteValidationIssue {
+  SuiteValidationSeverity severity = 1;
+
+  // The field that has the problem. The path uses the field names of
+  // ReconciliationSuite, for example
+  // `reconciliations[2].comparison.columns[0].numeric_scale` or
+  // `execution.timeout`. The index of a list item is its position in the suite.
+  //
+  // A field that only YAML has uses its YAML key, for example
+  // `reconciliations[0].setup_file`.
+  //
+  // The path is empty when the problem is about the full suite, or when the
+  // YAML text is not valid YAML.
+  string field_path = 2;
+
+  // A description of the problem for the person who edits the suite.
+  string message = 3;
+
+  // The position of the problem in the YAML text. It is set only when the
+  // request gives the suite as YAML.
+  //
+  // It points to the key of the field in field_path. If the YAML does not have
+  // that key, for example because a required field is missing, it points to
+  // the nearest key that contains the field.
+  optional YamlPosition position = 4;
+}
+
+// The error details of an INVALID_ARGUMENT error that a request gets because
+// of the contents of its suite. It lists all issues with the ERROR severity,
+// so that the caller can show each issue next to its field.
+message SuiteValidationFailure {
+  repeated SuiteValidationIssue issues = 1;
+}

@@ -32,6 +32,24 @@ service AlertsService {
     };
   }
 
+  // Creates the alert when no alert holds `fqn`, otherwise replaces the stored
+  // alert with the state given here in a single write. Use it to make a stored
+  // alert match a declared state, e.g. when deploying alerts from configuration
+  // as code. See UpsertRequest for which fields cannot change.
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (google.api.http) = {
+      put: "/api/alerts/v2"
+      body: "*"
+    };
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ALERTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+  }
+
   // Retrieves a list of alert configurations based on filters.
   rpc List(ListRequest) returns (ListResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -246,12 +264,92 @@ message CreateRequest {
     // An incident lifecycle alert.
     synq.alerts.v2.IncidentLifecycleAlert incident_lifecycle = 10;
   }
+
+  // Config ID that owns this alert when deployed from configuration as code
+  // (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
+  // combined with `owner.ownership_id`.
+  optional string config_id = 11;
 }
 
 // CreateResponse returns the created alert configuration.
 message CreateResponse {
   // The alert configuration that was created.
   synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
+}
+
+// UpsertRequest states the complete alert held under `fqn`. Nothing is merged
+// with the stored alert: every field is written as sent, so an omitted
+// `template` clears it and the targets replace the stored ones. The only
+// exception is `is_disabled`, described on the field.
+//
+// The alert kind, the `owner` inside it, and `config_id` are fixed when an alert
+// is created. When an alert already holds `fqn` and any of them differs from the
+// stored value, the request fails with FAILED_PRECONDITION and nothing is
+// written; to change one, delete the alert and upsert it again.
+//
+// The trigger is stored as sent, as with Create. A `query` read back from the
+// API carries parts it cannot express as `unsupported`, so to write a stored
+// selection back unchanged send the `rendered_resolver_ql` you read as
+// `resolver_ql`.
+//
+// Incident-owner alerts cannot be upserted — manage them with
+// ToggleIncidentOwnerAlert.
+message UpsertRequest {
+  // Human-readable name for the alert configuration.
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // Fully qualified name identifying the alert. An alert holding it is
+  // replaced; otherwise a new alert is created with it.
+  string fqn = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 500
+  }];
+
+  // Custom template for the rendered alert message. Omit to use the default
+  // rendering, clearing any stored template. Currently applied only to issue
+  // alerts; accepted and ignored for other kinds.
+  optional synq.alerts.templates.v2.AlertTemplate template = 3;
+
+  // The alert. Exactly one kind must be specified, and for an existing alert it
+  // must be the kind it was created with.
+  oneof kind {
+    option (buf.validate.oneof).required = true;
+
+    // An issue alert on selected entities.
+    synq.alerts.v2.IssueLifecycleAlert issue_lifecycle = 4;
+    // A schema change alert on selected entities.
+    synq.alerts.v2.SchemaChangeAlert schema_change = 5;
+    // An incident lifecycle alert.
+    synq.alerts.v2.IncidentLifecycleAlert incident_lifecycle = 6;
+  }
+
+  // Config ID that owns this alert when deployed from configuration as code
+  // (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
+  // combined with `owner.ownership_id`. For an existing alert it must equal the
+  // stored value, where omitted and the empty string are different values.
+  optional string config_id = 7;
+
+  // Whether the alert is paused. When omitted, a new alert is created enabled
+  // and an existing alert keeps its current state, so a deploy that does not
+  // manage pausing never re-enables an alert someone paused in the app. Set it
+  // to make the deploy own the paused state.
+  optional bool is_disabled = 8;
+
+  // Optional optimistic-concurrency guard: the write fails with ABORTED if the alert
+  // holding `fqn` was modified since this etag was read, or no longer exists.
+  optional string etag = 9;
+}
+
+// UpsertResponse returns the stored alert after the write.
+message UpsertResponse {
+  // The alert configuration as stored.
+  synq.alerts.v2.Alert alert = 1 [(buf.validate.field).required = true];
+
+  // True when no alert held `fqn` and this call created one.
+  bool created = 2;
 }
 
 message AlertIdentifier {
@@ -278,6 +376,10 @@ message RenameRequest {
     min_len: 1
     max_len: 255
   }];
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 3;
 }
 
 // RenameResponse returns the renamed alert configuration.
@@ -294,6 +396,10 @@ message UpdateTargetsRequest {
   // The complete set of delivery targets, replacing the existing ones. At least
   // one target is required; the allowed target types depend on the alert's kind.
   repeated synq.alerts.v2.AlertingTarget targets = 2;
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 3;
 }
 
 // UpdateTargetsResponse returns the updated alert configuration.
@@ -338,6 +444,10 @@ message UpdateSettingsRequest {
     // Settings for an incident lifecycle alert.
     synq.alerts.v2.IncidentLifecycleAlertSettings incident_lifecycle = 5;
   }
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 6;
 }
 
 // UpdateSettingsResponse returns the updated alert configuration.
@@ -355,6 +465,10 @@ message UpdateTemplateRequest {
   // template and revert to the default rendering. Currently applied only to
   // issue alerts; accepted and ignored for other kinds.
   optional synq.alerts.templates.v2.AlertTemplate template = 2;
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 3;
 }
 
 // UpdateTemplateResponse returns the updated alert configuration.
@@ -368,6 +482,10 @@ message UpdateTemplateResponse {
 message DeleteRequest {
   // Identifier for the config to delete.
   AlertIdentifier identifier = 1 [(buf.validate.field).required = true];
+
+  // Optional optimistic-concurrency guard. When set, the delete fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 2;
 }
 
 // DeleteResponse confirms the deletion (empty response).
@@ -384,6 +502,10 @@ message ToggleEnabledRequest {
   // Whether the alert configuration should be enabled.
   // true = enable the alert, false = disable the alert.
   bool is_enabled = 2;
+
+  // Optional optimistic-concurrency guard. When set, the write fails with a
+  // conflict (ABORTED) if the alert was modified since this etag was read.
+  optional string etag = 3;
 }
 
 // ToggleEnabledResponse confirms the toggle operation (empty response).
@@ -419,6 +541,18 @@ message ListRequest {
   // Optional filter by owner of the alert configurations. Only issue and schema
   // change alerts carry an owner; filtering by owner therefore returns those only.
   optional synq.alerts.v2.Owner owner = 1;
+
+  // Optional filter by the config the alerts were deployed from.
+  // Unset: no config filtering. Empty `ids`: only alerts managed by some config.
+  // Non-empty `ids`: only alerts managed by one of those configs.
+  optional ConfigsFilter configs_filter = 2;
+}
+
+// ConfigsFilter selects alerts by the config that manages them.
+message ConfigsFilter {
+  // Config IDs to match. An empty string matches the config a deploy without a
+  // namespace uses.
+  repeated string ids = 1;
 }
 
 // ListResponse returns the filtered list of alert configurations.

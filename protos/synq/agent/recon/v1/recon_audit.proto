@@ -279,6 +279,32 @@ message Normalization {
 
   // Target column expressions after normalization.
   repeated string target_columns = 2;
+
+  // The precision each decimal and floating-point column was compared at, in
+  // column order. A MATCH on such a column is a match at this precision.
+  repeated NumericComparison numeric_columns = 3;
+}
+
+// NumericComparison records the precision one numeric column was compared at.
+message NumericComparison {
+  // Column name as the source side reports it.
+  string column = 1;
+
+  oneof precision {
+    // Both sides were rounded to this many decimal places.
+    int32 decimal_places = 2;
+
+    // Both sides were compared at this many significant digits, as
+    // floating-point values are by default.
+    int32 significant_digits = 3;
+
+    // Both sides were compared at the full precision the column holds.
+    bool exact = 4;
+  }
+
+  // True when the precision was set by the suite's comparison settings, false
+  // when it was derived from the column types on both sides.
+  bool configured = 5;
 }
 
 // StageAudit captures one reconciliation stage execution.

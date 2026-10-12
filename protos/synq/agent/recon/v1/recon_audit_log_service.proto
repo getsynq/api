@@ -58,7 +58,36 @@ message IngestAuditLogRequest {
   AuditLog audit_log = 1 [(buf.validate.field).required = true];
 }
 
-message IngestAuditLogResponse {}
+message IngestAuditLogResponse {
+  // Messages for the user who reported the run, such as a warning about part
+  // of the audit log that was not stored, or a link to the run in the app.
+  // Show each one as it is. Empty when there is nothing to say.
+  repeated IngestMessage messages = 1;
+}
+
+// IngestMessage is something to tell the user who reported a run.
+message IngestMessage {
+  // How prominently to show the message.
+  IngestMessageSeverity severity = 1;
+
+  // The message, as one or more plain sentences.
+  string text = 2;
+
+  // A link that goes with the message, for example to the run in the app.
+  optional string url = 3;
+}
+
+// IngestMessageSeverity is how prominently to show an IngestMessage.
+enum IngestMessageSeverity {
+  INGEST_MESSAGE_SEVERITY_UNSPECIFIED = 0;
+
+  // Information, for example where to view the run.
+  INGEST_MESSAGE_SEVERITY_INFO = 1;
+
+  // Something the user should know about the stored run, for example that
+  // part of what was reported was not stored.
+  INGEST_MESSAGE_SEVERITY_WARNING = 2;
+}
 
 message ListAuditLogsRequest {
   // Filter by suite name. When empty, returns all suites.

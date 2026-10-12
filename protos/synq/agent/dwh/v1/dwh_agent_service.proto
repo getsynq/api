@@ -49,6 +49,10 @@ message Hello {
     string instance = 5;
     // Enabled databases to query if connection supports multiple databases, can be empty.
     repeated string databases = 6;
+    // Login the connection runs its queries as, spelled as the platform's query history names
+    // the user: a user name, a service account's email, a service principal's client id. Empty
+    // when the configuration names none and only the credential knows it, such as an access token.
+    string login = 7;
   }
   repeated AvailableConnection available_connections = 4;
 }
