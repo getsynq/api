@@ -37,7 +37,8 @@ message User {
   string email = 4;
 
   // Canonical identity strings for this user.
-  // Includes "synq:<user_id>" and all linked aliases (email, slack, msteams).
+  // Includes "synq:<user_id>" and all linked aliases (email, slack, msteams,
+  // and every linked platform user as its "platform_user:" id).
   // Can be passed to ListIssues(interacted_by_identities) to filter issues this user interacted with.
   repeated string identities = 5;
 
@@ -65,6 +66,7 @@ message UserAlias {
     SlackUser slack = 30;
     EmailUser email = 31;
     MsTeamsUser ms_teams = 32;
+    PlatformUser platform_user = 33;
   }
 }
 
@@ -93,6 +95,22 @@ message SlackUser {
 message MsTeamsUser {
   string member_id = 1 [(buf.validate.field) = {
     string: {min_len: 1}
+    required: true
+  }];
+}
+
+// PlatformUser links a login on one connected platform, such as a warehouse
+// user, to a workspace member, so what the login reads counts as that member's.
+// A login belongs to at most one member, and a member may hold many logins.
+// Linking a login that another member holds moves it to the new member.
+message PlatformUser {
+  // The platform user id, as the platform users reads return it.
+  string platform_user_id = 1 [(buf.validate.field) = {
+    string: {
+      min_len: 1
+      max_len: 2048
+      prefix: "platform_user:"
+    }
     required: true
   }];
 }

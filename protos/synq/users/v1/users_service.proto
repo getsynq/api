@@ -54,6 +54,10 @@ service UsersService {
     };
   }
 
+  // Links aliases to users.
+  // A platform user alias needs SCOPE_PLATFORM_USER_LINK, every other alias type
+  // SCOPE_USER_EDIT. A request holding an alias the caller may not write is
+  // refused as a whole, and nothing is written.
   rpc UpsertUserAliases(UpsertUserAliasesRequest) returns (UpsertUserAliasesResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
@@ -61,10 +65,17 @@ service UsersService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_USER_EDIT]
+      scopes: [
+        SCOPE_USER_EDIT,
+        SCOPE_PLATFORM_USER_LINK
+      ]
     };
   }
 
+  // Removes aliases from users.
+  // A platform user alias removes only that login, every other alias type removes
+  // the user's alias of that type. The scopes are checked per alias, as for
+  // UpsertUserAliases.
   rpc DeleteUserAliases(DeleteUserAliasesRequest) returns (DeleteUserAliasesResponse) {
     option idempotency_level = IDEMPOTENT;
     option (google.api.http) = {
@@ -72,7 +83,10 @@ service UsersService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_USER_EDIT]
+      scopes: [
+        SCOPE_USER_EDIT,
+        SCOPE_PLATFORM_USER_LINK
+      ]
     };
   }
 
@@ -118,7 +132,8 @@ service UsersService {
   // If user_id is omitted, returns identities for the currently authenticated user.
   // These identity strings can be passed to ListIssues(interacted_by_identities)
   // to filter issues the user has interacted with.
-  // Format: "synq:<user_id>", "email:<email>", "slack:<slack_user_id>", "msteams:<member_id>", etc.
+  // Format: "synq:<user_id>", "email:<email>", "slack:<slack_user_id>", "msteams:<member_id>",
+  // and the "platform_user:" id of every linked platform user.
   rpc GetUserIdentities(GetUserIdentitiesRequest) returns (GetUserIdentitiesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {get: "/api/users/v1/identities"};

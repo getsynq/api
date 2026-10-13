@@ -1,0 +1,25 @@
+syntax = "proto3";
+package synq.entities.v1;
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// NumericCategory is the kind of number a column holds, which decides how many
+// significant digits its values carry. It is read from the column's type as the
+// data warehouse declares it, with the same name meaning a different size on
+// different warehouses taken into account: a bare FLOAT is single precision on
+// MySQL and a double on Snowflake.
+enum NumericCategory {
+  // The column does not hold a number, or its type is not recognised.
+  NUMERIC_CATEGORY_UNSPECIFIED = 0;
+  // A whole number: an integer type, or an exact decimal declared with scale 0
+  // (a Snowflake NUMBER(38,0)).
+  NUMERIC_CATEGORY_INTEGER = 1;
+  // An exact decimal (NUMERIC, DECIMAL, NUMBER) that may hold fractions, sized
+  // by its precision and scale when they are known.
+  NUMERIC_CATEGORY_DECIMAL = 2;
+  // A double-precision binary float, about 15 significant digits.
+  NUMERIC_CATEGORY_FLOAT = 3;
+  // A single-precision binary float (REAL, FLOAT4, Float32, BINARY_FLOAT),
+  // about 7 significant digits.
+  NUMERIC_CATEGORY_SINGLE_PRECISION_FLOAT = 4;
+}

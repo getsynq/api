@@ -4,6 +4,7 @@ package synq.ingest.dwh.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/numeric_category.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
 
@@ -42,6 +43,29 @@ message SchemaColumn {
   bool is_struct = 6;
   bool is_repeated = 7;
   repeated SchemaColumnField fields = 8;
+  // Declared precision of an exact numeric column (NUMERIC, DECIMAL, NUMBER), in
+  // decimal digits. Set whichever category the column reads as, so a NUMBER(38,0)
+  // is NUMERIC_CATEGORY_INTEGER with precision 38 and scale 0. Unset for every
+  // other column, and for an exact numeric whose size the data warehouse does
+  // not report.
+  optional int64 precision = 9 [(buf.validate.field) = {
+    int64: {
+      gte: 1
+      lte: 1000
+    }
+  }];
+  // Declared scale of an exact numeric column, set together with precision.
+  // Unset is not a scale of 0: it means the scale is not known.
+  optional int64 scale = 10 [(buf.validate.field) = {
+    int64: {
+      gte: 0
+      lte: 1000
+    }
+  }];
+  // What kind of number the column holds. Unspecified for a non-numeric column,
+  // and for one whose type is not recognised. When unspecified, it is read from
+  // native_type and scale.
+  synq.entities.v1.NumericCategory numeric_category = 11;
 }
 
 message SchemaColumnField {

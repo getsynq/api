@@ -104,6 +104,8 @@ message RecommendationAction {
     LinkAction link = 2;
     // Open a place in the Coalesce Quality app.
     OpenInAppAction open_in_app = 3;
+    // Start connecting a new integration.
+    NewIntegrationAction new_integration = 4;
   }
 }
 
@@ -161,6 +163,20 @@ message LinkAction {
 // routes.
 message OpenInAppAction {
   AppDestination destination = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+// NewIntegrationAction starts connecting a new integration of a platform the
+// workspace has none of, where it is made through
+// `synq.integrations.v1.IntegrationsService.CreateIntegration` or the app.
+message NewIntegrationAction {
+  // The platform to connect. A platform with several kinds of integration has
+  // one action per kind (`DATA_PLATFORM_TYPE_DBT_CLOUD` and
+  // `DATA_PLATFORM_TYPE_DBT_SELF_HOSTED` for dbt). A client that cannot
+  // connect the platform offers no button for it.
+  synq.platforms.v1.DataPlatformType platform = 1 [(buf.validate.field).enum = {
     defined_only: true
     not_in: [0]
   }];

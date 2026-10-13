@@ -301,8 +301,27 @@ message ComparisonConfig {
   // Integer, text, timestamp and other columns are not affected.
   optional NumericScale numeric_scale = 1;
 
-  // Settings for individual columns, overriding numeric_scale above.
+  // Settings for individual columns, overriding the settings above.
   repeated ColumnComparison columns = 2;
+
+  // How much of a second timestamp columns are compared to, timestamp key
+  // columns included. When not set, a timestamp is compared at the precision
+  // both sides hold, the coarser of the two. Date, numeric, text and other
+  // columns are not affected.
+  optional TimestampPrecision timestamp_precision = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // The time zone the source side's timestamps without a time zone hold their
+  // wall clock in, as an IANA name such as Europe/Warsaw. When not set, they
+  // are read as UTC. A timestamp with a time zone already says which instant
+  // it is and is not affected.
+  optional string source_time_zone = 4 [(buf.validate.field).string.min_len = 1];
+
+  // The time zone the target side's timestamps without a time zone hold their
+  // wall clock in, as source_time_zone does for the source side.
+  optional string target_time_zone = 5 [(buf.validate.field).string.min_len = 1];
 }
 
 // ColumnComparison holds the comparison settings of one column.
@@ -317,6 +336,39 @@ message ColumnComparison {
   // How many decimal places this column is compared at, or exact. Overrides
   // the reconciliation's and the suite's numeric_scale.
   optional NumericScale numeric_scale = 2;
+
+  // How much of a second this timestamp column is compared to. Overrides the
+  // reconciliation's and the suite's timestamp_precision.
+  optional TimestampPrecision timestamp_precision = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // The time zone the source side holds this column's wall clock in.
+  // Overrides the reconciliation's and the suite's source_time_zone.
+  optional string source_time_zone = 4 [(buf.validate.field).string.min_len = 1];
+
+  // The time zone the target side holds this column's wall clock in.
+  // Overrides the reconciliation's and the suite's target_time_zone.
+  optional string target_time_zone = 5 [(buf.validate.field).string.min_len = 1];
+}
+
+// TimestampPrecision is how much of a second a timestamp column is compared
+// to. Both sides are cut to it, never rounded, so a value that differs only
+// beyond it matches.
+enum TimestampPrecision {
+  TIMESTAMP_PRECISION_UNSPECIFIED = 0;
+  // Whole seconds.
+  TIMESTAMP_PRECISION_SECOND = 1;
+  // Milliseconds, three fractional digits.
+  TIMESTAMP_PRECISION_MILLISECOND = 2;
+  // Microseconds, six fractional digits.
+  TIMESTAMP_PRECISION_MICROSECOND = 3;
+  // Every fractional digit both sides hold, without cutting either: on one
+  // kind of database the column is compared as it is held, and between two
+  // the sides must hold the same precision, at most microseconds, otherwise
+  // the reconciliation fails rather than cutting the finer side.
+  TIMESTAMP_PRECISION_EXACT = 4;
 }
 
 // NumericScale is the precision a numeric column is compared at.

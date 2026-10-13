@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package synq.entities.lineage.folds.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/entities/lineage/folds/v1alpha";
+
+// LineageFold shows many similar entities as one node in lineage.
+//
+// Some tools write to a new table or a new storage path on every run: a date
+// sharded table (`events_20261008`), a staging table per load
+// (`tmp_load_<uuid>`), an export per day (`exports/orders_20261008`). Each of
+// them is its own entity, so lineage shows one node per day or per run. A fold
+// matches those entities and lineage shows them as the single fold node
+// instead, connected to everything any of them is connected to.
+//
+// Folding changes only how lineage is drawn. Every folded entity keeps its own
+// page, checks, owners and documentation, and switching a fold off brings the
+// original nodes back.
+message LineageFold {
+  // Id of the fold, a UUID chosen by the caller when the fold is created.
+  string id = 1;
+
+  reserved 2;
+  reserved "entity_id";
+
+  // Name shown on the fold's node, for example "orders exports".
+  string name = 3;
+
+  // Which entities the fold shows as its node.
+  FoldMatcher matcher = 4;
+
+  // Whether lineage applies the fold. A fold that is switched off is kept, so
+  // it can be switched back on.
+  bool enabled = 5;
+
+  // Entity tag for optimistic concurrency: pass it back on a change to guard
+  // against overwriting a concurrent one. Opaque, do not parse. Output only.
+  string etag = 6;
+
+  // When the fold was created. Output only.
+  google.protobuf.Timestamp created_at = 7;
+
+  // When the fold was last changed, switching it on or off included. Output
+  // only.
+  google.protobuf.Timestamp updated_at = 8;
+
+  // Who created the fold. Absent when it cannot be attributed to a person.
+  // Output only.
+  synq.issues.actor.v1.Actor created_by = 9;
+
+  // Who last changed the fold. Absent when it cannot be attributed to a
+  // person. Output only.
+  synq.issues.actor.v1.Actor updated_by = 10;
+}
+
+// FoldNode is one node lineage showed for a fold: the fold as it was applied,
+// and the entities the node stands for.
+//
+// The node's entity id is derived from all of that, so it names exactly one set
+// of members. When the fold or its members change, lineage shows the fold under
+// a new id, and the old id keeps answering with what it showed while a reader
+// may still hold it.
+message FoldNode {
+  // The node's entity id, `lineagefold-` followed by a hash.
+  string entity_id = 1;
+
+  // The fold the node was made from. It may since have been changed,
+  // switched off or deleted: read it with `BatchGetFolds`.
+  string fold_id = 2;
+
+  // The fold's name when the node was made.
+  string name = 3;
+
+  // The fold's matcher when the node was made.
+  FoldMatcher matcher = 4;
+
+  // The entities the node stands for, sorted.
+  repeated string member_entity_ids = 5;
+
+  // When the node was made.
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// FoldMatcher selects the entities a fold shows as its node.
+message FoldMatcher {
+  oneof kind {
+    option (buf.validate.oneof).required = true;
+
+    // Match entity ids against a pattern.
+    IdPatternMatcher id_pattern = 1;
+  }
+}
+
+// IdPatternMatcher matches the entity ids of the entities to fold.
+//
+// The pattern is an entity id with the part that changes replaced by
+// wildcards: `*` matches any run of characters and `?` exactly one. A wildcard
+// matches within one part of the id and never across the `::` between parts or
+// the `/` inside a storage path, so `bq-proj::ds::events_*` folds
+// `bq-proj::ds::events_20261008` but not anything inside another dataset, and
+// `s3-bucket::p-runs/*/orders` folds one path segment.
+//
+// The first part of the id (the instance, project or bucket) is written out in
+// full, and the pattern holds at least one wildcard.
+message IdPatternMatcher {
+  string pattern = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+}

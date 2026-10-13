@@ -1,0 +1,323 @@
+syntax = "proto3";
+
+package synq.entities.lineage.folds.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/lineage/folds/v1alpha/lineage_fold.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/lineage/folds/v1alpha";
+
+// LineageFoldsService manages the lineage folds of a workspace: rules that show
+// many similar entities, a table or a storage path written anew on every run,
+// as one node in lineage. See `LineageFold`.
+//
+// A change to a fold reaches lineage shortly after the call returns, not
+// within it.
+//
+// Fold ids are UUIDs chosen by the caller, so a retried create converges on
+// the same fold instead of making a second one. Pass the `etag` you last read
+// on a change to guard against overwriting a concurrent edit.
+//
+// This API is in alpha: its shape may change without notice.
+service LineageFoldsService {
+  // Create a fold. Repeating the same request returns the fold it created;
+  // creating a different fold under an id already in use is refused with
+  // ALREADY_EXISTS.
+  rpc CreateFold(CreateFoldRequest) returns (CreateFoldResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha"
+      body: "*"
+    };
+  }
+
+  // List the ids of every fold in the workspace, switched off ones included,
+  // oldest first. Read the folds with `BatchGetFolds`.
+  rpc ListFolds(ListFoldsRequest) returns (ListFoldsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/lineage/folds/v1alpha"};
+  }
+
+  // Read folds by id. An id with no fold is absent from the response.
+  rpc BatchGetFolds(BatchGetFoldsRequest) returns (BatchGetFoldsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/batch-get"
+      body: "*"
+    };
+  }
+
+  // Read fold nodes by entity id: which fold a node in a lineage response
+  // stands for, and which entities it showed. An id is answered for as long as
+  // lineage may still return it; an id with nothing to answer is absent from
+  // the response.
+  rpc BatchGetFoldNodes(BatchGetFoldNodesRequest) returns (BatchGetFoldNodesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/nodes/batch-get"
+      body: "*"
+    };
+  }
+
+  // Change the name shown on a fold's node.
+  rpc RenameFold(RenameFoldRequest) returns (RenameFoldResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/{id}/rename"
+      body: "*"
+    };
+  }
+
+  // Change which entities a fold matches. The fold's node keeps its entity id.
+  rpc UpdateFoldMatcher(UpdateFoldMatcherRequest) returns (UpdateFoldMatcherResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/{id}/matcher"
+      body: "*"
+    };
+  }
+
+  // Switch a fold on or off. A fold switched off is kept and listed, and
+  // lineage shows the entities it matched as their own nodes again.
+  rpc SetFoldEnabled(SetFoldEnabledRequest) returns (SetFoldEnabledResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/{id}/enabled"
+      body: "*"
+    };
+  }
+
+  // Delete a fold. Deleting a fold that does not exist succeeds.
+  rpc DeleteFold(DeleteFoldRequest) returns (DeleteFoldResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_LINEAGE_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/{id}/delete"
+      body: "*"
+    };
+  }
+
+  // Show what a matcher would fold, before it is saved: how many entities and
+  // lineage edges it matches, a sample of them, and the entities that stop
+  // being shown on the same node as a folded one. Answered from the lineage the
+  // workspace has now, without any fold applied.
+  rpc PreviewFold(PreviewFoldRequest) returns (PreviewFoldResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/lineage/folds/v1alpha/preview"
+      body: "*"
+    };
+  }
+}
+
+message CreateFoldRequest {
+  // Id of the new fold, a UUID.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Name shown on the fold's node.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // Which entities the fold shows as its node.
+  FoldMatcher matcher = 3 [(buf.validate.field).required = true];
+
+  // Whether lineage applies the fold from the start. Defaults to on.
+  optional bool enabled = 4;
+
+  // Who is making the change. Optional: the identity is completed from the
+  // calling credentials. Set it to attribute the change to a person.
+  synq.issues.actor.v1.Actor actor = 5;
+}
+
+message CreateFoldResponse {
+  LineageFold fold = 1;
+}
+
+message ListFoldsRequest {}
+
+message ListFoldsResponse {
+  repeated string ids = 1;
+}
+
+message BatchGetFoldsRequest {
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+}
+
+message BatchGetFoldsResponse {
+  // Folds keyed by id.
+  map<string, LineageFold> folds = 1;
+}
+
+message BatchGetFoldNodesRequest {
+  // Entity ids of fold nodes, as a lineage response returns them.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {pattern: "^lineagefold-[0-9a-f]{32}$"}
+    }
+  }];
+}
+
+message BatchGetFoldNodesResponse {
+  // Fold nodes keyed by entity id.
+  map<string, FoldNode> fold_nodes = 1;
+}
+
+message RenameFoldRequest {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // When set, the change is refused with ABORTED if the fold changed since
+  // this etag was read.
+  optional string etag = 3 [(buf.validate.field).string.max_len = 200];
+
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message RenameFoldResponse {
+  LineageFold fold = 1;
+}
+
+message UpdateFoldMatcherRequest {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  FoldMatcher matcher = 2 [(buf.validate.field).required = true];
+
+  // When set, the change is refused with ABORTED if the fold changed since
+  // this etag was read.
+  optional string etag = 3 [(buf.validate.field).string.max_len = 200];
+
+  synq.issues.actor.v1.Actor actor = 4;
+}
+
+message UpdateFoldMatcherResponse {
+  LineageFold fold = 1;
+}
+
+message SetFoldEnabledRequest {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  bool enabled = 2;
+
+  synq.issues.actor.v1.Actor actor = 3;
+}
+
+message SetFoldEnabledResponse {
+  LineageFold fold = 1;
+}
+
+message DeleteFoldRequest {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // When set, the delete is refused with ABORTED if the fold changed since
+  // this etag was read.
+  optional string etag = 2 [(buf.validate.field).string.max_len = 200];
+
+  synq.issues.actor.v1.Actor actor = 3;
+}
+
+message DeleteFoldResponse {}
+
+message PreviewFoldRequest {
+  // The matcher to preview.
+  FoldMatcher matcher = 1 [(buf.validate.field).required = true];
+
+  // How many sample entities to return, at most. Defaults to 20.
+  optional int32 sample_size = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 200
+  }];
+
+  // When previewing a change to an existing fold, its id, so the fold is not
+  // reported as overlapping with itself.
+  optional string fold_id = 3 [(buf.validate.field).string.uuid = true];
+}
+
+message PreviewFoldResponse {
+  // How many entities in lineage the matcher folds.
+  int32 entity_count = 1;
+
+  // A sample of the entity ids folded, in id order.
+  repeated string sample_entity_ids = 2;
+
+  // How many lineage edges connect a folded entity to anything. Edges between
+  // two folded entities disappear into the fold's node.
+  int32 edge_count = 3;
+
+  // How many folded entities are shown today on one node with other entities
+  // that the matcher does not fold, typically the same table as a
+  // transformation model or a catalog entry sees it. Folded, such an entity
+  // moves to the fold's node and the others stay on a node of their own.
+  int32 separated_entity_count = 4;
+
+  // A sample of them.
+  repeated SeparatedEntity sample_separated_entities = 5;
+
+  // Enabled folds that already match some of the same entities. An entity
+  // matched by more than one fold goes to the oldest of them.
+  repeated string overlapping_fold_ids = 6;
+}
+
+// SeparatedEntity is a folded entity and the entities it is shown with today
+// that stay out of the fold.
+message SeparatedEntity {
+  string entity_id = 1;
+
+  repeated string separated_from_entity_ids = 2;
+}
