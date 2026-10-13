@@ -12559,7 +12559,7 @@ components:
                     $ref: '#/components/schemas/synq.entities.v1.CodeType'
                 content:
                     type: string
-                    maxLength: 100000
+                    maxLength: 1048576
                     description: Content of the code. Displayed in the UI.
             title: Code
             additionalProperties: false
