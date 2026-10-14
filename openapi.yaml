@@ -23996,6 +23996,22 @@ components:
                 - METRIC_ID_ROW_COUNT
                 - METRIC_ID_DELAY
                 - METRIC_ID_VOLUME_CHANGE_DELAY
+                - METRIC_ID_NUM_ROWS
+                - METRIC_ID_NUM_NULL
+                - METRIC_ID_PCT_NULL
+                - METRIC_ID_NUM_UNIQUE
+                - METRIC_ID_PCT_UNIQUE
+                - METRIC_ID_NUM_EMPTY
+                - METRIC_ID_PCT_EMPTY
+                - METRIC_ID_MEAN
+                - METRIC_ID_MIN
+                - METRIC_ID_MAX
+                - METRIC_ID_MEDIAN
+                - METRIC_ID_STDDEV
+            description: |-
+                Metric a monitor predicts. ROW_COUNT, DELAY and VOLUME_CHANGE_DELAY apply to table stats
+                 monitors and deployment rules; the remaining values are field statistics and apply to
+                 field stats columns only.
         synq.monitors.automated_monitors.v1.MetricOption:
             type: object
             properties:
@@ -25098,9 +25114,45 @@ components:
                     type: array
                     items:
                         type: string
-                        minItems: 1
-                    minItems: 1
+                    description: |-
+                        Columns monitored with every metric of their data type. A column may appear here or in
+                         field_options, not both. At least one of fields / field_options must be non-empty.
+                fieldOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.MonitorFieldStats.FieldOption'
+                    description: |-
+                        Columns monitored with an explicit metric selection. The sensitivity of each metric
+                         applies to that metric instead of the monitor's sensitivity. Changing the selection keeps
+                         the history of the metrics that remain and does not reset the monitor: a removed metric
+                         stops being predicted, and adding it back resumes it.
             title: MonitorFieldStats
+            additionalProperties: false
+            description: |
+                field_stats_requires_a_column // at least one of fields or field_options is required
+        synq.monitors.custom_monitors.v1.MonitorFieldStats.FieldOption:
+            type: object
+            properties:
+                field:
+                    type: string
+                    description: Column name, as in the table schema.
+                metrics:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.monitors.automated_monitors.v1.MetricOption'
+                    minItems: 1
+                    description: |-
+                        Metrics to predict on this column, each with its sensitivity. Must be metrics that
+                         exist for the column's data type (e.g. mean is not available on a text column):
+                         - text: NUM_ROWS, NUM_NULL, PCT_NULL, NUM_UNIQUE, PCT_UNIQUE, NUM_EMPTY, PCT_EMPTY.
+                         - numeric: the text metrics plus MEAN, MIN, MAX, MEDIAN, STDDEV.
+                         - date and time: NUM_ROWS, NUM_NULL, PCT_NULL, NUM_UNIQUE, PCT_UNIQUE, MIN, MAX.
+                         A metric the column's data warehouse cannot compute is skipped (Redshift does not
+                         compute NUM_UNIQUE or PCT_UNIQUE on numeric columns), so a column whose whole selection
+                         is skipped produces no predictions.
+            title: FieldOption
+            required:
+                - field
             additionalProperties: false
         synq.monitors.custom_monitors.v1.MonitorFreshness:
             type: object

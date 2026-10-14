@@ -94,7 +94,34 @@ message MonitorCustomNumeric {
 message MonitorVolume {}
 
 message MonitorFieldStats {
-  repeated string fields = 1 [(buf.validate.field).repeated.min_items = 1];
+  // Columns monitored with every metric of their data type. A column may appear here or in
+  // field_options, not both. At least one of fields / field_options must be non-empty.
+  repeated string fields = 1;
+  // Columns monitored with an explicit metric selection. The sensitivity of each metric
+  // applies to that metric instead of the monitor's sensitivity. Changing the selection keeps
+  // the history of the metrics that remain and does not reset the monitor: a removed metric
+  // stops being predicted, and adding it back resumes it.
+  repeated FieldOption field_options = 2;
+
+  message FieldOption {
+    // Column name, as in the table schema.
+    string field = 1 [(buf.validate.field).required = true];
+    // Metrics to predict on this column, each with its sensitivity. Must be metrics that
+    // exist for the column's data type (e.g. mean is not available on a text column):
+    // - text: NUM_ROWS, NUM_NULL, PCT_NULL, NUM_UNIQUE, PCT_UNIQUE, NUM_EMPTY, PCT_EMPTY.
+    // - numeric: the text metrics plus MEAN, MIN, MAX, MEDIAN, STDDEV.
+    // - date and time: NUM_ROWS, NUM_NULL, PCT_NULL, NUM_UNIQUE, PCT_UNIQUE, MIN, MAX.
+    // A metric the column's data warehouse cannot compute is skipped (Redshift does not
+    // compute NUM_UNIQUE or PCT_UNIQUE on numeric columns), so a column whose whole selection
+    // is skipped produces no predictions.
+    repeated synq.monitors.automated_monitors.v1.MetricOption metrics = 2 [(buf.validate.field).repeated.min_items = 1];
+  }
+
+  option (buf.validate.message).cel = {
+    id: "field_stats_requires_a_column"
+    message: "at least one of fields or field_options is required"
+    expression: "this.fields.size() + this.field_options.size() >= 1"
+  };
 }
 
 message MonitorTableStats {

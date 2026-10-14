@@ -54,11 +54,38 @@ enum Severity {
   SEVERITY_INFO = 3;
 }
 
+// Metric a monitor predicts. ROW_COUNT, DELAY and VOLUME_CHANGE_DELAY apply to table stats
+// monitors and deployment rules; the remaining values are field statistics and apply to
+// field stats columns only.
 enum MetricId {
   METRIC_ID_UNSPECIFIED = 0;
   METRIC_ID_ROW_COUNT = 1;
   METRIC_ID_DELAY = 2;
   METRIC_ID_VOLUME_CHANGE_DELAY = 3;
+  // Field statistic: number of rows.
+  METRIC_ID_NUM_ROWS = 4;
+  // Field statistic: number of null values.
+  METRIC_ID_NUM_NULL = 5;
+  // Field statistic: share of null values.
+  METRIC_ID_PCT_NULL = 6;
+  // Field statistic: number of distinct values.
+  METRIC_ID_NUM_UNIQUE = 7;
+  // Field statistic: share of distinct values.
+  METRIC_ID_PCT_UNIQUE = 8;
+  // Field statistic: number of empty values.
+  METRIC_ID_NUM_EMPTY = 9;
+  // Field statistic: share of empty values.
+  METRIC_ID_PCT_EMPTY = 10;
+  // Field statistic: mean value.
+  METRIC_ID_MEAN = 11;
+  // Field statistic: minimum value.
+  METRIC_ID_MIN = 12;
+  // Field statistic: maximum value.
+  METRIC_ID_MAX = 13;
+  // Field statistic: median value.
+  METRIC_ID_MEDIAN = 14;
+  // Field statistic: standard deviation.
+  METRIC_ID_STDDEV = 15;
 }
 
 enum Sensitivity {
