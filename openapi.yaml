@@ -15435,7 +15435,7 @@ components:
                     description: |-
                         The tool that ran the queries, from the query's tag, as the lowercase
                          platform name, like `looker` or `dbt_cloud`. Empty when no tag names a
-                         tool: people, or a tool that is not recognized.
+                         tool, and `kind` then says who ran them.
                 entityId:
                     type: string
                     maxLength: 4096
@@ -15452,12 +15452,29 @@ components:
                 distinctLogins:
                     type: integer
                     description: The distinct warehouse users that ran them.
+                kind:
+                    description: |-
+                        Who ran the queries. Unspecified only from a server that does not
+                         classify them yet.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinIssuerKind'
             title: JoinIssuer
             additionalProperties: false
             description: |-
-                JoinIssuer is one tool, or one entity of a tool, that ran queries making a
-                 join. An issuer entity, like a dbt model or a Looker dashboard, has the
-                 role that the entity of a SQL definition has in `sources`.
+                JoinIssuer is one tool, one entity of a tool, or one kind of warehouse
+                 user with no tool, that ran queries making a join. An issuer entity, like a
+                 dbt model or a Looker dashboard, has the role that the entity of a SQL
+                 definition has in `sources`.
+        synq.entities.sql_insights.v1.JoinIssuerKind:
+            type: string
+            title: JoinIssuerKind
+            enum:
+                - JOIN_ISSUER_KIND_UNSPECIFIED
+                - JOIN_ISSUER_KIND_TOOL
+                - JOIN_ISSUER_KIND_PEOPLE
+                - JOIN_ISSUER_KIND_SERVICE_ACCOUNT
+                - JOIN_ISSUER_KIND_COALESCE
+                - JOIN_ISSUER_KIND_UNKNOWN
+            description: JoinIssuerKind says who ran the queries of a JoinIssuer.
         synq.entities.sql_insights.v1.JoinKeyPart:
             type: object
             properties:
@@ -15482,6 +15499,18 @@ components:
                         Set for the side with a role of its own in an ASOF, UPDATE_FROM,
                          DELETE_USING or MERGE join: the side whose rows look for a match in an
                          ASOF join, or the table the statement writes to.
+                joinType:
+                    description: |-
+                        The join type, seen from `column`'s side, as a semantic layer names it.
+                         OTHER for a kind with no join type of its own, and `native_join_type`
+                         then names it.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinType'
+                nativeJoinType:
+                    type: string
+                    maxLength: 256
+                    description: |-
+                        The kind's own name when `join_type` is OTHER, like `RIGHT_OUTER` or
+                         `ASOF`. Empty otherwise.
             title: JoinKeyPart
             additionalProperties: false
             description: |-
@@ -15626,6 +15655,38 @@ components:
             description: |-
                 JoinQueryLogEvidence sums the queries that made a join in the requested
                  window. A query counts once per join, also for a composite key.
+        synq.entities.sql_insights.v1.JoinQueryLogLeftOut:
+            type: object
+            properties:
+                coalesceQualityQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Queries that Coalesce Quality's tag marks, by any warehouse user.
+                coalesceLogins:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        The other queries of the warehouse users Coalesce connects as, for
+                         Coalesce Quality or Coalesce Catalog.
+                serviceAccounts:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Queries of the warehouse users that `exclude_service_accounts` leaves
+                         out.
+            title: JoinQueryLogLeftOut
+            additionalProperties: false
+            description: |-
+                JoinQueryLogLeftOut counts the queries left out of the query history
+                 evidence, of the joins that pass every other filter of the request. A
+                 query counts once, however many patterns its join makes. The thresholds
+                 never count them.
         synq.entities.sql_insights.v1.JoinQueryLogRequest:
             type: object
             properties:
@@ -15648,6 +15709,18 @@ components:
                          listed.
                 minLogins:
                     type: integer
+                includeCoalesceQuality:
+                    type: boolean
+                    description: |-
+                        Set to keep the queries Coalesce ran: those Coalesce Quality's tag
+                         marks, and those of the warehouse users Coalesce connects as. Leave
+                         unset to leave them out, as popularity does, and count them in
+                         `query_log_left_out`.
+                excludeServiceAccounts:
+                    type: boolean
+                    description: |-
+                        Set to leave out the queries of every warehouse user in a service
+                         account, and count them in `query_log_left_out`.
             title: JoinQueryLogRequest
             required:
                 - from
@@ -15666,6 +15739,17 @@ components:
                 - JOIN_SIDE_DERIVATION_RENAMED
                 - JOIN_SIDE_DERIVATION_TRANSFORMED
             description: JoinSideDerivation is how a join pair side's column reaches the comparison.
+        synq.entities.sql_insights.v1.JoinType:
+            type: string
+            title: JoinType
+            enum:
+                - JOIN_TYPE_UNSPECIFIED
+                - JOIN_TYPE_LEFT_OUTER
+                - JOIN_TYPE_INNER
+                - JOIN_TYPE_FULL_OUTER
+                - JOIN_TYPE_CROSS
+                - JOIN_TYPE_OTHER
+            description: JoinType is a join type as a semantic layer names it.
         synq.entities.sql_insights.v1.ListJoinPatternsRequest:
             type: object
             properties:
@@ -15724,6 +15808,11 @@ components:
                         How many hours of the `query_log` window the query history covered in
                          full. 0 with no QUERY_LOG pattern means that no query history was read
                          for the window, not that no query made a join.
+                queryLogLeftOut:
+                    description: |-
+                        The queries left out of the query history evidence. Set when the
+                         request sets `query_log`.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinQueryLogLeftOut'
             title: ListJoinPatternsResponse
             additionalProperties: false
             description: ListJoinPatternsResponse lists the join patterns of the requested entity.
@@ -16987,6 +17076,9 @@ components:
                 - ENTITY_TYPE_FABRIC_VIEW
                 - ENTITY_TYPE_DB2_TABLE
                 - ENTITY_TYPE_DB2_VIEW
+                - ENTITY_TYPE_LOOKER_STUDIO_CUSTOMER
+                - ENTITY_TYPE_LOOKER_STUDIO_REPORT
+                - ENTITY_TYPE_LOOKER_STUDIO_DATA_SOURCE
                 - ENTITY_TYPE_CUSTOM_ENTITY_GENERIC
                 - ENTITY_TYPE_CUSTOM_ENTITY_CUSTOM_TYPE_MIN
                 - ENTITY_TYPE_CUSTOM_ENTITY_CUSTOM_TYPE_MAX
@@ -27186,6 +27278,7 @@ components:
                 - DATA_PLATFORM_TYPE_ATHENA
                 - DATA_PLATFORM_TYPE_FABRIC
                 - DATA_PLATFORM_TYPE_DB2
+                - DATA_PLATFORM_TYPE_LOOKER_STUDIO
                 - DATA_PLATFORM_TYPE_SYNQ
         synq.platforms.v1.DatabricksIdentifier:
             type: object
@@ -55295,6 +55388,32 @@ paths:
                   schema:
                     type: integer
                     title: min_logins
+                - name: queryLog.includeCoalesceQuality
+                  in: query
+                  description: |-
+                    Set to keep the queries Coalesce ran: those Coalesce Quality's tag
+                     marks, and those of the warehouse users Coalesce connects as. Leave
+                     unset to leave them out, as popularity does, and count them in
+                     `query_log_left_out`.
+                  schema:
+                    type: boolean
+                    title: include_coalesce_quality
+                    description: |-
+                        Set to keep the queries Coalesce ran: those Coalesce Quality's tag
+                         marks, and those of the warehouse users Coalesce connects as. Leave
+                         unset to leave them out, as popularity does, and count them in
+                         `query_log_left_out`.
+                - name: queryLog.excludeServiceAccounts
+                  in: query
+                  description: |-
+                    Set to leave out the queries of every warehouse user in a service
+                     account, and count them in `query_log_left_out`.
+                  schema:
+                    type: boolean
+                    title: exclude_service_accounts
+                    description: |-
+                        Set to leave out the queries of every warehouse user in a service
+                         account, and count them in `query_log_left_out`.
                 - name: bareOnly
                   in: query
                   description: |-

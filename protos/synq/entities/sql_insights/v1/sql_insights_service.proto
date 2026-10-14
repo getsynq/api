@@ -125,6 +125,29 @@ message JoinQueryLogRequest {
   // listed.
   uint64 min_queries = 3;
   uint32 min_logins = 4;
+  // Set to keep the queries Coalesce ran: those Coalesce Quality's tag
+  // marks, and those of the warehouse users Coalesce connects as. Leave
+  // unset to leave them out, as popularity does, and count them in
+  // `query_log_left_out`.
+  bool include_coalesce_quality = 5;
+  // Set to leave out the queries of every warehouse user in a service
+  // account, and count them in `query_log_left_out`.
+  bool exclude_service_accounts = 6;
+}
+
+// JoinQueryLogLeftOut counts the queries left out of the query history
+// evidence, of the joins that pass every other filter of the request. A
+// query counts once, however many patterns its join makes. The thresholds
+// never count them.
+message JoinQueryLogLeftOut {
+  // Queries that Coalesce Quality's tag marks, by any warehouse user.
+  uint64 coalesce_quality_queries = 1;
+  // The other queries of the warehouse users Coalesce connects as, for
+  // Coalesce Quality or Coalesce Catalog.
+  uint64 coalesce_logins = 2;
+  // Queries of the warehouse users that `exclude_service_accounts` leaves
+  // out.
+  uint64 service_accounts = 3;
 }
 
 // ListJoinPatternsResponse lists the join patterns of the requested entity.
@@ -138,6 +161,9 @@ message ListJoinPatternsResponse {
   // full. 0 with no QUERY_LOG pattern means that no query history was read
   // for the window, not that no query made a join.
   uint32 query_log_covered_hours = 2;
+  // The queries left out of the query history evidence. Set when the
+  // request sets `query_log`.
+  JoinQueryLogLeftOut query_log_left_out = 3;
 }
 
 // JoinPattern is one way to join the requested entity: a join key, and the
@@ -182,13 +208,14 @@ message JoinQueryLogEvidence {
   string sample_query_id = 6 [(buf.validate.field).string.max_len = 4096];
 }
 
-// JoinIssuer is one tool, or one entity of a tool, that ran queries making a
-// join. An issuer entity, like a dbt model or a Looker dashboard, has the
-// role that the entity of a SQL definition has in `sources`.
+// JoinIssuer is one tool, one entity of a tool, or one kind of warehouse
+// user with no tool, that ran queries making a join. An issuer entity, like a
+// dbt model or a Looker dashboard, has the role that the entity of a SQL
+// definition has in `sources`.
 message JoinIssuer {
   // The tool that ran the queries, from the query's tag, as the lowercase
   // platform name, like `looker` or `dbt_cloud`. Empty when no tag names a
-  // tool: people, or a tool that is not recognized.
+  // tool, and `kind` then says who ran them.
   string platform = 1 [(buf.validate.field).string.max_len = 256];
   // The entity that ran the queries, when the tag names one. Empty
   // otherwise. It is the same opaque identifier the request's `entity_id`
@@ -198,6 +225,27 @@ message JoinIssuer {
   uint64 queries = 3;
   // The distinct warehouse users that ran them.
   uint32 distinct_logins = 4;
+  // Who ran the queries. Unspecified only from a server that does not
+  // classify them yet.
+  JoinIssuerKind kind = 5;
+}
+
+// JoinIssuerKind says who ran the queries of a JoinIssuer.
+enum JoinIssuerKind {
+  JOIN_ISSUER_KIND_UNSPECIFIED = 0;
+  // A tool that the query's tag names.
+  JOIN_ISSUER_KIND_TOOL = 1;
+  // People: warehouse users linked to a person, with an email, or not
+  // classified otherwise.
+  JOIN_ISSUER_KIND_PEOPLE = 2;
+  // Warehouse users in a service account.
+  JOIN_ISSUER_KIND_SERVICE_ACCOUNT = 3;
+  // The warehouse users Coalesce connects as, for Coalesce Quality or
+  // Coalesce Catalog.
+  JOIN_ISSUER_KIND_COALESCE = 4;
+  // Queries that name no warehouse user, or users of a recognized tool that
+  // no service account holds.
+  JOIN_ISSUER_KIND_UNKNOWN = 5;
 }
 
 // JoinKeyPart is one comparison of a join key, read from the side of the
@@ -218,6 +266,24 @@ message JoinKeyPart {
   // DELETE_USING or MERGE join: the side whose rows look for a match in an
   // ASOF join, or the table the statement writes to.
   bool leads = 5;
+  // The join type, seen from `column`'s side, as a semantic layer names it.
+  // OTHER for a kind with no join type of its own, and `native_join_type`
+  // then names it.
+  JoinType join_type = 6;
+  // The kind's own name when `join_type` is OTHER, like `RIGHT_OUTER` or
+  // `ASOF`. Empty otherwise.
+  string native_join_type = 7 [(buf.validate.field).string.max_len = 256];
+}
+
+// JoinType is a join type as a semantic layer names it.
+enum JoinType {
+  JOIN_TYPE_UNSPECIFIED = 0;
+  JOIN_TYPE_LEFT_OUTER = 1;
+  JOIN_TYPE_INNER = 2;
+  JOIN_TYPE_FULL_OUTER = 3;
+  JOIN_TYPE_CROSS = 4;
+  // `native_join_type` says which.
+  JOIN_TYPE_OTHER = 5;
 }
 
 // JoinPatternSource is one join in the SQL of one entity that joins on the
