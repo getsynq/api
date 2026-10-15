@@ -5889,6 +5889,21 @@ components:
                          pages, Catalog-written descriptions) has anything to answer.
                     nullable: true
                     $ref: '#/components/schemas/synq.auth.iam.v1.CatalogAccount'
+                timeZone:
+                    type: string
+                    description: |-
+                        IANA time zone the workspace works in, such as "Europe/Madrid". Unset when
+                         the workspace has not set one. A client showing activity by local time
+                         uses `user_time_zone` when set, then this, then UTC.
+                    nullable: true
+                userTimeZone:
+                    type: string
+                    description: |-
+                        IANA time zone the authenticated user chose, such as "Europe/Warsaw".
+                         Populated only when the token is tied to a Coalesce Quality user (i.e.
+                         `synq_user_id` is set) and that user has chosen a zone; unset otherwise.
+                         Takes precedence over `time_zone`.
+                    nullable: true
             title: IamResponse
             additionalProperties: false
         synq.common.v1.ScopeFilter:
@@ -10764,6 +10779,1266 @@ components:
                     $ref: '#/components/schemas/synq.domains.v2.Domain'
             title: UpsertResponse
             additionalProperties: false
+        synq.entities.activity.v1alpha.ActivityDirection:
+            type: string
+            title: ActivityDirection
+            enum:
+                - ACTIVITY_DIRECTION_UNSPECIFIED
+                - ACTIVITY_DIRECTION_READ
+                - ACTIVITY_DIRECTION_INPUT
+                - ACTIVITY_DIRECTION_WRITE
+            description: ActivityDirection is how a query touched an entity.
+        synq.entities.activity.v1alpha.ActivityLens:
+            type: string
+            title: ActivityLens
+            enum:
+                - ACTIVITY_LENS_UNSPECIFIED
+                - ACTIVITY_LENS_CONSUMPTION
+                - ACTIVITY_LENS_DEVELOPMENT
+                - ACTIVITY_LENS_MONITORING
+            description: |-
+                ActivityLens picks which directions and which logins count. Coalesce Quality's own queries, a read
+                 of an intermediate table and a login's reads of a table it wrote the same day are left out under
+                 every lens, and writes never depend on it.
+        synq.entities.activity.v1alpha.ActivityMeasure:
+            type: string
+            title: ActivityMeasure
+            enum:
+                - ACTIVITY_MEASURE_UNSPECIFIED
+                - ACTIVITY_MEASURE_QUERIES
+                - ACTIVITY_MEASURE_VIEWS
+                - ACTIVITY_MEASURE_RUNS
+            description: ActivityMeasure is what a count counts. Counts are compared only within one measure.
+        synq.entities.activity.v1alpha.ActivityShape:
+            type: string
+            title: ActivityShape
+            enum:
+                - ACTIVITY_SHAPE_UNSPECIFIED
+                - ACTIVITY_SHAPE_INTERVAL
+                - ACTIVITY_SHAPE_CUMULATIVE
+                - ACTIVITY_SHAPE_TRAILING_WINDOW
+                - ACTIVITY_SHAPE_LATEST_VALUE
+            description: ActivityShape is how a platform reports a figure.
+        synq.entities.activity.v1alpha.ActorActivity:
+            type: object
+            allOf:
+                - properties:
+                    count:
+                        type:
+                            - integer
+                            - string
+                        title: count
+                        format: int64
+                    logins:
+                        type: integer
+                        title: logins
+                        description: The distinct logins behind the count. 1 for a login.
+                    lastSeenAt:
+                        title: last_seen_at
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    basis:
+                        title: basis
+                        description: For a login only.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.LoginBasis'
+                    personIdentity:
+                        type: string
+                        title: person_identity
+                        description: |-
+                            For a login with basis OWN_LOGIN, VIEWER_EMAIL or VIEWER_TOOL_USER: the identity of its person,
+                             such as "email:<address>", empty when none resolves. A member whose identities hold the login's
+                             "platform_user:<id>" wins over it: that is a platform user alias, and the caller applies it.
+                    activeDays:
+                        type: integer
+                        title: active_days
+                        description: The distinct UTC days with counted access.
+                    shares:
+                        title: shares
+                        description: The summed shares of the queries behind the count.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryShares'
+                    purpose:
+                        title: purpose
+                        description: |-
+                            What it acts for: a service account's purpose, else the purpose of the tool that issued its
+                             queries. Unspecified for a login, and for a tool with no known purpose.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.Purpose'
+                    cadence:
+                        title: cadence
+                        description: How often it accessed the entity in the window.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+                    builtIn:
+                        type: boolean
+                        title: built_in
+                        description: Set when service_account_id names a built-in account.
+                    entityId:
+                        type: string
+                        title: entity_id
+                        description: For a service account, its entity id, which resolves to its name like any other entity.
+                - oneOf:
+                    - properties:
+                        issuer:
+                            title: issuer
+                            description: A tool, from the tag on queries no job is named for, such as "Looker reads this".
+                            $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                      title: issuer
+                      required:
+                        - issuer
+                    - properties:
+                        issuerEntityId:
+                            type: string
+                            title: issuer_entity_id
+                            description: A job, task or step, such as "dbt model M writes this".
+                      title: issuer_entity_id
+                      required:
+                        - issuerEntityId
+                    - properties:
+                        platformUserId:
+                            type: string
+                            title: platform_user_id
+                      title: platform_user_id
+                      required:
+                        - platformUserId
+                    - properties:
+                        serviceAccountId:
+                            type: string
+                            title: service_account_id
+                            description: A service account, a built-in one included.
+                      title: service_account_id
+                      required:
+                        - serviceAccountId
+            title: ActorActivity
+            additionalProperties: false
+            description: ActorActivity is one thing that touched an entity in one direction and measure, with its count.
+        synq.entities.activity.v1alpha.ActorComputeTotals:
+            type: object
+            properties:
+                platformRootId:
+                    type: string
+                computeId:
+                    type: string
+                platform:
+                    description: DATA_PLATFORM_TYPE_UNSPECIFIED when the instance's platform is not known.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                computeUnit:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ComputeUnit'
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                weights:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryWeights'
+            title: ActorComputeTotals
+            additionalProperties: false
+            description: ActorComputeTotals is an actor's queries on one compute of one platform instance.
+        synq.entities.activity.v1alpha.ActorEntityActivity:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                direction:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                measure:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                count:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                shares:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryShares'
+                lastSeenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                activeDays:
+                    type: integer
+            title: ActorEntityActivity
+            additionalProperties: false
+            description: ActorEntityActivity is what an actor did to one entity in one direction and measure.
+        synq.entities.activity.v1alpha.ActorGroup:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorGroupKind'
+                actor:
+                    description: |-
+                        The actor to ask GetActorSummary about, whose summary has the same queries, compute and logins as
+                         the group. Unset for PEOPLE and UNATTRIBUTED.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorRef'
+                logins:
+                    type: integer
+                    description: The distinct logins behind the queries.
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: The group's weights per platform, by platform.
+                daily:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
+                    description: The queries per day in the asked time zone, and when in the week.
+                grid:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WeekGrid'
+            title: ActorGroup
+            additionalProperties: false
+            description: ActorGroup is the queries of the logins that land in one group.
+        synq.entities.activity.v1alpha.ActorGroupKind:
+            type: string
+            title: ActorGroupKind
+            enum:
+                - ACTOR_GROUP_KIND_UNSPECIFIED
+                - ACTOR_GROUP_KIND_COALESCE
+                - ACTOR_GROUP_KIND_SERVICE_ACCOUNT
+                - ACTOR_GROUP_KIND_TOOL
+                - ACTOR_GROUP_KIND_PEOPLE
+                - ACTOR_GROUP_KIND_UNATTRIBUTED
+            description: |-
+                ActorGroupKind is the group a login's queries land in on the overview. Each lands in exactly one,
+                 so the groups add up to the workspace.
+        synq.entities.activity.v1alpha.ActorGroupRef:
+            type: object
+            allOf:
+                - properties:
+                    builtIn:
+                        type: boolean
+                        title: built_in
+                        description: 'Output only: service_account_id names a built-in account.'
+                - oneOf:
+                    - properties:
+                        issuer:
+                            not:
+                                enum:
+                                    - 0
+                            title: issuer
+                            description: The TOOL group of this tool.
+                            $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                      title: issuer
+                      required:
+                        - issuer
+                    - properties:
+                        serviceAccountId:
+                            type: string
+                            title: service_account_id
+                            maxLength: 128
+                            minLength: 1
+                            description: The SERVICE_ACCOUNT group of this service account, a built-in one included.
+                      title: service_account_id
+                      required:
+                        - serviceAccountId
+            title: ActorGroupRef
+            additionalProperties: false
+            description: |-
+                ActorGroupRef names one group of GetActivityOverview. Its summary has exactly the group's queries, so
+                 it can be narrower than the actor of the same name: a login a service account holds can land with
+                 another account first, and Coalesce Quality's queries land in the COALESCE group.
+        synq.entities.activity.v1alpha.ActorRef:
+            type: object
+            oneOf:
+                - properties:
+                    coalesce:
+                        type: boolean
+                        title: coalesce
+                        description: |-
+                            Coalesce Quality and Coalesce Catalog: every query that carried Coalesce Quality's tag, on any
+                             login, and every query of a login either connects as. What the overview's COALESCE group counts.
+                        const: "true"
+                  title: coalesce
+                  required:
+                    - coalesce
+                - properties:
+                    group:
+                        title: group
+                        description: |-
+                            One group of GetActivityOverview, exactly the logins the overview lands in it: what
+                             ActorGroup.actor names for a service account or a tool.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorGroupRef'
+                  title: group
+                  required:
+                    - group
+                - properties:
+                    issuer:
+                        not:
+                            enum:
+                                - 0
+                        title: issuer
+                        description: A tool, from the tag its queries carry.
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                  title: issuer
+                  required:
+                    - issuer
+                - properties:
+                    issuerEntityId:
+                        type: string
+                        title: issuer_entity_id
+                        maxLength: 2048
+                        minLength: 1
+                        description: 'A job, task or step that issues queries or runs what builds an entity: what it maintains.'
+                  title: issuer_entity_id
+                  required:
+                    - issuerEntityId
+                - properties:
+                    personIdentity:
+                        type: string
+                        title: person_identity
+                        maxLength: 2048
+                        minLength: 1
+                        description: The logins linked to this person, such as "synq:<user_id>" or "email:<address>".
+                  title: person_identity
+                  required:
+                    - personIdentity
+                - properties:
+                    platformUserId:
+                        type: string
+                        title: platform_user_id
+                        maxLength: 2048
+                        minLength: 1
+                        description: One login, on every tool that issued its queries.
+                  title: platform_user_id
+                  required:
+                    - platformUserId
+                - properties:
+                    serviceAccountId:
+                        type: string
+                        title: service_account_id
+                        maxLength: 128
+                        minLength: 1
+                        description: |-
+                            The logins a service account holds, a built-in one included, such as `built_in.fivetran`.
+                             `built_in.coalesce-quality` is the same actor as coalesce.
+                  title: service_account_id
+                  required:
+                    - serviceAccountId
+            additionalProperties: false
+            description: ActorRef names who an actor summary is about.
+        synq.entities.activity.v1alpha.ActorTotals:
+            type: object
+            properties:
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Its queries, whatever they touched.
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: The whole weights of its queries, per platform, by platform.
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Access to entities, per direction.
+                inputs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Write queries. Runs are never part of it.
+                runs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: The runs of what a job builds.
+                entitiesRead:
+                    type: integer
+                    description: The distinct entities it read, and wrote or built.
+                entitiesWritten:
+                    type: integer
+                activeDays:
+                    type: integer
+                    description: The distinct UTC days with any access.
+                outsideEntities:
+                    description: |-
+                        The whole weight less the entity shares, never below 0: what the queries spent outside entities,
+                         such as on a pipeline's staging tables. Each figure is a sum across platforms.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryShares'
+            title: ActorTotals
+            additionalProperties: false
+            description: ActorTotals is an actor's whole window.
+        synq.entities.activity.v1alpha.BatchGetPopularityRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                    maxItems: 1000
+                    minItems: 1
+                until:
+                    description: |-
+                        The window ends at the start of this hour, exclusive. Unset is the current hour, so the window
+                         holds closed hours only.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                pool:
+                    description: The pools to rank in. Unset is SYSTEM.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.PopularityPool'
+            title: BatchGetPopularityRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.BatchGetPopularityResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.EntityPopularity'
+                    description: One per distinct asked id, in the order each was first asked.
+                from:
+                    description: The window read, [from, to).
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                coveredHours:
+                    type: integer
+                    description: |-
+                        Hours of the window whose query history was read. An hour that was not read counts nothing either
+                         way.
+                ranksUnavailable:
+                    type: boolean
+                    description: |-
+                        Set when the ranks could not be computed. The counts are still served, and every rank list is
+                         empty.
+                ranksPending:
+                    type: boolean
+                    description: |-
+                        Set when the ranks of the default window are not ready for every asked entity yet. The counts are
+                         served, and an entity has no ranks until they are.
+                ranksWindowTo:
+                    description: |-
+                        The end of the window the ranks were computed for, exclusive, when it differs from to: the ranks
+                         of the default window are computed once a day, for the window ending at 00:00 UTC.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: BatchGetPopularityResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ComputeUnit:
+            type: string
+            title: ComputeUnit
+            enum:
+                - COMPUTE_UNIT_UNSPECIFIED
+                - COMPUTE_UNIT_SNOWFLAKE_XSMALL_WAREHOUSE_MS
+                - COMPUTE_UNIT_BIGQUERY_SLOT_MS
+                - COMPUTE_UNIT_DATABRICKS_TASK_MS
+            description: |-
+                ComputeUnit is what compute_ms counts on one platform. Each platform reports its own unit, so
+                 compute is never summed across platforms.
+        synq.entities.activity.v1alpha.CurrentReading:
+            type: object
+            properties:
+                shape:
+                    description: TRAILING_WINDOW or LATEST_VALUE.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityShape'
+                windowDays:
+                    type: integer
+                    description: M of "N in the last M days". Zero for a LATEST_VALUE reading.
+                count:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: N.
+                observedAt:
+                    description: When the figure was read from the platform.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                direction:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+            title: CurrentReading
+            additionalProperties: false
+            description: |-
+                CurrentReading is a platform's own current figure for an entity, such as "40 views in the last 28
+                 days". Compare it only with readings of the same shape and window.
+        synq.entities.activity.v1alpha.DirectionActors:
+            type: object
+            properties:
+                direction:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                measure:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                total:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        The direction's count: every counted access, whoever it was. The lists below overlap, and a
+                         login can be left off one by its policy, so they do not add up to it.
+                issuerEntities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
+                serviceAccounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
+                    description: The workspace's service accounts first, then the built-in ones, each by count.
+                tools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
+                logins:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
+                    description: |-
+                        Every login, whatever issued its queries, except those whose policy keeps them off the frequent
+                         users list. A login known two ways is listed once per basis.
+                unattributed:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: The count no login is named for.
+            title: DirectionActors
+            additionalProperties: false
+        synq.entities.activity.v1alpha.DirectionSeries:
+            type: object
+            properties:
+                direction:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                measure:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                total:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                hourly:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
+                    description: |-
+                        One point per UTC hour of the window. Empty for a measure platforms only report per day, such as
+                         VIEWS.
+                daily:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
+                    description: One point per day the window overlaps, in the asked time zone.
+                grid:
+                    description: Unset for a measure reported only per day.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WeekGrid'
+            title: DirectionSeries
+            additionalProperties: false
+            description: DirectionSeries is one direction's access over the window.
+        synq.entities.activity.v1alpha.EntityActors:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                actors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.DirectionActors'
+                    description: |-
+                        One per direction and measure with counted access: READ, INPUT, WRITE, then in measure order.
+                         INPUT is counted only under the DEVELOPMENT lens.
+                notCounted:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.NotCountedActivity'
+            title: EntityActors
+            additionalProperties: false
+        synq.entities.activity.v1alpha.EntityPopularity:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                measures:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.MeasurePopularity'
+                    description: One per measure with counted reads or writes, or with a current reading, in measure order.
+                notCounted:
+                    description: Access the read saw and did not count.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.NotCountedActivity'
+            title: EntityPopularity
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetActivityOverviewRequest:
+            type: object
+            properties:
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                timeZone:
+                    type: string
+                    maxLength: 64
+                    description: The IANA time zone days and grid cells are in. Unset is UTC.
+                pool:
+                    description: The pool most_read is ranked in. Unset is SYSTEM.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.PopularityPool'
+                measure:
+                    description: The measure most_read reads. Unset is QUERIES.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                topK:
+                    type: integer
+                    maximum: 200
+                    description: At most this many most_read rows. Unset is 20.
+            title: GetActivityOverviewRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetActivityOverviewResponse:
+            type: object
+            properties:
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                timeZone:
+                    type: string
+                    description: The time zone used, "UTC" when none was asked.
+                coveredHours:
+                    type: integer
+                    description: Hours of the window whose query history was read.
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Every query of the workspace, Coalesce Quality's included, as they cost compute too.
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: The workspace's weights per platform, by platform.
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorGroup'
+                    description: By compute, highest first, then queries.
+                mostRead:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.MostRead'
+                    description: The most read entities under CONSUMPTION, by reads.
+                entitiesRead:
+                    type: integer
+                    description: The entities with counted reads under CONSUMPTION, entities that are the same counted once.
+                ranksUnavailable:
+                    type: boolean
+                    description: Set when the ranks could not be computed. The groups are still served, and most_read is empty.
+            title: GetActivityOverviewResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetActorSummaryRequest:
+            type: object
+            properties:
+                actor:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorRef'
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                timeZone:
+                    type: string
+                    maxLength: 64
+                    description: The IANA time zone days and grid cells are in. Unset is UTC.
+                topK:
+                    type: integer
+                    maximum: 1000
+                    description: At most this many entities per direction. Unset is 20.
+            title: GetActorSummaryRequest
+            required:
+                - actor
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetActorSummaryResponse:
+            type: object
+            properties:
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                timeZone:
+                    type: string
+                    description: The time zone used, "UTC" when none was asked.
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                    description: The logins the actor resolved to, sorted. Empty without the platform users scope.
+                totals:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorTotals'
+                computes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorComputeTotals'
+                    description: Ordered by platform instance, then compute.
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorEntityActivity'
+                    description: |-
+                        At most top_k per direction, READ, INPUT, then WRITE, each by count. For a job, a WRITE row of
+                         measure RUNS counts the runs of what it builds, never write queries.
+                hourly:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
+                    description: The actor's queries per UTC hour, split by issuer.
+                daily:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
+                grid:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WeekGrid'
+            title: GetActorSummaryResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetEntityActivitySeriesRequest:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 2048
+                    minLength: 1
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30. 28 gives every weekday four times.
+                lens:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityLens'
+                measure:
+                    description: Unset is QUERIES.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                timeZone:
+                    type: string
+                    maxLength: 64
+                    description: |-
+                        The IANA time zone days and grid cells are in, such as "Europe/Warsaw". Unset is UTC. The window
+                         itself stays in whole UTC hours.
+                split:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesSplit'
+            title: GetEntityActivitySeriesRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GetEntityActivitySeriesResponse:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                from:
+                    description: The window read, [from, to).
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                timeZone:
+                    type: string
+                    description: The time zone used, "UTC" when none was asked.
+                directions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.DirectionSeries'
+                    description: The lens's directions, then WRITE, each only when it has counted access.
+                notCounted:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.NotCountedActivity'
+            title: GetEntityActivitySeriesResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.GridDay:
+            type: object
+            properties:
+                isoWeekday:
+                    type: integer
+                    description: 1 is Monday, 7 is Sunday.
+                hours:
+                    type: array
+                    items:
+                        type:
+                            - integer
+                            - string
+                        format: int64
+                    description: 24 counts, one per local hour.
+                occurrences:
+                    type: integer
+                    description: How many local dates with this weekday overlap the window, to average by.
+            title: GridDay
+            additionalProperties: false
+            description: GridDay is one weekday of a weekday and hour grid.
+        synq.entities.activity.v1alpha.IssuerCount:
+            type: object
+            properties:
+                issuer:
+                    description: DATA_PLATFORM_TYPE_UNSPECIFIED is access whose query carried no tool's tag.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                count:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+            title: IssuerCount
+            additionalProperties: false
+            description: IssuerCount is one issuing tool's part of a point.
+        synq.entities.activity.v1alpha.ListEntityActorsRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                    maxItems: 1000
+                    minItems: 1
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                topK:
+                    type: integer
+                    description: At most this many entries per list. Unset returns every entry.
+                lens:
+                    description: |-
+                        Which access counts. Unset is CONSUMPTION, under which each direction's total is what
+                         BatchGetPopularity counts.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityLens'
+                directions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                    description: Only these directions. Empty is every direction the lens serves.
+                measures:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                    description: Only these measures. Empty is every measure.
+            title: ListEntityActorsRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ListEntityActorsResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.EntityActors'
+                    description: One per distinct asked id, in the order each was first asked.
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                loginsHidden:
+                    type: boolean
+                    description: 'Set when the caller may not see logins: every logins list is empty. Every count is still served.'
+            title: ListEntityActorsResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ListPersonActivityRequest:
+            type: object
+            properties:
+                identities:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 200
+                        minItems: 1
+                    maxItems: 200
+                    minItems: 1
+                    description: |-
+                        The identities of one person, as synq.users.v1 gives them, such as "synq:<user_id>",
+                         "email:<address>" or "platform_user:<id>".
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                directions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                    description: Only these directions. Empty keeps every one.
+                pagination:
+                    description: Without a page size every entity is returned.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListPersonActivityRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ListPersonActivityResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PersonEntityActivity'
+                    description: Ordered by count, highest first, then entity id, direction and measure.
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                    description: The logins the identities resolved to, sorted.
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                pageInfo:
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+            title: ListPersonActivityResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.LoginBasis:
+            type: string
+            title: LoginBasis
+            enum:
+                - LOGIN_BASIS_UNSPECIFIED
+                - LOGIN_BASIS_SERVICE_ACCOUNT
+                - LOGIN_BASIS_SHARED_LOGIN
+                - LOGIN_BASIS_OWN_LOGIN
+                - LOGIN_BASIS_UNRESOLVED_LOGIN
+                - LOGIN_BASIS_VIEWER_EMAIL
+                - LOGIN_BASIS_VIEWER_TOOL_USER
+            description: LoginBasis is how a login touching an entity is known.
+        synq.entities.activity.v1alpha.MeasurePopularity:
+            type: object
+            properties:
+                measure:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Counted reads, and the distinct logins among them. A login is not a person. A read with no login
+                         counts in reads, never in reader_logins.
+                readerLogins:
+                    type: integer
+                lastReadAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                writerLogins:
+                    type: integer
+                lastWrittenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                writeCadence:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+                memberEntityIds:
+                    type: array
+                    items:
+                        type: string
+                    description: The entities the same as the asked one whose access answered.
+                ranks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PoolRank'
+                    description: The entity's rank in each pool of the asked kind where it has reads. Empty when it has none.
+                readings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.CurrentReading'
+                    description: |-
+                        The platform's own current figures for the entity, one per direction, shape and window. They are
+                         not in reads or writes: a trailing window or a latest value cannot be split into the hours of the
+                         window.
+            title: MeasurePopularity
+            additionalProperties: false
+            description: |-
+                MeasurePopularity is one measure's answer. For RUNS, writes is the runs of what builds the entity,
+                 each counted once whatever orchestrators ran it, last_written_at the last run and write_cadence how
+                 often it runs. RUNS has no reads, no logins and no ranks.
+        synq.entities.activity.v1alpha.MostRead:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    description: The entity, or the smallest id among the entities it is the same as.
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                rank:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.PoolRank'
+            title: MostRead
+            additionalProperties: false
+            description: MostRead is one entity's place in one pool.
+        synq.entities.activity.v1alpha.NotCountedActivity:
+            type: object
+            properties:
+                coalesceLogins:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Access by the logins Coalesce Quality connects as, on queries that carried no Coalesce Quality
+                         tag. A tagged query is in coalesce_quality_queries instead.
+                writersOwnReads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Reads by a login of an entity it wrote the same UTC day.
+                intermediate:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Reads in an hour the entity was an intermediate table.
+                coalesceQualityQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Coalesce Quality's own queries, on any login, such as a monitor or a SQL test reading the entity.
+                         Never counted.
+                excludedByPolicy:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Reads by logins whose service account does not count toward popularity, such as a loader or an
+                         orchestrator.
+                excludedByLens:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Access the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT.
+            title: NotCountedActivity
+            additionalProperties: false
+            description: NotCountedActivity is access a read saw and left out.
+        synq.entities.activity.v1alpha.PersonEntityActivity:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                direction:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityDirection'
+                measure:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityMeasure'
+                count:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                lastSeenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: PersonEntityActivity
+            additionalProperties: false
+            description: PersonEntityActivity is what a person's logins did to one entity in one direction and measure.
+        synq.entities.activity.v1alpha.PlatformWeights:
+            type: object
+            properties:
+                platform:
+                    description: DATA_PLATFORM_TYPE_UNSPECIFIED is the queries whose platform is not known.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                computeUnit:
+                    description: What weights.compute_ms counts.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ComputeUnit'
+                weights:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryWeights'
+            title: PlatformWeights
+            additionalProperties: false
+            description: PlatformWeights are the weights of the queries on one platform.
+        synq.entities.activity.v1alpha.PoolRank:
+            type: object
+            properties:
+                pool:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.PopularityPool'
+                platform:
+                    description: The platform and instance the pool is on, as far as the pool names them.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                instance:
+                    type: string
+                    maxLength: 2048
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: The entity's reads in this pool.
+                percentile:
+                    type: number
+                    format: double
+                    description: |-
+                        The share of the pool's other entities with fewer reads, from 0 to 1. Entities with equal reads
+                         share the lower place, and the only entity of a pool has 1.
+                poolSize:
+                    type: integer
+                    description: 'The entities in the pool: those with counted reads in the window.'
+            title: PoolRank
+            additionalProperties: false
+            description: PoolRank is an entity's place in one pool.
+        synq.entities.activity.v1alpha.PopularityPool:
+            type: string
+            title: PopularityPool
+            enum:
+                - POPULARITY_POOL_UNSPECIFIED
+                - POPULARITY_POOL_SYSTEM
+                - POPULARITY_POOL_PLATFORM
+                - POPULARITY_POOL_WORKSPACE
+            description: PopularityPool is what a rank compares an entity with.
+        synq.entities.activity.v1alpha.Purpose:
+            type: string
+            title: Purpose
+            enum:
+                - PURPOSE_UNSPECIFIED
+                - PURPOSE_LOADER
+                - PURPOSE_ORCHESTRATOR
+                - PURPOSE_TRANSFORMER
+                - PURPOSE_BI
+                - PURPOSE_REVERSE_ETL
+                - PURPOSE_APPLICATION
+                - PURPOSE_OBSERVABILITY
+                - PURPOSE_CATALOG
+                - PURPOSE_CI
+                - PURPOSE_OTHER
+            description: |-
+                Purpose is what a service account acts for. It decides whether its reads count toward popularity
+                 when its popularity policy does not say.
+        synq.entities.activity.v1alpha.QueryShares:
+            type: object
+            properties:
+                executionMs:
+                    type: number
+                    format: double
+                    nullable: true
+                computeMs:
+                    type: number
+                    format: double
+                    nullable: true
+                bytesScanned:
+                    type: number
+                    format: double
+                    nullable: true
+                bytesBilled:
+                    type: number
+                    format: double
+                    nullable: true
+            title: QueryShares
+            additionalProperties: false
+            description: |-
+                QueryShares are the weights of each query split equally over the entities it touched, so they add
+                 up across entities. Equal is a convention, as no platform reports cost per table. An unset figure
+                 is one no query reported.
+        synq.entities.activity.v1alpha.QueryWeights:
+            type: object
+            properties:
+                executionMs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    nullable: true
+                computeMs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: In the unit of the platform the weights are for.
+                    nullable: true
+                bytesScanned:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: 'What the queries scanned. Never a cost: a platform can bill differently from what it scanned.'
+                    nullable: true
+                bytesBilled:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Set only where the platform bills by bytes read.
+                    nullable: true
+            title: QueryWeights
+            additionalProperties: false
+            description: |-
+                QueryWeights are whole weights summed over queries. An unset figure is one no query reported, and
+                 zero is a value. Nothing here is a credit or a price.
+        synq.entities.activity.v1alpha.SeriesPoint:
+            type: object
+            properties:
+                start:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                count:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                byIssuer:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.IssuerCount'
+                    description: 'With SERIES_SPLIT_ISSUER only: each tool''s count, highest first, then by issuer.'
+                covered:
+                    type: boolean
+                    description: 'On an hourly point: whether the hour''s query history was read.'
+                coveredHours:
+                    type: integer
+                    description: |-
+                        On a daily point: how many of the day's hours were read. A day has 23 or 25 hours when the time
+                         zone changes its offset.
+                partial:
+                    type: boolean
+                    description: 'On a daily point: the day is not wholly inside the window.'
+            title: SeriesPoint
+            additionalProperties: false
+            description: |-
+                SeriesPoint is one step of a series. A series is dense: a step with nothing counted is a point with
+                 count 0, and covered or covered_hours say whether it was seen at all.
+        synq.entities.activity.v1alpha.SeriesSplit:
+            type: string
+            title: SeriesSplit
+            enum:
+                - SERIES_SPLIT_UNSPECIFIED
+                - SERIES_SPLIT_ISSUER
+            description: SeriesSplit is how each point of a series is broken down.
+        synq.entities.activity.v1alpha.WeekGrid:
+            type: object
+            properties:
+                days:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.GridDay'
+            title: WeekGrid
+            additionalProperties: false
+            description: 'WeekGrid is when access happens in the week: seven days, Monday first.'
+        synq.entities.activity.v1alpha.WriteCadence:
+            type: string
+            title: WriteCadence
+            enum:
+                - WRITE_CADENCE_UNSPECIFIED
+                - WRITE_CADENCE_NONE
+                - WRITE_CADENCE_ONCE
+                - WRITE_CADENCE_HOURLY
+                - WRITE_CADENCE_SUB_DAILY
+                - WRITE_CADENCE_DAILY
+                - WRITE_CADENCE_WEEKLY
+                - WRITE_CADENCE_RARE
+            description: |-
+                WriteCadence is how often something wrote an entity in the window, from the median gap between the
+                 hours with writes. It is not freshness.
         synq.entities.annotations.v1.AnnotationCount:
             type: object
             properties:
@@ -15075,7 +16350,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.v1.Identifier'
-                    description: Entities to query for orchestration relationships (e.g., Airflow tasks, dbt models, SQLMesh models, tables)
+                    description: Entities to query for orchestration relationships (e.g., Airflow tasks, dbt Cloud job steps, Coalesce jobs, dbt models, tables)
             title: BatchOrchestrationRequest
             additionalProperties: false
         synq.entities.orchestration.v1.BatchOrchestrationResponse:
@@ -15086,8 +16361,8 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.entities.orchestration.v1.Orchestration'
                     description: |-
-                        Orchestration relationships for each requested entity.
-                         The order corresponds to the order of entities in the request.
+                        Orchestration relationships for each requested entity, in the order of the request.
+                         An entity requested twice is answered once, and an entity the workspace does not hold is left out.
             title: BatchOrchestrationResponse
             additionalProperties: false
         synq.entities.orchestration.v1.Orchestration:
@@ -15096,7 +16371,7 @@ components:
                 entity:
                     description: |-
                         The entity being queried along with its other identities.
-                         For example, if querying a dbt or SQLMesh model, this group includes both the model
+                         For example, if querying a dbt model, this group includes both the model
                          and the table it creates, as they represent the same logical concept.
                     $ref: '#/components/schemas/synq.entities.orchestration.v1.OrchestrationGroup'
                 downstream:
@@ -15104,26 +16379,30 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.entities.orchestration.v1.OrchestrationGroup'
                     description: |-
-                        Downstream entities that this entity orchestrates.
-                         Each group contains all identities of the orchestrated concept.
+                        Downstream: the entities this job, job step or task ran in the last 31 days.
+                         Each group contains all identities of the entity that ran.
                          Examples:
-                         - If entity is an Airflow task: groups containing [dbt model, table] or [SQLMesh model, table]
-                         - If entity is an Airflow task: groups containing downstream Airflow tasks and their orchestrated entities
+                         - If entity is an Airflow task: groups containing [dbt model, table], or the dbt seeds and snapshots it ran
+                         - If entity is an Airflow DAG: groups containing its tasks
+                         - If entity is a dbt Cloud job step: groups containing [dbt model, table]
+                         - If entity is a Coalesce job: groups containing its Coalesce nodes
                 upstream:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.orchestration.v1.OrchestrationGroup'
                     description: |-
-                        Upstream entities that orchestrate this entity.
-                         Each group contains all identities of the orchestrating concept.
+                        Upstream: the jobs, job steps and tasks that ran this entity in the last 31 days.
+                         Each group contains all identities of the job, job step or task.
                          Examples:
-                         - If entity is a dbt/SQLMesh model or table: groups containing the Airflow task that executes it
-                         - If entity is an Airflow task: groups containing upstream Airflow tasks that trigger it
+                         - If entity is a dbt model or table: groups containing the Airflow task or dbt Cloud job step that ran it
+                         - If entity is a Coalesce node: groups containing the Coalesce job that ran it
+                         - If entity is an Airflow task: groups containing its Airflow DAG
             title: Orchestration
             additionalProperties: false
             description: |-
-                Orchestration represents the orchestration relationships for a given entity.
-                 It shows both what the entity orchestrates (downstream) and what orchestrates it (upstream).
+                Orchestration represents the orchestration relationships for a given entity: what ran it
+                 (upstream) and what it ran (downstream), in the last 31 days. A group that is both is in both
+                 lists. Groups are ordered by how many times they ran, most first.
         synq.entities.orchestration.v1.OrchestrationGroup:
             type: object
             properties:
@@ -15135,7 +16414,6 @@ components:
                         Identifiers of all representations of this logical entity.
                          Examples:
                          - For a dbt model: [dbt model, table it creates]
-                         - For a SQLMesh model: [SQLMesh model, table it creates]
                          - For an Airflow task: [Airflow task]
                 synqPaths:
                     type: array
@@ -15149,6 +16427,1093 @@ components:
                  For example, a dbt model and the table it creates are different representations
                  of the same entity, so they appear together in one group. An Airflow task
                  typically has only one identity (the task itself).
+        synq.entities.platformusers.v1alpha.AdvancedMatch:
+            type: object
+            properties:
+                platforms:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    maxItems: 100
+                    description: The platform of the login.
+                platformRootEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: The platform instance the login lives on, such as the Snowflake account's entity id.
+                userTypes:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 64
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: |-
+                        The kind of login the platform states, such as Snowflake's `SERVICE` or BigQuery's
+                         `serviceAccount`, ignoring case.
+                emailDomains:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 256
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: The domain of the email the platform states, ignoring case.
+                issuers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    maxItems: 100
+                    description: |-
+                        The tools whose queries the matcher takes, from the tag a tool puts on its queries. Empty takes
+                         every query of a matching login. DATA_PLATFORM_TYPE_UNSPECIFIED names the queries with no tag.
+                minIssuerShare:
+                    type: number
+                    maximum: 1
+                    minimum: 0
+                    format: double
+                    description: |-
+                        The least share of the login's queries in the window, from 0 to 1, that a tool named in issuers
+                         must have. Only with issuers.
+                footprints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    maxItems: 100
+                    description: Loaders whose columns the tables the login writes carry, such as Fivetran's `_fivetran_synced`.
+                minFootprintShare:
+                    type: number
+                    maximum: 1
+                    minimum: 0
+                    format: double
+                    description: |-
+                        The least share, from 0 to 1, of the tables the login wrote in the window that carry a loader's
+                         columns. Only with footprints.
+            title: AdvancedMatch
+            additionalProperties: false
+            description: |-
+                AdvancedMatch narrows a matcher by what the platform states about a login and by what the login
+                 did. Every non-empty field must match, and an empty one matches everything.
+        synq.entities.platformusers.v1alpha.ApplyServiceAccountChangesRequest:
+            type: object
+            properties:
+                changes:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccountChanges'
+                planToken:
+                    type: string
+                    maxLength: 256
+                    minLength: 1
+            title: ApplyServiceAccountChangesRequest
+            required:
+                - changes
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ApplyServiceAccountChangesResponse:
+            type: object
+            properties:
+                serviceAccounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccount'
+                    description: The accounts and person links as written, with their new etags.
+                personLinks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PersonLink'
+            title: ApplyServiceAccountChangesResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetPlatformUsersRequest:
+            type: object
+            properties:
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                    maxItems: 1000
+                    minItems: 1
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The days of query history read, back from the current hour. Unset is 30.
+                view:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUserView'
+            title: BatchGetPlatformUsersRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetPlatformUsersResponse:
+            type: object
+            properties:
+                platformUsers:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUser'
+                    description: Keyed by platform user id.
+            title: BatchGetPlatformUsersResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetPlatformUsersResponse.PlatformUsersEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUser'
+            title: PlatformUsersEntry
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetServiceAccountsRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 128
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                    maxItems: 1000
+                    minItems: 1
+            title: BatchGetServiceAccountsRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetServiceAccountsResponse:
+            type: object
+            properties:
+                serviceAccounts:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccount'
+                    description: The accounts among the asked ids, keyed by id.
+            title: BatchGetServiceAccountsResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BatchGetServiceAccountsResponse.ServiceAccountsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccount'
+            title: ServiceAccountsEntry
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.BuiltInPolicyChange:
+            type: object
+            properties:
+                builtInId:
+                    type: string
+                    maxLength: 128
+                    minLength: 1
+                policy:
+                    description: A policy with neither field set goes back to the purpose default.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PopularityPolicy'
+            title: BuiltInPolicyChange
+            required:
+                - policy
+            additionalProperties: false
+            description: |-
+                BuiltInPolicyChange sets the popularity policy of a built-in account, the one thing of a built-in
+                 account a workspace can change.
+        synq.entities.platformusers.v1alpha.Classification:
+            type: string
+            title: Classification
+            enum:
+                - CLASSIFICATION_UNSPECIFIED
+                - CLASSIFICATION_PERSON
+                - CLASSIFICATION_SERVICE_ACCOUNT
+                - CLASSIFICATION_BUILT_IN
+                - CLASSIFICATION_COALESCE
+                - CLASSIFICATION_UNCLASSIFIED
+            description: Classification is how a login reads, in one word.
+        synq.entities.platformusers.v1alpha.CoalesceLoginExclusion:
+            type: object
+            properties:
+                platformUserId:
+                    type: string
+                    maxLength: 2048
+                    minLength: 1
+                excluded:
+                    type: boolean
+                    description: True takes the login out of the Coalesce Quality account, false puts it back.
+            title: CoalesceLoginExclusion
+            additionalProperties: false
+            description: |-
+                CoalesceLoginExclusion says whether a former login of Coalesce Quality is still ours. A login that
+                 a Coalesce Quality integration connects as now cannot be excluded.
+        synq.entities.platformusers.v1alpha.Evidence:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.EvidenceKind'
+                platformUserId:
+                    type: string
+                login:
+                    type: string
+                values:
+                    type: array
+                    items:
+                        type: string
+                    description: 'What the evidence names: the tool, the pattern, the kind, the cadence or the email.'
+                text:
+                    type: string
+                    description: One line for a person, such as "99% Looker Studio queries" or "writes every hour".
+            title: Evidence
+            additionalProperties: false
+            description: Evidence is one hint about what a login is.
+        synq.entities.platformusers.v1alpha.EvidenceKind:
+            type: string
+            title: EvidenceKind
+            enum:
+                - EVIDENCE_KIND_UNSPECIFIED
+                - EVIDENCE_KIND_TOOL_MARKER
+                - EVIDENCE_KIND_NAME_PATTERN
+                - EVIDENCE_KIND_PLATFORM_KIND
+                - EVIDENCE_KIND_FOOTPRINT
+                - EVIDENCE_KIND_WRITE_CADENCE
+                - EVIDENCE_KIND_EMAIL
+            description: EvidenceKind is a kind of hint about what a login is.
+        synq.entities.platformusers.v1alpha.LinkCandidateMember:
+            type: object
+            properties:
+                userId:
+                    type: string
+                    maxLength: 256
+                    minLength: 1
+                firstName:
+                    type: string
+                    maxLength: 256
+                lastName:
+                    type: string
+                    maxLength: 256
+                email:
+                    type: string
+                    maxLength: 512
+                identities:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        maxItems: 100
+                    maxItems: 100
+                    description: |-
+                        The member's identities, as User.identities lists them. A login listed here by its
+                         "platform_user:<id>" is already linked, and is never suggested.
+            title: LinkCandidateMember
+            additionalProperties: false
+            description: LinkCandidateMember is one workspace member a login may be linked to.
+        synq.entities.platformusers.v1alpha.LinkEvidence:
+            type: string
+            title: LinkEvidence
+            enum:
+                - LINK_EVIDENCE_UNSPECIFIED
+                - LINK_EVIDENCE_LOGIN_IS_EMAIL
+                - LINK_EVIDENCE_EMAIL_LOCAL_PART
+                - LINK_EVIDENCE_NAME
+            description: LinkEvidence is why a login is suggested for a member, strongest first.
+        synq.entities.platformusers.v1alpha.LinkSuggestion:
+            type: object
+            properties:
+                platformUserId:
+                    type: string
+                login:
+                    type: string
+                platform:
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                platformRootEntityId:
+                    type: string
+                userIdentity:
+                    type: string
+                    description: '"synq:<user_id>" of the suggested member.'
+                evidence:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.LinkEvidence'
+                ambiguous:
+                    type: boolean
+                    description: The login matches more than one member, each listed with its own suggestion.
+            title: LinkSuggestion
+            additionalProperties: false
+            description: LinkSuggestion is one login that may belong to one member.
+        synq.entities.platformusers.v1alpha.ListLinkSuggestionsRequest:
+            type: object
+            properties:
+                members:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.LinkCandidateMember'
+                    maxItems: 5000
+                    minItems: 1
+                    description: The members to match, as synq.users.v1 UsersService.ListUsers returns them.
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: Only these logins. Empty considers every login.
+                pagination:
+                    description: Without a page size every suggestion is returned.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListLinkSuggestionsRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListLinkSuggestionsResponse:
+            type: object
+            properties:
+                suggestions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.LinkSuggestion'
+                    description: By evidence, strongest first, then login, platform user id and member.
+                pageInfo:
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+            title: ListLinkSuggestionsResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListPlatformUsersRequest:
+            type: object
+            properties:
+                serviceAccountIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 128
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: Only the logins in these service accounts, built-in ones included.
+                platforms:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    description: Only the logins on these platforms.
+                platformRootEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: Only the logins on these platform instances.
+                unclassifiedOnly:
+                    type: boolean
+                    description: Only the logins with a slice no service account takes and no person link or email links.
+                suggestedOnly:
+                    type: boolean
+                    description: Only the logins a service account suggestion includes.
+                search:
+                    type: string
+                    maxLength: 256
+                    description: A substring of the login, display name or email, ignoring case.
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The days of query history read, back from the current hour. Unset is 30.
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: Only these logins.
+                sources:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 256
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: Only the logins these integrations declare.
+                view:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUserView'
+                pagination:
+                    description: Without a page size every matching login is returned.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListPlatformUsersRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListPlatformUsersResponse:
+            type: object
+            properties:
+                platformUsers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUser'
+                summary:
+                    description: On the first page only.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUsersSummary'
+                pageInfo:
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+                from:
+                    description: The window read, [from, to).
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: ListPlatformUsersResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListServiceAccountSuggestionsRequest:
+            type: object
+            properties:
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The days of query history the evidence is read over, back from the current hour. Unset is 30.
+            title: ListServiceAccountSuggestionsRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListServiceAccountSuggestionsResponse:
+            type: object
+            properties:
+                suggestions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccountSuggestion'
+                    description: By source, then by how much of the logins' activity carries the evidence, highest first.
+            title: ListServiceAccountSuggestionsResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListServiceAccountsRequest:
+            type: object
+            title: ListServiceAccountsRequest
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.ListServiceAccountsResponse:
+            type: object
+            properties:
+                serviceAccounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccount'
+                    description: |-
+                        The workspace's accounts by priority, highest first, then the last update, newest first, then id.
+                         Then the built-in accounts, in the order they apply, `built_in.coalesce-quality` first.
+                personLinks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PersonLink'
+                    description: By priority, highest first, then the last update, newest first, then id.
+            title: ListServiceAccountsResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.LoginSlice:
+            type: object
+            properties:
+                issuer:
+                    description: DATA_PLATFORM_TYPE_UNSPECIFIED is the queries with no tool's tag.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                classification:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Classification'
+                serviceAccounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SliceMembership'
+                    description: Every service account the slice is in, the first one deciding where its queries are grouped.
+                person:
+                    description: For a PERSON slice.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SlicePerson'
+                countsTowardPopularity:
+                    type: boolean
+                listedAsFrequentUser:
+                    type: boolean
+                lastSeenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                signals:
+                    description: With view FULL only.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SliceSignals'
+            title: LoginSlice
+            additionalProperties: false
+            description: |-
+                LoginSlice is the queries of one login that one tool issued, from the tag on each query, or the
+                 queries with no tag. Each slice is classified on its own.
+        synq.entities.platformusers.v1alpha.MatchKind:
+            type: string
+            title: MatchKind
+            enum:
+                - MATCH_KIND_UNSPECIFIED
+                - MATCH_KIND_EXACT
+                - MATCH_KIND_MATCHER
+                - MATCH_KIND_BUILT_IN
+            description: MatchKind is why a slice is in a service account.
+        synq.entities.platformusers.v1alpha.Matcher:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: Caller-supplied uuid, unique within the workspace.
+                platformUserIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: Exact logins, by the platform_user_id PlatformUsersService returns.
+                logins:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 256
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: Patterns over the login, `*` for any run of characters, ignoring case, such as `FIVETRAN_*`.
+                emails:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 256
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: |-
+                        Patterns over the email the platform states, `*` for any run of characters, ignoring case, such
+                         as `*@example.com`. On BigQuery the login is the email.
+                advanced:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.AdvancedMatch'
+                internalOnly:
+                    type: boolean
+                    description: |-
+                        Output only: the matcher uses a condition this API cannot express. Its account reads as is, and
+                         a change to it is refused.
+            title: Matcher
+            additionalProperties: false
+            description: |-
+                Matcher selects logins. Set the simple fields first: most service accounts need only login
+                 patterns. Every non-empty field must match.
+
+                 A matcher with only platform_user_ids, and optionally advanced.issuers, is an exact matcher: it
+                 names logins, and wins over every other matcher and over the logins Coalesce Quality connects as.
+                 platform_user_ids cannot be combined with any other field, and each login and issuer can be in only
+                 one exact matcher of an account.
+        synq.entities.platformusers.v1alpha.PersonLink:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: Caller-supplied uuid, unique within the workspace.
+                title:
+                    type: string
+                    maxLength: 200
+                    minLength: 1
+                priority:
+                    type: integer
+                    format: int32
+                    description: Higher first, between person links.
+                matcher:
+                    description: Its id is the link's own, whatever is sent. platform_user_ids is not allowed here.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Matcher'
+                identityPattern:
+                    type: string
+                    maxLength: 512
+                    minLength: 1
+                    description: |-
+                        The identity of the person, `{login}` standing for the login, lower-cased. Such as
+                         `email:{login}@example.com`, to resolve with synq.users.v1.
+                etag:
+                    type: string
+                    maxLength: 256
+                    description: 'Output only: pass it back on a change of the link.'
+                updatedBy:
+                    description: Output only.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                createdAt:
+                    description: Output only.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                updatedAt:
+                    description: Output only.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: PersonLink
+            required:
+                - matcher
+            additionalProperties: false
+            description: |-
+                PersonLink links logins to a person: the identity it makes from each login, such as
+                 `email:{login}@example.com`. It applies only to logins no service account takes.
+
+                 A person link takes only the queries a login ran with no tool's tag, unless its matcher names
+                 issuers. So a person who runs a BI tool on their own credentials keeps those queries as the tool's.
+        synq.entities.platformusers.v1alpha.PlanServiceAccountChangesRequest:
+            type: object
+            properties:
+                changes:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccountChanges'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The days of query history the plan is read over, back from the current hour. Unset is 30.
+            title: PlanServiceAccountChangesRequest
+            required:
+                - changes
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.PlanServiceAccountChangesResponse:
+            type: object
+            properties:
+                sliceChanges:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SliceChange'
+                    description: By the size of counted_reads_delta, largest first, then login and issuer.
+                countedReadsDelta:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: The counted reads the change set adds, negative when it removes them.
+                rankChanges:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.RankChange'
+                    description: |-
+                        At most 20, in the SYSTEM pool, by how far the percentile moves, largest first. Empty when the
+                         ranks could not be computed, with ranks_unavailable set.
+                ranksUnavailable:
+                    type: boolean
+                planToken:
+                    type: string
+                    description: What ApplyServiceAccountChanges takes for exactly this change set.
+                from:
+                    description: The window planned over, [from, to).
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: PlanServiceAccountChangesResponse
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.PlatformUser:
+            type: object
+            properties:
+                platformUserId:
+                    type: string
+                    description: Opaque. Pass it back as it is.
+                name:
+                    type: string
+                    description: The login as the platform shows it.
+                platform:
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                platformRootEntityId:
+                    type: string
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlatformUserSource'
+                    description: One per integration that declared the login, by integration.
+                classification:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Classification'
+                lastSeenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Reads and writes over the window, Coalesce Quality's own queries left out.
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                share:
+                    type: number
+                    format: double
+                    description: Its share of the workspace's reads, inputs and writes in the window, from 0 to 1.
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: What its queries cost, per platform.
+                slices:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.LoginSlice'
+                    description: One per slice, by issuer.
+                identities:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        `platform_user:<id>` always, and `email:<address>` when an integration lists an email for a
+                         login that is not a service kind.
+                evidence:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Evidence'
+                suggested:
+                    type: boolean
+                    description: A service account suggestion includes the login.
+            title: PlatformUser
+            additionalProperties: false
+            description: PlatformUser is one login on one platform instance.
+        synq.entities.platformusers.v1alpha.PlatformUserSource:
+            type: object
+            properties:
+                source:
+                    type: string
+                    description: The integration.
+                userType:
+                    type: string
+                    description: The kind of login the platform's user listing states, such as Snowflake's `SERVICE`.
+                email:
+                    type: string
+                displayName:
+                    type: string
+                coalesceLogin:
+                    type: boolean
+                    description: A login the integration connects as, now or before.
+                coalesceLoginCurrent:
+                    type: boolean
+                    description: A login the integration connects as now.
+                stateAt:
+                    description: When the integration observed what it declared.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: PlatformUserSource
+            additionalProperties: false
+            description: PlatformUserSource is what one integration declared about a login.
+        synq.entities.platformusers.v1alpha.PlatformUserView:
+            type: string
+            title: PlatformUserView
+            enum:
+                - PLATFORM_USER_VIEW_UNSPECIFIED
+                - PLATFORM_USER_VIEW_BASIC
+                - PLATFORM_USER_VIEW_FULL
+            description: PlatformUserView is how much of a login a read returns.
+        synq.entities.platformusers.v1alpha.PlatformUsersSummary:
+            type: object
+            properties:
+                classifiedShare:
+                    type: number
+                    format: double
+                    description: The share of the workspace's activity in the window whose login is classified, from 0 to 1.
+                countedShare:
+                    type: number
+                    format: double
+                    description: The share of the workspace's reads that count toward popularity, from 0 to 1.
+                unclassifiedLogins:
+                    type: integer
+                suggestedLogins:
+                    type: integer
+                logins:
+                    type: integer
+            title: PlatformUsersSummary
+            additionalProperties: false
+            description: PlatformUsersSummary is the whole window of the workspace, whatever the filters.
+        synq.entities.platformusers.v1alpha.PopularityPolicy:
+            type: object
+            properties:
+                countsTowardPopularity:
+                    type: boolean
+                    description: Whether the logins' reads count toward an entity's popularity. Unset takes the purpose default.
+                    nullable: true
+                listedAsFrequentUser:
+                    type: boolean
+                    description: |-
+                        Whether the logins may be listed among an entity's frequent users. Unset is false, as a service
+                         account is not a person.
+                    nullable: true
+                countsTowardPopularityResolved:
+                    type: boolean
+                    description: 'Output only: what applies, the policy or the purpose default.'
+                listedAsFrequentUserResolved:
+                    type: boolean
+                    description: 'Output only: what applies.'
+            title: PopularityPolicy
+            additionalProperties: false
+            description: |-
+                PopularityPolicy says whether the reads of a service account's logins count. An unset field takes
+                 the default of the account's purpose: loader, orchestrator, transformer, observability, catalog and
+                 CI reads do not count, every other purpose's do. Coalesce Quality's own queries never count,
+                 whatever a policy says.
+        synq.entities.platformusers.v1alpha.RankChange:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                pool:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.PopularityPool'
+                platform:
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                instance:
+                    type: string
+                readsBefore:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                readsAfter:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                percentileBefore:
+                    type: number
+                    format: double
+                    description: From 0 to 1, 0 when the entity was not ranked.
+                percentileAfter:
+                    type: number
+                    format: double
+            title: RankChange
+            additionalProperties: false
+            description: RankChange is one entity whose rank in one pool the change set moves.
+        synq.entities.platformusers.v1alpha.ServiceAccount:
+            type: object
+            properties:
+                id:
+                    type: string
+                    maxLength: 128
+                    minLength: 1
+                    description: |-
+                        A caller-supplied uuid for a workspace account. A built-in account's id starts with
+                         `built_in.`, such as `built_in.fivetran`.
+                name:
+                    type: string
+                    maxLength: 200
+                    minLength: 1
+                toolPlatform:
+                    description: |-
+                        The tool the logins act for, DATA_PLATFORM_TYPE_UNSPECIFIED when there is none or it is not
+                         known.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                toolEntityId:
+                    type: string
+                    maxLength: 2048
+                    description: The tool's integration entity, if the workspace has one.
+                    nullable: true
+                purpose:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.Purpose'
+                policy:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PopularityPolicy'
+                priority:
+                    type: integer
+                    format: int32
+                    description: Higher first, between accounts.
+                matchers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Matcher'
+                    maxItems: 100
+                builtIn:
+                    type: boolean
+                    description: |-
+                        Output only: the account is built in. Its matchers cannot be changed, and its policy is changed
+                         through ServiceAccountChanges.built_in_policies.
+                excludedPlatformUserIds:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Output only, on `built_in.coalesce-quality`: the former logins of Coalesce Quality that a person
+                         said are no longer ours. Changed through ServiceAccountChanges.coalesce_logins.
+                etag:
+                    type: string
+                    maxLength: 256
+                    description: |-
+                        Output only: pass it back on a change of the account, so a concurrent change is refused rather
+                         than overwritten.
+                updatedBy:
+                    description: Output only.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                createdAt:
+                    description: Output only.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                updatedAt:
+                    description: Output only.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: ServiceAccount
+            additionalProperties: false
+            description: |-
+                ServiceAccount is a group of logins that act for one tool or purpose, such as the logins Airflow
+                 runs as. A login slice that a service account takes reads as the tool, not as a person, and counts
+                 toward popularity as the account's policy says.
+
+                 A login's queries are split by the tool that issued them, from the tag on each query. Each part is
+                 matched on its own, so a person's Looker Studio queries can belong to a shared Looker Studio
+                 account while the rest of their queries stay theirs.
+
+                 Accounts apply in order: exact matchers first, then every other matcher by the account's priority,
+                 highest first, then the last update, newest first, then the id. Built-in accounts apply after every
+                 workspace account.
+        synq.entities.platformusers.v1alpha.ServiceAccountChanges:
+            type: object
+            properties:
+                upsertServiceAccounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccount'
+                    maxItems: 1000
+                    description: |-
+                        Each replaces the account with its id, matchers included, or creates it. Pass the etag you read
+                         to replace one.
+                deleteServiceAccountIds:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: Deleting an account deletes its matchers. Deleting one that is not there succeeds.
+                upsertPersonLinks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PersonLink'
+                    maxItems: 1000
+                deletePersonLinkIds:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 1000
+                    maxItems: 1000
+                builtInPolicies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.BuiltInPolicyChange'
+                    maxItems: 1000
+                coalesceLogins:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.CoalesceLoginExclusion'
+                    maxItems: 1000
+            title: ServiceAccountChanges
+            additionalProperties: false
+            description: |-
+                ServiceAccountChanges is any mix of changes to a workspace's service accounts, person links and
+                 policies, planned and applied as one.
+        synq.entities.platformusers.v1alpha.ServiceAccountSuggestion:
+            type: object
+            properties:
+                source:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SuggestionSource'
+                changes:
+                    description: |-
+                        The account to create, with one matcher. Its ids are generated, so applying it twice creates it
+                         once.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccountChanges'
+                evidence:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Evidence'
+                    description: Why each login is in it, one entry per login.
+            title: ServiceAccountSuggestion
+            additionalProperties: false
+        synq.entities.platformusers.v1alpha.SliceChange:
+            type: object
+            properties:
+                platformUserId:
+                    type: string
+                login:
+                    type: string
+                issuer:
+                    description: The tool whose queries the slice is, DATA_PLATFORM_TYPE_UNSPECIFIED for queries with no tag.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                before:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SliceReading'
+                after:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SliceReading'
+                countedReadsDelta:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Reads of the slice in the window that start counting toward popularity, negative when they stop.
+            title: SliceChange
+            additionalProperties: false
+            description: SliceChange is one login slice whose classification the change set moves.
+        synq.entities.platformusers.v1alpha.SliceMembership:
+            type: object
+            properties:
+                serviceAccountId:
+                    type: string
+                kind:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.MatchKind'
+                matcherId:
+                    type: string
+                    description: The matcher that took the slice, for MATCHER and EXACT.
+            title: SliceMembership
+            additionalProperties: false
+            description: SliceMembership is one service account a login slice is in, and why.
+        synq.entities.platformusers.v1alpha.SlicePerson:
+            type: object
+            properties:
+                identity:
+                    type: string
+                    description: Such as `email:jane@example.com`, to resolve with synq.users.v1.
+                personLinkId:
+                    type: string
+                    description: The person link that made it, empty when it is the email the platform states.
+            title: SlicePerson
+            additionalProperties: false
+            description: SlicePerson is the person a login slice is linked to.
+        synq.entities.platformusers.v1alpha.SliceReading:
+            type: object
+            properties:
+                classification:
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Classification'
+                serviceAccountIds:
+                    type: array
+                    items:
+                        type: string
+                    description: The service accounts the slice is in, the first one deciding its group, built-in ones included.
+                personIdentity:
+                    type: string
+                    description: The identity of its person, for a slice a person link or the platform's email links.
+                countsTowardPopularity:
+                    type: boolean
+                listedAsFrequentUser:
+                    type: boolean
+            title: SliceReading
+            additionalProperties: false
+            description: SliceReading is how one login slice reads under a classification.
+        synq.entities.platformusers.v1alpha.SliceSignals:
+            type: object
+            properties:
+                issuerShare:
+                    type: number
+                    format: double
+                    description: Its share of the login's queries in the window, from 0 to 1.
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                inputs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                activeDays:
+                    type: integer
+                distinctEntities:
+                    type: integer
+                    description: The distinct entities it touched, and wrote.
+                writtenEntities:
+                    type: integer
+                writeCadence:
+                    description: How often it writes.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+            title: SliceSignals
+            additionalProperties: false
+            description: 'SliceSignals are what a login slice did in the window: what the matchers and the suggestions see.'
+        synq.entities.platformusers.v1alpha.SuggestionSource:
+            type: string
+            title: SuggestionSource
+            enum:
+                - SUGGESTION_SOURCE_UNSPECIFIED
+                - SUGGESTION_SOURCE_COALESCE_QUALITY_MARKER
+                - SUGGESTION_SOURCE_TOOL_MARKER
+                - SUGGESTION_SOURCE_PLATFORM_KIND
+                - SUGGESTION_SOURCE_NAME_PATTERN
+                - SUGGESTION_SOURCE_LOADER_FOOTPRINT
+                - SUGGESTION_SOURCE_BEHAVIOUR
+            description: SuggestionSource is the evidence a suggestion rests on, most confident first.
         synq.entities.resolve.v1.BatchResolveIdentifiersRequest:
             type: object
             properties:
@@ -27321,6 +29686,11 @@ components:
                 - DATA_PLATFORM_TYPE_ATLAN
                 - DATA_PLATFORM_TYPE_COALESCE
                 - DATA_PLATFORM_TYPE_CASTORDOC
+                - DATA_PLATFORM_TYPE_FIVETRAN
+                - DATA_PLATFORM_TYPE_DAGSTER
+                - DATA_PLATFORM_TYPE_AIRBYTE
+                - DATA_PLATFORM_TYPE_STITCH
+                - DATA_PLATFORM_TYPE_SNOWPLOW
                 - DATA_PLATFORM_TYPE_POWERBI
                 - DATA_PLATFORM_TYPE_THOUGHTSPOT
                 - DATA_PLATFORM_TYPE_SIGMA
@@ -27331,6 +29701,24 @@ components:
                 - DATA_PLATFORM_TYPE_FABRIC
                 - DATA_PLATFORM_TYPE_DB2
                 - DATA_PLATFORM_TYPE_LOOKER_STUDIO
+                - DATA_PLATFORM_TYPE_HEX
+                - DATA_PLATFORM_TYPE_OMNI
+                - DATA_PLATFORM_TYPE_METABASE
+                - DATA_PLATFORM_TYPE_GOOGLE_SHEETS
+                - DATA_PLATFORM_TYPE_GRAFANA
+                - DATA_PLATFORM_TYPE_STREAMLIT
+                - DATA_PLATFORM_TYPE_ASTRATO
+                - DATA_PLATFORM_TYPE_SNOWFLAKE_CORTEX
+                - DATA_PLATFORM_TYPE_SNOWFLAKE_INTELLIGENCE
+                - DATA_PLATFORM_TYPE_CUBE
+                - DATA_PLATFORM_TYPE_CENSUS
+                - DATA_PLATFORM_TYPE_HIGHTOUCH
+                - DATA_PLATFORM_TYPE_WORKATO
+                - DATA_PLATFORM_TYPE_ESTUARY
+                - DATA_PLATFORM_TYPE_DLT
+                - DATA_PLATFORM_TYPE_TERRAFORM
+                - DATA_PLATFORM_TYPE_HEVO
+                - DATA_PLATFORM_TYPE_DATASTREAM
                 - DATA_PLATFORM_TYPE_SYNQ
         synq.platforms.v1.DatabricksIdentifier:
             type: object
@@ -29962,7 +32350,10 @@ components:
                 - SCOPE_DELIVERY_EDIT
                 - SCOPE_RECOMMENDATIONS_READ
                 - SCOPE_RECOMMENDATIONS_EDIT
+                - SCOPE_PLATFORM_USERS_READ
                 - SCOPE_PLATFORM_USER_LINK
+                - SCOPE_SERVICE_ACCOUNTS_READ
+                - SCOPE_SERVICE_ACCOUNTS_EDIT
         synq.v1.Severity:
             type: string
             title: Severity
@@ -37687,6 +40078,146 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.domains.v2.FetchDomainWithSubDomainsResponse'
+    /api/entities/activity/v1alpha/actor-summary:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: GetActorSummary
+            description: |-
+                Read what one actor read, built and wrote over the window, what its queries cost per compute and
+                 platform, and when it works. The actor is asked for by name, so nothing is left out for being
+                 Coalesce Quality's own access, a writer's own read or a policy. Without the platform users scope
+                 only an issuer entity, a job or step, may be asked for, and the answer names no login.
+            operationId: synq.entities.activity.v1alpha.ActivityService.GetActorSummary
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetActorSummaryRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetActorSummaryResponse'
+    /api/entities/activity/v1alpha/actors:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: ListEntityActors
+            description: |-
+                Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
+                 tools and the logins. Only a caller holding the platform users scope sees the logins: any other
+                 gets every logins list empty and logins_hidden set.
+            operationId: synq.entities.activity.v1alpha.ActivityService.ListEntityActors
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListEntityActorsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListEntityActorsResponse'
+    /api/entities/activity/v1alpha/overview:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: GetActivityOverview
+            description: |-
+                Read a workspace's queries and their cost per group of logins, per platform, and its most read
+                 entities. It names groups and entities, never a login or a person.
+            operationId: synq.entities.activity.v1alpha.ActivityService.GetActivityOverview
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetActivityOverviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetActivityOverviewResponse'
+    /api/entities/activity/v1alpha/person:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: ListPersonActivity
+            description: |-
+                Read what one person's logins read and wrote over the window, per entity, direction and measure.
+                 What a colleague read is personal data, so a user caller needs the platform users scope from its
+                 role, which a Developer and an Admin have. Logins in a service account, and Coalesce Quality's
+                 own queries, are never part of the answer.
+            operationId: synq.entities.activity.v1alpha.ActivityService.ListPersonActivity
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListPersonActivityRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListPersonActivityResponse'
+    /api/entities/activity/v1alpha/popularity:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: BatchGetPopularity
+            description: |-
+                Read how popular each asked entity is over the window: its counted reads and writes per measure,
+                 and its rank in each pool it has reads in. An entity is answered with the entities it is the same
+                 as, such as a dbt model and the table it builds. Every asked id has an answer, an empty one when
+                 nothing counted.
+            operationId: synq.entities.activity.v1alpha.ActivityService.BatchGetPopularity
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.BatchGetPopularityRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.BatchGetPopularityResponse'
+    /api/entities/activity/v1alpha/series:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: GetEntityActivitySeries
+            description: |-
+                Read how access to one entity moves over the window: per direction, a point per UTC hour, a point
+                 per day in the asked time zone, and a weekday and hour grid. A direction's total is the sum of its
+                 actors in ListEntityActors under the same lens. It names tools, never a login.
+            operationId: synq.entities.activity.v1alpha.ActivityService.GetEntityActivitySeries
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetEntityActivitySeriesRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetEntityActivitySeriesResponse'
     /api/entities/annotations/v1:
         get:
             tags:
@@ -41348,6 +43879,186 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.folders.v1.ListMembersResponse'
+    /api/entities/platform-users/v1alpha/batch-get:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.PlatformUsersService
+            summary: BatchGetPlatformUsers
+            description: |-
+                Read logins by platform user id. Ids no integration declared and with no activity in the window
+                 are left out.
+            operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.BatchGetPlatformUsers
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.BatchGetPlatformUsersRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.BatchGetPlatformUsersResponse'
+    /api/entities/platform-users/v1alpha/link-suggestions:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.PlatformUsersService
+            summary: ListLinkSuggestions
+            description: |-
+                Suggest which workspace member each unclassified login may belong to, by matching the login
+                 against the members the caller passes. Accept a suggestion with synq.users.v1
+                 UsersService.UpsertUserAliases. A login already linked is skipped only when the caller lists its
+                 "platform_user:<id>" among a member's identities.
+            operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.ListLinkSuggestions
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListLinkSuggestionsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListLinkSuggestionsResponse'
+    /api/entities/platform-users/v1alpha/list:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.PlatformUsersService
+            summary: ListPlatformUsers
+            description: |-
+                List the workspace's logins by their share of the workspace's activity, highest first. The first
+                 page carries a summary of the whole window.
+            operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.ListPlatformUsers
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListPlatformUsersRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListPlatformUsersResponse'
+    /api/entities/service-accounts/v1alpha/apply:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.ServiceAccountsService
+            summary: ApplyServiceAccountChanges
+            description: |-
+                Write a planned change set, all of it or nothing. It is refused with FAILED_PRECONDITION when the
+                 token is not from a plan of exactly this change set against the workspace as it is now: plan it
+                 again. A change to an account or person link whose etag no longer matches is refused with
+                 ABORTED, and nothing is written. Caller-supplied ids and etags make a retry converge.
+            operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.ApplyServiceAccountChanges
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ApplyServiceAccountChangesRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ApplyServiceAccountChangesResponse'
+    /api/entities/service-accounts/v1alpha/batch-get:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.ServiceAccountsService
+            summary: BatchGetServiceAccounts
+            description: Read service accounts by id, built-in ids included. Ids that do not exist are left out.
+            operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.BatchGetServiceAccounts
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.BatchGetServiceAccountsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.BatchGetServiceAccountsResponse'
+    /api/entities/service-accounts/v1alpha/list:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.ServiceAccountsService
+            summary: ListServiceAccounts
+            description: |-
+                List every workspace service account, then every built-in one, in the order they apply, and the
+                 person links in a second list.
+            operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.ListServiceAccounts
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListServiceAccountsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListServiceAccountsResponse'
+    /api/entities/service-accounts/v1alpha/plan:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.ServiceAccountsService
+            summary: PlanServiceAccountChanges
+            description: |-
+                Report what a change set would change, without writing it: every login slice whose
+                 classification moves, how many counted reads each adds or removes, and the entities whose rank
+                 moves most. The plan_token it returns is what ApplyServiceAccountChanges takes.
+            operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.PlanServiceAccountChanges
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlanServiceAccountChangesRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.PlanServiceAccountChangesResponse'
+    /api/entities/service-accounts/v1alpha/suggestions:
+        post:
+            tags:
+                - synq.entities.platformusers.v1alpha.ServiceAccountsService
+            summary: ListServiceAccountSuggestions
+            description: |-
+                Suggest service accounts for the logins nothing classifies, each as a change set with its
+                 evidence. A suggestion changes nothing by itself: edit it if needed, plan it with
+                 PlanServiceAccountChanges, then apply it.
+            operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.ListServiceAccountSuggestions
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListServiceAccountSuggestionsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListServiceAccountSuggestionsResponse'
     /api/entities/typedefs/v1/entity-traits/list:
         post:
             tags:
@@ -52296,9 +55007,8 @@ paths:
                 - synq.entities.orchestration.v1.OrchestrationService
             summary: BatchOrchestration
             description: |-
-                BatchOrchestration retrieves orchestration relationships for multiple entities.
-                 For each entity, it returns both upstream entities (what orchestrates it) and
-                 downstream entities (what it orchestrates).
+                BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it
+                 in the last 31 days (upstream), and the entities it ran (downstream).
             operationId: synq.entities.orchestration.v1.OrchestrationService.BatchOrchestration
             parameters:
                 - name: entities.entityId
@@ -56280,11 +58990,25 @@ tags:
     - name: synq.entities.impact.v1.ImpactService
     - name: synq.entities.coordinates.v1.DatabaseCoordinatesService
       description: DatabaseCoordinatesService is a service for getting database coordinates of Entities.
+    - name: synq.entities.activity.v1alpha.ActivityService
+      description: |-
+        ActivityService reads the query history of a workspace's data platforms: how popular an entity is,
+         who reads and writes it, what one login, tool, job or person touched and what it cost, and where a
+         workspace's compute goes.
+
+         Every read covers a window of whole UTC hours, by default the 30 days before the current hour. A
+         login's reads count toward popularity as its service account's popularity policy says (see
+         synq.entities.platformusers.v1alpha.ServiceAccountsService), and Coalesce Quality's own queries never
+         count.
+
+         Weights are per query, in each platform's own figures. bytes_scanned is never a cost, and no
+         platform reports cost per table, so an entity's share of a query is an equal split. Nothing here is
+         credits or currency.
     - name: synq.entities.orchestration.v1.OrchestrationService
       description: |-
-        OrchestrationService provides information about orchestration relationships between entities.
-         This includes relationships between Airflow tasks and transformation models (dbt, SQLMesh),
-         as well as task-to-task dependencies.
+        OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
+         job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
+         dbt Cloud job steps and Coalesce jobs.
     - name: synq.entities.checks.v2.ChecksCategoriesService
       description: |-
         ChecksCategoriesService reads and edits the categories of the checks in a
@@ -56344,6 +59068,29 @@ tags:
          programmatically; the same service is also mounted on the internal
          API. The workspace and the acting identity are always taken from the
          request context, never from the payload.
+    - name: synq.entities.platformusers.v1alpha.PlatformUsersService
+      description: |-
+        PlatformUsersService reads the logins of a workspace's data platforms, as its integrations declare
+         them and as their queries show them: how each login reads, why, how much it does and what it costs.
+
+         Logins, their emails and what they read are often personal data, so every read here needs the
+         platform users scope, which a Developer and an Admin have.
+    - name: synq.entities.platformusers.v1alpha.ServiceAccountsService
+      description: |-
+        ServiceAccountsService maintains a workspace's service accounts, person links and popularity
+         policies: which logins act for a tool, which belong to a person, and whose reads count toward an
+         entity's popularity.
+
+         Every change goes through a plan first. A typical loop is: ListPlatformUsers with unclassified_only
+         to see the logins nothing classifies, ListServiceAccountSuggestions for the accounts their evidence
+         points at, PlanServiceAccountChanges to see what a change set moves, then
+         ApplyServiceAccountChanges with the plan's token. A change takes effect on the next read.
+
+         Exact matchers, suggestion evidence and plans name logins, which are often personal data. A caller
+         without the platform users scope gets them with every platform user id, login and person identity
+         cleared, and the counts kept. A suggestion's account name and login patterns come from the logins it
+         saw, so that caller gets those cleared too, and a suggestion named after its one login is named
+         "Service login".
     - name: synq.entities.sql_insights.v1.SqlInsightsService
       description: |-
         SqlInsightsService exposes analytical information about the SQL used across a

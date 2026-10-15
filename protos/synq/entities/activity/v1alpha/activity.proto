@@ -1,0 +1,298 @@
+syntax = "proto3";
+
+package synq.entities.activity.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/entities/activity/v1alpha";
+
+// ActivityDirection is how a query touched an entity.
+enum ActivityDirection {
+  ACTIVITY_DIRECTION_UNSPECIFIED = 0;
+  // A statement that writes nothing read the entity.
+  ACTIVITY_DIRECTION_READ = 1;
+  // A statement that writes another table read the entity, such as a model build.
+  ACTIVITY_DIRECTION_INPUT = 2;
+  // Rows landed in the entity. For RUNS, one run of what builds the entity.
+  ACTIVITY_DIRECTION_WRITE = 3;
+}
+
+// ActivityMeasure is what a count counts. Counts are compared only within one measure.
+enum ActivityMeasure {
+  ACTIVITY_MEASURE_UNSPECIFIED = 0;
+  // Warehouse queries.
+  ACTIVITY_MEASURE_QUERIES = 1;
+  // Opens of a BI asset.
+  ACTIVITY_MEASURE_VIEWS = 2;
+  // Orchestrated runs of what builds an entity. Always WRITE, with no login.
+  ACTIVITY_MEASURE_RUNS = 3;
+}
+
+// ActivityShape is how a platform reports a figure.
+enum ActivityShape {
+  ACTIVITY_SHAPE_UNSPECIFIED = 0;
+  // Occurrences counted per event, hour or day.
+  ACTIVITY_SHAPE_INTERVAL = 1;
+  // The day's difference between two daily readings of an all-time counter.
+  ACTIVITY_SHAPE_CUMULATIVE = 2;
+  // The platform's own "N in the last M days".
+  ACTIVITY_SHAPE_TRAILING_WINDOW = 3;
+  // A figure with no stated window.
+  ACTIVITY_SHAPE_LATEST_VALUE = 4;
+}
+
+// ActivityLens picks which directions and which logins count. Coalesce Quality's own queries, a read
+// of an intermediate table and a login's reads of a table it wrote the same day are left out under
+// every lens, and writes never depend on it.
+enum ActivityLens {
+  // Read as CONSUMPTION.
+  ACTIVITY_LENS_UNSPECIFIED = 0;
+  // Reads by the logins whose reads count toward popularity: people, BI tools, reverse ETL and
+  // applications. What BatchGetPopularity counts.
+  ACTIVITY_LENS_CONSUMPTION = 1;
+  // Every INPUT, and the reads of people: what is read to build, and what developers look at.
+  ACTIVITY_LENS_DEVELOPMENT = 2;
+  // Reads by a service account whose purpose is observability.
+  ACTIVITY_LENS_MONITORING = 3;
+}
+
+// Purpose is what a service account acts for. It decides whether its reads count toward popularity
+// when its popularity policy does not say.
+enum Purpose {
+  PURPOSE_UNSPECIFIED = 0;
+  // Ingestion and replication, such as Fivetran, Airbyte, Stitch or Estuary.
+  PURPOSE_LOADER = 1;
+  // Airflow, Dagster.
+  PURPOSE_ORCHESTRATOR = 2;
+  // dbt, Coalesce Transform, SQLMesh.
+  PURPOSE_TRANSFORMER = 3;
+  // Looker, Tableau, Sigma, Power BI.
+  PURPOSE_BI = 4;
+  // Hightouch, Census.
+  PURPOSE_REVERSE_ETL = 5;
+  // A product or service that reads its own data, such as a Streamlit app.
+  PURPOSE_APPLICATION = 6;
+  // Data quality and observability tools, Coalesce Quality included.
+  PURPOSE_OBSERVABILITY = 7;
+  // Metadata crawlers, Coalesce Catalog included.
+  PURPOSE_CATALOG = 8;
+  // CI and infrastructure as code.
+  PURPOSE_CI = 9;
+  PURPOSE_OTHER = 10;
+}
+
+// SeriesSplit is how each point of a series is broken down.
+enum SeriesSplit {
+  // No breakdown.
+  SERIES_SPLIT_UNSPECIFIED = 0;
+  // Per issuing tool, from the tag its queries carry.
+  SERIES_SPLIT_ISSUER = 1;
+}
+
+// PopularityPool is what a rank compares an entity with.
+enum PopularityPool {
+  // Read as SYSTEM.
+  POPULARITY_POOL_UNSPECIFIED = 0;
+  // One measure on one platform instance, such as one Snowflake account.
+  POPULARITY_POOL_SYSTEM = 1;
+  // One measure on every instance of one platform.
+  POPULARITY_POOL_PLATFORM = 2;
+  // One measure across the workspace.
+  POPULARITY_POOL_WORKSPACE = 3;
+}
+
+// WriteCadence is how often something wrote an entity in the window, from the median gap between the
+// hours with writes. It is not freshness.
+enum WriteCadence {
+  WRITE_CADENCE_UNSPECIFIED = 0;
+  // Nothing written in the window.
+  WRITE_CADENCE_NONE = 1;
+  // One hour with writes.
+  WRITE_CADENCE_ONCE = 2;
+  WRITE_CADENCE_HOURLY = 3;
+  // Several times a day.
+  WRITE_CADENCE_SUB_DAILY = 4;
+  WRITE_CADENCE_DAILY = 5;
+  WRITE_CADENCE_WEEKLY = 6;
+  // Less often than weekly.
+  WRITE_CADENCE_RARE = 7;
+}
+
+// ComputeUnit is what compute_ms counts on one platform. Each platform reports its own unit, so
+// compute is never summed across platforms.
+enum ComputeUnit {
+  // The platform reports no compute figure.
+  COMPUTE_UNIT_UNSPECIFIED = 0;
+  // Milliseconds of an X-Small warehouse: a query's execution time scaled by its warehouse size and
+  // its share of the warehouse.
+  COMPUTE_UNIT_SNOWFLAKE_XSMALL_WAREHOUSE_MS = 1;
+  // BigQuery slot milliseconds.
+  COMPUTE_UNIT_BIGQUERY_SLOT_MS = 2;
+  // Databricks task milliseconds.
+  COMPUTE_UNIT_DATABRICKS_TASK_MS = 3;
+}
+
+// QueryWeights are whole weights summed over queries. An unset figure is one no query reported, and
+// zero is a value. Nothing here is a credit or a price.
+message QueryWeights {
+  optional uint64 execution_ms = 1;
+  // In the unit of the platform the weights are for.
+  optional uint64 compute_ms = 2;
+  // What the queries scanned. Never a cost: a platform can bill differently from what it scanned.
+  optional uint64 bytes_scanned = 3;
+  // Set only where the platform bills by bytes read.
+  optional uint64 bytes_billed = 4;
+}
+
+// PlatformWeights are the weights of the queries on one platform.
+message PlatformWeights {
+  // DATA_PLATFORM_TYPE_UNSPECIFIED is the queries whose platform is not known.
+  synq.platforms.v1.DataPlatformType platform = 1;
+  // What weights.compute_ms counts.
+  ComputeUnit compute_unit = 2;
+  QueryWeights weights = 3;
+}
+
+// QueryShares are the weights of each query split equally over the entities it touched, so they add
+// up across entities. Equal is a convention, as no platform reports cost per table. An unset figure
+// is one no query reported.
+message QueryShares {
+  optional double execution_ms = 1;
+  optional double compute_ms = 2;
+  optional double bytes_scanned = 3;
+  optional double bytes_billed = 4;
+}
+
+// IssuerCount is one issuing tool's part of a point.
+message IssuerCount {
+  // DATA_PLATFORM_TYPE_UNSPECIFIED is access whose query carried no tool's tag.
+  synq.platforms.v1.DataPlatformType issuer = 1;
+  uint64 count = 2;
+}
+
+// SeriesPoint is one step of a series. A series is dense: a step with nothing counted is a point with
+// count 0, and covered or covered_hours say whether it was seen at all.
+message SeriesPoint {
+  google.protobuf.Timestamp start = 1;
+  uint64 count = 2;
+  // With SERIES_SPLIT_ISSUER only: each tool's count, highest first, then by issuer.
+  repeated IssuerCount by_issuer = 3;
+  // On an hourly point: whether the hour's query history was read.
+  bool covered = 4;
+  // On a daily point: how many of the day's hours were read. A day has 23 or 25 hours when the time
+  // zone changes its offset.
+  uint32 covered_hours = 5;
+  // On a daily point: the day is not wholly inside the window.
+  bool partial = 6;
+}
+
+// GridDay is one weekday of a weekday and hour grid.
+message GridDay {
+  // 1 is Monday, 7 is Sunday.
+  uint32 iso_weekday = 1;
+  // 24 counts, one per local hour.
+  repeated uint64 hours = 2;
+  // How many local dates with this weekday overlap the window, to average by.
+  uint32 occurrences = 3;
+}
+
+// WeekGrid is when access happens in the week: seven days, Monday first.
+message WeekGrid {
+  repeated GridDay days = 1;
+}
+
+// PoolRank is an entity's place in one pool.
+message PoolRank {
+  PopularityPool pool = 1;
+  // The platform and instance the pool is on, as far as the pool names them.
+  synq.platforms.v1.DataPlatformType platform = 2;
+  string instance = 3 [(buf.validate.field).string.max_len = 2048];
+  // The entity's reads in this pool.
+  uint64 reads = 4;
+  // The share of the pool's other entities with fewer reads, from 0 to 1. Entities with equal reads
+  // share the lower place, and the only entity of a pool has 1.
+  double percentile = 5;
+  // The entities in the pool: those with counted reads in the window.
+  uint32 pool_size = 6;
+}
+
+// NotCountedActivity is access a read saw and left out.
+message NotCountedActivity {
+  // Access by the logins Coalesce Quality connects as, on queries that carried no Coalesce Quality
+  // tag. A tagged query is in coalesce_quality_queries instead.
+  uint64 coalesce_logins = 1;
+  // Reads by a login of an entity it wrote the same UTC day.
+  uint64 writers_own_reads = 2;
+  // Reads in an hour the entity was an intermediate table.
+  uint64 intermediate = 3;
+  // Coalesce Quality's own queries, on any login, such as a monitor or a SQL test reading the entity.
+  // Never counted.
+  uint64 coalesce_quality_queries = 4;
+  // Reads by logins whose service account does not count toward popularity, such as a loader or an
+  // orchestrator.
+  uint64 excluded_by_policy = 5;
+  // Access the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT.
+  uint64 excluded_by_lens = 6;
+}
+
+// ActorRef names who an actor summary is about.
+message ActorRef {
+  oneof actor {
+    option (buf.validate.oneof).required = true;
+    // One login, on every tool that issued its queries.
+    string platform_user_id = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 2048
+    }];
+    // A job, task or step that issues queries or runs what builds an entity: what it maintains.
+    string issuer_entity_id = 2 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 2048
+    }];
+    // A tool, from the tag its queries carry.
+    synq.platforms.v1.DataPlatformType issuer = 3 [(buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }];
+    // The logins a service account holds, a built-in one included, such as `built_in.fivetran`.
+    // `built_in.coalesce-quality` is the same actor as coalesce.
+    string service_account_id = 4 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 128
+    }];
+    // The logins linked to this person, such as "synq:<user_id>" or "email:<address>".
+    string person_identity = 5 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 2048
+    }];
+    // Coalesce Quality and Coalesce Catalog: every query that carried Coalesce Quality's tag, on any
+    // login, and every query of a login either connects as. What the overview's COALESCE group counts.
+    bool coalesce = 6 [(buf.validate.field).bool.const = true];
+    // One group of GetActivityOverview, exactly the logins the overview lands in it: what
+    // ActorGroup.actor names for a service account or a tool.
+    ActorGroupRef group = 7;
+  }
+}
+
+// ActorGroupRef names one group of GetActivityOverview. Its summary has exactly the group's queries, so
+// it can be narrower than the actor of the same name: a login a service account holds can land with
+// another account first, and Coalesce Quality's queries land in the COALESCE group.
+message ActorGroupRef {
+  oneof group {
+    option (buf.validate.oneof).required = true;
+    // The SERVICE_ACCOUNT group of this service account, a built-in one included.
+    string service_account_id = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 128
+    }];
+    // The TOOL group of this tool.
+    synq.platforms.v1.DataPlatformType issuer = 2 [(buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }];
+  }
+  // Output only: service_account_id names a built-in account.
+  bool built_in = 3;
+}

@@ -9,13 +9,12 @@ import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/entities/orchestration/v1";
 
-// OrchestrationService provides information about orchestration relationships between entities.
-// This includes relationships between Airflow tasks and transformation models (dbt, SQLMesh),
-// as well as task-to-task dependencies.
+// OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
+// job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
+// dbt Cloud job steps and Coalesce jobs.
 service OrchestrationService {
-  // BatchOrchestration retrieves orchestration relationships for multiple entities.
-  // For each entity, it returns both upstream entities (what orchestrates it) and
-  // downstream entities (what it orchestrates).
+  // BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it
+  // in the last 31 days (upstream), and the entities it ran (downstream).
   rpc BatchOrchestration(BatchOrchestrationRequest) returns (BatchOrchestrationResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -30,12 +29,12 @@ service OrchestrationService {
 }
 
 message BatchOrchestrationRequest {
-  // Entities to query for orchestration relationships (e.g., Airflow tasks, dbt models, SQLMesh models, tables)
+  // Entities to query for orchestration relationships (e.g., Airflow tasks, dbt Cloud job steps, Coalesce jobs, dbt models, tables)
   repeated entities.v1.Identifier entities = 1;
 }
 
 message BatchOrchestrationResponse {
-  // Orchestration relationships for each requested entity.
-  // The order corresponds to the order of entities in the request.
+  // Orchestration relationships for each requested entity, in the order of the request.
+  // An entity requested twice is answered once, and an entity the workspace does not hold is left out.
   repeated Orchestration orchestrations = 1;
 }

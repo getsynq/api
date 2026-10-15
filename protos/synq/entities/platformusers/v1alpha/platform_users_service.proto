@@ -1,0 +1,236 @@
+syntax = "proto3";
+
+package synq.entities.platformusers.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/platformusers/v1alpha/platform_users.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/platformusers/v1alpha";
+
+// PlatformUsersService reads the logins of a workspace's data platforms, as its integrations declare
+// them and as their queries show them: how each login reads, why, how much it does and what it costs.
+//
+// Logins, their emails and what they read are often personal data, so every read here needs the
+// platform users scope, which a Developer and an Admin have.
+service PlatformUsersService {
+  // List the workspace's logins by their share of the workspace's activity, highest first. The first
+  // page carries a summary of the whole window.
+  rpc ListPlatformUsers(ListPlatformUsersRequest) returns (ListPlatformUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/platform-users/v1alpha/list"
+      body: "*"
+    };
+  }
+
+  // Read logins by platform user id. Ids no integration declared and with no activity in the window
+  // are left out.
+  rpc BatchGetPlatformUsers(BatchGetPlatformUsersRequest) returns (BatchGetPlatformUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/platform-users/v1alpha/batch-get"
+      body: "*"
+    };
+  }
+
+  // Suggest which workspace member each unclassified login may belong to, by matching the login
+  // against the members the caller passes. Accept a suggestion with synq.users.v1
+  // UsersService.UpsertUserAliases. A login already linked is skipped only when the caller lists its
+  // "platform_user:<id>" among a member's identities.
+  rpc ListLinkSuggestions(ListLinkSuggestionsRequest) returns (ListLinkSuggestionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/platform-users/v1alpha/link-suggestions"
+      body: "*"
+    };
+  }
+}
+
+// PlatformUserView is how much of a login a read returns.
+enum PlatformUserView {
+  // Read as BASIC.
+  PLATFORM_USER_VIEW_UNSPECIFIED = 0;
+  // Everything but the signals of each slice.
+  PLATFORM_USER_VIEW_BASIC = 1;
+  // With the signals of each slice.
+  PLATFORM_USER_VIEW_FULL = 2;
+}
+
+message ListPlatformUsersRequest {
+  // Only the logins in these service accounts, built-in ones included.
+  repeated string service_account_ids = 1 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 128
+      }
+    }
+  }];
+  // Only the logins on these platforms.
+  repeated synq.platforms.v1.DataPlatformType platforms = 2 [(buf.validate.field).repeated.items.enum.defined_only = true];
+  // Only the logins on these platform instances.
+  repeated string platform_root_entity_ids = 3 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // Only the logins with a slice no service account takes and no person link or email links.
+  bool unclassified_only = 4;
+  // Only the logins a service account suggestion includes.
+  bool suggested_only = 5;
+  // A substring of the login, display name or email, ignoring case.
+  string search = 6 [(buf.validate.field).string.max_len = 256];
+  // The days of query history read, back from the current hour. Unset is 30.
+  uint32 window_days = 7 [(buf.validate.field).uint32.lte = 92];
+  // Only these logins.
+  repeated string platform_user_ids = 8 [(buf.validate.field).repeated = {
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // Only the logins these integrations declare.
+  repeated string sources = 9 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 256
+      }
+    }
+  }];
+  PlatformUserView view = 10 [(buf.validate.field).enum.defined_only = true];
+  // Without a page size every matching login is returned.
+  synq.v1.Pagination pagination = 11;
+}
+
+message ListPlatformUsersResponse {
+  repeated PlatformUser platform_users = 1;
+  // On the first page only.
+  PlatformUsersSummary summary = 2;
+  synq.v1.PageInfo page_info = 3;
+  // The window read, [from, to).
+  google.protobuf.Timestamp from = 4;
+  google.protobuf.Timestamp to = 5;
+}
+
+message BatchGetPlatformUsersRequest {
+  repeated string platform_user_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // The days of query history read, back from the current hour. Unset is 30.
+  uint32 window_days = 2 [(buf.validate.field).uint32.lte = 92];
+  PlatformUserView view = 3 [(buf.validate.field).enum.defined_only = true];
+}
+
+message BatchGetPlatformUsersResponse {
+  // Keyed by platform user id.
+  map<string, PlatformUser> platform_users = 1;
+}
+
+message ListLinkSuggestionsRequest {
+  // The members to match, as synq.users.v1 UsersService.ListUsers returns them.
+  repeated LinkCandidateMember members = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 5000
+  }];
+  // Only these logins. Empty considers every login.
+  repeated string platform_user_ids = 2 [(buf.validate.field).repeated = {
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // Without a page size every suggestion is returned.
+  synq.v1.Pagination pagination = 3;
+}
+
+// LinkCandidateMember is one workspace member a login may be linked to.
+message LinkCandidateMember {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+  string first_name = 2 [(buf.validate.field).string.max_len = 256];
+  string last_name = 3 [(buf.validate.field).string.max_len = 256];
+  string email = 4 [(buf.validate.field).string.max_len = 512];
+  // The member's identities, as User.identities lists them. A login listed here by its
+  // "platform_user:<id>" is already linked, and is never suggested.
+  repeated string identities = 5 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {max_len: 2048}
+    }
+  }];
+}
+
+// LinkEvidence is why a login is suggested for a member, strongest first.
+enum LinkEvidence {
+  LINK_EVIDENCE_UNSPECIFIED = 0;
+  // The login is an email address equal to the member's email.
+  LINK_EVIDENCE_LOGIN_IS_EMAIL = 1;
+  // The login equals the local part of the member's email.
+  LINK_EVIDENCE_EMAIL_LOCAL_PART = 2;
+  // The login spells the member's first and last name.
+  LINK_EVIDENCE_NAME = 3;
+}
+
+// LinkSuggestion is one login that may belong to one member.
+message LinkSuggestion {
+  string platform_user_id = 1;
+  string login = 2;
+  synq.platforms.v1.DataPlatformType platform = 3;
+  string platform_root_entity_id = 4;
+  // "synq:<user_id>" of the suggested member.
+  string user_identity = 5;
+  LinkEvidence evidence = 6;
+  // The login matches more than one member, each listed with its own suggestion.
+  bool ambiguous = 7;
+}
+
+message ListLinkSuggestionsResponse {
+  // By evidence, strongest first, then login, platform user id and member.
+  repeated LinkSuggestion suggestions = 1;
+  synq.v1.PageInfo page_info = 2;
+}

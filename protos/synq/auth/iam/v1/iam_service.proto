@@ -43,6 +43,15 @@ message IamResponse {
   // workspace has no Catalog account, so nothing Catalog-backed (knowledge
   // pages, Catalog-written descriptions) has anything to answer.
   optional CatalogAccount catalog_account = 10;
+  // IANA time zone the workspace works in, such as "Europe/Madrid". Unset when
+  // the workspace has not set one. A client showing activity by local time
+  // uses `user_time_zone` when set, then this, then UTC.
+  optional string time_zone = 11;
+  // IANA time zone the authenticated user chose, such as "Europe/Warsaw".
+  // Populated only when the token is tied to a Coalesce Quality user (i.e.
+  // `synq_user_id` is set) and that user has chosen a zone; unset otherwise.
+  // Takes precedence over `time_zone`.
+  optional string user_time_zone = 12;
 }
 
 // A Coalesce Catalog account linked to a Coalesce Quality workspace.

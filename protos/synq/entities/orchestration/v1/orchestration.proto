@@ -6,26 +6,30 @@ import "synq/entities/v1/identifier.proto";
 
 option go_package = "github.com/getsynq/api/entities/orchestration/v1";
 
-// Orchestration represents the orchestration relationships for a given entity.
-// It shows both what the entity orchestrates (downstream) and what orchestrates it (upstream).
+// Orchestration represents the orchestration relationships for a given entity: what ran it
+// (upstream) and what it ran (downstream), in the last 31 days. A group that is both is in both
+// lists. Groups are ordered by how many times they ran, most first.
 message Orchestration {
   // The entity being queried along with its other identities.
-  // For example, if querying a dbt or SQLMesh model, this group includes both the model
+  // For example, if querying a dbt model, this group includes both the model
   // and the table it creates, as they represent the same logical concept.
   OrchestrationGroup entity = 1;
 
-  // Downstream entities that this entity orchestrates.
-  // Each group contains all identities of the orchestrated concept.
+  // Downstream: the entities this job, job step or task ran in the last 31 days.
+  // Each group contains all identities of the entity that ran.
   // Examples:
-  // - If entity is an Airflow task: groups containing [dbt model, table] or [SQLMesh model, table]
-  // - If entity is an Airflow task: groups containing downstream Airflow tasks and their orchestrated entities
+  // - If entity is an Airflow task: groups containing [dbt model, table], or the dbt seeds and snapshots it ran
+  // - If entity is an Airflow DAG: groups containing its tasks
+  // - If entity is a dbt Cloud job step: groups containing [dbt model, table]
+  // - If entity is a Coalesce job: groups containing its Coalesce nodes
   repeated OrchestrationGroup downstream = 2;
 
-  // Upstream entities that orchestrate this entity.
-  // Each group contains all identities of the orchestrating concept.
+  // Upstream: the jobs, job steps and tasks that ran this entity in the last 31 days.
+  // Each group contains all identities of the job, job step or task.
   // Examples:
-  // - If entity is a dbt/SQLMesh model or table: groups containing the Airflow task that executes it
-  // - If entity is an Airflow task: groups containing upstream Airflow tasks that trigger it
+  // - If entity is a dbt model or table: groups containing the Airflow task or dbt Cloud job step that ran it
+  // - If entity is a Coalesce node: groups containing the Coalesce job that ran it
+  // - If entity is an Airflow task: groups containing its Airflow DAG
   repeated OrchestrationGroup upstream = 3;
 }
 
@@ -37,7 +41,6 @@ message OrchestrationGroup {
   // Identifiers of all representations of this logical entity.
   // Examples:
   // - For a dbt model: [dbt model, table it creates]
-  // - For a SQLMesh model: [SQLMesh model, table it creates]
   // - For an Airflow task: [Airflow task]
   repeated synq.entities.v1.Identifier entities = 1;
 

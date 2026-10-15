@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package synq.entities.platformusers.v1alpha;
+
+import "google/protobuf/timestamp.proto";
+import "synq/entities/activity/v1alpha/activity.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+
+option go_package = "github.com/getsynq/api/entities/platformusers/v1alpha";
+
+// Classification is how a login reads, in one word.
+enum Classification {
+  CLASSIFICATION_UNSPECIFIED = 0;
+  // Linked to a person, by a person link or the email the platform states.
+  CLASSIFICATION_PERSON = 1;
+  // In one of the workspace's service accounts.
+  CLASSIFICATION_SERVICE_ACCOUNT = 2;
+  // In a built-in account only.
+  CLASSIFICATION_BUILT_IN = 3;
+  // A login Coalesce Quality or Coalesce Catalog connects as.
+  CLASSIFICATION_COALESCE = 4;
+  // Nothing classifies it. It is presumed a person, and its reads count.
+  CLASSIFICATION_UNCLASSIFIED = 5;
+}
+
+// MatchKind is why a slice is in a service account.
+enum MatchKind {
+  MATCH_KIND_UNSPECIFIED = 0;
+  // An exact matcher names the login.
+  MATCH_KIND_EXACT = 1;
+  // A matcher's patterns or conditions match it.
+  MATCH_KIND_MATCHER = 2;
+  // A built-in account's rules match it.
+  MATCH_KIND_BUILT_IN = 3;
+}
+
+// SliceMembership is one service account a login slice is in, and why.
+message SliceMembership {
+  string service_account_id = 1;
+  MatchKind kind = 2;
+  // The matcher that took the slice, for MATCHER and EXACT.
+  string matcher_id = 3;
+}
+
+// SlicePerson is the person a login slice is linked to.
+message SlicePerson {
+  // Such as `email:jane@example.com`, to resolve with synq.users.v1.
+  string identity = 1;
+  // The person link that made it, empty when it is the email the platform states.
+  string person_link_id = 2;
+}
+
+// SliceSignals are what a login slice did in the window: what the matchers and the suggestions see.
+message SliceSignals {
+  // Its share of the login's queries in the window, from 0 to 1.
+  double issuer_share = 1;
+  uint64 reads = 2;
+  uint64 inputs = 3;
+  uint64 writes = 4;
+  uint32 active_days = 5;
+  // The distinct entities it touched, and wrote.
+  uint32 distinct_entities = 6;
+  uint32 written_entities = 7;
+  // How often it writes.
+  synq.entities.activity.v1alpha.WriteCadence write_cadence = 8;
+}
+
+// LoginSlice is the queries of one login that one tool issued, from the tag on each query, or the
+// queries with no tag. Each slice is classified on its own.
+message LoginSlice {
+  // DATA_PLATFORM_TYPE_UNSPECIFIED is the queries with no tool's tag.
+  synq.platforms.v1.DataPlatformType issuer = 1;
+  Classification classification = 2;
+  // Every service account the slice is in, the first one deciding where its queries are grouped.
+  repeated SliceMembership service_accounts = 3;
+  // For a PERSON slice.
+  SlicePerson person = 4;
+  bool counts_toward_popularity = 5;
+  bool listed_as_frequent_user = 6;
+  google.protobuf.Timestamp last_seen_at = 7;
+  // With view FULL only.
+  SliceSignals signals = 8;
+}
+
+// EvidenceKind is a kind of hint about what a login is.
+enum EvidenceKind {
+  EVIDENCE_KIND_UNSPECIFIED = 0;
+  // A tool's tag on its queries.
+  EVIDENCE_KIND_TOOL_MARKER = 1;
+  // A login name a tool's setup guide tells you to create.
+  EVIDENCE_KIND_NAME_PATTERN = 2;
+  // A kind of login the platform states is not a person.
+  EVIDENCE_KIND_PLATFORM_KIND = 3;
+  // The tables it writes carry a loader's columns.
+  EVIDENCE_KIND_FOOTPRINT = 4;
+  // It writes on a fixed cadence.
+  EVIDENCE_KIND_WRITE_CADENCE = 5;
+  // The platform states an email for it.
+  EVIDENCE_KIND_EMAIL = 6;
+}
+
+// Evidence is one hint about what a login is.
+message Evidence {
+  EvidenceKind kind = 1;
+  string platform_user_id = 2;
+  string login = 3;
+  // What the evidence names: the tool, the pattern, the kind, the cadence or the email.
+  repeated string values = 4;
+  // One line for a person, such as "99% Looker Studio queries" or "writes every hour".
+  string text = 5;
+}
+
+// PlatformUserSource is what one integration declared about a login.
+message PlatformUserSource {
+  // The integration.
+  string source = 1;
+  // The kind of login the platform's user listing states, such as Snowflake's `SERVICE`.
+  string user_type = 2;
+  string email = 3;
+  string display_name = 4;
+  // A login the integration connects as, now or before.
+  bool coalesce_login = 5;
+  // A login the integration connects as now.
+  bool coalesce_login_current = 6;
+  // When the integration observed what it declared.
+  google.protobuf.Timestamp state_at = 7;
+}
+
+// PlatformUser is one login on one platform instance.
+message PlatformUser {
+  // Opaque. Pass it back as it is.
+  string platform_user_id = 1;
+  // The login as the platform shows it.
+  string name = 2;
+  synq.platforms.v1.DataPlatformType platform = 3;
+  string platform_root_entity_id = 4;
+  // One per integration that declared the login, by integration.
+  repeated PlatformUserSource sources = 5;
+  Classification classification = 6;
+  google.protobuf.Timestamp last_seen_at = 7;
+  // Reads and writes over the window, Coalesce Quality's own queries left out.
+  uint64 reads = 8;
+  uint64 writes = 9;
+  // Its share of the workspace's reads, inputs and writes in the window, from 0 to 1.
+  double share = 10;
+  // What its queries cost, per platform.
+  repeated synq.entities.activity.v1alpha.PlatformWeights weights = 11;
+  // One per slice, by issuer.
+  repeated LoginSlice slices = 12;
+  // `platform_user:<id>` always, and `email:<address>` when an integration lists an email for a
+  // login that is not a service kind.
+  repeated string identities = 13;
+  repeated Evidence evidence = 14;
+  // A service account suggestion includes the login.
+  bool suggested = 15;
+}
+
+// PlatformUsersSummary is the whole window of the workspace, whatever the filters.
+message PlatformUsersSummary {
+  // The share of the workspace's activity in the window whose login is classified, from 0 to 1.
+  double classified_share = 1;
+  // The share of the workspace's reads that count toward popularity, from 0 to 1.
+  double counted_share = 2;
+  uint32 unclassified_logins = 3;
+  uint32 suggested_logins = 4;
+  uint32 logins = 5;
+}

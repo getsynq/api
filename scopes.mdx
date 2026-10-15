@@ -7,7 +7,7 @@ Every Coalesce Quality API token and OAuth client credential is granted a set of
 
 Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in [API settings](https://app.synq.io/settings/api), in the order listed below.
 
-There are 59 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+There are 62 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
 
 ## Edit Issues
 
@@ -105,6 +105,9 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GenerateConnectionsYaml`<br/>_synq.agent.dwh.v1.ConnectionsService_ | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
 | `ListConnections`<br/>_synq.agent.dwh.v1.ConnectionsService_ | ListConnections retrieves data warehouse connections for a workspace. |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, |
+| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read |
+| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point |
 | `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
@@ -197,6 +200,7 @@ View upstream and downstream lineage between entities.
 | Method | Description |
 | ------ | ----------- |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
 | `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
 | `BatchGetFoldNodes`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/nodes/batch-get` | Read fold nodes by entity id: which fold a node in a lineage response |
@@ -204,7 +208,7 @@ View upstream and downstream lineage between entities.
 | `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, |
 | `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
-| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
+| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it |
 
 ## Read Entity Code
 
@@ -742,6 +746,12 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
 | `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
 | `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
+| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, |
+| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
+| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the |
+| `ListPersonActivity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/person` | Read what one person's logins read and wrote over the window, per entity, direction and measure. |
 | `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
@@ -782,7 +792,13 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, |
 | `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
-| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration retrieves orchestration relationships for multiple entities. |
+| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it |
+| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. Ids no integration declared and with no activity in the window |
+| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login |
+| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's activity, highest first. The first |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins nothing classifies, each as a change set with its |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
@@ -859,6 +875,8 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. An explicit category is |
 | `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
+| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. It is refused with FAILED_PRECONDITION when the |
+| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
 | `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. Only the actor who posted the comment may |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
@@ -1075,6 +1093,21 @@ Dismiss, ignore and restore recommendations.
 | `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
 | `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it |
 
+## Read Platform Users
+
+`SCOPE_PLATFORM_USERS_READ`
+
+View the logins on your connected platforms, such as warehouse users and service accounts, and what each platform states about them.
+
+| Method | Description |
+| ------ | ----------- |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the |
+| `ListPersonActivity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/person` | Read what one person's logins read and wrote over the window, per entity, direction and measure. |
+| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. Ids no integration declared and with no activity in the window |
+| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login |
+| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's activity, highest first. The first |
+
 ## Link Platform Users
 
 `SCOPE_PLATFORM_USER_LINK`
@@ -1085,6 +1118,32 @@ Link logins on your connected platforms to workspace members, so their reads cou
 | ------ | ----------- |
 | `DeleteUserAliases`<br/>_synq.users.v1.UsersService_<br/>`POST /api/users/v1/aliases/delete` | Removes aliases from users. |
 | `UpsertUserAliases`<br/>_synq.users.v1.UsersService_<br/>`PUT /api/users/v1/aliases` | Links aliases to users. |
+
+## Read Service Accounts
+
+`SCOPE_SERVICE_ACCOUNTS_READ`
+
+View service accounts, person links, popularity policies and suggested service accounts.
+
+| Method | Description |
+| ------ | ----------- |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins nothing classifies, each as a change set with its |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
+
+## Manage Service Accounts
+
+`SCOPE_SERVICE_ACCOUNTS_EDIT`
+
+Create and change service accounts, person links and popularity policies.
+
+| Method | Description |
+| ------ | ----------- |
+| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. It is refused with FAILED_PRECONDITION when the |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins nothing classifies, each as a change set with its |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
+| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose |
 
 ## Endpoint reference
 
@@ -1224,6 +1283,12 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | `SCOPE_DOMAIN_EDIT` |
 | `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | `SCOPE_DOMAIN_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | `SCOPE_DOMAIN_EDIT` |
+| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
+| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_MCP_READ` |
+| `ListPersonActivity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/person` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
@@ -1294,6 +1359,14 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `UpdateFoldMatcher`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/matcher` | `SCOPE_LINEAGE_EDIT` |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_MCP_READ` |
+| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_MCP_READ` |
+| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | `SCOPE_PLATFORM_USERS_READ`<br/>`SCOPE_MCP_READ` |
+| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | `SCOPE_SERVICE_ACCOUNTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | `SCOPE_SERVICE_ACCOUNTS_READ`<br/>`SCOPE_SERVICE_ACCOUNTS_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | `SCOPE_SERVICE_ACCOUNTS_READ`<br/>`SCOPE_SERVICE_ACCOUNTS_EDIT`<br/>`SCOPE_MCP_READ` |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | `SCOPE_SERVICE_ACCOUNTS_READ`<br/>`SCOPE_SERVICE_ACCOUNTS_EDIT`<br/>`SCOPE_MCP_READ` |
+| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | `SCOPE_SERVICE_ACCOUNTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

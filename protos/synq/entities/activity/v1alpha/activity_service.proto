@@ -1,0 +1,581 @@
+syntax = "proto3";
+
+package synq.entities.activity.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/activity/v1alpha/activity.proto";
+import "synq/platforms/v1/data_platform_types.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/activity/v1alpha";
+
+// ActivityService reads the query history of a workspace's data platforms: how popular an entity is,
+// who reads and writes it, what one login, tool, job or person touched and what it cost, and where a
+// workspace's compute goes.
+//
+// Every read covers a window of whole UTC hours, by default the 30 days before the current hour. A
+// login's reads count toward popularity as its service account's popularity policy says (see
+// synq.entities.platformusers.v1alpha.ServiceAccountsService), and Coalesce Quality's own queries never
+// count.
+//
+// Weights are per query, in each platform's own figures. bytes_scanned is never a cost, and no
+// platform reports cost per table, so an entity's share of a query is an equal split. Nothing here is
+// credits or currency.
+service ActivityService {
+  // Read how popular each asked entity is over the window: its counted reads and writes per measure,
+  // and its rank in each pool it has reads in. An entity is answered with the entities it is the same
+  // as, such as a dbt model and the table it builds. Every asked id has an answer, an empty one when
+  // nothing counted.
+  rpc BatchGetPopularity(BatchGetPopularityRequest) returns (BatchGetPopularityResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/popularity"
+      body: "*"
+    };
+  }
+
+  // Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
+  // tools and the logins. Only a caller holding the platform users scope sees the logins: any other
+  // gets every logins list empty and logins_hidden set.
+  rpc ListEntityActors(ListEntityActorsRequest) returns (ListEntityActorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/actors"
+      body: "*"
+    };
+  }
+
+  // Read what one person's logins read and wrote over the window, per entity, direction and measure.
+  // What a colleague read is personal data, so a user caller needs the platform users scope from its
+  // role, which a Developer and an Admin have. Logins in a service account, and Coalesce Quality's
+  // own queries, are never part of the answer.
+  rpc ListPersonActivity(ListPersonActivityRequest) returns (ListPersonActivityResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/person"
+      body: "*"
+    };
+  }
+
+  // Read how access to one entity moves over the window: per direction, a point per UTC hour, a point
+  // per day in the asked time zone, and a weekday and hour grid. A direction's total is the sum of its
+  // actors in ListEntityActors under the same lens. It names tools, never a login.
+  rpc GetEntityActivitySeries(GetEntityActivitySeriesRequest) returns (GetEntityActivitySeriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/series"
+      body: "*"
+    };
+  }
+
+  // Read what one actor read, built and wrote over the window, what its queries cost per compute and
+  // platform, and when it works. The actor is asked for by name, so nothing is left out for being
+  // Coalesce Quality's own access, a writer's own read or a policy. Without the platform users scope
+  // only an issuer entity, a job or step, may be asked for, and the answer names no login.
+  rpc GetActorSummary(GetActorSummaryRequest) returns (GetActorSummaryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_PLATFORM_USERS_READ,
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/actor-summary"
+      body: "*"
+    };
+  }
+
+  // Read a workspace's queries and their cost per group of logins, per platform, and its most read
+  // entities. It names groups and entities, never a login or a person.
+  rpc GetActivityOverview(GetActivityOverviewRequest) returns (GetActivityOverviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/overview"
+      body: "*"
+    };
+  }
+}
+
+message BatchGetPopularityRequest {
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour, so the window
+  // holds closed hours only.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  // The pools to rank in. Unset is SYSTEM.
+  PopularityPool pool = 4 [(buf.validate.field).enum.defined_only = true];
+}
+
+message BatchGetPopularityResponse {
+  // One per distinct asked id, in the order each was first asked.
+  repeated EntityPopularity entities = 1;
+  // The window read, [from, to).
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  // Hours of the window whose query history was read. An hour that was not read counts nothing either
+  // way.
+  uint32 covered_hours = 4;
+  // Set when the ranks could not be computed. The counts are still served, and every rank list is
+  // empty.
+  bool ranks_unavailable = 5;
+  // Set when the ranks of the default window are not ready for every asked entity yet. The counts are
+  // served, and an entity has no ranks until they are.
+  bool ranks_pending = 6;
+  // The end of the window the ranks were computed for, exclusive, when it differs from to: the ranks
+  // of the default window are computed once a day, for the window ending at 00:00 UTC.
+  google.protobuf.Timestamp ranks_window_to = 7;
+}
+
+message EntityPopularity {
+  string entity_id = 1;
+  // One per measure with counted reads or writes, or with a current reading, in measure order.
+  repeated MeasurePopularity measures = 2;
+  // Access the read saw and did not count.
+  NotCountedActivity not_counted = 3;
+}
+
+// MeasurePopularity is one measure's answer. For RUNS, writes is the runs of what builds the entity,
+// each counted once whatever orchestrators ran it, last_written_at the last run and write_cadence how
+// often it runs. RUNS has no reads, no logins and no ranks.
+message MeasurePopularity {
+  ActivityMeasure measure = 1;
+  // Counted reads, and the distinct logins among them. A login is not a person. A read with no login
+  // counts in reads, never in reader_logins.
+  uint64 reads = 2;
+  uint32 reader_logins = 3;
+  google.protobuf.Timestamp last_read_at = 4;
+  uint64 writes = 5;
+  uint32 writer_logins = 6;
+  google.protobuf.Timestamp last_written_at = 7;
+  WriteCadence write_cadence = 8;
+  // The entities the same as the asked one whose access answered.
+  repeated string member_entity_ids = 9;
+  // The entity's rank in each pool of the asked kind where it has reads. Empty when it has none.
+  repeated PoolRank ranks = 10;
+  // The platform's own current figures for the entity, one per direction, shape and window. They are
+  // not in reads or writes: a trailing window or a latest value cannot be split into the hours of the
+  // window.
+  repeated CurrentReading readings = 11;
+}
+
+// CurrentReading is a platform's own current figure for an entity, such as "40 views in the last 28
+// days". Compare it only with readings of the same shape and window.
+message CurrentReading {
+  // TRAILING_WINDOW or LATEST_VALUE.
+  ActivityShape shape = 1;
+  // M of "N in the last M days". Zero for a LATEST_VALUE reading.
+  uint32 window_days = 2;
+  // N.
+  uint64 count = 3;
+  // When the figure was read from the platform.
+  google.protobuf.Timestamp observed_at = 4;
+  ActivityDirection direction = 5;
+}
+
+message ListEntityActorsRequest {
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  // At most this many entries per list. Unset returns every entry.
+  uint32 top_k = 4;
+  // Which access counts. Unset is CONSUMPTION, under which each direction's total is what
+  // BatchGetPopularity counts.
+  ActivityLens lens = 5 [(buf.validate.field).enum.defined_only = true];
+  // Only these directions. Empty is every direction the lens serves.
+  repeated ActivityDirection directions = 6 [(buf.validate.field).repeated.items.enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Only these measures. Empty is every measure.
+  repeated ActivityMeasure measures = 7 [(buf.validate.field).repeated.items.enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+message ListEntityActorsResponse {
+  // One per distinct asked id, in the order each was first asked.
+  repeated EntityActors entities = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  // Set when the caller may not see logins: every logins list is empty. Every count is still served.
+  bool logins_hidden = 4;
+}
+
+message EntityActors {
+  string entity_id = 1;
+  // One per direction and measure with counted access: READ, INPUT, WRITE, then in measure order.
+  // INPUT is counted only under the DEVELOPMENT lens.
+  repeated DirectionActors actors = 2;
+  NotCountedActivity not_counted = 3;
+}
+
+// LoginBasis is how a login touching an entity is known.
+enum LoginBasis {
+  LOGIN_BASIS_UNSPECIFIED = 0;
+  // A login in a service account. Never a person.
+  LOGIN_BASIS_SERVICE_ACCOUNT = 1;
+  // A login that stands for whoever was looking: one in a BI or application service account, or a
+  // login reading for a BI or application tool.
+  LOGIN_BASIS_SHARED_LOGIN = 2;
+  // A login linked to a person, by a person link or the platform's email. A platform user alias in
+  // synq.users.v1 that names the login wins over that person: the caller applies it.
+  LOGIN_BASIS_OWN_LOGIN = 3;
+  // A login nothing classifies, presumed a person.
+  LOGIN_BASIS_UNRESOLVED_LOGIN = 4;
+  // A viewer a BI tool's query tag named by email, on the BI asset it looked at.
+  LOGIN_BASIS_VIEWER_EMAIL = 5;
+  // A viewer a BI tool's query tag named by the tool's own user id, on the BI asset it looked at.
+  LOGIN_BASIS_VIEWER_TOOL_USER = 6;
+}
+
+// ActorActivity is one thing that touched an entity in one direction and measure, with its count.
+message ActorActivity {
+  oneof actor {
+    // A job, task or step, such as "dbt model M writes this".
+    string issuer_entity_id = 1;
+    // A service account, a built-in one included.
+    string service_account_id = 2;
+    // A tool, from the tag on queries no job is named for, such as "Looker reads this".
+    synq.platforms.v1.DataPlatformType issuer = 3;
+    string platform_user_id = 4;
+  }
+  uint64 count = 5;
+  // The distinct logins behind the count. 1 for a login.
+  uint32 logins = 6;
+  google.protobuf.Timestamp last_seen_at = 7;
+  // For a login only.
+  LoginBasis basis = 8;
+  // For a login with basis OWN_LOGIN, VIEWER_EMAIL or VIEWER_TOOL_USER: the identity of its person,
+  // such as "email:<address>", empty when none resolves. A member whose identities hold the login's
+  // "platform_user:<id>" wins over it: that is a platform user alias, and the caller applies it.
+  string person_identity = 9;
+  // The distinct UTC days with counted access.
+  uint32 active_days = 10;
+  // The summed shares of the queries behind the count.
+  QueryShares shares = 11;
+  // What it acts for: a service account's purpose, else the purpose of the tool that issued its
+  // queries. Unspecified for a login, and for a tool with no known purpose.
+  Purpose purpose = 12;
+  // How often it accessed the entity in the window.
+  WriteCadence cadence = 13;
+  // Set when service_account_id names a built-in account.
+  bool built_in = 14;
+  // For a service account, its entity id, which resolves to its name like any other entity.
+  string entity_id = 15;
+}
+
+message DirectionActors {
+  ActivityDirection direction = 1;
+  ActivityMeasure measure = 2;
+  // The direction's count: every counted access, whoever it was. The lists below overlap, and a
+  // login can be left off one by its policy, so they do not add up to it.
+  uint64 total = 3;
+  repeated ActorActivity issuer_entities = 4;
+  // The workspace's service accounts first, then the built-in ones, each by count.
+  repeated ActorActivity service_accounts = 5;
+  repeated ActorActivity tools = 6;
+  // Every login, whatever issued its queries, except those whose policy keeps them off the frequent
+  // users list. A login known two ways is listed once per basis.
+  repeated ActorActivity logins = 7;
+  // The count no login is named for.
+  uint64 unattributed = 8;
+}
+
+message ListPersonActivityRequest {
+  // The identities of one person, as synq.users.v1 gives them, such as "synq:<user_id>",
+  // "email:<address>" or "platform_user:<id>".
+  repeated string identities = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  // Only these directions. Empty keeps every one.
+  repeated ActivityDirection directions = 4 [(buf.validate.field).repeated.items.enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Without a page size every entity is returned.
+  synq.v1.Pagination pagination = 5;
+}
+
+message ListPersonActivityResponse {
+  // Ordered by count, highest first, then entity id, direction and measure.
+  repeated PersonEntityActivity entities = 1;
+  // The logins the identities resolved to, sorted.
+  repeated string platform_user_ids = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+  synq.v1.PageInfo page_info = 5;
+}
+
+// PersonEntityActivity is what a person's logins did to one entity in one direction and measure.
+message PersonEntityActivity {
+  string entity_id = 1;
+  ActivityDirection direction = 2;
+  ActivityMeasure measure = 3;
+  uint64 count = 4;
+  google.protobuf.Timestamp last_seen_at = 5;
+}
+
+message GetEntityActivitySeriesRequest {
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30. 28 gives every weekday four times.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  ActivityLens lens = 4 [(buf.validate.field).enum.defined_only = true];
+  // Unset is QUERIES.
+  ActivityMeasure measure = 5 [(buf.validate.field).enum.defined_only = true];
+  // The IANA time zone days and grid cells are in, such as "Europe/Warsaw". Unset is UTC. The window
+  // itself stays in whole UTC hours.
+  string time_zone = 6 [(buf.validate.field).string.max_len = 64];
+  SeriesSplit split = 7 [(buf.validate.field).enum.defined_only = true];
+}
+
+message GetEntityActivitySeriesResponse {
+  string entity_id = 1;
+  // The window read, [from, to).
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  // The time zone used, "UTC" when none was asked.
+  string time_zone = 4;
+  // The lens's directions, then WRITE, each only when it has counted access.
+  repeated DirectionSeries directions = 5;
+  NotCountedActivity not_counted = 6;
+}
+
+// DirectionSeries is one direction's access over the window.
+message DirectionSeries {
+  ActivityDirection direction = 1;
+  ActivityMeasure measure = 2;
+  uint64 total = 3;
+  // One point per UTC hour of the window. Empty for a measure platforms only report per day, such as
+  // VIEWS.
+  repeated SeriesPoint hourly = 4;
+  // One point per day the window overlaps, in the asked time zone.
+  repeated SeriesPoint daily = 5;
+  // Unset for a measure reported only per day.
+  WeekGrid grid = 6;
+}
+
+message GetActorSummaryRequest {
+  ActorRef actor = 1 [(buf.validate.field).required = true];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  // The IANA time zone days and grid cells are in. Unset is UTC.
+  string time_zone = 4 [(buf.validate.field).string.max_len = 64];
+  // At most this many entities per direction. Unset is 20.
+  uint32 top_k = 5 [(buf.validate.field).uint32.lte = 1000];
+}
+
+message GetActorSummaryResponse {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // The time zone used, "UTC" when none was asked.
+  string time_zone = 3;
+  // The logins the actor resolved to, sorted. Empty without the platform users scope.
+  repeated string platform_user_ids = 4;
+  ActorTotals totals = 5;
+  // Ordered by platform instance, then compute.
+  repeated ActorComputeTotals computes = 6;
+  // At most top_k per direction, READ, INPUT, then WRITE, each by count. For a job, a WRITE row of
+  // measure RUNS counts the runs of what it builds, never write queries.
+  repeated ActorEntityActivity entities = 7;
+  // The actor's queries per UTC hour, split by issuer.
+  repeated SeriesPoint hourly = 8;
+  repeated SeriesPoint daily = 9;
+  WeekGrid grid = 10;
+}
+
+// ActorTotals is an actor's whole window.
+message ActorTotals {
+  // Its queries, whatever they touched.
+  uint64 queries = 1;
+  // The whole weights of its queries, per platform, by platform.
+  repeated PlatformWeights weights = 2;
+  // Access to entities, per direction.
+  uint64 reads = 3;
+  uint64 inputs = 4;
+  // Write queries. Runs are never part of it.
+  uint64 writes = 5;
+  // The runs of what a job builds.
+  uint64 runs = 6;
+  // The distinct entities it read, and wrote or built.
+  uint32 entities_read = 7;
+  uint32 entities_written = 8;
+  // The distinct UTC days with any access.
+  uint32 active_days = 9;
+  // The whole weight less the entity shares, never below 0: what the queries spent outside entities,
+  // such as on a pipeline's staging tables. Each figure is a sum across platforms.
+  QueryShares outside_entities = 10;
+}
+
+// ActorComputeTotals is an actor's queries on one compute of one platform instance.
+message ActorComputeTotals {
+  string platform_root_id = 1;
+  string compute_id = 2;
+  // DATA_PLATFORM_TYPE_UNSPECIFIED when the instance's platform is not known.
+  synq.platforms.v1.DataPlatformType platform = 3;
+  ComputeUnit compute_unit = 4;
+  uint64 queries = 5;
+  QueryWeights weights = 6;
+}
+
+// ActorEntityActivity is what an actor did to one entity in one direction and measure.
+message ActorEntityActivity {
+  string entity_id = 1;
+  ActivityDirection direction = 2;
+  ActivityMeasure measure = 3;
+  uint64 count = 4;
+  QueryShares shares = 5;
+  google.protobuf.Timestamp last_seen_at = 6;
+  uint32 active_days = 7;
+}
+
+// ActorGroupKind is the group a login's queries land in on the overview. Each lands in exactly one,
+// so the groups add up to the workspace.
+enum ActorGroupKind {
+  ACTOR_GROUP_KIND_UNSPECIFIED = 0;
+  // Coalesce Quality's own queries on any login, and every query of a login Coalesce Quality or
+  // Coalesce Catalog connects as.
+  ACTOR_GROUP_KIND_COALESCE = 1;
+  // The logins whose first service account is this one, a built-in one included.
+  ACTOR_GROUP_KIND_SERVICE_ACCOUNT = 2;
+  // A tool's tag on queries of logins no service account holds.
+  ACTOR_GROUP_KIND_TOOL = 3;
+  // Every person and every login nothing classifies, together.
+  ACTOR_GROUP_KIND_PEOPLE = 4;
+  // Queries that name no login.
+  ACTOR_GROUP_KIND_UNATTRIBUTED = 5;
+}
+
+message GetActivityOverviewRequest {
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 1;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 2 [(buf.validate.field).uint32.lte = 92];
+  // The IANA time zone days and grid cells are in. Unset is UTC.
+  string time_zone = 3 [(buf.validate.field).string.max_len = 64];
+  // The pool most_read is ranked in. Unset is SYSTEM.
+  PopularityPool pool = 4 [(buf.validate.field).enum.defined_only = true];
+  // The measure most_read reads. Unset is QUERIES.
+  ActivityMeasure measure = 5 [(buf.validate.field).enum.defined_only = true];
+  // At most this many most_read rows. Unset is 20.
+  uint32 top_k = 6 [(buf.validate.field).uint32.lte = 200];
+}
+
+message GetActivityOverviewResponse {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // The time zone used, "UTC" when none was asked.
+  string time_zone = 3;
+  // Hours of the window whose query history was read.
+  uint32 covered_hours = 4;
+  // Every query of the workspace, Coalesce Quality's included, as they cost compute too.
+  uint64 queries = 5;
+  // The workspace's weights per platform, by platform.
+  repeated PlatformWeights weights = 6;
+  // By compute, highest first, then queries.
+  repeated ActorGroup groups = 7;
+  // The most read entities under CONSUMPTION, by reads.
+  repeated MostRead most_read = 8;
+  // The entities with counted reads under CONSUMPTION, entities that are the same counted once.
+  uint32 entities_read = 9;
+  // Set when the ranks could not be computed. The groups are still served, and most_read is empty.
+  bool ranks_unavailable = 10;
+}
+
+// ActorGroup is the queries of the logins that land in one group.
+message ActorGroup {
+  ActorGroupKind kind = 1;
+  // The actor to ask GetActorSummary about, whose summary has the same queries, compute and logins as
+  // the group. Unset for PEOPLE and UNATTRIBUTED.
+  ActorRef actor = 2;
+  // The distinct logins behind the queries.
+  uint32 logins = 3;
+  uint64 queries = 4;
+  // The group's weights per platform, by platform.
+  repeated PlatformWeights weights = 5;
+  // The queries per day in the asked time zone, and when in the week.
+  repeated SeriesPoint daily = 6;
+  WeekGrid grid = 7;
+}
+
+// MostRead is one entity's place in one pool.
+message MostRead {
+  // The entity, or the smallest id among the entities it is the same as.
+  string entity_id = 1;
+  uint64 reads = 2;
+  PoolRank rank = 3;
+}
