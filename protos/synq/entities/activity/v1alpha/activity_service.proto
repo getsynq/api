@@ -34,6 +34,7 @@ service ActivityService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -44,7 +45,7 @@ service ActivityService {
   }
 
   // Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
-  // tools and the logins. Anyone who reads lineage is served. Only a caller holding the platform users
+  // tools and the logins. Anyone who reads lineage, and the reliability agent, is served. Only a caller holding the platform users
   // scope sees the logins: any other gets every logins list empty and logins_hidden set.
   rpc ListEntityActors(ListEntityActorsRequest) returns (ListEntityActorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -52,6 +53,7 @@ service ActivityService {
       scopes: [
         SCOPE_PLATFORM_USERS_READ,
         SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -87,6 +89,7 @@ service ActivityService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -98,7 +101,7 @@ service ActivityService {
 
   // Read how each asked entity is used over the window, in one line: what loads it, what runs and
   // builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by
-  // Airflow, transformed by dbt, read by Looker Studio and 12 people". Each role names its actor at
+  // Airflow, transformed by dbt, read by Looker Studio, 3 people and 12 logins". Each role names its actor at
   // the most precise level known: a job or app, else a service account, else the tool. It answers
   // "what runs this" for a table or a model, and GetActorSummary answers "what this job runs". It
   // names tools, jobs and service accounts, never a login.
@@ -108,6 +111,7 @@ service ActivityService {
       scopes: [
         SCOPE_ENTITY_READ,
         SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -131,6 +135,7 @@ service ActivityService {
       scopes: [
         SCOPE_PLATFORM_USERS_READ,
         SCOPE_LINEAGE_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -147,6 +152,7 @@ service ActivityService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
         SCOPE_MCP_READ
       ]
     };
@@ -640,10 +646,13 @@ enum ActorGroupKind {
   ACTOR_GROUP_KIND_SERVICE_ACCOUNT = 2;
   // A tool's tag on queries of logins no service account holds.
   ACTOR_GROUP_KIND_TOOL = 3;
-  // Every person and every login nothing classifies, together.
+  // The logins known to be a person's: those a person rule or the platform's email names a person.
   ACTOR_GROUP_KIND_PEOPLE = 4;
   // Queries that name no login.
   ACTOR_GROUP_KIND_UNATTRIBUTED = 5;
+  // The logins nothing classifies. Nothing says whether a person or a program is behind one, so it is
+  // a login, never a person.
+  ACTOR_GROUP_KIND_LOGINS = 6;
 }
 
 message GetActivityOverviewRequest {
@@ -697,7 +706,9 @@ message GetActivityOverviewResponse {
   bool ranks_unavailable = 10;
   // The live warehouse tables and views of the workspace or the selection, entities that are the
   // same counted once, and those of them anyone but Coalesce Quality read, input or wrote in the
-  // window, so "2,530 of 7,196 tables in use". Only with include_flows or a selection.
+  // window, through them or through a table a share shows in another account, so "2,530 of 7,196
+  // tables in use". A table on a platform with no query history in the window counts in neither.
+  // Only with include_flows or a selection.
   uint32 entities_live = 11;
   uint32 entities_touched = 12;
   // Under a selection: the selected entities' share of each platform's weights, by platform. Unset
@@ -713,7 +724,7 @@ message GetActivityOverviewResponse {
 message ActorGroup {
   ActorGroupKind kind = 1;
   // The actor to ask GetActorSummary about, whose summary has the same queries, compute and logins as
-  // the group. Unset for PEOPLE and UNATTRIBUTED.
+  // the group. Unset for PEOPLE, LOGINS and UNATTRIBUTED.
   ActorRef actor = 2;
   // The distinct logins behind the queries.
   uint32 logins = 3;
@@ -819,10 +830,13 @@ enum UsageLevel {
   USAGE_LEVEL_SERVICE_ACCOUNT = 2;
   // Only the tool, in issuer, from the tag on its queries.
   USAGE_LEVEL_TOOL = 3;
-  // Every person, and every login no service account holds, together. actors counts them.
+  // The logins known to be a person's, by a person rule or the platform's email. actors counts the
+  // people.
   USAGE_LEVEL_PEOPLE = 4;
   // Access with no login and no tool.
   USAGE_LEVEL_UNKNOWN = 5;
+  // The logins nothing classifies, none of them known to be a person. actors counts the logins.
+  USAGE_LEVEL_LOGINS = 6;
 }
 
 // UsageEvidence is what a role was learned from, and what its count counts.
@@ -843,15 +857,15 @@ enum UsageEvidence {
 message UsageRole {
   UsageRoleKind role = 1;
   UsageLevel level = 2;
-  // Who plays the role, as ActorActivity names it. Unset on a TOOL, PEOPLE or UNKNOWN role.
+  // Who plays the role, as ActorActivity names it. Unset on a TOOL, PEOPLE, LOGINS or UNKNOWN role.
   oneof actor {
     // For ENTITY: the job, task, step, model or app, such as "dbt model M builds this".
     string issuer_entity_id = 3;
     // For SERVICE_ACCOUNT: the service account, a built-in one included.
     string service_account_id = 4;
   }
-  // The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE or UNKNOWN
-  // role, and on a service account whose queries name no tool.
+  // The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE, LOGINS or
+  // UNKNOWN role, and on a service account whose queries name no tool.
   synq.platforms.v1.DataPlatformType issuer = 5;
   // Set when service_account_id names a built-in account.
   bool built_in = 6;
@@ -860,8 +874,8 @@ message UsageRole {
   UsageEvidence evidence = 8;
   // Runs, writes or reads, as evidence says. 0 for IDENTITY.
   uint64 count = 9;
-  // The people, and the logins with no person, behind a PEOPLE role. A person counts once however
-  // many logins they used.
+  // The people behind a PEOPLE role, a person once however many logins they used, or the logins
+  // behind a LOGINS role.
   uint32 actors = 10;
   google.protobuf.Timestamp last_seen_at = 11;
   // How often the actor did it in the window. NONE for IDENTITY.
@@ -981,7 +995,8 @@ enum AccessSignal {
   // read it or built anything from it. Each entity carries its share of what building it cost.
   ACCESS_SIGNAL_BUILT_NEVER_READ = 1;
   // A live warehouse table or view nobody read, built from or wrote in the window, with the schema
-  // it lives in.
+  // it lives in. A table on a platform with no query history in the window is never untouched, as
+  // nothing could have seen it used.
   ACCESS_SIGNAL_UNTOUCHED = 2;
   // Reads that count toward popularity came through a login that reads for whoever looks at a BI
   // tool or an application, so the viewer behind them is not known. The response sums them per tool.
@@ -1025,14 +1040,19 @@ message ListAccessSignalsResponse {
   repeated ToolSharedReads tools = 8;
 }
 
-// SignalEntity is one entity a signal names: an entity with the entities it is the same as, by the
-// smallest id among them, or for UNTOUCHED the table or view itself. Only the fields of the signal
-// asked are set.
+// SignalEntity is one entity a signal names: an entity with the entities it is the same as, the
+// tables a share shows in other accounts included, by the smallest id among them, or for UNTOUCHED
+// the table or view itself. A read of any of them is a read of all, as in popularity. Only the fields
+// of the signal asked are set.
 message SignalEntity {
+  reserved 2;
+  reserved "writes";
+
   string entity_id = 1;
-  // BUILT_NEVER_READ: the pipeline's writes, its runs included, its share of their cost by platform,
-  // and when it last wrote.
-  uint64 writes = 2;
+  // BUILT_NEVER_READ: the pipeline's write queries and its runs, two measures that never add up, its
+  // share of the queries' cost by platform, and when it last wrote.
+  uint64 write_queries = 10;
+  uint64 write_runs = 11;
   repeated PlatformShares build_shares = 3;
   google.protobuf.Timestamp last_written_at = 4;
   // UNTOUCHED: where it lives. Unset when its address is not known.

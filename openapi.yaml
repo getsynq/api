@@ -11042,7 +11042,7 @@ components:
                 actor:
                     description: |-
                         The actor to ask GetActorSummary about, whose summary has the same queries, compute and logins as
-                         the group. Unset for PEOPLE and UNATTRIBUTED.
+                         the group. Unset for PEOPLE, LOGINS and UNATTRIBUTED.
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorRef'
                 logins:
                     type: integer
@@ -11110,6 +11110,7 @@ components:
                 - ACTOR_GROUP_KIND_TOOL
                 - ACTOR_GROUP_KIND_PEOPLE
                 - ACTOR_GROUP_KIND_UNATTRIBUTED
+                - ACTOR_GROUP_KIND_LOGINS
             description: |-
                 ActorGroupKind is the group a login's queries land in on the overview. Each lands in exactly one,
                  so the groups add up to the workspace.
@@ -11734,7 +11735,9 @@ components:
                     description: |-
                         The live warehouse tables and views of the workspace or the selection, entities that are the
                          same counted once, and those of them anyone but Coalesce Quality read, input or wrote in the
-                         window, so "2,530 of 7,196 tables in use". Only with include_flows or a selection.
+                         window, through them or through a table a share shows in another account, so "2,530 of 7,196
+                         tables in use". A table on a platform with no query history in the window counts in neither.
+                         Only with include_flows or a selection.
                 entitiesTouched:
                     type: integer
                 shares:
@@ -12559,14 +12562,19 @@ components:
             properties:
                 entityId:
                     type: string
-                writes:
+                writeQueries:
                     type:
                         - integer
                         - string
                     format: int64
                     description: |-
-                        BUILT_NEVER_READ: the pipeline's writes, its runs included, its share of their cost by platform,
-                         and when it last wrote.
+                        BUILT_NEVER_READ: the pipeline's write queries and its runs, two measures that never add up, its
+                         share of the queries' cost by platform, and when it last wrote.
+                writeRuns:
+                    type:
+                        - integer
+                        - string
+                    format: int64
                 buildShares:
                     type: array
                     items:
@@ -12598,9 +12606,10 @@ components:
             title: SignalEntity
             additionalProperties: false
             description: |-
-                SignalEntity is one entity a signal names: an entity with the entities it is the same as, by the
-                 smallest id among them, or for UNTOUCHED the table or view itself. Only the fields of the signal
-                 asked are set.
+                SignalEntity is one entity a signal names: an entity with the entities it is the same as, the
+                 tables a share shows in other accounts included, by the smallest id among them, or for UNTOUCHED
+                 the table or view itself. A read of any of them is a read of all, as in popularity. Only the fields
+                 of the signal asked are set.
         synq.entities.activity.v1alpha.ToolSharedReads:
             type: object
             properties:
@@ -12643,6 +12652,7 @@ components:
                 - USAGE_LEVEL_TOOL
                 - USAGE_LEVEL_PEOPLE
                 - USAGE_LEVEL_UNKNOWN
+                - USAGE_LEVEL_LOGINS
             description: |-
                 UsageLevel is how precisely a role names its actor, most precise first. A role with an ENTITY or a
                  SERVICE_ACCOUNT row has no TOOL row for the same tool.
@@ -12659,8 +12669,8 @@ components:
                     issuer:
                         title: issuer
                         description: |-
-                            The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE or UNKNOWN
-                             role, and on a service account whose queries name no tool.
+                            The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE, LOGINS or
+                             UNKNOWN role, and on a service account whose queries name no tool.
                         $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
                     builtIn:
                         type: boolean
@@ -12684,8 +12694,8 @@ components:
                         type: integer
                         title: actors
                         description: |-
-                            The people, and the logins with no person, behind a PEOPLE role. A person counts once however
-                             many logins they used.
+                            The people behind a PEOPLE role, a person once however many logins they used, or the logins
+                             behind a LOGINS role.
                     lastSeenAt:
                         title: last_seen_at
                         $ref: '#/components/schemas/google.protobuf.Timestamp'
@@ -40989,7 +40999,7 @@ paths:
             summary: ListEntityActors
             description: |-
                 Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
-                 tools and the logins. Anyone who reads lineage is served. Only a caller holding the platform users
+                 tools and the logins. Anyone who reads lineage, and the reliability agent, is served. Only a caller holding the platform users
                  scope sees the logins: any other gets every logins list empty and logins_hidden set.
             operationId: synq.entities.activity.v1alpha.ActivityService.ListEntityActors
             requestBody:
@@ -41130,7 +41140,7 @@ paths:
             description: |-
                 Read how each asked entity is used over the window, in one line: what loads it, what runs and
                  builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by
-                 Airflow, transformed by dbt, read by Looker Studio and 12 people". Each role names its actor at
+                 Airflow, transformed by dbt, read by Looker Studio, 3 people and 12 logins". Each role names its actor at
                  the most precise level known: a job or app, else a service account, else the tool. It answers
                  "what runs this" for a table or a model, and GetActorSummary answers "what this job runs". It
                  names tools, jobs and service accounts, never a login.
