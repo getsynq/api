@@ -53,7 +53,7 @@ service PlatformUsersService {
   // Suggest which workspace member each unclassified login may belong to, by matching the login
   // against the members the caller passes. Accept a suggestion with synq.users.v1
   // UsersService.UpsertUserAliases. A login already linked is skipped only when the caller lists its
-  // "platform_user:<id>" among a member's identities.
+  // platform_user_id among a member's identities.
   rpc ListLinkSuggestions(ListLinkSuggestionsRequest) returns (ListLinkSuggestionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -196,7 +196,7 @@ message LinkCandidateMember {
   string last_name = 3 [(buf.validate.field).string.max_len = 256];
   string email = 4 [(buf.validate.field).string.max_len = 512];
   // The member's identities, as User.identities lists them. A login listed here by its
-  // "platform_user:<id>" is already linked, and is never suggested.
+  // platform_user_id is already linked, and is never suggested.
   repeated string identities = 5 [(buf.validate.field).repeated = {
     max_items: 100
     items: {

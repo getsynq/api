@@ -164,11 +164,16 @@ message ListJoinPatternsResponse {
   // The queries left out of the query history evidence. Set when the
   // request sets `query_log`.
   JoinQueryLogLeftOut query_log_left_out = 3;
+  // The requested entity first, then every entity that is the same object,
+  // like the table a dbt model builds. The patterns already include the
+  // joins of each of them, so asking about another one of these returns the
+  // same patterns.
+  repeated string entity_ids = 4 [(buf.validate.field).repeated.items.string.max_len = 4096];
 }
 
 // JoinPattern is one way to join the requested entity: a join key, and the
-// SQL that joins on it. The same key written in several SQL definitions is
-// one pattern listing each of them.
+// SQL that joins on it. The same key written in several SQL definitions, or
+// joined with several join types, is one pattern listing each of them.
 message JoinPattern {
   // The comparisons of the key, read from the requested entity's side and
   // ordered by its column. More than one is a composite key: a row matches
@@ -185,9 +190,61 @@ message JoinPattern {
   // object are listed once: a join both a dbt model and the view it builds
   // make is listed from the model, as `BatchSqlDetails` reads it.
   repeated JoinPatternSource sources = 4;
-  // How queries in the query history made the join in the requested window.
+  // How queries in the query history made the join in the requested window,
+  // over every join type in `join_types`. A warehouse user is counted once.
   // Set when `evidence_kinds` holds QUERY_LOG.
   JoinQueryLogEvidence query_log = 5;
+  // Each join type the key is joined with, the most used first: by the SQL
+  // definitions that use it, then by queries. The `kind`, `join_type` and
+  // `native_join_type` of the key's comparisons are those of the first.
+  repeated JoinPatternType join_types = 6;
+}
+
+// JoinPatternType is one join type that a pattern's key is joined with, and
+// the evidence of that join type only.
+message JoinPatternType {
+  // The kind of join, seen from the requested entity's side, as
+  // `JoinKeyPart.kind` is.
+  JoinKind kind = 1;
+  // The join type, seen from the requested entity's side, as a semantic
+  // layer names it.
+  JoinType join_type = 2;
+  // The kind's own name when `join_type` is OTHER, like `RIGHT_OUTER`.
+  // Empty otherwise.
+  string native_join_type = 3 [(buf.validate.field).string.max_len = 256];
+  // Which side keeps the rows that find no match on the other side.
+  JoinKeeps keeps = 4;
+  // The comparisons between a column and a literal that the ON clauses of
+  // this join type add, as SQL. Each is listed once, in the order first
+  // seen.
+  repeated string filters = 5 [(buf.validate.field).repeated.items.string.max_len = 100000];
+  // The joins of the pattern's `sources` that use this join type, in the
+  // same order.
+  repeated JoinPatternSource sources = 6;
+  // How queries in the query history made the join with this join type.
+  // Set when queries made it.
+  JoinQueryLogEvidence query_log = 7;
+}
+
+// JoinKeeps says which side of a join keeps all of its rows, also those
+// that find no match, seen from the requested entity's side. A row with no
+// match comes back with the other side's columns null.
+enum JoinKeeps {
+  // A semi or anti join, UPDATE FROM, DELETE USING or MERGE, which return
+  // or change the rows of one side only.
+  JOIN_KEEPS_UNSPECIFIED = 0;
+  // Only the rows that match: an inner join, a comma join, or a cross join
+  // with a predicate.
+  JOIN_KEEPS_MATCHED = 1;
+  // All rows of the requested entity: a left outer join from its side, or
+  // an ASOF join in which it is the side looking for a match.
+  JOIN_KEEPS_REQUESTED = 2;
+  // All rows of the other entity: a right outer join from the requested
+  // entity's side, or an ASOF join in which the other side looks for a
+  // match.
+  JOIN_KEEPS_OTHER = 3;
+  // All rows of both: a full outer join.
+  JOIN_KEEPS_BOTH = 4;
 }
 
 // JoinQueryLogEvidence sums the queries that made a join in the requested
@@ -258,7 +315,8 @@ message JoinKeyPart {
   JoinColumn other = 2;
   // The kind of join, seen from `column`'s side. A join the SQL writes as
   // `other RIGHT JOIN column` reads as LEFT_OUTER here, as it keeps every row
-  // of `column`'s table.
+  // of `column`'s table. It is the kind of the pattern's first join type,
+  // and `JoinPattern.join_types` lists every one.
   JoinKind kind = 3;
   // The comparison, read as `column <operator> other`.
   JoinOperator operator = 4;

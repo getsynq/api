@@ -63,6 +63,13 @@ message SliceSignals {
   uint32 written_entities = 7;
   // How often it writes.
   synq.entities.activity.v1alpha.WriteCadence write_cadence = 8;
+  // The distinct hours it read in, how many of the 24 hours of a day they fall in, and the median gap
+  // in hours between them, 0 with fewer than two.
+  uint32 read_hours = 9;
+  uint32 read_hours_of_day = 10;
+  double median_read_gap_hours = 11;
+  // The share of its queries that load files or move them on a stage, from 0 to 1.
+  double load_share = 12;
 }
 
 // LoginSlice is the queries of one login that one tool issued, from the tag on each query, or the
@@ -97,6 +104,16 @@ enum EvidenceKind {
   EVIDENCE_KIND_WRITE_CADENCE = 5;
   // The platform states an email for it.
   EVIDENCE_KIND_EMAIL = 6;
+  // It reads through every hour of the day.
+  EVIDENCE_KIND_READ_CADENCE = 7;
+  // Most of its queries load files or move them on a stage.
+  EVIDENCE_KIND_LOAD_OPERATIONS = 8;
+  // Its name holds a tool's name or a service affix, such as `_SVC`.
+  EVIDENCE_KIND_NAME_TOKEN = 9;
+  // Its name reads as a person's, such as `JANE.DOE`, `JANE_DOE` or an email address, and nothing
+  // about it says it is a service. A hint about the login, not who it is: the login stays unclassified
+  // until a person rule, a stated email or a link names its person.
+  EVIDENCE_KIND_PERSON_NAME = 10;
 }
 
 // Evidence is one hint about what a login is.
@@ -147,8 +164,8 @@ message PlatformUser {
   repeated synq.entities.activity.v1alpha.PlatformWeights weights = 11;
   // One per slice, by issuer.
   repeated LoginSlice slices = 12;
-  // `platform_user:<id>` always, and `email:<address>` when an integration lists an email for a
-  // login that is not a service kind.
+  // The platform_user_id always, which starts with `platform_user:`, and `email:<address>` when an
+  // integration lists an email for a login that is not a service kind.
   repeated string identities = 13;
   repeated Evidence evidence = 14;
   // A service account suggestion includes the login.

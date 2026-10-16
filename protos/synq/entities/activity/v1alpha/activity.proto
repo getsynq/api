@@ -5,6 +5,7 @@ package synq.entities.activity.v1alpha;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/platforms/v1/data_platform_types.proto";
+import "synq/queries/v1/query.proto";
 
 option go_package = "github.com/getsynq/api/entities/activity/v1alpha";
 
@@ -273,7 +274,27 @@ message ActorRef {
     // One group of GetActivityOverview, exactly the logins the overview lands in it: what
     // ActorGroup.actor names for a service account or a tool.
     ActorGroupRef group = 7;
+    // One person through every identity of theirs, each login counted once.
+    PersonIdentities person_identities = 8;
   }
+}
+
+// PersonIdentities names one person by the identities of theirs a caller holds: what
+// synq.users.v1.UsersService.GetUserIdentities returns for them, such as "synq:<user_id>", their
+// "email:<address>" and the "platform_user:<id>" logins linked to them, and the BI viewers those
+// resolve. Only a login that is somebody's own, or nobody's, is the person's: a login a service
+// account holds never is.
+message PersonIdentities {
+  repeated string identities = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
 }
 
 // ActorGroupRef names one group of GetActivityOverview. Its summary has exactly the group's queries, so
@@ -295,4 +316,23 @@ message ActorGroupRef {
   }
   // Output only: service_account_id names a built-in account.
   bool built_in = 3;
+}
+
+// ActivitySelection picks the entities a read is about: a data product, an owner, a saved filter or
+// any other query. A data product is `in_product(...)` in resolver_ql, an owner `in_owner(...)`.
+message ActivitySelection {
+  oneof selection {
+    option (buf.validate.oneof).required = true;
+    // The entities in resolver query language, the fuller of the two forms.
+    string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+    // The entities in structured form, as the filter builder produces it.
+    synq.queries.v1.Query public_query = 2;
+  }
+}
+
+// PlatformShares are the shares of the queries on one platform.
+message PlatformShares {
+  synq.platforms.v1.DataPlatformType platform = 1;
+  ComputeUnit compute_unit = 2;
+  QueryShares shares = 3;
 }

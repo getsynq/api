@@ -10,6 +10,17 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // A dataset specifies which connection to use and how to select data —
 // either via a raw SQL query or by referencing a table with optional column filtering.
 message Dataset {
+  option (buf.validate.message).cel = {
+    id: "dataset_columns_query_only"
+    message: "columns and exclude_columns beside the dataset need a query; a table takes them inside table"
+    expression: "(size(this.columns) == 0 && size(this.exclude_columns) == 0) || has(this.query)"
+  };
+  option (buf.validate.message).cel = {
+    id: "dataset_columns_exclusive"
+    message: "columns and exclude_columns are mutually exclusive"
+    expression: "size(this.columns) == 0 || size(this.exclude_columns) == 0"
+  };
+
   // Name of the connection to use. Must reference a connection configured
   // in the runner's connection map.
   string connection = 1 [(buf.validate.field) = {
@@ -39,6 +50,18 @@ message Dataset {
   //   - Databricks: TIMESTAMP AS OF '<as_of>'
   // Has no effect on databases that don't support time-travel.
   optional string as_of = 4;
+
+  // Columns of the query's result to compare. When set, only these columns
+  // are read from the query; the rest of its SELECT list is ignored.
+  // Only with query — a table takes its columns inside table.
+  // Mutually exclusive with exclude_columns.
+  repeated string columns = 5;
+
+  // Columns of the query's result to leave out of the comparison. Every other
+  // column is read (resolved at runtime from the query's result shape).
+  // Only with query — a table takes its exclusions inside table.
+  // Mutually exclusive with columns.
+  repeated string exclude_columns = 6;
 }
 
 // TableReference specifies a table and optional column filtering.

@@ -188,6 +188,8 @@ enum AppDestination {
   APP_DESTINATION_UNSPECIFIED = 0;
   // The review of the AI agent's prompt suggestions.
   APP_DESTINATION_PROMPT_SUGGESTIONS = 1;
+  // The service accounts of the workspace, with the proposals waiting for review.
+  APP_DESTINATION_SERVICE_ACCOUNTS = 2;
 }
 
 // RecommendationState is whether a recommendation is in front of you.

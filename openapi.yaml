@@ -901,6 +901,26 @@ components:
                                - Databricks: TIMESTAMP AS OF '<as_of>'
                              Has no effect on databases that don't support time-travel.
                         nullable: true
+                    columns:
+                        type: array
+                        items:
+                            type: string
+                        title: columns
+                        description: |-
+                            Columns of the query's result to compare. When set, only these columns
+                             are read from the query; the rest of its SELECT list is ignored.
+                             Only with query — a table takes its columns inside table.
+                             Mutually exclusive with exclude_columns.
+                    excludeColumns:
+                        type: array
+                        items:
+                            type: string
+                        title: exclude_columns
+                        description: |-
+                            Columns of the query's result to leave out of the comparison. Every other
+                             column is read (resolved at runtime from the query's result shape).
+                             Only with query — a table takes its exclusions inside table.
+                             Mutually exclusive with columns.
                 - oneOf:
                     - properties:
                         query:
@@ -927,10 +947,12 @@ components:
             required:
                 - connection
             additionalProperties: false
-            description: |-
+            description: |
                 Dataset defines a source or target dataset for reconciliation.
                  A dataset specifies which connection to use and how to select data —
                  either via a raw SQL query or by referencing a table with optional column filtering.
+                dataset_columns_exclusive // columns and exclude_columns are mutually exclusive
+                dataset_columns_query_only // columns and exclude_columns beside the dataset need a query; a table takes them inside table
         synq.agent.recon.v1.DeploymentAction:
             type: string
             title: DeploymentAction
@@ -10779,6 +10801,18 @@ components:
                     $ref: '#/components/schemas/synq.domains.v2.Domain'
             title: UpsertResponse
             additionalProperties: false
+        synq.entities.activity.v1alpha.AccessSignal:
+            type: string
+            title: AccessSignal
+            enum:
+                - ACCESS_SIGNAL_UNSPECIFIED
+                - ACCESS_SIGNAL_BUILT_NEVER_READ
+                - ACCESS_SIGNAL_UNTOUCHED
+                - ACCESS_SIGNAL_READ_WITHOUT_VIEWER
+                - ACCESS_SIGNAL_WRITTEN_OUTSIDE_PIPELINE
+            description: |-
+                AccessSignal is a place where how an entity is used and what is expected of it disagree. Coalesce
+                 Quality's own access, such as a monitor reading a table, never counts as using it.
         synq.entities.activity.v1alpha.ActivityDirection:
             type: string
             title: ActivityDirection
@@ -10809,6 +10843,30 @@ components:
                 - ACTIVITY_MEASURE_VIEWS
                 - ACTIVITY_MEASURE_RUNS
             description: ActivityMeasure is what a count counts. Counts are compared only within one measure.
+        synq.entities.activity.v1alpha.ActivitySelection:
+            type: object
+            oneOf:
+                - properties:
+                    publicQuery:
+                        title: public_query
+                        description: The entities in structured form, as the filter builder produces it.
+                        $ref: '#/components/schemas/synq.queries.v1.Query'
+                  title: public_query
+                  required:
+                    - publicQuery
+                - properties:
+                    resolverQl:
+                        type: string
+                        title: resolver_ql
+                        maxLength: 20000
+                        description: The entities in resolver query language, the fuller of the two forms.
+                  title: resolver_ql
+                  required:
+                    - resolverQl
+            additionalProperties: false
+            description: |-
+                ActivitySelection picks the entities a read is about: a data product, an owner, a saved filter or
+                 any other query. A data product is `in_product(...)` in resolver_ql, an owner `in_owner(...)`.
         synq.entities.activity.v1alpha.ActivityShape:
             type: string
             title: ActivityShape
@@ -10953,6 +11011,29 @@ components:
             title: ActorEntityActivity
             additionalProperties: false
             description: ActorEntityActivity is what an actor did to one entity in one direction and measure.
+        synq.entities.activity.v1alpha.ActorFileOperation:
+            type: object
+            properties:
+                operation:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.FileOperation'
+                locationEntityId:
+                    type: string
+                    description: |-
+                        The stage or location the files moved through, empty when none is known. A temporary stage a
+                         tool makes per run is one location.
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: The whole weights of the queries per platform, by platform.
+            title: ActorFileOperation
+            additionalProperties: false
+            description: ActorFileOperation is an actor's queries of one file operation on one location.
         synq.entities.activity.v1alpha.ActorGroup:
             type: object
             properties:
@@ -10980,9 +11061,42 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
-                    description: The queries per day in the asked time zone, and when in the week.
+                    description: |-
+                        The queries per day in the asked time zone, and when in the week. Under a selection, the reads,
+                         inputs and writes of the selected entities.
                 grid:
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.WeekGrid'
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        The group's access to entities, per entity a query touched, so a query that read three tables is
+                         three reads. Under a selection, of the selected entities only. Only with include_flows or a
+                         selection.
+                inputs:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                entitiesRead:
+                    type: integer
+                    description: The entities it read or input, and wrote, entities that are the same counted once.
+                entitiesWritten:
+                    type: integer
+                shares:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformShares'
+                    description: |-
+                        Under a selection: the group's share of its queries' weights on the selected entities, by
+                         platform. Unset without one, where weights is the whole.
             title: ActorGroup
             additionalProperties: false
             description: ActorGroup is the queries of the logins that land in one group.
@@ -11035,6 +11149,48 @@ components:
                 ActorGroupRef names one group of GetActivityOverview. Its summary has exactly the group's queries, so
                  it can be narrower than the actor of the same name: a login a service account holds can land with
                  another account first, and Coalesce Quality's queries land in the COALESCE group.
+        synq.entities.activity.v1alpha.ActorIssuerEntity:
+            type: object
+            properties:
+                issuerEntityId:
+                    type: string
+                issuer:
+                    description: The tool that issued its queries.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                weights:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformWeights'
+                    description: The whole weights of its queries per platform, by platform.
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Its writes, one per entity each write query touched, and the entities it wrote, entities that
+                         are the same counted once.
+                entitiesWritten:
+                    type: integer
+            title: ActorIssuerEntity
+            additionalProperties: false
+            description: 'ActorIssuerEntity is one job behind an actor''s queries: the queries it issued and what it wrote.'
+        synq.entities.activity.v1alpha.ActorKind:
+            type: string
+            title: ActorKind
+            enum:
+                - ACTOR_KIND_UNSPECIFIED
+                - ACTOR_KIND_COALESCE
+                - ACTOR_KIND_SERVICE_ACCOUNT
+                - ACTOR_KIND_TOOL
+                - ACTOR_KIND_PERSON
+                - ACTOR_KIND_LOGIN
+            description: ActorKind is what an actor of ListActors is.
         synq.entities.activity.v1alpha.ActorRef:
             type: object
             oneOf:
@@ -11081,6 +11237,14 @@ components:
                   required:
                     - issuerEntityId
                 - properties:
+                    personIdentities:
+                        title: person_identities
+                        description: One person through every identity of theirs, each login counted once.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PersonIdentities'
+                  title: person_identities
+                  required:
+                    - personIdentities
+                - properties:
                     personIdentity:
                         type: string
                         title: person_identity
@@ -11114,6 +11278,17 @@ components:
                     - serviceAccountId
             additionalProperties: false
             description: ActorRef names who an actor summary is about.
+        synq.entities.activity.v1alpha.ActorSort:
+            type: string
+            title: ActorSort
+            enum:
+                - ACTOR_SORT_UNSPECIFIED
+                - ACTOR_SORT_ACCESS
+                - ACTOR_SORT_QUERIES
+                - ACTOR_SORT_READS
+                - ACTOR_SORT_WRITES
+                - ACTOR_SORT_COMPUTE
+            description: ActorSort is the order of ListActors, highest first, then by kind and actor.
         synq.entities.activity.v1alpha.ActorTotals:
             type: object
             properties:
@@ -11167,6 +11342,68 @@ components:
             title: ActorTotals
             additionalProperties: false
             description: ActorTotals is an actor's whole window.
+        synq.entities.activity.v1alpha.ActorWrittenSchema:
+            type: object
+            properties:
+                schema:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WarehouseSchema'
+                entitiesWritten:
+                    type: integer
+                    description: The entities it wrote there, entities that are the same counted once each.
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                cadence:
+                    description: How often it wrote there in the window.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+            title: ActorWrittenSchema
+            additionalProperties: false
+            description: ActorWrittenSchema is what an actor wrote in one schema.
+        synq.entities.activity.v1alpha.BatchGetEntityUsageRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                        minItems: 1
+                    maxItems: 1000
+                    minItems: 1
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                topK:
+                    type: integer
+                    maximum: 10
+                    description: |-
+                        At most this many roles of each kind, such as the three tools that read the entity most. Unset
+                         is 3.
+            title: BatchGetEntityUsageRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.BatchGetEntityUsageResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.EntityUsage'
+                    description: One per distinct asked id, in the order each was first asked.
+                from:
+                    description: The window read, [from, to).
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: BatchGetEntityUsageResponse
+            additionalProperties: false
         synq.entities.activity.v1alpha.BatchGetPopularityRequest:
             type: object
             properties:
@@ -11192,6 +11429,11 @@ components:
                 pool:
                     description: The pools to rank in. Unset is SYSTEM.
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.PopularityPool'
+                lens:
+                    description: |-
+                        Which access counts, in the counts and the ranks alike. Unset is CONSUMPTION. Under DEVELOPMENT
+                         a measure's reads hold what was read to build it too.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivityLens'
             title: BatchGetPopularityRequest
             additionalProperties: false
         synq.entities.activity.v1alpha.BatchGetPopularityResponse:
@@ -11369,6 +11611,39 @@ components:
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.NotCountedActivity'
             title: EntityPopularity
             additionalProperties: false
+        synq.entities.activity.v1alpha.EntityUsage:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                roles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.UsageRole'
+                    description: In role order, then by count, highest first.
+                coveredHours:
+                    type: integer
+                    description: Hours of the window whose query history was read. An hour that was not read counts nothing.
+                windowHours:
+                    type: integer
+                    description: The hours of the window.
+            title: EntityUsage
+            additionalProperties: false
+            description: |-
+                EntityUsage is how one entity is used. An entity is answered with the entities it is the same as,
+                 such as a dbt model and the table it builds, and with the other side of a share, so asking for
+                 the model or for its table gives the same roles.
+        synq.entities.activity.v1alpha.FileOperation:
+            type: string
+            title: FileOperation
+            enum:
+                - FILE_OPERATION_UNSPECIFIED
+                - FILE_OPERATION_LOAD
+                - FILE_OPERATION_UNLOAD
+                - FILE_OPERATION_PUT
+                - FILE_OPERATION_GET
+                - FILE_OPERATION_REMOVE
+            description: FileOperation is a query that moves files rather than rows.
         synq.entities.activity.v1alpha.GetActivityOverviewRequest:
             type: object
             properties:
@@ -11393,6 +11668,25 @@ components:
                     type: integer
                     maximum: 200
                     description: At most this many most_read rows. Unset is 20.
+                selection:
+                    description: |-
+                        Only these entities, such as a data product's. Unset is the whole workspace. A selection of more
+                         than 50,000 entities, counting the entities each is the same as, is refused with
+                         INVALID_ARGUMENT.
+
+                         Under a selection a group is its access to the selected entities, never its whole cost: its
+                         shares of its queries' weights, not the weights, so the groups add up to what the selection
+                         costs. A query that read three selected tables is three reads and its weight is counted once,
+                         so queries and weights are unset and reads, inputs and writes count the access. most_read lists
+                         the selected entities, each with its rank in the whole pool.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivitySelection'
+                includeFlows:
+                    type: boolean
+                    description: |-
+                        Also count each group's reads, inputs and writes and the entities it read and wrote, and the
+                         live and touched tables. Without a selection they read the access to every entity, which can
+                         take seconds on a large workspace, so a client shows the groups first and asks for these in a
+                         second call. A selection always counts them, as they are its groups.
             title: GetActivityOverviewRequest
             additionalProperties: false
         synq.entities.activity.v1alpha.GetActivityOverviewResponse:
@@ -11435,6 +11729,27 @@ components:
                 ranksUnavailable:
                     type: boolean
                     description: Set when the ranks could not be computed. The groups are still served, and most_read is empty.
+                entitiesLive:
+                    type: integer
+                    description: |-
+                        The live warehouse tables and views of the workspace or the selection, entities that are the
+                         same counted once, and those of them anyone but Coalesce Quality read, input or wrote in the
+                         window, so "2,530 of 7,196 tables in use". Only with include_flows or a selection.
+                entitiesTouched:
+                    type: integer
+                shares:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformShares'
+                    description: |-
+                        Under a selection: the selected entities' share of each platform's weights, by platform. Unset
+                         without one, where weights is the whole.
+                flowsIncluded:
+                    type: boolean
+                    description: |-
+                        Set when the groups' reads, inputs and writes and the live and touched tables were counted, with
+                         include_flows or a selection. Unset, they read 0 because they were not asked for, and a client
+                         shows them as loading while it asks again with include_flows.
             title: GetActivityOverviewResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.GetActorSummaryRequest:
@@ -11501,6 +11816,27 @@ components:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.SeriesPoint'
                 grid:
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.WeekGrid'
+                issuerEntities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorIssuerEntity'
+                    description: |-
+                        The jobs behind the actor's queries, such as a DAG, a dbt model, a Streamlit app, or a monitor or
+                         SQL test of Coalesce Quality's: by queries, highest first, then writes. At most top_k.
+                writtenSchemas:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorWrittenSchema'
+                    description: |-
+                        What the actor wrote itself, per warehouse schema, by writes, highest first. Runs it orchestrated
+                         are not writes. The entities whose schema is not known are one entry with schema unset, last.
+                fileOperations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorFileOperation'
+                    description: |-
+                        The actor's queries that moved files, per operation and location, such as the files it put to a
+                         stage, by queries, highest first.
             title: GetActorSummaryResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.GetEntityActivitySeriesRequest:
@@ -11588,6 +11924,123 @@ components:
             title: IssuerCount
             additionalProperties: false
             description: IssuerCount is one issuing tool's part of a point.
+        synq.entities.activity.v1alpha.ListAccessSignalsRequest:
+            type: object
+            properties:
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                selection:
+                    description: |-
+                        Only these entities, such as a data product's. Unset is the whole workspace. A selection of more
+                         than 50,000 entities, counting the entities each is the same as, is refused with
+                         INVALID_ARGUMENT.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivitySelection'
+                signal:
+                    not:
+                        enum:
+                            - 0
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.AccessSignal'
+                pagination:
+                    description: Without a page size every entity is returned.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListAccessSignalsRequest
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ListAccessSignalsResponse:
+            type: object
+            properties:
+                signal:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.AccessSignal'
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SignalEntity'
+                    description: |-
+                        One page of the entities that raise the signal. BUILT_NEVER_READ by build compute, highest first,
+                         READ_WITHOUT_VIEWER by shared reads and WRITTEN_OUTSIDE_PIPELINE by outside writes, each then by
+                         entity id. UNTOUCHED by schema, then entity id, those with no known schema last.
+                total:
+                    type: integer
+                    description: How many entities raise the signal, on every page.
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                pageInfo:
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+                schemas:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.SchemaSignal'
+                    description: 'UNTOUCHED: every schema with untouched tables and views, by how many, highest first.'
+                tools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ToolSharedReads'
+                    description: |-
+                        READ_WITHOUT_VIEWER: the counted reads of every entity per tool, and those of them through a
+                         shared login, by shared reads, highest first.
+            title: ListAccessSignalsResponse
+            additionalProperties: false
+        synq.entities.activity.v1alpha.ListActorsRequest:
+            type: object
+            properties:
+                until:
+                    description: The window ends at the start of this hour, exclusive. Unset is the current hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                windowDays:
+                    type: integer
+                    maximum: 92
+                    description: The window's length in days, back from until. Unset is 30.
+                selection:
+                    description: |-
+                        Only the access to these entities, such as a data product's. Unset is the whole workspace. Under a
+                         selection an actor is its access to the selected entities: its reads, inputs and writes and its
+                         shares of their cost, with no queries and no weights. A selection of more than 50,000 entities,
+                         counting the entities each is the same as, is refused with INVALID_ARGUMENT.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActivitySelection'
+                kinds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorKind'
+                    maxItems: 5
+                    uniqueItems: true
+                    description: Only actors of these kinds. Empty is every kind the caller may see.
+                sort:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorSort'
+                platform:
+                    description: The platform ACTOR_SORT_COMPUTE sorts on and compute_fraction is of. Required with it.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                pagination:
+                    description: Without a page size every actor is returned.
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListActorsRequest
+            additionalProperties: false
+            description: |
+                compute_sort_needs_platform // sorting by compute needs a platform
+        synq.entities.activity.v1alpha.ListActorsResponse:
+            type: object
+            properties:
+                actors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListedActor'
+                    description: In the asked order.
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                pageInfo:
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+                peopleHidden:
+                    type: boolean
+                    description: 'Set when the caller may not see people and logins: no PERSON or LOGIN actor is listed.'
+            title: ListActorsResponse
+            additionalProperties: false
         synq.entities.activity.v1alpha.ListEntityActorsRequest:
             type: object
             properties:
@@ -11699,6 +12152,50 @@ components:
                     $ref: '#/components/schemas/synq.v1.PageInfo'
             title: ListPersonActivityResponse
             additionalProperties: false
+        synq.entities.activity.v1alpha.ListedActor:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorKind'
+                actor:
+                    description: The actor to ask GetActorSummary about. Without a selection its summary has the same totals.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorRef'
+                builtIn:
+                    type: boolean
+                    description: Set when actor names a built-in account.
+                entityId:
+                    type: string
+                    description: For a service account, its entity id, which resolves to its name like any other entity.
+                logins:
+                    type: integer
+                    description: The distinct logins behind its queries and its access.
+                totals:
+                    description: |-
+                        As GetActorSummary has them. Under a selection, the access to the selected entities only: queries,
+                         weights, runs and outside_entities are unset.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorTotals'
+                shares:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformShares'
+                    description: 'Under a selection: its share of what the selected entities cost, by platform.'
+                issuers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.IssuerCount'
+                    description: |-
+                        Its queries per issuing tool, highest first, then by issuer, such as how much of a person's work
+                         ran through dbt. Empty under a selection.
+                computeFraction:
+                    type: number
+                    format: double
+                    description: |-
+                        With a platform: its compute on the platform over the platform's whole compute, or over what the
+                         selected entities cost on it, from 0 to 1. The actors overlap, so their fractions do not add up to
+                         1.
+            title: ListedActor
+            additionalProperties: false
+            description: ListedActor is one actor of ListActors over the window.
         synq.entities.activity.v1alpha.LoginBasis:
             type: string
             title: LoginBasis
@@ -11846,6 +12343,39 @@ components:
             title: PersonEntityActivity
             additionalProperties: false
             description: PersonEntityActivity is what a person's logins did to one entity in one direction and measure.
+        synq.entities.activity.v1alpha.PersonIdentities:
+            type: object
+            properties:
+                identities:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 200
+                        minItems: 1
+                    maxItems: 200
+                    minItems: 1
+            title: PersonIdentities
+            additionalProperties: false
+            description: |-
+                PersonIdentities names one person by the identities of theirs a caller holds: what
+                 synq.users.v1.UsersService.GetUserIdentities returns for them, such as "synq:<user_id>", their
+                 "email:<address>" and the "platform_user:<id>" logins linked to them, and the BI viewers those
+                 resolve. Only a login that is somebody's own, or nobody's, is the person's: a login a service
+                 account holds never is.
+        synq.entities.activity.v1alpha.PlatformShares:
+            type: object
+            properties:
+                platform:
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                computeUnit:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.ComputeUnit'
+                shares:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryShares'
+            title: PlatformShares
+            additionalProperties: false
+            description: PlatformShares are the shares of the queries on one platform.
         synq.entities.activity.v1alpha.PlatformWeights:
             type: object
             properties:
@@ -11976,6 +12506,16 @@ components:
             description: |-
                 QueryWeights are whole weights summed over queries. An unset figure is one no query reported, and
                  zero is a value. Nothing here is a credit or a price.
+        synq.entities.activity.v1alpha.SchemaSignal:
+            type: object
+            properties:
+                schema:
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WarehouseSchema'
+                entities:
+                    type: integer
+            title: SchemaSignal
+            additionalProperties: false
+            description: SchemaSignal is one schema's untouched tables and views.
         synq.entities.activity.v1alpha.SeriesPoint:
             type: object
             properties:
@@ -12014,6 +12554,203 @@ components:
                 - SERIES_SPLIT_UNSPECIFIED
                 - SERIES_SPLIT_ISSUER
             description: SeriesSplit is how each point of a series is broken down.
+        synq.entities.activity.v1alpha.SignalEntity:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                writes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        BUILT_NEVER_READ: the pipeline's writes, its runs included, its share of their cost by platform,
+                         and when it last wrote.
+                buildShares:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.PlatformShares'
+                lastWrittenAt:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                schema:
+                    description: 'UNTOUCHED: where it lives. Unset when its address is not known.'
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.WarehouseSchema'
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: 'READ_WITHOUT_VIEWER: its counted reads, and those through a shared login.'
+                sharedReads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                outsideWrites:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: 'WRITTEN_OUTSIDE_PIPELINE: the writes no pipeline explains, and the distinct logins behind them.'
+                writingLogins:
+                    type: integer
+            title: SignalEntity
+            additionalProperties: false
+            description: |-
+                SignalEntity is one entity a signal names: an entity with the entities it is the same as, by the
+                 smallest id among them, or for UNTOUCHED the table or view itself. Only the fields of the signal
+                 asked are set.
+        synq.entities.activity.v1alpha.ToolSharedReads:
+            type: object
+            properties:
+                issuer:
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                reads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                sharedReads:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                share:
+                    type: number
+                    format: double
+                    description: shared_reads over reads, from 0 to 1.
+            title: ToolSharedReads
+            additionalProperties: false
+            description: ToolSharedReads is one tool's counted reads, and the part of them through a shared login.
+        synq.entities.activity.v1alpha.UsageEvidence:
+            type: string
+            title: UsageEvidence
+            enum:
+                - USAGE_EVIDENCE_UNSPECIFIED
+                - USAGE_EVIDENCE_IDENTITY
+                - USAGE_EVIDENCE_RUNS
+                - USAGE_EVIDENCE_QUERIES
+                - USAGE_EVIDENCE_VIEWS
+            description: UsageEvidence is what a role was learned from, and what its count counts.
+        synq.entities.activity.v1alpha.UsageLevel:
+            type: string
+            title: UsageLevel
+            enum:
+                - USAGE_LEVEL_UNSPECIFIED
+                - USAGE_LEVEL_ENTITY
+                - USAGE_LEVEL_SERVICE_ACCOUNT
+                - USAGE_LEVEL_TOOL
+                - USAGE_LEVEL_PEOPLE
+                - USAGE_LEVEL_UNKNOWN
+            description: |-
+                UsageLevel is how precisely a role names its actor, most precise first. A role with an ENTITY or a
+                 SERVICE_ACCOUNT row has no TOOL row for the same tool.
+        synq.entities.activity.v1alpha.UsageRole:
+            type: object
+            allOf:
+                - properties:
+                    role:
+                        title: role
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.UsageRoleKind'
+                    level:
+                        title: level
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.UsageLevel'
+                    issuer:
+                        title: issuer
+                        description: |-
+                            The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE or UNKNOWN
+                             role, and on a service account whose queries name no tool.
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    builtIn:
+                        type: boolean
+                        title: built_in
+                        description: Set when service_account_id names a built-in account.
+                    entityId:
+                        type: string
+                        title: entity_id
+                        description: For a service account, its entity id, which resolves to its name like any other entity.
+                    evidence:
+                        title: evidence
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.UsageEvidence'
+                    count:
+                        type:
+                            - integer
+                            - string
+                        title: count
+                        format: int64
+                        description: Runs, writes or reads, as evidence says. 0 for IDENTITY.
+                    actors:
+                        type: integer
+                        title: actors
+                        description: |-
+                            The people, and the logins with no person, behind a PEOPLE role. A person counts once however
+                             many logins they used.
+                    lastSeenAt:
+                        title: last_seen_at
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    cadence:
+                        title: cadence
+                        description: How often the actor did it in the window. NONE for IDENTITY.
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+                    countsForPopularity:
+                        type: boolean
+                        title: counts_for_popularity
+                        description: |-
+                            On a READ or REVERSE_ETL role: whether some of its reads count toward popularity. False when the
+                             service account's popularity policy leaves them all out, and always false on the other roles.
+                    more:
+                        type: integer
+                        title: more
+                        description: How many roles of this kind top_k cut, set on the last one kept.
+                - oneOf:
+                    - properties:
+                        issuerEntityId:
+                            type: string
+                            title: issuer_entity_id
+                            description: 'For ENTITY: the job, task, step, model or app, such as "dbt model M builds this".'
+                      title: issuer_entity_id
+                      required:
+                        - issuerEntityId
+                    - properties:
+                        serviceAccountId:
+                            type: string
+                            title: service_account_id
+                            description: 'For SERVICE_ACCOUNT: the service account, a built-in one included.'
+                      title: service_account_id
+                      required:
+                        - serviceAccountId
+            title: UsageRole
+            additionalProperties: false
+            description: UsageRole is one actor in one role of an entity. Coalesce Quality's own queries are never a role.
+        synq.entities.activity.v1alpha.UsageRoleKind:
+            type: string
+            title: UsageRoleKind
+            enum:
+                - USAGE_ROLE_KIND_UNSPECIFIED
+                - USAGE_ROLE_KIND_LOADED
+                - USAGE_ROLE_KIND_ORCHESTRATED
+                - USAGE_ROLE_KIND_TRANSFORMED
+                - USAGE_ROLE_KIND_WRITTEN
+                - USAGE_ROLE_KIND_READ
+                - USAGE_ROLE_KIND_REVERSE_ETL
+            description: UsageRoleKind is what an actor does to an entity, in the order to draw them in, left to right.
+        synq.entities.activity.v1alpha.WarehouseSchema:
+            type: object
+            properties:
+                instance:
+                    type: string
+                    maxLength: 2048
+                    description: The instance, such as a Snowflake account or a BigQuery project.
+                database:
+                    type: string
+                    maxLength: 2048
+                schema:
+                    type: string
+                    maxLength: 2048
+            title: WarehouseSchema
+            additionalProperties: false
+            description: WarehouseSchema is a schema of one warehouse instance, as the warehouse names it.
         synq.entities.activity.v1alpha.WeekGrid:
             type: object
             properties:
@@ -16677,6 +17414,10 @@ components:
                 - EVIDENCE_KIND_FOOTPRINT
                 - EVIDENCE_KIND_WRITE_CADENCE
                 - EVIDENCE_KIND_EMAIL
+                - EVIDENCE_KIND_READ_CADENCE
+                - EVIDENCE_KIND_LOAD_OPERATIONS
+                - EVIDENCE_KIND_NAME_TOKEN
+                - EVIDENCE_KIND_PERSON_NAME
             description: EvidenceKind is a kind of hint about what a login is.
         synq.entities.platformusers.v1alpha.LinkCandidateMember:
             type: object
@@ -16703,7 +17444,7 @@ components:
                     maxItems: 100
                     description: |-
                         The member's identities, as User.identities lists them. A login listed here by its
-                         "platform_user:<id>" is already linked, and is never suggested.
+                         platform_user_id is already linked, and is never suggested.
             title: LinkCandidateMember
             additionalProperties: false
             description: LinkCandidateMember is one workspace member a login may be linked to.
@@ -17136,8 +17877,8 @@ components:
                     items:
                         type: string
                     description: |-
-                        `platform_user:<id>` always, and `email:<address>` when an integration lists an email for a
-                         login that is not a service kind.
+                        The platform_user_id always, which starts with `platform_user:`, and `email:<address>` when an
+                         integration lists an email for a login that is not a service kind.
                 evidence:
                     type: array
                     items:
@@ -17397,6 +18138,9 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.Evidence'
                     description: Why each login is in it, one entry per login.
+                confidence:
+                    description: The least confidence of its logins' evidence.
+                    $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SuggestionConfidence'
             title: ServiceAccountSuggestion
             additionalProperties: false
         synq.entities.platformusers.v1alpha.SliceChange:
@@ -17499,9 +18243,32 @@ components:
                 writeCadence:
                     description: How often it writes.
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
+                readHours:
+                    type: integer
+                    description: |-
+                        The distinct hours it read in, how many of the 24 hours of a day they fall in, and the median gap
+                         in hours between them, 0 with fewer than two.
+                readHoursOfDay:
+                    type: integer
+                medianReadGapHours:
+                    type: number
+                    format: double
+                loadShare:
+                    type: number
+                    format: double
+                    description: The share of its queries that load files or move them on a stage, from 0 to 1.
             title: SliceSignals
             additionalProperties: false
             description: 'SliceSignals are what a login slice did in the window: what the matchers and the suggestions see.'
+        synq.entities.platformusers.v1alpha.SuggestionConfidence:
+            type: string
+            title: SuggestionConfidence
+            enum:
+                - SUGGESTION_CONFIDENCE_UNSPECIFIED
+                - SUGGESTION_CONFIDENCE_LOW
+                - SUGGESTION_CONFIDENCE_MEDIUM
+                - SUGGESTION_CONFIDENCE_HIGH
+            description: SuggestionConfidence is how sure a suggestion is, from its evidence.
         synq.entities.platformusers.v1alpha.SuggestionSource:
             type: string
             title: SuggestionSource
@@ -17513,6 +18280,7 @@ components:
                 - SUGGESTION_SOURCE_NAME_PATTERN
                 - SUGGESTION_SOURCE_LOADER_FOOTPRINT
                 - SUGGESTION_SOURCE_BEHAVIOUR
+                - SUGGESTION_SOURCE_NAME_TOKEN
             description: SuggestionSource is the evidence a suggestion rests on, most confident first.
         synq.entities.resolve.v1.BatchResolveIdentifiersRequest:
             type: object
@@ -17840,6 +18608,19 @@ components:
                 - JOIN_ISSUER_KIND_COALESCE
                 - JOIN_ISSUER_KIND_UNKNOWN
             description: JoinIssuerKind says who ran the queries of a JoinIssuer.
+        synq.entities.sql_insights.v1.JoinKeeps:
+            type: string
+            title: JoinKeeps
+            enum:
+                - JOIN_KEEPS_UNSPECIFIED
+                - JOIN_KEEPS_MATCHED
+                - JOIN_KEEPS_REQUESTED
+                - JOIN_KEEPS_OTHER
+                - JOIN_KEEPS_BOTH
+            description: |-
+                JoinKeeps says which side of a join keeps all of its rows, also those
+                 that find no match, seen from the requested entity's side. A row with no
+                 match comes back with the other side's columns null.
         synq.entities.sql_insights.v1.JoinKeyPart:
             type: object
             properties:
@@ -17853,7 +18634,8 @@ components:
                     description: |-
                         The kind of join, seen from `column`'s side. A join the SQL writes as
                          `other RIGHT JOIN column` reads as LEFT_OUTER here, as it keeps every row
-                         of `column`'s table.
+                         of `column`'s table. It is the kind of the pattern's first join type,
+                         and `JoinPattern.join_types` lists every one.
                     $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinKind'
                 operator:
                     description: The comparison, read as `column <operator> other`.
@@ -17952,15 +18734,24 @@ components:
                          make is listed from the model, as `BatchSqlDetails` reads it.
                 queryLog:
                     description: |-
-                        How queries in the query history made the join in the requested window.
+                        How queries in the query history made the join in the requested window,
+                         over every join type in `join_types`. A warehouse user is counted once.
                          Set when `evidence_kinds` holds QUERY_LOG.
                     $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinQueryLogEvidence'
+                joinTypes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinPatternType'
+                    description: |-
+                        Each join type the key is joined with, the most used first: by the SQL
+                         definitions that use it, then by queries. The `kind`, `join_type` and
+                         `native_join_type` of the key's comparisons are those of the first.
             title: JoinPattern
             additionalProperties: false
             description: |-
                 JoinPattern is one way to join the requested entity: a join key, and the
-                 SQL that joins on it. The same key written in several SQL definitions is
-                 one pattern listing each of them.
+                 SQL that joins on it. The same key written in several SQL definitions, or
+                 joined with several join types, is one pattern listing each of them.
         synq.entities.sql_insights.v1.JoinPatternSource:
             type: object
             properties:
@@ -17985,6 +18776,54 @@ components:
             description: |-
                 JoinPatternSource is one join in the SQL of one entity that joins on the
                  pattern's key.
+        synq.entities.sql_insights.v1.JoinPatternType:
+            type: object
+            properties:
+                kind:
+                    description: |-
+                        The kind of join, seen from the requested entity's side, as
+                         `JoinKeyPart.kind` is.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinKind'
+                joinType:
+                    description: |-
+                        The join type, seen from the requested entity's side, as a semantic
+                         layer names it.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinType'
+                nativeJoinType:
+                    type: string
+                    maxLength: 256
+                    description: |-
+                        The kind's own name when `join_type` is OTHER, like `RIGHT_OUTER`.
+                         Empty otherwise.
+                keeps:
+                    description: Which side keeps the rows that find no match on the other side.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinKeeps'
+                filters:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 100000
+                    description: |-
+                        The comparisons between a column and a literal that the ON clauses of
+                         this join type add, as SQL. Each is listed once, in the order first
+                         seen.
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinPatternSource'
+                    description: |-
+                        The joins of the pattern's `sources` that use this join type, in the
+                         same order.
+                queryLog:
+                    description: |-
+                        How queries in the query history made the join with this join type.
+                         Set when queries made it.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinQueryLogEvidence'
+            title: JoinPatternType
+            additionalProperties: false
+            description: |-
+                JoinPatternType is one join type that a pattern's key is joined with, and
+                 the evidence of that join type only.
         synq.entities.sql_insights.v1.JoinQueryLogEvidence:
             type: object
             properties:
@@ -18178,6 +19017,16 @@ components:
                         The queries left out of the query history evidence. Set when the
                          request sets `query_log`.
                     $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinQueryLogLeftOut'
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 4096
+                    description: |-
+                        The requested entity first, then every entity that is the same object,
+                         like the table a dbt model builds. The patterns already include the
+                         joins of each of them, so asking about another one of these returns the
+                         same patterns.
             title: ListJoinPatternsResponse
             additionalProperties: false
             description: ListJoinPatternsResponse lists the join patterns of the requested entity.
@@ -30770,6 +31619,7 @@ components:
             enum:
                 - APP_DESTINATION_UNSPECIFIED
                 - APP_DESTINATION_PROMPT_SUGGESTIONS
+                - APP_DESTINATION_SERVICE_ACCOUNTS
             description: |-
                 AppDestination is a place in the Coalesce Quality app a recommendation can
                  send you to. A client that does not know a value offers no button for it.
@@ -40078,6 +40928,32 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.domains.v2.FetchDomainWithSubDomainsResponse'
+    /api/entities/activity/v1alpha/actor-list:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: ListActors
+            description: |-
+                List the workspace's actors, the service accounts, tools, people, logins nothing classifies and
+                 Coalesce Quality, each with the totals GetActorSummary has for it: its queries and their weights,
+                 its reads, inputs and writes, and the entities it read and wrote. A login can be in several actors,
+                 such as its service account and the tool that issued its queries, so the actors never add up to
+                 the workspace: GetActivityOverview is the split that does. Only a caller holding the platform users
+                 scope sees people and logins: any other gets the rest with people_hidden set.
+            operationId: synq.entities.activity.v1alpha.ActivityService.ListActors
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListActorsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListActorsResponse'
     /api/entities/activity/v1alpha/actor-summary:
         post:
             tags:
@@ -40086,8 +40962,12 @@ paths:
             description: |-
                 Read what one actor read, built and wrote over the window, what its queries cost per compute and
                  platform, and when it works. The actor is asked for by name, so nothing is left out for being
-                 Coalesce Quality's own access, a writer's own read or a policy. Without the platform users scope
-                 only an issuer entity, a job or step, may be asked for, and the answer names no login.
+                 Coalesce Quality's own access, a writer's own read or a policy.
+
+                 What a person did is personal data: a person, or a login, is answered only to that person, or to a
+                 caller holding the platform users scope, which a Developer and an Admin have. Anyone else gets
+                 PERMISSION_DENIED. A job, a service account, a tool and Coalesce Quality are answered to every
+                 caller, and without the platform users scope the answer names no login.
             operationId: synq.entities.activity.v1alpha.ActivityService.GetActorSummary
             requestBody:
                 content:
@@ -40109,8 +40989,8 @@ paths:
             summary: ListEntityActors
             description: |-
                 Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
-                 tools and the logins. Only a caller holding the platform users scope sees the logins: any other
-                 gets every logins list empty and logins_hidden set.
+                 tools and the logins. Anyone who reads lineage is served. Only a caller holding the platform users
+                 scope sees the logins: any other gets every logins list empty and logins_hidden set.
             operationId: synq.entities.activity.v1alpha.ActivityService.ListEntityActors
             requestBody:
                 content:
@@ -40218,6 +41098,56 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.activity.v1alpha.GetEntityActivitySeriesResponse'
+    /api/entities/activity/v1alpha/signals:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: ListAccessSignals
+            description: |-
+                List the entities of the workspace, or of a selection, that one signal names, such as the tables
+                 a pipeline builds and nobody reads, or the tables nobody touched. A signal is computed from the
+                 window's access on each call, so a service account change shows on the next one. It names
+                 entities and tools, never a login.
+            operationId: synq.entities.activity.v1alpha.ActivityService.ListAccessSignals
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListAccessSignalsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.ListAccessSignalsResponse'
+    /api/entities/activity/v1alpha/usage:
+        post:
+            tags:
+                - synq.entities.activity.v1alpha.ActivityService
+            summary: BatchGetEntityUsage
+            description: |-
+                Read how each asked entity is used over the window, in one line: what loads it, what runs and
+                 builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by
+                 Airflow, transformed by dbt, read by Looker Studio and 12 people". Each role names its actor at
+                 the most precise level known: a job or app, else a service account, else the tool. It answers
+                 "what runs this" for a table or a model, and GetActorSummary answers "what this job runs". It
+                 names tools, jobs and service accounts, never a login.
+            operationId: synq.entities.activity.v1alpha.ActivityService.BatchGetEntityUsage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.activity.v1alpha.BatchGetEntityUsageRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.activity.v1alpha.BatchGetEntityUsageResponse'
     /api/entities/annotations/v1:
         get:
             tags:
@@ -43910,7 +44840,7 @@ paths:
                 Suggest which workspace member each unclassified login may belong to, by matching the login
                  against the members the caller passes. Accept a suggestion with synq.users.v1
                  UsersService.UpsertUserAliases. A login already linked is skipped only when the caller lists its
-                 "platform_user:<id>" among a member's identities.
+                 platform_user_id among a member's identities.
             operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.ListLinkSuggestions
             requestBody:
                 content:
@@ -44042,8 +44972,9 @@ paths:
                 - synq.entities.platformusers.v1alpha.ServiceAccountsService
             summary: ListServiceAccountSuggestions
             description: |-
-                Suggest service accounts for the logins nothing classifies, each as a change set with its
-                 evidence. A suggestion changes nothing by itself: edit it if needed, plan it with
+                Suggest service accounts for the logins the evidence says are not a person, each as a change set
+                 with its evidence. A login a workspace account, a person link or Coalesce Quality takes is left
+                 out. A login only a built-in account holds is suggested too, so it can get an account of its own. A suggestion changes nothing by itself: edit it if needed, plan it with
                  PlanServiceAccountChanges, then apply it.
             operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.ListServiceAccountSuggestions
             requestBody:
@@ -59009,6 +59940,10 @@ tags:
         OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
          job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
          dbt Cloud job steps and Coalesce jobs.
+
+         Deprecated: use synq.entities.activity.v1alpha.ActivityService. BatchGetEntityUsage answers "what
+         runs this" for a table or a model, as its ORCHESTRATED and TRANSFORMED roles, and GetActorSummary
+         answers "what this job runs", from its RUNS writes.
     - name: synq.entities.checks.v2.ChecksCategoriesService
       description: |-
         ChecksCategoriesService reads and edits the categories of the checks in a

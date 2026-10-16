@@ -12,7 +12,13 @@ option go_package = "github.com/getsynq/api/entities/orchestration/v1";
 // OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
 // job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
 // dbt Cloud job steps and Coalesce jobs.
+//
+// Deprecated: use synq.entities.activity.v1alpha.ActivityService. BatchGetEntityUsage answers "what
+// runs this" for a table or a model, as its ORCHESTRATED and TRANSFORMED roles, and GetActorSummary
+// answers "what this job runs", from its RUNS writes.
 service OrchestrationService {
+  option deprecated = true;
+
   // BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it
   // in the last 31 days (upstream), and the entities it ran (downstream).
   rpc BatchOrchestration(BatchOrchestrationRequest) returns (BatchOrchestrationResponse) {

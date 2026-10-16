@@ -44,13 +44,14 @@ service ActivityService {
   }
 
   // Read who read and wrote each asked entity over the window: the jobs, the service accounts, the
-  // tools and the logins. Only a caller holding the platform users scope sees the logins: any other
-  // gets every logins list empty and logins_hidden set.
+  // tools and the logins. Anyone who reads lineage is served. Only a caller holding the platform users
+  // scope sees the logins: any other gets every logins list empty and logins_hidden set.
   rpc ListEntityActors(ListEntityActorsRequest) returns (ListEntityActorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_PLATFORM_USERS_READ,
+        SCOPE_LINEAGE_READ,
         SCOPE_MCP_READ
       ]
     };
@@ -95,10 +96,35 @@ service ActivityService {
     };
   }
 
+  // Read how each asked entity is used over the window, in one line: what loads it, what runs and
+  // builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by
+  // Airflow, transformed by dbt, read by Looker Studio and 12 people". Each role names its actor at
+  // the most precise level known: a job or app, else a service account, else the tool. It answers
+  // "what runs this" for a table or a model, and GetActorSummary answers "what this job runs". It
+  // names tools, jobs and service accounts, never a login.
+  rpc BatchGetEntityUsage(BatchGetEntityUsageRequest) returns (BatchGetEntityUsageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_LINEAGE_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/usage"
+      body: "*"
+    };
+  }
+
   // Read what one actor read, built and wrote over the window, what its queries cost per compute and
   // platform, and when it works. The actor is asked for by name, so nothing is left out for being
-  // Coalesce Quality's own access, a writer's own read or a policy. Without the platform users scope
-  // only an issuer entity, a job or step, may be asked for, and the answer names no login.
+  // Coalesce Quality's own access, a writer's own read or a policy.
+  //
+  // What a person did is personal data: a person, or a login, is answered only to that person, or to a
+  // caller holding the platform users scope, which a Developer and an Admin have. Anyone else gets
+  // PERMISSION_DENIED. A job, a service account, a tool and Coalesce Quality are answered to every
+  // caller, and without the platform users scope the answer names no login.
   rpc GetActorSummary(GetActorSummaryRequest) returns (GetActorSummaryResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -129,6 +155,44 @@ service ActivityService {
       body: "*"
     };
   }
+
+  // List the workspace's actors, the service accounts, tools, people, logins nothing classifies and
+  // Coalesce Quality, each with the totals GetActorSummary has for it: its queries and their weights,
+  // its reads, inputs and writes, and the entities it read and wrote. A login can be in several actors,
+  // such as its service account and the tool that issued its queries, so the actors never add up to
+  // the workspace: GetActivityOverview is the split that does. Only a caller holding the platform users
+  // scope sees people and logins: any other gets the rest with people_hidden set.
+  rpc ListActors(ListActorsRequest) returns (ListActorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/actor-list"
+      body: "*"
+    };
+  }
+
+  // List the entities of the workspace, or of a selection, that one signal names, such as the tables
+  // a pipeline builds and nobody reads, or the tables nobody touched. A signal is computed from the
+  // window's access on each call, so a service account change shows on the next one. It names
+  // entities and tools, never a login.
+  rpc ListAccessSignals(ListAccessSignalsRequest) returns (ListAccessSignalsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/activity/v1alpha/signals"
+      body: "*"
+    };
+  }
 }
 
 message BatchGetPopularityRequest {
@@ -149,6 +213,9 @@ message BatchGetPopularityRequest {
   uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
   // The pools to rank in. Unset is SYSTEM.
   PopularityPool pool = 4 [(buf.validate.field).enum.defined_only = true];
+  // Which access counts, in the counts and the ranks alike. Unset is CONSUMPTION. Under DEVELOPMENT
+  // a measure's reads hold what was read to build it too.
+  ActivityLens lens = 5 [(buf.validate.field).enum.defined_only = true];
 }
 
 message BatchGetPopularityResponse {
@@ -456,6 +523,65 @@ message GetActorSummaryResponse {
   repeated SeriesPoint hourly = 8;
   repeated SeriesPoint daily = 9;
   WeekGrid grid = 10;
+  // The jobs behind the actor's queries, such as a DAG, a dbt model, a Streamlit app, or a monitor or
+  // SQL test of Coalesce Quality's: by queries, highest first, then writes. At most top_k.
+  repeated ActorIssuerEntity issuer_entities = 11;
+  // What the actor wrote itself, per warehouse schema, by writes, highest first. Runs it orchestrated
+  // are not writes. The entities whose schema is not known are one entry with schema unset, last.
+  repeated ActorWrittenSchema written_schemas = 12;
+  // The actor's queries that moved files, per operation and location, such as the files it put to a
+  // stage, by queries, highest first.
+  repeated ActorFileOperation file_operations = 13;
+}
+
+// ActorWrittenSchema is what an actor wrote in one schema.
+message ActorWrittenSchema {
+  WarehouseSchema schema = 1;
+  // The entities it wrote there, entities that are the same counted once each.
+  uint32 entities_written = 2;
+  uint64 writes = 3;
+  // How often it wrote there in the window.
+  WriteCadence cadence = 4;
+}
+
+// FileOperation is a query that moves files rather than rows.
+enum FileOperation {
+  FILE_OPERATION_UNSPECIFIED = 0;
+  // A COPY that lands files in a table.
+  FILE_OPERATION_LOAD = 1;
+  // A COPY that writes a table's rows out to files.
+  FILE_OPERATION_UNLOAD = 2;
+  // A file uploaded to a stage, such as a Snowflake PUT.
+  FILE_OPERATION_PUT = 3;
+  // A file downloaded from a stage, such as a Snowflake GET.
+  FILE_OPERATION_GET = 4;
+  // Files removed from a stage, such as a Snowflake REMOVE.
+  FILE_OPERATION_REMOVE = 5;
+}
+
+// ActorFileOperation is an actor's queries of one file operation on one location.
+message ActorFileOperation {
+  FileOperation operation = 1;
+  // The stage or location the files moved through, empty when none is known. A temporary stage a
+  // tool makes per run is one location.
+  string location_entity_id = 2;
+  uint64 queries = 3;
+  // The whole weights of the queries per platform, by platform.
+  repeated PlatformWeights weights = 4;
+}
+
+// ActorIssuerEntity is one job behind an actor's queries: the queries it issued and what it wrote.
+message ActorIssuerEntity {
+  string issuer_entity_id = 1;
+  // The tool that issued its queries.
+  synq.platforms.v1.DataPlatformType issuer = 2;
+  uint64 queries = 3;
+  // The whole weights of its queries per platform, by platform.
+  repeated PlatformWeights weights = 4;
+  // Its writes, one per entity each write query touched, and the entities it wrote, entities that
+  // are the same counted once.
+  uint64 writes = 5;
+  uint32 entities_written = 6;
 }
 
 // ActorTotals is an actor's whole window.
@@ -533,6 +659,21 @@ message GetActivityOverviewRequest {
   ActivityMeasure measure = 5 [(buf.validate.field).enum.defined_only = true];
   // At most this many most_read rows. Unset is 20.
   uint32 top_k = 6 [(buf.validate.field).uint32.lte = 200];
+  // Only these entities, such as a data product's. Unset is the whole workspace. A selection of more
+  // than 50,000 entities, counting the entities each is the same as, is refused with
+  // INVALID_ARGUMENT.
+  //
+  // Under a selection a group is its access to the selected entities, never its whole cost: its
+  // shares of its queries' weights, not the weights, so the groups add up to what the selection
+  // costs. A query that read three selected tables is three reads and its weight is counted once,
+  // so queries and weights are unset and reads, inputs and writes count the access. most_read lists
+  // the selected entities, each with its rank in the whole pool.
+  ActivitySelection selection = 7;
+  // Also count each group's reads, inputs and writes and the entities it read and wrote, and the
+  // live and touched tables. Without a selection they read the access to every entity, which can
+  // take seconds on a large workspace, so a client shows the groups first and asks for these in a
+  // second call. A selection always counts them, as they are its groups.
+  bool include_flows = 8;
 }
 
 message GetActivityOverviewResponse {
@@ -554,6 +695,18 @@ message GetActivityOverviewResponse {
   uint32 entities_read = 9;
   // Set when the ranks could not be computed. The groups are still served, and most_read is empty.
   bool ranks_unavailable = 10;
+  // The live warehouse tables and views of the workspace or the selection, entities that are the
+  // same counted once, and those of them anyone but Coalesce Quality read, input or wrote in the
+  // window, so "2,530 of 7,196 tables in use". Only with include_flows or a selection.
+  uint32 entities_live = 11;
+  uint32 entities_touched = 12;
+  // Under a selection: the selected entities' share of each platform's weights, by platform. Unset
+  // without one, where weights is the whole.
+  repeated PlatformShares shares = 13;
+  // Set when the groups' reads, inputs and writes and the live and touched tables were counted, with
+  // include_flows or a selection. Unset, they read 0 because they were not asked for, and a client
+  // shows them as loading while it asks again with include_flows.
+  bool flows_included = 14;
 }
 
 // ActorGroup is the queries of the logins that land in one group.
@@ -567,9 +720,22 @@ message ActorGroup {
   uint64 queries = 4;
   // The group's weights per platform, by platform.
   repeated PlatformWeights weights = 5;
-  // The queries per day in the asked time zone, and when in the week.
+  // The queries per day in the asked time zone, and when in the week. Under a selection, the reads,
+  // inputs and writes of the selected entities.
   repeated SeriesPoint daily = 6;
   WeekGrid grid = 7;
+  // The group's access to entities, per entity a query touched, so a query that read three tables is
+  // three reads. Under a selection, of the selected entities only. Only with include_flows or a
+  // selection.
+  uint64 reads = 8;
+  uint64 inputs = 9;
+  uint64 writes = 10;
+  // The entities it read or input, and wrote, entities that are the same counted once.
+  uint32 entities_read = 11;
+  uint32 entities_written = 12;
+  // Under a selection: the group's share of its queries' weights on the selected entities, by
+  // platform. Unset without one, where weights is the whole.
+  repeated PlatformShares shares = 13;
 }
 
 // MostRead is one entity's place in one pool.
@@ -578,4 +744,326 @@ message MostRead {
   string entity_id = 1;
   uint64 reads = 2;
   PoolRank rank = 3;
+}
+
+message BatchGetEntityUsageRequest {
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 2048
+      }
+    }
+  }];
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 2;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 3 [(buf.validate.field).uint32.lte = 92];
+  // At most this many roles of each kind, such as the three tools that read the entity most. Unset
+  // is 3.
+  uint32 top_k = 4 [(buf.validate.field).uint32.lte = 10];
+}
+
+message BatchGetEntityUsageResponse {
+  // One per distinct asked id, in the order each was first asked.
+  repeated EntityUsage entities = 1;
+  // The window read, [from, to).
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+// EntityUsage is how one entity is used. An entity is answered with the entities it is the same as,
+// such as a dbt model and the table it builds, and with the other side of a share, so asking for
+// the model or for its table gives the same roles.
+message EntityUsage {
+  string entity_id = 1;
+  // In role order, then by count, highest first.
+  repeated UsageRole roles = 2;
+  // Hours of the window whose query history was read. An hour that was not read counts nothing.
+  uint32 covered_hours = 3;
+  // The hours of the window.
+  uint32 window_hours = 4;
+}
+
+// UsageRoleKind is what an actor does to an entity, in the order to draw them in, left to right.
+enum UsageRoleKind {
+  USAGE_ROLE_KIND_UNSPECIFIED = 0;
+  // A loader writes it, such as Fivetran, Airbyte, Stitch or a loader service account.
+  USAGE_ROLE_KIND_LOADED = 1;
+  // An orchestrator runs what builds it, such as an Airflow task, a dbt Cloud job step or a Coalesce
+  // job, or an orchestrator writes it. Two orchestrators of one run are two roles, each with its
+  // own count.
+  USAGE_ROLE_KIND_ORCHESTRATED = 2;
+  // A transformer builds it: a dbt model, a Coalesce node or a SQLMesh model that is the same entity,
+  // even with no query history, and a transformer's writes, which add to that model.
+  USAGE_ROLE_KIND_TRANSFORMED = 3;
+  // Any other write, such as a person's.
+  USAGE_ROLE_KIND_WRITTEN = 4;
+  // A tool, an app or people read it.
+  USAGE_ROLE_KIND_READ = 5;
+  // A reverse ETL tool, such as Census or Hightouch, reads it to copy the rows into another system,
+  // so a broken entity breaks a sync there.
+  USAGE_ROLE_KIND_REVERSE_ETL = 6;
+}
+
+// UsageLevel is how precisely a role names its actor, most precise first. A role with an ENTITY or a
+// SERVICE_ACCOUNT row has no TOOL row for the same tool.
+enum UsageLevel {
+  USAGE_LEVEL_UNSPECIFIED = 0;
+  // A job, task, step, model or app, in issuer_entity_id. One that no longer exists falls back to its
+  // tool.
+  USAGE_LEVEL_ENTITY = 1;
+  // A service account, a built-in one included, in service_account_id.
+  USAGE_LEVEL_SERVICE_ACCOUNT = 2;
+  // Only the tool, in issuer, from the tag on its queries.
+  USAGE_LEVEL_TOOL = 3;
+  // Every person, and every login no service account holds, together. actors counts them.
+  USAGE_LEVEL_PEOPLE = 4;
+  // Access with no login and no tool.
+  USAGE_LEVEL_UNKNOWN = 5;
+}
+
+// UsageEvidence is what a role was learned from, and what its count counts.
+enum UsageEvidence {
+  USAGE_EVIDENCE_UNSPECIFIED = 0;
+  // An entity that is the same as the asked one, such as the dbt model that builds a table, with no
+  // activity in the window. count is 0.
+  USAGE_EVIDENCE_IDENTITY = 1;
+  // Orchestrated runs.
+  USAGE_EVIDENCE_RUNS = 2;
+  // Warehouse queries.
+  USAGE_EVIDENCE_QUERIES = 3;
+  // Opens of a BI asset.
+  USAGE_EVIDENCE_VIEWS = 4;
+}
+
+// UsageRole is one actor in one role of an entity. Coalesce Quality's own queries are never a role.
+message UsageRole {
+  UsageRoleKind role = 1;
+  UsageLevel level = 2;
+  // Who plays the role, as ActorActivity names it. Unset on a TOOL, PEOPLE or UNKNOWN role.
+  oneof actor {
+    // For ENTITY: the job, task, step, model or app, such as "dbt model M builds this".
+    string issuer_entity_id = 3;
+    // For SERVICE_ACCOUNT: the service account, a built-in one included.
+    string service_account_id = 4;
+  }
+  // The tool, such as Fivetran, Airflow, dbt or Looker Studio. Unspecified on a PEOPLE or UNKNOWN
+  // role, and on a service account whose queries name no tool.
+  synq.platforms.v1.DataPlatformType issuer = 5;
+  // Set when service_account_id names a built-in account.
+  bool built_in = 6;
+  // For a service account, its entity id, which resolves to its name like any other entity.
+  string entity_id = 7;
+  UsageEvidence evidence = 8;
+  // Runs, writes or reads, as evidence says. 0 for IDENTITY.
+  uint64 count = 9;
+  // The people, and the logins with no person, behind a PEOPLE role. A person counts once however
+  // many logins they used.
+  uint32 actors = 10;
+  google.protobuf.Timestamp last_seen_at = 11;
+  // How often the actor did it in the window. NONE for IDENTITY.
+  WriteCadence cadence = 12;
+  // On a READ or REVERSE_ETL role: whether some of its reads count toward popularity. False when the
+  // service account's popularity policy leaves them all out, and always false on the other roles.
+  bool counts_for_popularity = 13;
+  // How many roles of this kind top_k cut, set on the last one kept.
+  uint32 more = 14;
+}
+
+// ActorKind is what an actor of ListActors is.
+enum ActorKind {
+  ACTOR_KIND_UNSPECIFIED = 0;
+  // Coalesce Quality's own queries on any login, and every query of a login Coalesce Quality or
+  // Coalesce Catalog connects as.
+  ACTOR_KIND_COALESCE = 1;
+  // The logins a service account holds, a built-in one included.
+  ACTOR_KIND_SERVICE_ACCOUNT = 2;
+  // A tool, from the tag its queries carry, on any login.
+  ACTOR_KIND_TOOL = 3;
+  // The logins of one person.
+  ACTOR_KIND_PERSON = 4;
+  // A login nothing classifies, with all of its queries.
+  ACTOR_KIND_LOGIN = 5;
+}
+
+// ActorSort is the order of ListActors, highest first, then by kind and actor.
+enum ActorSort {
+  // Read as ACCESS.
+  ACTOR_SORT_UNSPECIFIED = 0;
+  // Reads, inputs and writes together.
+  ACTOR_SORT_ACCESS = 1;
+  // Queries. Refused under a selection, which counts access, not queries.
+  ACTOR_SORT_QUERIES = 2;
+  ACTOR_SORT_READS = 3;
+  ACTOR_SORT_WRITES = 4;
+  // Compute on the asked platform, as each platform reports compute in its own unit. Under a selection,
+  // the compute share of the selected entities.
+  ACTOR_SORT_COMPUTE = 5;
+}
+
+message ListActorsRequest {
+  option (buf.validate.message).cel = {
+    id: "compute_sort_needs_platform"
+    message: "sorting by compute needs a platform"
+    expression: "this.sort != 5 || this.platform != 0"
+  };
+
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 1;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 2 [(buf.validate.field).uint32.lte = 92];
+  // Only the access to these entities, such as a data product's. Unset is the whole workspace. Under a
+  // selection an actor is its access to the selected entities: its reads, inputs and writes and its
+  // shares of their cost, with no queries and no weights. A selection of more than 50,000 entities,
+  // counting the entities each is the same as, is refused with INVALID_ARGUMENT.
+  ActivitySelection selection = 3;
+  // Only actors of these kinds. Empty is every kind the caller may see.
+  repeated ActorKind kinds = 4 [(buf.validate.field).repeated = {
+    max_items: 5
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  ActorSort sort = 5 [(buf.validate.field).enum.defined_only = true];
+  // The platform ACTOR_SORT_COMPUTE sorts on and compute_fraction is of. Required with it.
+  synq.platforms.v1.DataPlatformType platform = 6 [(buf.validate.field).enum.defined_only = true];
+  // Without a page size every actor is returned.
+  synq.v1.Pagination pagination = 7;
+}
+
+message ListActorsResponse {
+  // In the asked order.
+  repeated ListedActor actors = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  synq.v1.PageInfo page_info = 4;
+  // Set when the caller may not see people and logins: no PERSON or LOGIN actor is listed.
+  bool people_hidden = 5;
+}
+
+// ListedActor is one actor of ListActors over the window.
+message ListedActor {
+  ActorKind kind = 1;
+  // The actor to ask GetActorSummary about. Without a selection its summary has the same totals.
+  ActorRef actor = 2;
+  // Set when actor names a built-in account.
+  bool built_in = 3;
+  // For a service account, its entity id, which resolves to its name like any other entity.
+  string entity_id = 4;
+  // The distinct logins behind its queries and its access.
+  uint32 logins = 5;
+  // As GetActorSummary has them. Under a selection, the access to the selected entities only: queries,
+  // weights, runs and outside_entities are unset.
+  ActorTotals totals = 6;
+  // Under a selection: its share of what the selected entities cost, by platform.
+  repeated PlatformShares shares = 7;
+  // Its queries per issuing tool, highest first, then by issuer, such as how much of a person's work
+  // ran through dbt. Empty under a selection.
+  repeated IssuerCount issuers = 8;
+  // With a platform: its compute on the platform over the platform's whole compute, or over what the
+  // selected entities cost on it, from 0 to 1. The actors overlap, so their fractions do not add up to
+  // 1.
+  double compute_fraction = 9;
+}
+
+// AccessSignal is a place where how an entity is used and what is expected of it disagree. Coalesce
+// Quality's own access, such as a monitor reading a table, never counts as using it.
+enum AccessSignal {
+  ACCESS_SIGNAL_UNSPECIFIED = 0;
+  // A pipeline, an orchestrator's runs or what transforms, wrote the entity in the window, and nobody
+  // read it or built anything from it. Each entity carries its share of what building it cost.
+  ACCESS_SIGNAL_BUILT_NEVER_READ = 1;
+  // A live warehouse table or view nobody read, built from or wrote in the window, with the schema
+  // it lives in.
+  ACCESS_SIGNAL_UNTOUCHED = 2;
+  // Reads that count toward popularity came through a login that reads for whoever looks at a BI
+  // tool or an application, so the viewer behind them is not known. The response sums them per tool.
+  ACCESS_SIGNAL_READ_WITHOUT_VIEWER = 3;
+  // A pipeline maintains the entity while a person, or a login nobody names, writes it too.
+  ACCESS_SIGNAL_WRITTEN_OUTSIDE_PIPELINE = 4;
+}
+
+message ListAccessSignalsRequest {
+  // The window ends at the start of this hour, exclusive. Unset is the current hour.
+  google.protobuf.Timestamp until = 1;
+  // The window's length in days, back from until. Unset is 30.
+  uint32 window_days = 2 [(buf.validate.field).uint32.lte = 92];
+  // Only these entities, such as a data product's. Unset is the whole workspace. A selection of more
+  // than 50,000 entities, counting the entities each is the same as, is refused with
+  // INVALID_ARGUMENT.
+  ActivitySelection selection = 3;
+  AccessSignal signal = 4 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Without a page size every entity is returned.
+  synq.v1.Pagination pagination = 5;
+}
+
+message ListAccessSignalsResponse {
+  AccessSignal signal = 1;
+  // One page of the entities that raise the signal. BUILT_NEVER_READ by build compute, highest first,
+  // READ_WITHOUT_VIEWER by shared reads and WRITTEN_OUTSIDE_PIPELINE by outside writes, each then by
+  // entity id. UNTOUCHED by schema, then entity id, those with no known schema last.
+  repeated SignalEntity entities = 2;
+  // How many entities raise the signal, on every page.
+  uint32 total = 3;
+  google.protobuf.Timestamp from = 4;
+  google.protobuf.Timestamp to = 5;
+  synq.v1.PageInfo page_info = 6;
+  // UNTOUCHED: every schema with untouched tables and views, by how many, highest first.
+  repeated SchemaSignal schemas = 7;
+  // READ_WITHOUT_VIEWER: the counted reads of every entity per tool, and those of them through a
+  // shared login, by shared reads, highest first.
+  repeated ToolSharedReads tools = 8;
+}
+
+// SignalEntity is one entity a signal names: an entity with the entities it is the same as, by the
+// smallest id among them, or for UNTOUCHED the table or view itself. Only the fields of the signal
+// asked are set.
+message SignalEntity {
+  string entity_id = 1;
+  // BUILT_NEVER_READ: the pipeline's writes, its runs included, its share of their cost by platform,
+  // and when it last wrote.
+  uint64 writes = 2;
+  repeated PlatformShares build_shares = 3;
+  google.protobuf.Timestamp last_written_at = 4;
+  // UNTOUCHED: where it lives. Unset when its address is not known.
+  WarehouseSchema schema = 5;
+  // READ_WITHOUT_VIEWER: its counted reads, and those through a shared login.
+  uint64 reads = 6;
+  uint64 shared_reads = 7;
+  // WRITTEN_OUTSIDE_PIPELINE: the writes no pipeline explains, and the distinct logins behind them.
+  uint64 outside_writes = 8;
+  uint32 writing_logins = 9;
+}
+
+// WarehouseSchema is a schema of one warehouse instance, as the warehouse names it.
+message WarehouseSchema {
+  // The instance, such as a Snowflake account or a BigQuery project.
+  string instance = 1 [(buf.validate.field).string.max_len = 2048];
+  string database = 2 [(buf.validate.field).string.max_len = 2048];
+  string schema = 3 [(buf.validate.field).string.max_len = 2048];
+}
+
+// SchemaSignal is one schema's untouched tables and views.
+message SchemaSignal {
+  WarehouseSchema schema = 1;
+  uint32 entities = 2;
+}
+
+// ToolSharedReads is one tool's counted reads, and the part of them through a shared login.
+message ToolSharedReads {
+  synq.platforms.v1.DataPlatformType issuer = 1;
+  uint64 reads = 2;
+  uint64 shared_reads = 3;
+  // shared_reads over reads, from 0 to 1.
+  double share = 4;
 }
