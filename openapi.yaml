@@ -11233,7 +11233,9 @@ components:
                         title: issuer_entity_id
                         maxLength: 2048
                         minLength: 1
-                        description: 'A job, task or step that issues queries or runs what builds an entity: what it maintains.'
+                        description: |-
+                            A job, task or step that issues queries or runs what builds an entity: what it maintains. A dbt
+                             Cloud job is what its steps maintain.
                   title: issuer_entity_id
                   required:
                     - issuerEntityId
@@ -11531,11 +11533,17 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
-                    description: The workspace's service accounts first, then the built-in ones, each by count.
+                    description: |-
+                        The workspace's service accounts first, then the built-in ones, each by count. A tool with one
+                         built-in account is that account, so the account also has every query tagged with the tool, on
+                         any login.
                 tools:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorActivity'
+                    description: |-
+                        The tools that tagged the queries naming no issuer entity, except a tool with one built-in
+                         account, which is listed as that account.
                 logins:
                     type: array
                     items:
@@ -11807,7 +11815,8 @@ components:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.ActorEntityActivity'
                     description: |-
                         At most top_k per direction, READ, INPUT, then WRITE, each by count. For a job, a WRITE row of
-                         measure RUNS counts the runs of what it builds, never write queries.
+                         measure RUNS counts the runs of what it builds, never write queries. A dbt Cloud job answers with
+                         what its steps run.
                 hourly:
                     type: array
                     items:
@@ -11840,6 +11849,14 @@ components:
                     description: |-
                         The actor's queries that moved files, per operation and location, such as the files it put to a
                          stage, by queries, highest first.
+                orchestratedEntityIds:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        For a job, task or step: every entity orchestration lineage says it runs, sorted, whether or not it
+                         ran it in the window, so a job that runs less often than the window still names what it runs. A
+                         dbt Cloud job names what its steps run. entities and totals count only what the window saw.
             title: GetActorSummaryResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.GetEntityActivitySeriesRequest:
@@ -11965,7 +11982,8 @@ components:
                     description: |-
                         One page of the entities that raise the signal. BUILT_NEVER_READ by build compute, highest first,
                          READ_WITHOUT_VIEWER by shared reads and WRITTEN_OUTSIDE_PIPELINE by outside writes, each then by
-                         entity id. UNTOUCHED by schema, then entity id, those with no known schema last.
+                         entity id. UNTOUCHED by schema in the order of schemas, then entity id, those with no known schema
+                         last.
                 total:
                     type: integer
                     description: How many entities raise the signal, on every page.
@@ -11979,7 +11997,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.SchemaSignal'
-                    description: 'UNTOUCHED: every schema with untouched tables and views, by how many, highest first.'
+                    description: 'UNTOUCHED: every schema with untouched tables and views, by how many, highest first, then by name.'
                 tools:
                     type: array
                     items:
@@ -12641,6 +12659,7 @@ components:
                 - USAGE_EVIDENCE_RUNS
                 - USAGE_EVIDENCE_QUERIES
                 - USAGE_EVIDENCE_VIEWS
+                - USAGE_EVIDENCE_DECLARED
             description: UsageEvidence is what a role was learned from, and what its count counts.
         synq.entities.activity.v1alpha.UsageLevel:
             type: string
@@ -12689,7 +12708,7 @@ components:
                             - string
                         title: count
                         format: int64
-                        description: Runs, writes or reads, as evidence says. 0 for IDENTITY.
+                        description: Runs, writes or reads, as evidence says. 0 for IDENTITY and DECLARED.
                     actors:
                         type: integer
                         title: actors
@@ -12701,7 +12720,7 @@ components:
                         $ref: '#/components/schemas/google.protobuf.Timestamp'
                     cadence:
                         title: cadence
-                        description: How often the actor did it in the window. NONE for IDENTITY.
+                        description: How often the actor did it in the window. NONE for IDENTITY and DECLARED.
                         $ref: '#/components/schemas/synq.entities.activity.v1alpha.WriteCadence'
                     countsForPopularity:
                         type: boolean
@@ -23932,6 +23951,47 @@ components:
             title: AthenaOutputs
             additionalProperties: false
             description: Athena generated outputs.
+        synq.integrations.v1.BatchGetIntegrationHealthRequest:
+            type: object
+            properties:
+                integrationIds:
+                    type: array
+                    items:
+                        type: string
+                        format: uuid
+                        maxItems: 500
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 500
+                    minItems: 1
+                    uniqueItems: true
+                    description: Integration ids (UUIDs).
+            title: BatchGetIntegrationHealthRequest
+            additionalProperties: false
+            description: Request for the current health of several integrations.
+        synq.integrations.v1.BatchGetIntegrationHealthResponse:
+            type: object
+            properties:
+                health:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.integrations.v1.IntegrationHealth'
+                    description: |-
+                        Current health summary, keyed by integration id. Requested ids that do
+                         not exist are absent from the map.
+            title: BatchGetIntegrationHealthResponse
+            additionalProperties: false
+            description: Response with the current health of each integration found.
+        synq.integrations.v1.BatchGetIntegrationHealthResponse.HealthEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.integrations.v1.IntegrationHealth'
+            title: HealthEntry
+            additionalProperties: false
         synq.integrations.v1.BatchGetIntegrationsRequest:
             type: object
             properties:
@@ -31684,6 +31744,13 @@ components:
                          credentials.
                     nullable: true
                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                feedback:
+                    type: string
+                    maxLength: 2000
+                    description: |-
+                        Why, in your own words: what makes the recommendation wrong or not
+                         worth acting on for you. Optional. Kept with the decision and read by
+                         Coalesce Quality to improve the recommendations it makes.
             title: DismissRecommendationRequest
             required:
                 - recommendationId
@@ -31740,6 +31807,13 @@ components:
                          credentials.
                     nullable: true
                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                feedback:
+                    type: string
+                    maxLength: 2000
+                    description: |-
+                        Why, in your own words: what makes the recommendation wrong or not
+                         worth acting on for you. Optional. Kept with the decision and read by
+                         Coalesce Quality to improve the recommendations it makes.
             title: IgnoreRecommendationRequest
             required:
                 - recommendationId
@@ -31953,6 +32027,13 @@ components:
                          dismissed. Absent when nobody decided.
                     nullable: true
                     $ref: '#/components/schemas/synq.recommendations.v1.RecommendationDecision'
+                released:
+                    type: boolean
+                    description: |-
+                        Whether this kind of recommendation is shown to everyone who can read the
+                         workspace's recommendations. A new kind is shown only to Coalesce Quality
+                         staff until its wording and remediation have been checked, so a reader
+                         outside it only ever sees `true`.
             title: Recommendation
             additionalProperties: false
             description: |-
@@ -32013,6 +32094,9 @@ components:
                     description: Who made it. Absent when the request identified no one.
                     nullable: true
                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                feedback:
+                    type: string
+                    description: Why, as given with the decision. Empty when no reason was given.
             title: RecommendationDecision
             additionalProperties: false
             description: RecommendationDecision is a dismissal or an ignore.
@@ -57263,9 +57347,9 @@ paths:
             summary: BatchGetRecommendations
             description: |-
                 Fetch recommendations by id. Ids that are unknown, belong to another
-                 workspace, no longer exist because the condition cleared, or concern an
-                 integration the credential cannot read are omitted from the response
-                 rather than erroring.
+                 workspace, no longer exist because the condition cleared, concern an
+                 integration the credential cannot read, or are of a kind not released to
+                 the caller are omitted from the response rather than erroring.
             operationId: synq.recommendations.v1.RecommendationsService.BatchGetRecommendations
             requestBody:
                 content:
@@ -57316,6 +57400,14 @@ paths:
                                          credentials.
                                     nullable: true
                                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                                feedback:
+                                    type: string
+                                    title: feedback
+                                    maxLength: 2000
+                                    description: |-
+                                        Why, in your own words: what makes the recommendation wrong or not
+                                         worth acting on for you. Optional. Kept with the decision and read by
+                                         Coalesce Quality to improve the recommendations it makes.
                             title: DismissRecommendationRequest
                             additionalProperties: false
                             description: Request to dismiss a recommendation.
@@ -57363,6 +57455,14 @@ paths:
                                          credentials.
                                     nullable: true
                                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                                feedback:
+                                    type: string
+                                    title: feedback
+                                    maxLength: 2000
+                                    description: |-
+                                        Why, in your own words: what makes the recommendation wrong or not
+                                         worth acting on for you. Optional. Kept with the decision and read by
+                                         Coalesce Quality to improve the recommendations it makes.
                             title: IgnoreRecommendationRequest
                             additionalProperties: false
                             description: Request to ignore a recommendation.
@@ -59646,6 +59746,10 @@ tags:
 
          Decisions are kept by recommendation id, so they keep applying when a
          recommendation disappears and comes back.
+
+         A new kind of recommendation is shown only to Coalesce Quality staff until
+         its wording and remediation have been checked against real workspaces;
+         everyone else reads only the released kinds (`Recommendation.released`).
 
          A recommendation about an integration is also governed by that
          integration's permissions: reading it needs a credential that can read

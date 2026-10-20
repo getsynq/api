@@ -28,6 +28,10 @@ option go_package = "github.com/getsynq/api/recommendations/v1";
 // Decisions are kept by recommendation id, so they keep applying when a
 // recommendation disappears and comes back.
 //
+// A new kind of recommendation is shown only to Coalesce Quality staff until
+// its wording and remediation have been checked against real workspaces;
+// everyone else reads only the released kinds (`Recommendation.released`).
+//
 // A recommendation about an integration is also governed by that
 // integration's permissions: reading it needs a credential that can read
 // integrations, and deciding about it one that can edit them. One that cannot
@@ -48,15 +52,16 @@ service RecommendationsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_RECOMMENDATIONS_READ,
-        SCOPE_RECOMMENDATIONS_EDIT
+        SCOPE_RECOMMENDATIONS_EDIT,
+        SCOPE_MCP_READ
       ]
     };
   }
 
   // Fetch recommendations by id. Ids that are unknown, belong to another
-  // workspace, no longer exist because the condition cleared, or concern an
-  // integration the credential cannot read are omitted from the response
-  // rather than erroring.
+  // workspace, no longer exist because the condition cleared, concern an
+  // integration the credential cannot read, or are of a kind not released to
+  // the caller are omitted from the response rather than erroring.
   rpc BatchGetRecommendations(BatchGetRecommendationsRequest) returns (BatchGetRecommendationsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {
@@ -66,7 +71,8 @@ service RecommendationsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_RECOMMENDATIONS_READ,
-        SCOPE_RECOMMENDATIONS_EDIT
+        SCOPE_RECOMMENDATIONS_EDIT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -85,7 +91,10 @@ service RecommendationsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+      scopes: [
+        SCOPE_RECOMMENDATIONS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -103,7 +112,10 @@ service RecommendationsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+      scopes: [
+        SCOPE_RECOMMENDATIONS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 
@@ -121,7 +133,10 @@ service RecommendationsService {
       body: "*"
     };
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_RECOMMENDATIONS_EDIT]
+      scopes: [
+        SCOPE_RECOMMENDATIONS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
   }
 }
@@ -199,6 +214,10 @@ message DismissRecommendationRequest {
   // Who is deciding. Optional: identity is completed from the calling
   // credentials.
   optional synq.issues.actor.v1.Actor actor = 2;
+  // Why, in your own words: what makes the recommendation wrong or not
+  // worth acting on for you. Optional. Kept with the decision and read by
+  // Coalesce Quality to improve the recommendations it makes.
+  string feedback = 3 [(buf.validate.field).string.max_len = 2000];
 }
 
 // Response with the recommendation as stored after the call.
@@ -216,6 +235,10 @@ message IgnoreRecommendationRequest {
   // Who is deciding. Optional: identity is completed from the calling
   // credentials.
   optional synq.issues.actor.v1.Actor actor = 2;
+  // Why, in your own words: what makes the recommendation wrong or not
+  // worth acting on for you. Optional. Kept with the decision and read by
+  // Coalesce Quality to improve the recommendations it makes.
+  string feedback = 3 [(buf.validate.field).string.max_len = 2000];
 }
 
 // Response with the recommendation as stored after the call.

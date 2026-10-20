@@ -371,6 +371,7 @@ Create, update, and delete integrations and their connection settings.
 | `AcceptPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | AcceptPromptSuggestion applies a pending suggestion to the matching SRE agent |
 | `DismissPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | DismissPromptSuggestion marks a pending suggestion as dismissed with an optional |
 | `RecordPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | RecordPromptSuggestion is the producer-side endpoint used by the offline |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
 | `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
 | `CreateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1` | Create a new integration. The server assigns the id and returns the created |
 | `DeleteIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`DELETE /api/integrations/v1/{integration_id}` | Delete an integration. The integration stops being scheduled and is removed |
@@ -394,6 +395,7 @@ View integrations and their connection settings.
 | `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection |
 | `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the |
 | `Get`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`GET /api/extensions/atlan/integrations/v1` |  |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
 | `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
 | `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. Secret config fields are masked. |
 | `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an |
@@ -820,6 +822,9 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
 | `BatchGetIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/by-id` |  |
 | `ListIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`GET /api/incidents/v1` |  |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
 | `BatchGetIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/by-id` |  |
 | `ListIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`GET /api/issues/v1` |  |
 | `BatchGetIssues`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/by-id` |  |
@@ -848,6 +853,8 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
 | `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. Pass a |
 | `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. Unlike |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
 | `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
@@ -897,6 +904,9 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
 | `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
 | `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. The ownership id is supplied |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. Replaces |
+| `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | Ignore a recommendation for good, whatever is found about it later. |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it |
 | `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
 
@@ -1425,14 +1435,15 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `RenameIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/rename` | `SCOPE_INCIDENTS_EDIT` |
 | `SplitIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/split` | `SCOPE_INCIDENTS_EDIT` |
 | `UpdateIncidentState`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/state` | `SCOPE_INCIDENTS_EDIT` |
-| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT`<br/>`SCOPE_MCP_READ` |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT`<br/>`SCOPE_MCP_READ` |
 | `CreateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1` | `SCOPE_INTEGRATION_EDIT` |
 | `DeleteIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`DELETE /api/integrations/v1/{integration_id}` | `SCOPE_INTEGRATION_EDIT` |
 | `DisableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/disable` | `SCOPE_INTEGRATION_EDIT` |
 | `EnableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/enable` | `SCOPE_INTEGRATION_EDIT` |
 | `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
 | `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
-| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT` |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | `SCOPE_INTEGRATION_READ`<br/>`SCOPE_INTEGRATION_EDIT`<br/>`SCOPE_MCP_READ` |
 | `RefreshIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/refresh` | `SCOPE_INTEGRATION_EDIT` |
 | `UpdateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`PUT /api/integrations/v1/{integration_id}` | `SCOPE_INTEGRATION_EDIT` |
 | `BatchGetIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/by-id` | `SCOPE_ISSUES_READ`<br/>`SCOPE_MCP_READ` |
@@ -1499,11 +1510,11 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `DescribeResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/describe-resolver-ql` | — |
 | `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
-| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT` |
-| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | `SCOPE_RECOMMENDATIONS_EDIT` |
-| `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | `SCOPE_RECOMMENDATIONS_EDIT` |
-| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT` |
-| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | `SCOPE_RECOMMENDATIONS_EDIT` |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT`<br/>`SCOPE_MCP_READ` |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | `SCOPE_RECOMMENDATIONS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | `SCOPE_RECOMMENDATIONS_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | `SCOPE_RECOMMENDATIONS_READ`<br/>`SCOPE_RECOMMENDATIONS_EDIT`<br/>`SCOPE_MCP_READ` |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | `SCOPE_RECOMMENDATIONS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |
 | `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | `SCOPE_SAVED_VIEW_EDIT`<br/>`SCOPE_SAVED_VIEW_ADMIN`<br/>`SCOPE_MCP_WRITE` |
 | `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | `SCOPE_SAVED_VIEW_READ`<br/>`SCOPE_MCP_READ` |

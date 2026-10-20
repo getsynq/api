@@ -247,7 +247,8 @@ message ActorRef {
       min_len: 1
       max_len: 2048
     }];
-    // A job, task or step that issues queries or runs what builds an entity: what it maintains.
+    // A job, task or step that issues queries or runs what builds an entity: what it maintains. A dbt
+    // Cloud job is what its steps maintain.
     string issuer_entity_id = 2 [(buf.validate.field).string = {
       min_len: 1
       max_len: 2048

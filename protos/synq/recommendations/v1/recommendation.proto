@@ -59,6 +59,11 @@ message Recommendation {
   // present when it reopened because something new was found since it was
   // dismissed. Absent when nobody decided.
   optional RecommendationDecision decision = 13;
+  // Whether this kind of recommendation is shown to everyone who can read the
+  // workspace's recommendations. A new kind is shown only to Coalesce Quality
+  // staff until its wording and remediation have been checked, so a reader
+  // outside it only ever sees `true`.
+  bool released = 14;
 }
 
 // RecommendationTarget is what a recommendation is about.
@@ -213,6 +218,8 @@ message RecommendationDecision {
   google.protobuf.Timestamp decided_at = 2;
   // Who made it. Absent when the request identified no one.
   optional synq.issues.actor.v1.Actor decided_by = 3;
+  // Why, as given with the decision. Empty when no reason was given.
+  string feedback = 4;
 }
 
 // RecommendationDecisionKind is what was decided about a recommendation.

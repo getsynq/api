@@ -68,7 +68,8 @@ service IntegrationsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INTEGRATION_READ,
-        SCOPE_INTEGRATION_EDIT
+        SCOPE_INTEGRATION_EDIT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -84,7 +85,8 @@ service IntegrationsService {
     option (synq.v1.scope_authorization) = {
       scopes: [
         SCOPE_INTEGRATION_READ,
-        SCOPE_INTEGRATION_EDIT
+        SCOPE_INTEGRATION_EDIT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -172,6 +174,24 @@ service IntegrationsService {
       scopes: [
         SCOPE_INTEGRATION_READ,
         SCOPE_INTEGRATION_EDIT
+      ]
+    };
+  }
+
+  // Return the current health of several integrations at once, without their
+  // run history: what `GetIntegrationHealth` returns as `health`, for each id.
+  // Use it to find which of the workspace's integrations need attention, then
+  // `GetIntegrationHealth` for the runs of one of them.
+  //
+  // Ids that are unknown or belong to another workspace are omitted from the
+  // response rather than erroring.
+  rpc BatchGetIntegrationHealth(BatchGetIntegrationHealthRequest) returns (BatchGetIntegrationHealthResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_INTEGRATION_READ,
+        SCOPE_INTEGRATION_EDIT,
+        SCOPE_MCP_READ
       ]
     };
   }
@@ -400,4 +420,24 @@ message GetIntegrationHealthResponse {
   repeated IntegrationRun runs = 2;
   // Pagination metadata; pass `page_info.last_id` as the next cursor.
   synq.v1.PageInfo page_info = 3;
+}
+
+// Request for the current health of several integrations.
+message BatchGetIntegrationHealthRequest {
+  // Integration ids (UUIDs).
+  repeated string integration_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+    unique: true
+    items: {
+      string: {uuid: true}
+    }
+  }];
+}
+
+// Response with the current health of each integration found.
+message BatchGetIntegrationHealthResponse {
+  // Current health summary, keyed by integration id. Requested ids that do
+  // not exist are absent from the map.
+  map<string, IntegrationHealth> health = 1;
 }

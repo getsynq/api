@@ -401,8 +401,12 @@ message DirectionActors {
   // login can be left off one by its policy, so they do not add up to it.
   uint64 total = 3;
   repeated ActorActivity issuer_entities = 4;
-  // The workspace's service accounts first, then the built-in ones, each by count.
+  // The workspace's service accounts first, then the built-in ones, each by count. A tool with one
+  // built-in account is that account, so the account also has every query tagged with the tool, on
+  // any login.
   repeated ActorActivity service_accounts = 5;
+  // The tools that tagged the queries naming no issuer entity, except a tool with one built-in
+  // account, which is listed as that account.
   repeated ActorActivity tools = 6;
   // Every login, whatever issued its queries, except those whose policy keeps them off the frequent
   // users list. A login known two ways is listed once per basis.
@@ -523,7 +527,8 @@ message GetActorSummaryResponse {
   // Ordered by platform instance, then compute.
   repeated ActorComputeTotals computes = 6;
   // At most top_k per direction, READ, INPUT, then WRITE, each by count. For a job, a WRITE row of
-  // measure RUNS counts the runs of what it builds, never write queries.
+  // measure RUNS counts the runs of what it builds, never write queries. A dbt Cloud job answers with
+  // what its steps run.
   repeated ActorEntityActivity entities = 7;
   // The actor's queries per UTC hour, split by issuer.
   repeated SeriesPoint hourly = 8;
@@ -538,6 +543,10 @@ message GetActorSummaryResponse {
   // The actor's queries that moved files, per operation and location, such as the files it put to a
   // stage, by queries, highest first.
   repeated ActorFileOperation file_operations = 13;
+  // For a job, task or step: every entity orchestration lineage says it runs, sorted, whether or not it
+  // ran it in the window, so a job that runs less often than the window still names what it runs. A
+  // dbt Cloud job names what its steps run. entities and totals count only what the window saw.
+  repeated string orchestrated_entity_ids = 14;
 }
 
 // ActorWrittenSchema is what an actor wrote in one schema.
@@ -642,9 +651,12 @@ enum ActorGroupKind {
   // Coalesce Quality's own queries on any login, and every query of a login Coalesce Quality or
   // Coalesce Catalog connects as.
   ACTOR_GROUP_KIND_COALESCE = 1;
-  // The logins whose first service account is this one, a built-in one included.
+  // The logins whose first service account is this one, a built-in one included. A tool with one
+  // built-in account is that account, so its tag on queries of logins no service account holds lands
+  // here too.
   ACTOR_GROUP_KIND_SERVICE_ACCOUNT = 2;
-  // A tool's tag on queries of logins no service account holds.
+  // A tool's tag on queries of logins no service account holds, for a tool with no built-in account
+  // or several.
   ACTOR_GROUP_KIND_TOOL = 3;
   // The logins known to be a person's: those a person rule or the platform's email names a person.
   ACTOR_GROUP_KIND_PEOPLE = 4;
@@ -851,6 +863,10 @@ enum UsageEvidence {
   USAGE_EVIDENCE_QUERIES = 3;
   // Opens of a BI asset.
   USAGE_EVIDENCE_VIEWS = 4;
+  // Metadata names the actor, with no activity in the window: a job or task that orchestration lineage
+  // shows runs it, the tool Coalesce Catalog says transforms it, or the loader a dbt source names.
+  // count is 0.
+  USAGE_EVIDENCE_DECLARED = 5;
 }
 
 // UsageRole is one actor in one role of an entity. Coalesce Quality's own queries are never a role.
@@ -872,13 +888,13 @@ message UsageRole {
   // For a service account, its entity id, which resolves to its name like any other entity.
   string entity_id = 7;
   UsageEvidence evidence = 8;
-  // Runs, writes or reads, as evidence says. 0 for IDENTITY.
+  // Runs, writes or reads, as evidence says. 0 for IDENTITY and DECLARED.
   uint64 count = 9;
   // The people behind a PEOPLE role, a person once however many logins they used, or the logins
   // behind a LOGINS role.
   uint32 actors = 10;
   google.protobuf.Timestamp last_seen_at = 11;
-  // How often the actor did it in the window. NONE for IDENTITY.
+  // How often the actor did it in the window. NONE for IDENTITY and DECLARED.
   WriteCadence cadence = 12;
   // On a READ or REVERSE_ETL role: whether some of its reads count toward popularity. False when the
   // service account's popularity policy leaves them all out, and always false on the other roles.
@@ -893,9 +909,11 @@ enum ActorKind {
   // Coalesce Quality's own queries on any login, and every query of a login Coalesce Quality or
   // Coalesce Catalog connects as.
   ACTOR_KIND_COALESCE = 1;
-  // The logins a service account holds, a built-in one included.
+  // The logins a service account holds, a built-in one included. A tool with one built-in account is
+  // that account, so its tag on any login is the account's.
   ACTOR_KIND_SERVICE_ACCOUNT = 2;
-  // A tool, from the tag its queries carry, on any login.
+  // A tool, from the tag its queries carry, on any login, for a tool with no built-in account or
+  // several.
   ACTOR_KIND_TOOL = 3;
   // The logins of one person.
   ACTOR_KIND_PERSON = 4;
@@ -1026,14 +1044,15 @@ message ListAccessSignalsResponse {
   AccessSignal signal = 1;
   // One page of the entities that raise the signal. BUILT_NEVER_READ by build compute, highest first,
   // READ_WITHOUT_VIEWER by shared reads and WRITTEN_OUTSIDE_PIPELINE by outside writes, each then by
-  // entity id. UNTOUCHED by schema, then entity id, those with no known schema last.
+  // entity id. UNTOUCHED by schema in the order of schemas, then entity id, those with no known schema
+  // last.
   repeated SignalEntity entities = 2;
   // How many entities raise the signal, on every page.
   uint32 total = 3;
   google.protobuf.Timestamp from = 4;
   google.protobuf.Timestamp to = 5;
   synq.v1.PageInfo page_info = 6;
-  // UNTOUCHED: every schema with untouched tables and views, by how many, highest first.
+  // UNTOUCHED: every schema with untouched tables and views, by how many, highest first, then by name.
   repeated SchemaSignal schemas = 7;
   // READ_WITHOUT_VIEWER: the counted reads of every entity per tool, and those of them through a
   // shared login, by shared reads, highest first.
