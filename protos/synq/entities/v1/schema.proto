@@ -97,6 +97,9 @@ message SchemaColumn {
   // What kind of number the column holds. Unspecified for a non-numeric column,
   // and for one whose type is not recognised.
   NumericCategory numeric_category = 10;
+  // True when the column accepts NULL, false when it is declared NOT NULL.
+  // Unset when the data warehouse does not report it.
+  optional bool is_nullable = 12;
 }
 
 // Schema represents a schema of a table like entity

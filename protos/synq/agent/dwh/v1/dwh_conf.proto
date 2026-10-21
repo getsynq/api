@@ -201,6 +201,8 @@ message RedshiftConf {
   string password = 5 [(buf.validate.field) = {required: true}];
   // Estimate table freshness based on query logs
   bool freshness_from_query_logs = 6;
+  // Read each table's DDL with SHOW TABLE (one statement per table)
+  bool use_show_create_table = 7;
 }
 
 // Snowflake specific configuration

@@ -33,4 +33,6 @@ message RedshiftCloudConf {
   // Auto-creation quotes the value as a single identifier, so a schema-qualified
   // name only works against a table you have created yourself.
   optional string audit_table_fqn = 8;
+  // Read each table's DDL with SHOW TABLE (one statement per table).
+  optional bool use_show_create_table = 9;
 }

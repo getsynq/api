@@ -40,9 +40,15 @@ message ForeignKeyReference {
       max_len: 255
     }
   }];
-  // Target column names in the referenced table
+  // Target column names in the referenced table, in the order of the
+  // constraint's own columns
   repeated string columns = 4 [(buf.validate.field) = {
     repeated: {max_items: 100}
+  }];
+  // Entity id of the referenced table, the one the catalog publishes it
+  // under. Empty when it could not be resolved.
+  string referenced_entity_id = 5 [(buf.validate.field) = {
+    string: {max_len: 1000}
   }];
 }
 
