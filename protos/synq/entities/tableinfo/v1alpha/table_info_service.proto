@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package synq.entities.tableinfo.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identifier.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/tableinfo/v1alpha";
+
+// TableInfoService serves what a data warehouse reports about its tables and views: who owns
+// one, when it was created, how many rows and bytes it holds, when its data last changed, and
+// where to open it in the warehouse's own console.
+service TableInfoService {
+  // Warehouse facts about tables and views: owner, creation time, row count, size, last
+  // modification and a link to the object in the warehouse console.
+  //
+  // An identifier of an entity that has a warehouse table as an identity (a dbt model) returns
+  // the facts of that table. Every requested identifier gets one entry, in request order; an
+  // identifier nothing is known about gets an entry with only `id` set.
+  rpc BatchGetTableInfo(BatchGetTableInfoRequest) returns (BatchGetTableInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/table-info/v1alpha/batch-get"
+      body: "*"
+    };
+  }
+}
+
+message BatchGetTableInfoRequest {
+  // Identifiers of the tables or views, or of entities that share an identity with one.
+  repeated synq.entities.v1.Identifier ids = 1 [(buf.validate.field) = {
+    repeated: {
+      min_items: 1
+      max_items: 100
+    }
+  }];
+}
+
+message TableInfo {
+  // Identifier as requested.
+  synq.entities.v1.Identifier id = 1;
+  // Coalesce Quality path the owner, creation time and console link were found on. Empty when
+  // none of them is known.
+  string synq_path = 2;
+  // Role or user the warehouse names as the owner of the object. Unset when the warehouse does
+  // not report one.
+  optional string owner = 3;
+  // When the warehouse created the object. Unset when the warehouse does not report it.
+  google.protobuf.Timestamp created_at = 4;
+  // Link to the object in the warehouse's own console. Unset for a warehouse or object type the
+  // console has no page for.
+  optional string console_url = 5;
+  // Rows the warehouse reports the object holds. Unset when not reported.
+  optional int64 row_count = 6;
+  // Bytes the warehouse reports the object occupies. Unset when not reported.
+  optional int64 size_bytes = 7;
+  // Last change of the object's data the warehouse reports. Never later than stats_observed_at:
+  // a change after the read began is reported as the read's own time.
+  google.protobuf.Timestamp updated_at = 8;
+  // When Coalesce Quality read row_count, size_bytes and updated_at. Unset when none of them has
+  // been read.
+  google.protobuf.Timestamp stats_observed_at = 9;
+  // Coalesce Quality path row_count, size_bytes and updated_at were found on. It can differ from
+  // synq_path when the request names an entity with several identities.
+  string stats_synq_path = 10;
+}
+
+message BatchGetTableInfoResponse {
+  // One entry per requested identifier, in request order.
+  repeated TableInfo tables = 1;
+}

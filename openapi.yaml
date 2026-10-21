@@ -19346,6 +19346,85 @@ components:
                 - ISSUE_STATUS_WARN
                 - ISSUE_STATUS_ERROR
                 - ISSUE_STATUS_CRITICAL
+        synq.entities.tableinfo.v1alpha.BatchGetTableInfoRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                    maxItems: 100
+                    minItems: 1
+                    description: Identifiers of the tables or views, or of entities that share an identity with one.
+            title: BatchGetTableInfoRequest
+            additionalProperties: false
+        synq.entities.tableinfo.v1alpha.BatchGetTableInfoResponse:
+            type: object
+            properties:
+                tables:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.tableinfo.v1alpha.TableInfo'
+                    description: One entry per requested identifier, in request order.
+            title: BatchGetTableInfoResponse
+            additionalProperties: false
+        synq.entities.tableinfo.v1alpha.TableInfo:
+            type: object
+            properties:
+                id:
+                    description: Identifier as requested.
+                    $ref: '#/components/schemas/synq.entities.v1.Identifier'
+                synqPath:
+                    type: string
+                    description: |-
+                        Coalesce Quality path the owner, creation time and console link were found on. Empty when
+                         none of them is known.
+                owner:
+                    type: string
+                    description: |-
+                        Role or user the warehouse names as the owner of the object. Unset when the warehouse does
+                         not report one.
+                    nullable: true
+                createdAt:
+                    description: When the warehouse created the object. Unset when the warehouse does not report it.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                consoleUrl:
+                    type: string
+                    description: |-
+                        Link to the object in the warehouse's own console. Unset for a warehouse or object type the
+                         console has no page for.
+                    nullable: true
+                rowCount:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Rows the warehouse reports the object holds. Unset when not reported.
+                    nullable: true
+                sizeBytes:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Bytes the warehouse reports the object occupies. Unset when not reported.
+                    nullable: true
+                updatedAt:
+                    description: |-
+                        Last change of the object's data the warehouse reports. Never later than stats_observed_at:
+                         a change after the read began is reported as the read's own time.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                statsObservedAt:
+                    description: |-
+                        When Coalesce Quality read row_count, size_bytes and updated_at. Unset when none of them has
+                         been read.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                statsSynqPath:
+                    type: string
+                    description: |-
+                        Coalesce Quality path row_count, size_bytes and updated_at were found on. It can differ from
+                         synq_path when the request names an entity with several identities.
+            title: TableInfo
+            additionalProperties: false
         synq.entities.typedefs.v1.EntityTraitDef:
             type: object
             properties:
@@ -23496,6 +23575,15 @@ components:
                 description:
                     type: string
                     nullable: true
+                owner:
+                    type: string
+                    description: |-
+                        Role or user the data warehouse names as the owner of the object. Unset when it does not
+                         report one.
+                    nullable: true
+                createdAt:
+                    description: When the data warehouse created the object. Unset when it does not report it.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
             title: ObjectInformation
             additionalProperties: false
         synq.ingest.dwh.v1.ObjectMetrics:
@@ -24093,6 +24181,14 @@ components:
                         Explicit list of datasets to scrape. When set, only these are queried (no
                          project-level dataset listing needed). When empty, all visible datasets are
                          discovered. Mutually exclusive with `blacklisted_datasets`.
+                fetchPolicyTags:
+                    type: boolean
+                    description: |-
+                        Resolve column policy tags to their taxonomy and tag names through the Data
+                         Catalog API. Needs the Data Catalog API enabled in the taxonomy's project and
+                         datacatalog.taxonomies.get. Off by default, as a denied call shows in the
+                         audit log. Without it a policy tag keeps its resource name.
+                    nullable: true
             title: BigQueryCloudConf
             additionalProperties: false
             description: |-
@@ -45108,6 +45204,32 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListServiceAccountSuggestionsResponse'
+    /api/entities/table-info/v1alpha/batch-get:
+        post:
+            tags:
+                - synq.entities.tableinfo.v1alpha.TableInfoService
+            summary: BatchGetTableInfo
+            description: |-
+                Warehouse facts about tables and views: owner, creation time, row count, size, last
+                 modification and a link to the object in the warehouse console.
+
+                 An identifier of an entity that has a warehouse table as an identity (a dbt model) returns
+                 the facts of that table. Every requested identifier gets one entry, in request order; an
+                 identifier nothing is known about gets an entry with only `id` set.
+            operationId: synq.entities.tableinfo.v1alpha.TableInfoService.BatchGetTableInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.tableinfo.v1alpha.BatchGetTableInfoRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.tableinfo.v1alpha.BatchGetTableInfoResponse'
     /api/entities/typedefs/v1/entity-traits/list:
         post:
             tags:
@@ -60220,6 +60342,11 @@ tags:
 
          Each list is small — hundreds of entries — so every call returns the whole set
          and none of them page.
+    - name: synq.entities.tableinfo.v1alpha.TableInfoService
+      description: |-
+        TableInfoService serves what a data warehouse reports about its tables and views: who owns
+         one, when it was created, how many rows and bytes it holds, when its data last changed, and
+         where to open it in the warehouse's own console.
     - name: synq.entities.executions.v2.EntityExecutionsService
       description: |-
         EntityExecutionsService provides read-only access to entity execution history.

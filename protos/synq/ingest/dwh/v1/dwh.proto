@@ -22,6 +22,11 @@ message ObjectInformation {
   bool is_table = 6;
   repeated Tag tags = 4;
   optional string description = 5;
+  // Role or user the data warehouse names as the owner of the object. Unset when it does not
+  // report one.
+  optional string owner = 7;
+  // When the data warehouse created the object. Unset when it does not report it.
+  google.protobuf.Timestamp created_at = 8;
 }
 
 message SqlDefinition {

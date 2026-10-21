@@ -138,6 +138,7 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, |
 | `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last |
 | `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | List every trait a selection query can filter entities by. |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
@@ -818,6 +819,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchGetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_<br/>`POST /api/status/v1/incidents/by-id` | Get multiple entity statuses by their identifiers. |
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | Get specific entity status by its identifier. |
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | Get multiple entity statuses by their identifiers. |
+| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last |
 | `GetDiffByChangeId`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/change/{change_id}` |  |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
 | `BatchGetIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/by-id` |  |
@@ -1398,6 +1400,7 @@ Every public API method a customer token can call, and the scopes that satisfy i
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | `SCOPE_STATUS_READ`<br/>`SCOPE_MCP_READ` |
 | `GetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_ | `SCOPE_STATUS_READ` |
+| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |

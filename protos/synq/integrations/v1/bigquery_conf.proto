@@ -31,4 +31,9 @@ message BigQueryCloudConf {
   // project-level dataset listing needed). When empty, all visible datasets are
   // discovered. Mutually exclusive with `blacklisted_datasets`.
   repeated string datasets = 7;
+  // Resolve column policy tags to their taxonomy and tag names through the Data
+  // Catalog API. Needs the Data Catalog API enabled in the taxonomy's project and
+  // datacatalog.taxonomies.get. Off by default, as a denied call shows in the
+  // audit log. Without it a policy tag keeps its resource name.
+  optional bool fetch_policy_tags = 8;
 }

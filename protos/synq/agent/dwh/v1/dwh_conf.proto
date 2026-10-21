@@ -28,6 +28,11 @@ message BigQueryConf {
   // project-level bigquery.datasets.list permission.
   // When empty, all visible datasets in the project are discovered automatically.
   repeated string datasets = 5;
+  // Resolve column policy tags to their taxonomy and tag names through the Data Catalog API.
+  // Needs the Data Catalog API enabled in the taxonomy's project and datacatalog.taxonomies.get.
+  // Off by default, as a denied call shows in the audit log. Without it a policy tag keeps its
+  // resource name.
+  bool fetch_policy_tags = 6;
 }
 
 message ClickhouseConf {
