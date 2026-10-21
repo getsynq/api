@@ -250,6 +250,21 @@ message SchemaColumnChange {
     int32 ordinal_position = 5;
   }
 
+  // ColumnNullabilityChangeType represents a change in whether a column accepts NULL. Reported only
+  // where both versions of the schema state the column's nullability.
+  message ColumnNullabilityChangeType {
+    // Identifier of the modified column. See ColumnRemovalChangeType.column_id.
+    string column_id = 1;
+    // True when the column accepted NULL in the previous version, false when it was NOT NULL.
+    bool previous_is_nullable = 2;
+    // True when the column accepts NULL in the current version, false when it is NOT NULL.
+    bool current_is_nullable = 3;
+    // Name of the column as it appears in the source system. See ColumnRemovalChangeType.human_name.
+    string human_name = 4;
+    // Position of the changed column in the current version of the schema.
+    int32 ordinal_position = 5;
+  }
+
   // ColumnAdditionChangeType represents the addition of a new column to the schema.
   message ColumnAdditionChangeType {
     // Identifier of the new column. See ColumnRemovalChangeType.column_id.
@@ -266,5 +281,6 @@ message SchemaColumnChange {
     ColumnAdditionChangeType column_addition = 1;
     ColumnNativeTypeChangeType column_native_type = 2;
     ColumnRemovalChangeType column_removal = 3;
+    ColumnNullabilityChangeType column_nullability = 4;
   }
 }

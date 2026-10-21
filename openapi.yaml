@@ -20282,6 +20282,8 @@ components:
                 - ENTITY_TYPE_UNSPECIFIED
                 - ENTITY_TYPE_BQ_TABLE
                 - ENTITY_TYPE_BQ_VIEW
+                - ENTITY_TYPE_BQ_PROCEDURE
+                - ENTITY_TYPE_BQ_FUNCTION
                 - ENTITY_TYPE_LOOKER_LOOK
                 - ENTITY_TYPE_LOOKER_EXPLORE
                 - ENTITY_TYPE_LOOKER_VIEW
@@ -20390,14 +20392,22 @@ components:
                 - ENTITY_TYPE_DOMO_DATASET
                 - ENTITY_TYPE_MSSQL_TABLE
                 - ENTITY_TYPE_MSSQL_VIEW
+                - ENTITY_TYPE_MSSQL_PROCEDURE
+                - ENTITY_TYPE_MSSQL_FUNCTION
                 - ENTITY_TYPE_ORACLE_TABLE
                 - ENTITY_TYPE_ORACLE_VIEW
+                - ENTITY_TYPE_ORACLE_PROCEDURE
+                - ENTITY_TYPE_ORACLE_FUNCTION
                 - ENTITY_TYPE_ATHENA_TABLE
                 - ENTITY_TYPE_ATHENA_VIEW
                 - ENTITY_TYPE_FABRIC_TABLE
                 - ENTITY_TYPE_FABRIC_VIEW
+                - ENTITY_TYPE_FABRIC_PROCEDURE
+                - ENTITY_TYPE_FABRIC_FUNCTION
                 - ENTITY_TYPE_DB2_TABLE
                 - ENTITY_TYPE_DB2_VIEW
+                - ENTITY_TYPE_DB2_PROCEDURE
+                - ENTITY_TYPE_DB2_FUNCTION
                 - ENTITY_TYPE_LOOKER_STUDIO_CUSTOMER
                 - ENTITY_TYPE_LOOKER_STUDIO_REPORT
                 - ENTITY_TYPE_LOOKER_STUDIO_DATA_SOURCE
@@ -21422,6 +21432,13 @@ components:
                   required:
                     - columnNativeType
                 - properties:
+                    columnNullability:
+                        title: column_nullability
+                        $ref: '#/components/schemas/synq.entities.v1.SchemaColumnChange.ColumnNullabilityChangeType'
+                  title: column_nullability
+                  required:
+                    - columnNullability
+                - properties:
                     columnRemoval:
                         title: column_removal
                         $ref: '#/components/schemas/synq.entities.v1.SchemaColumnChange.ColumnRemovalChangeType'
@@ -21471,6 +21488,30 @@ components:
             title: ColumnNativeTypeChangeType
             additionalProperties: false
             description: ColumnNativeTypeChangeType represents a change in a column's data type.
+        synq.entities.v1.SchemaColumnChange.ColumnNullabilityChangeType:
+            type: object
+            properties:
+                columnId:
+                    type: string
+                    description: Identifier of the modified column. See ColumnRemovalChangeType.column_id.
+                previousIsNullable:
+                    type: boolean
+                    description: True when the column accepted NULL in the previous version, false when it was NOT NULL.
+                currentIsNullable:
+                    type: boolean
+                    description: True when the column accepts NULL in the current version, false when it is NOT NULL.
+                humanName:
+                    type: string
+                    description: Name of the column as it appears in the source system. See ColumnRemovalChangeType.human_name.
+                ordinalPosition:
+                    type: integer
+                    format: int32
+                    description: Position of the changed column in the current version of the schema.
+            title: ColumnNullabilityChangeType
+            additionalProperties: false
+            description: |-
+                ColumnNullabilityChangeType represents a change in whether a column accepts NULL. Reported only
+                 where both versions of the schema state the column's nullability.
         synq.entities.v1.SchemaColumnChange.ColumnRemovalChangeType:
             type: object
             properties:
