@@ -1,5 +1,7 @@
 #!/bin/bash
 
+MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
+
 PROTOS_DIR="."
 GEN_DIR="./tmp"
 DIRTY=false
@@ -21,7 +23,7 @@ fi
 # Evaluate the parsed options
 eval set -- "$VALID_ARGS"
 
-PROTOC_OPTS=""
+INCLUDES=()
 
 echo "$@"
 
@@ -36,7 +38,7 @@ while true; do
         shift 2
         ;;
     -I)
-        PROTOC_OPTS="$PROTOC_OPTS --proto_path=$2"
+        INCLUDES+=("$2")
         shift 2
         ;;
     -g | --gen)
@@ -56,26 +58,39 @@ done
 echo "Clearing generated directory -> $GEN_DIR"
 rm -rf $GEN_DIR
 mkdir -p $GEN_DIR
+GEN_DIR=$(cd "${GEN_DIR}" && pwd)
 DOCS_DIR="$GEN_DIR/_docs"
 mkdir -p $DOCS_DIR
 
+source "${MY_PATH}/buf_workspace.sh"
+buf_workspace "${PROTOS_DIR}" "${INCLUDES[@]}"
+
 echo "Compiling protos from -> $PROTOS_DIR"
-module_dirs=`find $PROTOS_DIR -maxdepth 1 -mindepth 1 -type d`
+module_dirs=`cd "${PROTOS_DIR}" && find . -maxdepth 1 -mindepth 1 -type d`
 for module_dir in $module_dirs; do
+    module_dir=${module_dir#./}
     echo "processing $module_dir"
     module=`basename $module_dir`
     mkdir "${DOCS_DIR}/${module}"
-    version_dirs=`find $module_dir -maxdepth 1 -mindepth 1 -type d`
+    version_dirs=`cd "${PROTOS_DIR}" && find "$module_dir" -maxdepth 1 -mindepth 1 -type d`
     for version_dir in $version_dirs; do
         version=`basename $version_dir`
-        proto_files=`find $version_dir -name *.proto -type f`
+        proto_files=`cd "${PROTOS_DIR}" && find "$version_dir" -name '*.proto' -type f`
         if [[ "${proto_files}" != "" ]]; then
-            protoc --proto_path=${PROTOS_DIR} $PROTOC_OPTS \
-                --go_out=${GEN_DIR} \
-                --go-grpc_out=${GEN_DIR} \
-                --doc_out=${DOCS_DIR}/${module} \
-                --doc_opt=markdown,${version}.md \
-                ${proto_files}
+            (cd "${BUF_WORKSPACE}" && buf generate --path "protos/${version_dir}" --template "
+version: v2
+plugins:
+  - local: protoc-gen-go
+    out: ${GEN_DIR}
+    strategy: all
+  - local: protoc-gen-go-grpc
+    out: ${GEN_DIR}
+    strategy: all
+  - local: protoc-gen-doc
+    out: ${DOCS_DIR}/${module}
+    opt: markdown,${version}.md
+    strategy: all
+")
         fi
     done
     if [ -z "$(ls -A ${DOCS_DIR}/${module})" ]; then

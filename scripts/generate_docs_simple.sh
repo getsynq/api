@@ -19,7 +19,7 @@ if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
-PROTOC_OPTS=""
+INCLUDES=()
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -32,7 +32,7 @@ while [ : ]; do
         shift 2
         ;;
     -I)
-        PROTOC_OPTS="$PROTOC_OPTS --proto_path=$2"
+        INCLUDES+=("$2")
         shift 2
         ;;
     --) shift; 
@@ -45,12 +45,21 @@ set -e
 
 echo "Generating docs..."
 
-# Find all .proto files in subdirectories
-proto_files=$(find "${PROTOS_DIR}" -type f -name "*.proto")
+source "${MY_PATH}/buf_workspace.sh"
+buf_workspace "${PROTOS_DIR}" "${INCLUDES[@]}"
 
-protoc --proto_path="${PROTOS_DIR}" ${PROTOC_OPTS}\
-    --doc_out="${TEMPLATE},api.mdx:${DOCS_DIR}" \
-    ${proto_files}
+# Every .proto file under the protos directory, in one request, so the template renders
+# a single page.
+mkdir -p "${DOCS_DIR}"
+DOCS_DIR=$(cd "${DOCS_DIR}" && pwd)
+(cd "${BUF_WORKSPACE}" && buf generate protos --template "
+version: v2
+plugins:
+  - local: protoc-gen-doc
+    out: ${DOCS_DIR}
+    opt: ${TEMPLATE},api.mdx
+    strategy: all
+")
 
 echo "Escaping MDX special characters..."
 python3 "${MY_PATH}/escape_mdx.py" "${DOCS_DIR}/api.mdx"

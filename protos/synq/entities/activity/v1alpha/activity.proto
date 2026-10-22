@@ -187,6 +187,50 @@ message SeriesPoint {
   uint32 covered_hours = 5;
   // On a daily point: the day is not wholly inside the window.
   bool partial = 6;
+  // How many of the point's hours are missing from the query history, as QueryHistory counts them:
+  // 0 or 1 on an hourly point. An hour that was not read and is not missing is one no integration
+  // has fetched yet.
+  uint32 missing_hours = 7;
+}
+
+// QueryHistory says which hours of a window an integration should have read and did not. A read hour
+// is never missing, and neither is an hour that was not read because:
+//   - it is not fetched yet: every hour from pending_from on, the last 24 hours at least, as an
+//     integration can fetch its query history once a day;
+//   - it is before the query history of every integration reading its instance, such as the days
+//     before an integration was added;
+//   - only orchestrated runs cover it, which report an hour only when something ran in it.
+// What is left is a fetch that failed or processing that did not catch up. It is what a client
+// warns about.
+message QueryHistory {
+  // Hours of the window missing for some integration, each counted once.
+  uint32 missing_hours = 1;
+  // From here on, no hour is missing yet. Never later than the window's end.
+  google.protobuf.Timestamp pending_from = 2;
+  // One per integration whose query history was read in the window, by integration id.
+  repeated IntegrationHistory integrations = 3;
+}
+
+// IntegrationHistory is the query history one integration read in a window.
+message IntegrationHistory {
+  string integration_id = 1;
+  // The platform whose query history it reads.
+  synq.platforms.v1.DataPlatformType platform = 2;
+  // The instance it reads, such as a Snowflake account, spelled as entity ids spell it.
+  string instance = 3;
+  // The first hour of its query history. Earlier hours are not missing.
+  google.protobuf.Timestamp history_from = 4;
+  // Hours of the window, from history_from and before pending_from, that no integration read on its
+  // instance. Another integration reading the instance in an hour makes the hour not missing.
+  uint32 missing_hours = 5;
+  // The same hours, merged into ranges, oldest first.
+  repeated HourRange missing = 6;
+}
+
+// HourRange is the hours [from, to).
+message HourRange {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
 }
 
 // GridDay is one weekday of a weekday and hour grid.

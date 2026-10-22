@@ -22,6 +22,9 @@ components:
                 Wrapper message for `double`.
 
                  The JSON representation for `DoubleValue` is JSON number.
+
+                 Not recommended for use in new APIs, but still useful for legacy APIs and
+                 has no plan to be removed.
         google.protobuf.Duration:
             type: string
             format: duration
@@ -92,6 +95,9 @@ components:
                 Wrapper message for `int64`.
 
                  The JSON representation for `Int64Value` is JSON string.
+
+                 Not recommended for use in new APIs, but still useful for legacy APIs and
+                 has no plan to be removed.
         google.protobuf.ListValue:
             type: object
             properties:
@@ -115,7 +121,7 @@ components:
                 `NullValue` is a singleton enumeration to represent the null value for the
                  `Value` type union.
 
-                  The JSON representation for `NullValue` is JSON `null`.
+                 The JSON representation for `NullValue` is JSON `null`.
         google.protobuf.Struct:
             type: object
             additionalProperties:
@@ -195,7 +201,6 @@ components:
                      Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
                          .setNanos((int) ((millis % 1000) * 1000000)).build();
 
-
                  Example 5: Compute Timestamp from Java `Instant.now()`.
 
                      Instant now = Instant.now();
@@ -203,7 +208,6 @@ components:
                      Timestamp timestamp =
                          Timestamp.newBuilder().setSeconds(now.getEpochSecond())
                              .setNanos(now.getNano()).build();
-
 
                  Example 6: Compute Timestamp from current time in Python.
 
@@ -234,7 +238,7 @@ components:
                  [`strftime`](https://docs.python.org/2/library/time.html#time.strftime) with
                  the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java, one can use
                  the Joda Time's [`ISODateTimeFormat.dateTime()`](
-                 http://www.joda.org/joda-time/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime%2D%2D
+                 http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()
                  ) to obtain a formatter capable of generating timestamps in this format.
         google.protobuf.Value:
             oneOf:
@@ -11472,6 +11476,11 @@ components:
                         The end of the window the ranks were computed for, exclusive, when it differs from to: the ranks
                          of the default window are computed once a day, for the window ending at 00:00 UTC.
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
+                queryHistory:
+                    description: |-
+                        Why an hour of the window that was not read was not. Warn about its missing_hours only:
+                         covered_hours short of the window is normal for its newest hours and for a new integration.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryHistory'
             title: BatchGetPopularityResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.ComputeUnit:
@@ -11908,6 +11917,9 @@ components:
                     description: The lens's directions, then WRITE, each only when it has counted access.
                 notCounted:
                     $ref: '#/components/schemas/synq.entities.activity.v1alpha.NotCountedActivity'
+                queryHistory:
+                    description: Why an hour of the window that was not read was not. Each point carries its own missing_hours.
+                    $ref: '#/components/schemas/synq.entities.activity.v1alpha.QueryHistory'
             title: GetEntityActivitySeriesResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.GridDay:
@@ -11930,6 +11942,43 @@ components:
             title: GridDay
             additionalProperties: false
             description: GridDay is one weekday of a weekday and hour grid.
+        synq.entities.activity.v1alpha.HourRange:
+            type: object
+            properties:
+                from:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: HourRange
+            additionalProperties: false
+            description: HourRange is the hours [from, to).
+        synq.entities.activity.v1alpha.IntegrationHistory:
+            type: object
+            properties:
+                integrationId:
+                    type: string
+                platform:
+                    description: The platform whose query history it reads.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                instance:
+                    type: string
+                    description: The instance it reads, such as a Snowflake account, spelled as entity ids spell it.
+                historyFrom:
+                    description: The first hour of its query history. Earlier hours are not missing.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                missingHours:
+                    type: integer
+                    description: |-
+                        Hours of the window, from history_from and before pending_from, that no integration read on its
+                         instance. Another integration reading the instance in an hour makes the hour not missing.
+                missing:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.HourRange'
+                    description: The same hours, merged into ranges, oldest first.
+            title: IntegrationHistory
+            additionalProperties: false
+            description: IntegrationHistory is the query history one integration read in a window.
         synq.entities.activity.v1alpha.IssuerCount:
             type: object
             properties:
@@ -12467,6 +12516,32 @@ components:
             description: |-
                 Purpose is what a service account acts for. It decides whether its reads count toward popularity
                  when its popularity policy does not say.
+        synq.entities.activity.v1alpha.QueryHistory:
+            type: object
+            properties:
+                missingHours:
+                    type: integer
+                    description: Hours of the window missing for some integration, each counted once.
+                pendingFrom:
+                    description: From here on, no hour is missing yet. Never later than the window's end.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                integrations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.activity.v1alpha.IntegrationHistory'
+                    description: One per integration whose query history was read in the window, by integration id.
+            title: QueryHistory
+            additionalProperties: false
+            description: |-
+                QueryHistory says which hours of a window an integration should have read and did not. A read hour
+                 is never missing, and neither is an hour that was not read because:
+                   - it is not fetched yet: every hour from pending_from on, the last 24 hours at least, as an
+                     integration can fetch its query history once a day;
+                   - it is before the query history of every integration reading its instance, such as the days
+                     before an integration was added;
+                   - only orchestrated runs cover it, which report an hour only when something ran in it.
+                 What is left is a fetch that failed or processing that did not catch up. It is what a client
+                 warns about.
         synq.entities.activity.v1alpha.QueryShares:
             type: object
             properties:
@@ -12563,6 +12638,12 @@ components:
                 partial:
                     type: boolean
                     description: 'On a daily point: the day is not wholly inside the window.'
+                missingHours:
+                    type: integer
+                    description: |-
+                        How many of the point's hours are missing from the query history, as QueryHistory counts them:
+                         0 or 1 on an hourly point. An hour that was not read and is not missing is one no integration
+                         has fetched yet.
             title: SeriesPoint
             additionalProperties: false
             description: |-
@@ -30858,6 +30939,8 @@ components:
                 - DATA_PLATFORM_TYPE_TERRAFORM
                 - DATA_PLATFORM_TYPE_HEVO
                 - DATA_PLATFORM_TYPE_DATASTREAM
+                - DATA_PLATFORM_TYPE_QLIK
+                - DATA_PLATFORM_TYPE_SALESFORCE
                 - DATA_PLATFORM_TYPE_SYNQ
         synq.platforms.v1.DatabricksIdentifier:
             type: object
@@ -34682,9 +34765,9 @@ paths:
                 - name: changeBefore.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -34692,24 +34775,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: changeBefore.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: limitToChangeTypes
                   in: query
@@ -40258,9 +40343,9 @@ paths:
                 - name: since.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -40268,24 +40353,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: since.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: pagination.cursor
                   in: query
@@ -47787,9 +47874,9 @@ paths:
                 - name: executionStartedAfter.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -47797,24 +47884,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: executionStartedAfter.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: executionTypes
                   in: query
@@ -48327,9 +48416,9 @@ paths:
                 - name: time.from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -48337,24 +48426,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: time.from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: sort.sortBy
                   in: query
@@ -49443,9 +49534,9 @@ paths:
                 - name: at.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -49453,24 +49544,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: at.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: issueIds
                   in: query
@@ -49817,9 +49910,9 @@ paths:
                 - name: logTime.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -49827,24 +49920,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: logTime.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
             requestBody:
                 content:
@@ -50199,9 +50294,9 @@ paths:
                 - name: from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -50209,24 +50304,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: limit.max
                   in: query
@@ -52362,9 +52459,9 @@ paths:
                 - name: time.from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -52372,24 +52469,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: time.from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: sort.sortBy
                   in: query
@@ -55339,9 +55438,9 @@ paths:
                 - name: from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -55349,24 +55448,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
             responses:
                 "200":
@@ -56098,9 +56199,9 @@ paths:
                 - name: from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -56108,24 +56209,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
             responses:
                 "200":
@@ -56154,9 +56257,9 @@ paths:
                 - name: from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -56164,24 +56267,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
             responses:
                 "200":
@@ -59385,9 +59490,9 @@ paths:
                 - name: queryLog.from.seconds
                   in: query
                   description: |-
-                    Represents seconds of UTC time since Unix epoch
-                     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                     9999-12-31T23:59:59Z inclusive.
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                   schema:
                     type:
                         - integer
@@ -59395,24 +59500,26 @@ paths:
                     title: seconds
                     format: int64
                     description: |-
-                        Represents seconds of UTC time since Unix epoch
-                         1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-                         9999-12-31T23:59:59Z inclusive.
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
                 - name: queryLog.from.nanos
                   in: query
                   description: |-
-                    Non-negative fractions of a second at nanosecond resolution. Negative
-                     second values with fractions must still have non-negative nanos values
-                     that count forward in time. Must be from 0 to 999,999,999
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
                      inclusive.
                   schema:
                     type: integer
                     title: nanos
                     format: int32
                     description: |-
-                        Non-negative fractions of a second at nanosecond resolution. Negative
-                         second values with fractions must still have non-negative nanos values
-                         that count forward in time. Must be from 0 to 999,999,999
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
                          inclusive.
                 - name: queryLog.minQueries
                   in: query
@@ -59969,70 +60076,35 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/synq.users.v1.RemoveUserRoleResponse'
 tags:
-    - name: synq.issues.issues.v1.IssuesService
-      description: IssuesService is a service for managing Issues.
-    - name: synq.issues.v2.IssuesService
-      description: IssuesService is a service for managing Issues.
-    - name: synq.git.commits.v1.CommitsService
-    - name: synq.recommendations.v1.RecommendationsService
+    - name: synq.agent.recon.v1.SuiteDeploymentService
       description: |-
-        RecommendationsService lists the changes Coalesce Quality recommends you
-         make, and records what you decided about them. See `Recommendation` for
-         what a recommendation is.
+        SuiteDeploymentService is the platform plane of reconciliation.
 
-         Recommendations are created and removed by Coalesce Quality itself: one
-         appears when something only you can change is found, and disappears once
-         it no longer holds. What you can do is decide whether a recommendation
-         stays in front of you:
+         SuiteConfigService is the developer/authoring sandbox (edit, version, run
+         ad-hoc with your own credentials — preview-only, no Entity, no Run, no
+         Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
+         a frozen snapshot of a suite config, mapped to workspace-level SYNQ
+         integrations, optionally scheduled or triggerable by API.
 
-           - Dismiss hides it until something new is found about it: an object it
-             did not list before, or a different remediation.
-           - Ignore hides it for good.
-           - Restore undoes either.
-
-         Decisions are kept by recommendation id, so they keep applying when a
-         recommendation disappears and comes back.
-
-         A new kind of recommendation is shown only to Coalesce Quality staff until
-         its wording and remediation have been checked against real workspaces;
-         everyone else reads only the released kinds (`Recommendation.released`).
-
-         A recommendation about an integration is also governed by that
-         integration's permissions: reading it needs a credential that can read
-         integrations, and deciding about it one that can edit them. One that cannot
-         does not see it listed.
-
-         Related services: `synq.integrations.v1.IntegrationsService` manages the
-         integrations recommendations can be about.
-    - name: synq.monitors.custom_monitors.v1.CustomMonitorsService
-    - name: synq.monitors.info.v1.MonitorInfoService
-    - name: synq.monitors.automated_monitors.v1.DeploymentRulesService
-    - name: synq.monitors.segments.v1.MonitorSegmentsService
+         Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
+         first promote. It survives re-promotes, schedule/mapping changes, and
+         pause/resume. Downstream AssetCommand / RunCommand publication keys off
+         deployment_id so Entity identity does not fragment on promote churn.
+    - name: synq.agent.recon.v1.YamlService
       description: |-
-        Reads and names the segments of a segmented custom monitor.
-
-         A monitor configured with a segmentation expression splits the data it
-         monitors into one time series per distinct value of that expression, and each
-         of those is a segment. The label is what every downstream surface shows for a
-         segment: the name of the check it produces, the search result, the alert. A
-         segment with no label falls back to its raw value, so a monitor segmented on
-         something encoded (an id, a code, a hashed bucket) reads as that raw value
-         everywhere until the segment is named.
-    - name: synq.monitors.history.v1.HistoryService
-    - name: synq.monitors.predictions.v1.MonitorPredictionsService
-      description: Access to anomaly detection model predictions and raw metric timeseries.
-    - name: synq.schedule.v1.ScheduleService
-      description: ScheduleService provides schedule evaluation utilities.
-    - name: synq.extensions.atlan.integrations.v1.AtlanIntegrationService
-    - name: synq.extensions.atlan.provider.v1.AtlanProviderService
-    - name: synq.extensions.atlan.workflows.v1.AtlanWorkflowService
-    - name: synq.alerts.services.v2.AlertsService
+        YamlService provides stateless conversion between YAML config format and proto.
+         This is useful for UI editors that need to display/edit suite configs as YAML.
+    - name: synq.agent.sre.v1.FeatureRequestService
       description: |-
-        AlertsService provides operations for managing alert configurations.
-
-         It supersedes synq.alerts.services.v1.AlertsService: entities are selected with
-         the canonical synq.queries.v1.Query + resolver_ql trigger rather than the bespoke
-         EntityGroupQuery.
+        FeatureRequestService allows MCP clients to submit feature requests when users encounter
+         missing capabilities. This is a last-resort service — it should only be used when no
+         existing tool can fulfill the user's request.
+    - name: synq.agent.sre.v1.LlmService
+      description: Service for evaluating LLM requests and producing structured output.
+    - name: synq.agent.sre.v1.TriageService
+      description: |-
+        Service for managing issue triage operations, allowing LLM agents to conclude investigations
+         and record evidence during the triage process.
     - name: synq.alerts.services.v1.AlertsService
       description: |-
         AlertsService provides operations for managing alert configurations.
@@ -60041,6 +60113,69 @@ tags:
          entities with the canonical synq.queries.v1.Query + resolver_ql trigger; this
          v1 service, which uses the bespoke EntityGroupQuery selection, is scheduled for
          removal. Migrate existing integrations to v2.
+    - name: synq.alerts.services.v2.AlertsService
+      description: |-
+        AlertsService provides operations for managing alert configurations.
+
+         It supersedes synq.alerts.services.v1.AlertsService: entities are selected with
+         the canonical synq.queries.v1.Query + resolver_ql trigger rather than the bespoke
+         EntityGroupQuery.
+    - name: synq.auth.iam.v1.IamService
+    - name: synq.entities.executions.v2.EntityExecutionsService
+      description: |-
+        EntityExecutionsService provides read-only access to entity execution history.
+         This service allows customers to retrieve information about all executions that happened on their entities,
+         including execution status, timing, and messages.
+
+         Use cases:
+         - Retrieve execution history for specific entities
+         - Filter executions by time range, status, or execution type
+         - Get aggregated summaries of execution activity
+         - Track execution trends and patterns
+    - name: synq.datachecks.sqltests.v1.SqlTestsService
+      description: SqlTestsService is a service for managing SqlTests.
+    - name: synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService
+      description: |-
+        SqlTestsDeploymentRulesService manages SqlTestDeploymentRules — rules that
+         dynamically deploy SQL test templates onto every table or view a query
+         matches, resyncing over time as the match set changes.
+    - name: synq.datachecks.testsuggestions.v1.TestSuggestionsService
+    - name: synq.datachecks.v1.TriggerService
+      description: TriggerService provides synchronous execution of datachecks on entities.
+    - name: synq.dataproducts.v1.DataproductsService
+      description: DataproductsService can be used to manage data products.
+    - name: synq.dataproducts.v2.DataproductsService
+      description: |-
+        DataproductsService manages data products — named, owned groupings of data
+         assets with a membership definition, a priority and an optional folder.
+
+         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
+         (a retried create converges instead of duplicating). Mutable fields are
+         optional on Upsert: a field that is set is written, a field that is omitted is
+         left unchanged. Pass the `etag` you last read to guard against overwriting a
+         concurrent edit.
+
+         A data product is a leaf in the reference graph — its definition may not
+         reference another data product or domain — so membership resolution always
+         terminates.
+    - name: synq.deliveries.v1.DeliveriesService
+      description: |-
+        DeliveriesService reports what was sent to your notification integrations —
+         webhooks, PagerDuty, Opsgenie — and what came back.
+
+         It answers the three questions an integration owner has. "Did this event
+         reach my endpoint": list the deliveries for an event id and read the outcome
+         of each. "Why did my endpoint reject it": read the attempts, which carry the
+         request as it was sent and the response as it came back. "Why did I get
+         nothing at all": every delivery that sent nothing records a reason, so a
+         silent integration can be explained rather than guessed at.
+
+         Deliveries are kept for 90 days. Credential-bearing header values are never
+         returned, on either side of an attempt — see `Header`.
+    - name: synq.domains.members.v1.DomainMembersService
+      description: DomainMembersService can be used to manage domain memberships.
+    - name: synq.domains.v1.DomainsService
+      description: DomainsService can be used to manage domains.
     - name: synq.domains.v2.DomainsService
       description: |-
         DomainsService manages data domains — named areas of ownership that group the
@@ -60056,144 +60191,24 @@ tags:
          is recursive. Every write that adds such a reference — including a change of
          `parent_id` — is rejected if it would close a loop, so a definition can always
          be resolved in finite time.
-    - name: synq.domains.members.v1.DomainMembersService
-      description: DomainMembersService can be used to manage domain memberships.
-    - name: synq.domains.v1.DomainsService
-      description: DomainsService can be used to manage domains.
-    - name: synq.queries.v1.QueriesService
+    - name: synq.entities.activity.v1alpha.ActivityService
       description: |-
-        QueriesService compiles and evaluates ResolverQL — the compact text query
-         language used across Coalesce Quality to select entities — over the public
-         API.
+        ActivityService reads the query history of a workspace's data platforms: how popular an entity is,
+         who reads and writes it, what one login, tool, job or person touched and what it cost, and where a
+         workspace's compute goes.
 
-         ResolverQL is a string DSL (for example `with_type("TABLE")` or
-         `in_folder(...)`); a structured `synq.queries.v1.Query` is its parsed,
-         machine-readable form. This service is the bridge between the two and the
-         read-only execution surface for both:
-           - `TranslateResolverQl` compiles a ResolverQL expression into a structured
-             `Query` without evaluating it — inspect it, validate it, or reuse it as a
-             filter on another API (entity listing, folder browsing, ...).
-           - `ResolveQuery` compiles a ResolverQL expression (or takes an
-             already-structured `Query`), evaluates it against the catalog, and
-             returns the matched entity ids. This is the general author -> resolve
-             loop.
-           - `DescribeResolverQl` returns the language itself — every function, every
-             accepted enum value — so you author against what this deployment compiles
-             rather than against a table baked into your client.
+         Every read covers a window of whole UTC hours, by default the 30 days before the current hour. A
+         login's reads count toward popularity as its service account's popularity policy says (see
+         synq.entities.platformusers.v1alpha.ServiceAccountsService), and Coalesce Quality's own queries never
+         count.
 
-         All three authenticate and resolve your workspace from your credentials.
-         `DescribeResolverQl` additionally needs no permission of its own, so any
-         credential can read it; the other two read the catalog and are scoped.
-    - name: synq.queries.v1.NLQueryService
-      description: NLQueryService generates structured Query protos from natural language descriptions using an LLM.
-    - name: synq.incidents.v1.IncidentsService
-      description: IncidentsService is a service for managing Incidents.
-    - name: synq.overlays.v1.OverlaysService
+         Weights are per query, in each platform's own figures. bytes_scanned is never a cost, and no
+         platform reports cost per table, so an entity's share of a query is an equal split. Nothing here is
+         credits or currency.
+    - name: synq.entities.annotations.v1.AnnotationsService
       description: |-
-        OverlaysService answers which organizational overlays claim an entity.
-
-         An overlay is a grouping you lay over your catalog rather than something the
-         warehouse itself knows about. Two kinds exist today: a **data product**, which
-         groups the assets that make up something your organization delivers, and an
-         **owner**, which names the person or team responsible for a set of assets and
-         where alerts about them go. Each is defined by a membership rule, not by an
-         explicit list, so what belongs to one changes as your warehouse does.
-
-         "Owner" here means stewardship — who is accountable for an asset and who hears
-         about it when something breaks. It is not the structural containment sense the
-         word carries elsewhere in the API, where an asset can be said to own the checks
-         and monitors declared on it. Nothing this service returns describes that
-         relationship.
-
-         This service reads that membership backwards. The defining services answer
-         "what is in this data product"; this one answers "which data products and
-         owners claim this table" — the question you have when you are looking at one
-         asset and want to know who cares about it and what it feeds.
-
-         Membership follows identity. Where the same table is represented more than
-         once in your catalog — a transformation model and the warehouse table it
-         builds — an overlay whose rule matches one of them claims the others too. So
-         an alert routed by ownership reaches the responsible party whichever
-         representation raised it, and you do not have to know which one a rule was
-         written against.
-
-         Two consequences worth planning around. You can ask about whichever
-         representation you happen to hold and get the same answer, so there is no need
-         to resolve an identity group first. And if you do ask about several members of
-         one group in a single call, each comes back with its own entry carrying the
-         same overlays — correct, but redundant, so ask about one member per group when
-         you are near the request limit.
-
-         Related services:
-           - `synq.dataproducts.v2.DataproductsService` and `synq.owners.v1.OwnersService`
-             define the overlays read here, and turn an id from a response into a name,
-             a description and its contact channels.
-           - `synq.entities.resolve.v1.IdentifierResolveService` turns an identifier you
-             already hold — a warehouse table name, a dbt model — into the `entity_id`
-             these calls take.
-    - name: synq.integrations.v1.IntegrationsService
-      description: |-
-        IntegrationsService manages connections from Coalesce Quality to your data
-         systems (warehouses, databases, and transformation tools).
-
-         Concurrency: every integration carries an opaque `etag`. Read it from
-         `GetIntegration` / `ListIntegrations`, then pass it back on
-         `UpdateIntegration` / `DeleteIntegration` to ensure you modify the version you
-         last saw. A stale etag is rejected with ABORTED (HTTP 409). Omit
-         the etag for last-write-wins.
-
-         Quota: each workspace has a limit on the number of integrations. Creating
-         beyond the limit is rejected with RESOURCE_EXHAUSTED.
-
-         Secrets: credential fields (passwords, tokens, keys) are write-only. They are
-         masked (returned empty) on every read. On update, omit a secret to keep it,
-         send a new value to rotate it, or send an explicit empty string to clear it
-         (where the field is `optional`).
-    - name: synq.platforms.v1.PlatformsService
-      description: PlatformsService is a service for managing Platforms and Integrations.
-    - name: synq.deliveries.v1.DeliveriesService
-      description: |-
-        DeliveriesService reports what was sent to your notification integrations —
-         webhooks, PagerDuty, Opsgenie — and what came back.
-
-         It answers the three questions an integration owner has. "Did this event
-         reach my endpoint": list the deliveries for an event id and read the outcome
-         of each. "Why did my endpoint reject it": read the attempts, which carry the
-         request as it was sent and the response as it came back. "Why did I get
-         nothing at all": every delivery that sent nothing records a reason, so a
-         silent integration can be explained rather than guessed at.
-
-         Deliveries are kept for 90 days. Credential-bearing header values are never
-         returned, on either side of an attempt — see `Header`.
-    - name: synq.agent.sre.v1.LlmService
-      description: Service for evaluating LLM requests and producing structured output.
-    - name: synq.agent.sre.v1.TriageService
-      description: |-
-        Service for managing issue triage operations, allowing LLM agents to conclude investigations
-         and record evidence during the triage process.
-    - name: synq.agent.sre.v1.FeatureRequestService
-      description: |-
-        FeatureRequestService allows MCP clients to submit feature requests when users encounter
-         missing capabilities. This is a last-resort service — it should only be used when no
-         existing tool can fulfill the user's request.
-    - name: synq.agent.recon.v1.YamlService
-      description: |-
-        YamlService provides stateless conversion between YAML config format and proto.
-         This is useful for UI editors that need to display/edit suite configs as YAML.
-    - name: synq.agent.recon.v1.SuiteDeploymentService
-      description: |-
-        SuiteDeploymentService is the platform plane of reconciliation.
-
-         SuiteConfigService is the developer/authoring sandbox (edit, version, run
-         ad-hoc with your own credentials — preview-only, no Entity, no Run, no
-         Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
-         a frozen snapshot of a suite config, mapped to workspace-level SYNQ
-         integrations, optionally scheduled or triggerable by API.
-
-         Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
-         first promote. It survives re-promotes, schedule/mapping changes, and
-         pause/resume. Downstream AssetCommand / RunCommand publication keys off
-         deployment_id so Entity identity does not fragment on promote churn.
+        AnnotationsService provides operations for managing and querying entity annotations.
+         Annotations are key-value pairs that can be attached to entities for categorization and filtering.
     - name: synq.entities.changes.v1.ChangesService
       description: |-
         ChangesService provides functionality to track and retrieve all types of changes to data entities.
@@ -60212,98 +60227,17 @@ tags:
          - "What changed in the last week for table X?" → Returns git commits, schema changes, SQL changes
          - "Show me all commits affecting this dbt model" → Returns git commits with lineage context
          - "What schema changes happened to this table?" → Returns schema changes detected by Coalesce Quality
-    - name: synq.entities.schemas.v1.SchemaMismatchesService
+    - name: synq.entities.checks.v1.ChecksCategoriesService
       description: |-
-        SchemaMismatchesService provides access to schema drift information between
-         data platform tables and their definitions (e.g., dbt models).
-    - name: synq.entities.schemas.v1.SchemasService
-      description: EntitiesService is a service for retriving any entity.
-    - name: synq.entities.constraints.v1.TableConstraintsService
-      description: TableConstraintsService provides access to table constraint and index information.
-    - name: synq.entities.custom.v1.RelationshipsService
-      description: |-
-        RelationshipsService allow management of relationships between entities. Relationships can
-         be created, updated, and deleted between 2 custom entities, or between a custom entity and Coalesce Quality native entity.enum
-         There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
-    - name: synq.entities.custom.v1.ChecksRelationshipsService
-    - name: synq.entities.custom.v1.EntitiesService
-      description: |-
-        custom.EntitiesService is a service for managing custom entities. Entities can represent
-         various data platform concepts such as services, consumers, applications or data pipelines
-         that are not natively available in Coalesce Quality.
+        ChecksCategoriesService lets workspace admins set explicit category
+         overrides on individual checks. An explicit category is the
+         authoritative category for a check — it takes precedence over the
+         categories computed by the workspace's categorisation rules.
 
-         Entities are identified by a unique identifier and can be created, updated, read and deleted.
-    - name: synq.entities.custom.v1.EntityExecutionsService
-    - name: synq.entities.custom.v1.TypesService
-      description: TypesService is a service for managing custom entity types.
-    - name: synq.entities.custom.v1.FeaturesService
-    - name: synq.entities.custom.v1.GroupsService
-      description: |-
-        It eliminates the need to keep state on client side to remember which assets were already created
-         and which should be deleted. The server will keep track of the current state of the group and client
-         can always send the intended new state. The server will calculate the diff and entities that are
-         no longer present in the group will be removed.
-
-         Example:
-         1. group has entities A, B, C at time t1
-         2. client sends group with entities B, C, D at time t2
-         3. server will remove entity A from the system and update the current state of the group to B, C, D
-
-         The service is designed to be idempotent and can be called multiple times with the same state without
-         causing any side effects.
-    - name: synq.entities.folders.v1.FoldersService
-      description: |-
-        FoldersService discovers and browses the folder / containment hierarchy of the
-         catalog: the roots data hangs from, the sub-folders under any folder, the
-         folders a given entity lives in, and the entities contained in a folder.
-
-         It is a read / navigation surface, not folder management — there are no
-         create, move, or delete operations.
-
-         Addressing: every folder has an opaque `folder_entity_id` (round-trip it
-         verbatim) and a structured `FolderRef{root_entity_id, folders[]}` (the
-         human-friendly form). Entities — both folder members and the ids you pass to
-         `GetFolderOf` — are named by their opaque entity id, the same id used across
-         the rest of the entities API.
-
-         Depth footgun: membership is SHALLOW by default. `Browse` returns only the
-         direct children of a folder, and `ListMembers` returns only the entities
-         placed directly in the folder. Set `deep = true` (or raise `Browse.depth`) to
-         recurse into sub-folders.
-    - name: synq.entities.annotations.v1.AnnotationsService
-      description: |-
-        AnnotationsService provides operations for managing and querying entity annotations.
-         Annotations are key-value pairs that can be attached to entities for categorization and filtering.
-    - name: synq.entities.status.v1.EntityIssuesService
-      description: EntityIssuesService is the service which retrieves entity issues status.
-    - name: synq.entities.status.v1.EntityIncidentsService
-      description: EntityIncidentsService is the service which retrieves entity status.
-    - name: synq.entities.impact.v1.ImpactService
-    - name: synq.entities.coordinates.v1.DatabaseCoordinatesService
-      description: DatabaseCoordinatesService is a service for getting database coordinates of Entities.
-    - name: synq.entities.activity.v1alpha.ActivityService
-      description: |-
-        ActivityService reads the query history of a workspace's data platforms: how popular an entity is,
-         who reads and writes it, what one login, tool, job or person touched and what it cost, and where a
-         workspace's compute goes.
-
-         Every read covers a window of whole UTC hours, by default the 30 days before the current hour. A
-         login's reads count toward popularity as its service account's popularity policy says (see
-         synq.entities.platformusers.v1alpha.ServiceAccountsService), and Coalesce Quality's own queries never
-         count.
-
-         Weights are per query, in each platform's own figures. bytes_scanned is never a cost, and no
-         platform reports cost per table, so an entity's share of a query is an equal split. Nothing here is
-         credits or currency.
-    - name: synq.entities.orchestration.v1.OrchestrationService
-      description: |-
-        OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
-         job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
-         dbt Cloud job steps and Coalesce jobs.
-
-         Deprecated: use synq.entities.activity.v1alpha.ActivityService. BatchGetEntityUsage answers "what
-         runs this" for a table or a model, as its ORCHESTRATED and TRANSFORMED roles, and GetActorSummary
-         answers "what this job runs", from its RUNS writes.
+         It is a public API so customers can manage check categories
+         programmatically; the same service is also mounted on the internal
+         API. The workspace and the acting identity are always taken from the
+         request context, never from the payload.
     - name: synq.entities.checks.v2.ChecksCategoriesService
       description: |-
         ChecksCategoriesService reads and edits the categories of the checks in a
@@ -60352,17 +60286,98 @@ tags:
          Every workspace starts with a set of platform-provided rules covering the
          common cases. They are visible here, they can be superseded by a workspace
          rule of any priority, and they cannot be edited from a workspace.
-    - name: synq.entities.checks.v1.ChecksCategoriesService
+    - name: synq.entities.code.v1.CodeService
       description: |-
-        ChecksCategoriesService lets workspace admins set explicit category
-         overrides on individual checks. An explicit category is the
-         authoritative category for a check — it takes precedence over the
-         categories computed by the workspace's categorisation rules.
+        CodeService is a service for retrieving code associated with entities in the system.
+         It provides functionality to access and manage code artifacts such as SQL queries,
+         Python scripts, dbt models, and other code configurations that are part of Coalesce Quality entities.
+    - name: synq.entities.constraints.v1.TableConstraintsService
+      description: TableConstraintsService provides access to table constraint and index information.
+    - name: synq.entities.coordinates.v1.DatabaseCoordinatesService
+      description: DatabaseCoordinatesService is a service for getting database coordinates of Entities.
+    - name: synq.entities.custom.v1.RelationshipsService
+      description: |-
+        RelationshipsService allow management of relationships between entities. Relationships can
+         be created, updated, and deleted between 2 custom entities, or between a custom entity and Coalesce Quality native entity.enum
+         There is no option to create relationships between 2 Coalesce Quality native entities (dbt model, BI dashboard, etc.).
+    - name: synq.entities.custom.v1.ChecksRelationshipsService
+    - name: synq.entities.custom.v1.EntitiesService
+      description: |-
+        custom.EntitiesService is a service for managing custom entities. Entities can represent
+         various data platform concepts such as services, consumers, applications or data pipelines
+         that are not natively available in Coalesce Quality.
 
-         It is a public API so customers can manage check categories
-         programmatically; the same service is also mounted on the internal
-         API. The workspace and the acting identity are always taken from the
-         request context, never from the payload.
+         Entities are identified by a unique identifier and can be created, updated, read and deleted.
+    - name: synq.entities.custom.v1.EntityExecutionsService
+    - name: synq.entities.custom.v1.FeaturesService
+    - name: synq.entities.custom.v1.GroupsService
+      description: |-
+        It eliminates the need to keep state on client side to remember which assets were already created
+         and which should be deleted. The server will keep track of the current state of the group and client
+         can always send the intended new state. The server will calculate the diff and entities that are
+         no longer present in the group will be removed.
+
+         Example:
+         1. group has entities A, B, C at time t1
+         2. client sends group with entities B, C, D at time t2
+         3. server will remove entity A from the system and update the current state of the group to B, C, D
+
+         The service is designed to be idempotent and can be called multiple times with the same state without
+         causing any side effects.
+    - name: synq.entities.custom.v1.TypesService
+      description: TypesService is a service for managing custom entity types.
+    - name: synq.entities.entities.v1.EntitiesService
+      description: EntitiesService is a service for retriving any entity.
+    - name: synq.entities.executions.v1.EntityExecutionsService
+      description: 'Deprecated: Use [synq.entities.custom.v1.EntityExecutionsService] instead'
+    - name: synq.entities.folders.v1.FoldersService
+      description: |-
+        FoldersService discovers and browses the folder / containment hierarchy of the
+         catalog: the roots data hangs from, the sub-folders under any folder, the
+         folders a given entity lives in, and the entities contained in a folder.
+
+         It is a read / navigation surface, not folder management — there are no
+         create, move, or delete operations.
+
+         Addressing: every folder has an opaque `folder_entity_id` (round-trip it
+         verbatim) and a structured `FolderRef{root_entity_id, folders[]}` (the
+         human-friendly form). Entities — both folder members and the ids you pass to
+         `GetFolderOf` — are named by their opaque entity id, the same id used across
+         the rest of the entities API.
+
+         Depth footgun: membership is SHALLOW by default. `Browse` returns only the
+         direct children of a folder, and `ListMembers` returns only the entities
+         placed directly in the folder. Set `deep = true` (or raise `Browse.depth`) to
+         recurse into sub-folders.
+    - name: synq.entities.impact.v1.ImpactService
+    - name: synq.entities.lineage.folds.v1alpha.LineageFoldsService
+      description: |-
+        LineageFoldsService manages the lineage folds of a workspace: rules that show
+         many similar entities, a table or a storage path written anew on every run,
+         as one node in lineage. See `LineageFold`.
+
+         A change to a fold reaches lineage shortly after the call returns, not
+         within it.
+
+         Fold ids are UUIDs chosen by the caller, so a retried create converges on
+         the same fold instead of making a second one. Pass the `etag` you last read
+         on a change to guard against overwriting a concurrent edit.
+
+         This API is in alpha: its shape may change without notice.
+    - name: synq.entities.lineage.v1.LineageService
+      description: |-
+        LineageService allows you to fetch:
+         * Entity level lineage from a starting point of one or more entities.
+         * Column Level lineage from a starting point of multiple columns of a single entity.
+    - name: synq.entities.orchestration.v1.OrchestrationService
+      description: |-
+        OrchestrationService tells which jobs, job steps and tasks run an entity, and which entities a
+         job, job step or task runs, from the runs of the last 31 days. It covers Airflow tasks and DAGs,
+         dbt Cloud job steps and Coalesce jobs.
+
+         Deprecated: use synq.entities.activity.v1alpha.ActivityService. BatchGetEntityUsage answers "what
+         runs this" for a table or a model, as its ORCHESTRATED and TRANSFORMED roles, and GetActorSummary
+         answers "what this job runs", from its RUNS writes.
     - name: synq.entities.platformusers.v1alpha.PlatformUsersService
       description: |-
         PlatformUsersService reads the logins of a workspace's data platforms, as its integrations declare
@@ -60386,6 +60401,14 @@ tags:
          cleared, and the counts kept. A suggestion's account name and login patterns come from the logins it
          saw, so that caller gets those cleared too, and a suggestion named after its one login is named
          "Service login".
+    - name: synq.entities.resolve.v1.IdentifierResolveService
+      description: IdentifierResolveService resolves identifiers to their Coalesce Quality paths and identities.
+    - name: synq.entities.schemas.v1.SchemaMismatchesService
+      description: |-
+        SchemaMismatchesService provides access to schema drift information between
+         data platform tables and their definitions (e.g., dbt models).
+    - name: synq.entities.schemas.v1.SchemasService
+      description: EntitiesService is a service for retriving any entity.
     - name: synq.entities.sql_insights.v1.SqlInsightsService
       description: |-
         SqlInsightsService exposes analytical information about the SQL used across a
@@ -60393,15 +60416,15 @@ tags:
          used in my warehouse, and by how many entities", "what SQL constructs does
          this specific entity use" and "which columns does building this entity join
          on", without requiring the caller to re-parse any SQL.
-    - name: synq.entities.entities.v1.EntitiesService
-      description: EntitiesService is a service for retriving any entity.
-    - name: synq.entities.resolve.v1.IdentifierResolveService
-      description: IdentifierResolveService resolves identifiers to their Coalesce Quality paths and identities.
-    - name: synq.entities.code.v1.CodeService
+    - name: synq.entities.status.v1.EntityIncidentsService
+      description: EntityIncidentsService is the service which retrieves entity status.
+    - name: synq.entities.status.v1.EntityIssuesService
+      description: EntityIssuesService is the service which retrieves entity issues status.
+    - name: synq.entities.tableinfo.v1alpha.TableInfoService
       description: |-
-        CodeService is a service for retrieving code associated with entities in the system.
-         It provides functionality to access and manage code artifacts such as SQL queries,
-         Python scripts, dbt models, and other code configurations that are part of Coalesce Quality entities.
+        TableInfoService serves what a data warehouse reports about its tables and views: who owns
+         one, when it was created, how many rows and bytes it holds, when its data last changed, and
+         where to open it in the warehouse's own console.
     - name: synq.entities.typedefs.v1.TypeDefsService
       description: |-
         TypeDefsService tells you what the type values in every other endpoint mean.
@@ -60442,56 +60465,38 @@ tags:
 
          Each list is small — hundreds of entries — so every call returns the whole set
          and none of them page.
-    - name: synq.entities.tableinfo.v1alpha.TableInfoService
+    - name: synq.extensions.atlan.integrations.v1.AtlanIntegrationService
+    - name: synq.extensions.atlan.provider.v1.AtlanProviderService
+    - name: synq.extensions.atlan.workflows.v1.AtlanWorkflowService
+    - name: synq.git.commits.v1.CommitsService
+    - name: synq.incidents.v1.IncidentsService
+      description: IncidentsService is a service for managing Incidents.
+    - name: synq.ingest.airflow.v1.AirflowLogsService
+    - name: synq.ingest.cloudwatch.v1.CloudwatchService
+    - name: synq.ingest.dwh.v1.DwhService
+    - name: synq.ingest.openlineage.v1.OpenlineageService
+    - name: synq.integrations.v1.IntegrationsService
       description: |-
-        TableInfoService serves what a data warehouse reports about its tables and views: who owns
-         one, when it was created, how many rows and bytes it holds, when its data last changed, and
-         where to open it in the warehouse's own console.
-    - name: synq.entities.executions.v2.EntityExecutionsService
-      description: |-
-        EntityExecutionsService provides read-only access to entity execution history.
-         This service allows customers to retrieve information about all executions that happened on their entities,
-         including execution status, timing, and messages.
+        IntegrationsService manages connections from Coalesce Quality to your data
+         systems (warehouses, databases, and transformation tools).
 
-         Use cases:
-         - Retrieve execution history for specific entities
-         - Filter executions by time range, status, or execution type
-         - Get aggregated summaries of execution activity
-         - Track execution trends and patterns
-    - name: synq.entities.executions.v1.EntityExecutionsService
-      description: 'Deprecated: Use [synq.entities.custom.v1.EntityExecutionsService] instead'
-    - name: synq.entities.lineage.folds.v1alpha.LineageFoldsService
-      description: |-
-        LineageFoldsService manages the lineage folds of a workspace: rules that show
-         many similar entities, a table or a storage path written anew on every run,
-         as one node in lineage. See `LineageFold`.
+         Concurrency: every integration carries an opaque `etag`. Read it from
+         `GetIntegration` / `ListIntegrations`, then pass it back on
+         `UpdateIntegration` / `DeleteIntegration` to ensure you modify the version you
+         last saw. A stale etag is rejected with ABORTED (HTTP 409). Omit
+         the etag for last-write-wins.
 
-         A change to a fold reaches lineage shortly after the call returns, not
-         within it.
+         Quota: each workspace has a limit on the number of integrations. Creating
+         beyond the limit is rejected with RESOURCE_EXHAUSTED.
 
-         Fold ids are UUIDs chosen by the caller, so a retried create converges on
-         the same fold instead of making a second one. Pass the `etag` you last read
-         on a change to guard against overwriting a concurrent edit.
-
-         This API is in alpha: its shape may change without notice.
-    - name: synq.entities.lineage.v1.LineageService
-      description: |-
-        LineageService allows you to fetch:
-         * Entity level lineage from a starting point of one or more entities.
-         * Column Level lineage from a starting point of multiple columns of a single entity.
-    - name: synq.users.v1.UsersService
-    - name: synq.savedviews.v1.SavedViewsService
-      description: |-
-        SavedViewsService manages saved views — named, reusable selections over your
-         entities (and other surfaces) with display configuration, sharing and
-         per-user pinning.
-
-         A saved view is owned by the user who created it. It can be kept private,
-         shared with the whole workspace, or granted to specific users. Reads return,
-         for the calling user, how each view relates to them (mine / shared / granted)
-         and what they are allowed to do with it. Workspace administrators can manage
-         any view in the workspace.
-    - name: synq.auth.iam.v1.IamService
+         Secrets: credential fields (passwords, tokens, keys) are write-only. They are
+         masked (returned empty) on every read. On update, omit a secret to keep it,
+         send a new value to rotate it, or send an explicit empty string to clear it
+         (where the field is `optional`).
+    - name: synq.issues.issues.v1.IssuesService
+      description: IssuesService is a service for managing Issues.
+    - name: synq.issues.v2.IssuesService
+      description: IssuesService is a service for managing Issues.
     - name: synq.knowledge.v1alpha.KnowledgeService
       description: |-
         KnowledgeService reads the knowledge a team keeps about its data: knowledge
@@ -60503,22 +60508,66 @@ tags:
          `synq.entities.entities.v1.EntitiesService` reads.
 
          This API is in alpha: its shape may change without notice.
-    - name: synq.dataproducts.v2.DataproductsService
+    - name: synq.monitors.automated_monitors.v1.DeploymentRulesService
+    - name: synq.monitors.custom_monitors.v1.CustomMonitorsService
+    - name: synq.monitors.history.v1.HistoryService
+    - name: synq.monitors.info.v1.MonitorInfoService
+    - name: synq.monitors.predictions.v1.MonitorPredictionsService
+      description: Access to anomaly detection model predictions and raw metric timeseries.
+    - name: synq.monitors.segments.v1.MonitorSegmentsService
       description: |-
-        DataproductsService manages data products — named, owned groupings of data
-         assets with a membership definition, a priority and an optional folder.
+        Reads and names the segments of a segmented custom monitor.
 
-         Ids are opaque UUIDs supplied by the caller, which makes writes idempotent
-         (a retried create converges instead of duplicating). Mutable fields are
-         optional on Upsert: a field that is set is written, a field that is omitted is
-         left unchanged. Pass the `etag` you last read to guard against overwriting a
-         concurrent edit.
+         A monitor configured with a segmentation expression splits the data it
+         monitors into one time series per distinct value of that expression, and each
+         of those is a segment. The label is what every downstream surface shows for a
+         segment: the name of the check it produces, the search result, the alert. A
+         segment with no label falls back to its raw value, so a monitor segmented on
+         something encoded (an id, a code, a hashed bucket) reads as that raw value
+         everywhere until the segment is named.
+    - name: synq.overlays.v1.OverlaysService
+      description: |-
+        OverlaysService answers which organizational overlays claim an entity.
 
-         A data product is a leaf in the reference graph — its definition may not
-         reference another data product or domain — so membership resolution always
-         terminates.
-    - name: synq.dataproducts.v1.DataproductsService
-      description: DataproductsService can be used to manage data products.
+         An overlay is a grouping you lay over your catalog rather than something the
+         warehouse itself knows about. Two kinds exist today: a **data product**, which
+         groups the assets that make up something your organization delivers, and an
+         **owner**, which names the person or team responsible for a set of assets and
+         where alerts about them go. Each is defined by a membership rule, not by an
+         explicit list, so what belongs to one changes as your warehouse does.
+
+         "Owner" here means stewardship — who is accountable for an asset and who hears
+         about it when something breaks. It is not the structural containment sense the
+         word carries elsewhere in the API, where an asset can be said to own the checks
+         and monitors declared on it. Nothing this service returns describes that
+         relationship.
+
+         This service reads that membership backwards. The defining services answer
+         "what is in this data product"; this one answers "which data products and
+         owners claim this table" — the question you have when you are looking at one
+         asset and want to know who cares about it and what it feeds.
+
+         Membership follows identity. Where the same table is represented more than
+         once in your catalog — a transformation model and the warehouse table it
+         builds — an overlay whose rule matches one of them claims the others too. So
+         an alert routed by ownership reaches the responsible party whichever
+         representation raised it, and you do not have to know which one a rule was
+         written against.
+
+         Two consequences worth planning around. You can ask about whichever
+         representation you happen to hold and get the same answer, so there is no need
+         to resolve an identity group first. And if you do ask about several members of
+         one group in a single call, each comes back with its own entry carrying the
+         same overlays — correct, but redundant, so ask about one member per group when
+         you are near the request limit.
+
+         Related services:
+           - `synq.dataproducts.v2.DataproductsService` and `synq.owners.v1.OwnersService`
+             define the overlays read here, and turn an id from a response into a name,
+             a description and its contact channels.
+           - `synq.entities.resolve.v1.IdentifierResolveService` turns an identifier you
+             already hold — a warehouse table name, a dbt model — into the `entity_id`
+             these calls take.
     - name: synq.owners.v1.OwnersService
       description: |-
         OwnersService manages owners and their ownerships — the "alert routing as
@@ -60538,17 +60587,75 @@ tags:
          whole data product), `synq.alerts.services.v2.AlertsService` (how the configured alerts
          are reported), and `synq.users.v1.UsersService` (resolve the users behind
          `UserContact` and Slack/Teams mentions).
-    - name: synq.ingest.cloudwatch.v1.CloudwatchService
-    - name: synq.ingest.dwh.v1.DwhService
-    - name: synq.ingest.airflow.v1.AirflowLogsService
-    - name: synq.ingest.openlineage.v1.OpenlineageService
-    - name: synq.datachecks.v1.TriggerService
-      description: TriggerService provides synchronous execution of datachecks on entities.
-    - name: synq.datachecks.sqltests.v1.SqlTestsService
-      description: SqlTestsService is a service for managing SqlTests.
-    - name: synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService
+    - name: synq.platforms.v1.PlatformsService
+      description: PlatformsService is a service for managing Platforms and Integrations.
+    - name: synq.queries.v1.NLQueryService
+      description: NLQueryService generates structured Query protos from natural language descriptions using an LLM.
+    - name: synq.queries.v1.QueriesService
       description: |-
-        SqlTestsDeploymentRulesService manages SqlTestDeploymentRules — rules that
-         dynamically deploy SQL test templates onto every table or view a query
-         matches, resyncing over time as the match set changes.
-    - name: synq.datachecks.testsuggestions.v1.TestSuggestionsService
+        QueriesService compiles and evaluates ResolverQL — the compact text query
+         language used across Coalesce Quality to select entities — over the public
+         API.
+
+         ResolverQL is a string DSL (for example `with_type("TABLE")` or
+         `in_folder(...)`); a structured `synq.queries.v1.Query` is its parsed,
+         machine-readable form. This service is the bridge between the two and the
+         read-only execution surface for both:
+           - `TranslateResolverQl` compiles a ResolverQL expression into a structured
+             `Query` without evaluating it — inspect it, validate it, or reuse it as a
+             filter on another API (entity listing, folder browsing, ...).
+           - `ResolveQuery` compiles a ResolverQL expression (or takes an
+             already-structured `Query`), evaluates it against the catalog, and
+             returns the matched entity ids. This is the general author -> resolve
+             loop.
+           - `DescribeResolverQl` returns the language itself — every function, every
+             accepted enum value — so you author against what this deployment compiles
+             rather than against a table baked into your client.
+
+         All three authenticate and resolve your workspace from your credentials.
+         `DescribeResolverQl` additionally needs no permission of its own, so any
+         credential can read it; the other two read the catalog and are scoped.
+    - name: synq.recommendations.v1.RecommendationsService
+      description: |-
+        RecommendationsService lists the changes Coalesce Quality recommends you
+         make, and records what you decided about them. See `Recommendation` for
+         what a recommendation is.
+
+         Recommendations are created and removed by Coalesce Quality itself: one
+         appears when something only you can change is found, and disappears once
+         it no longer holds. What you can do is decide whether a recommendation
+         stays in front of you:
+
+           - Dismiss hides it until something new is found about it: an object it
+             did not list before, or a different remediation.
+           - Ignore hides it for good.
+           - Restore undoes either.
+
+         Decisions are kept by recommendation id, so they keep applying when a
+         recommendation disappears and comes back.
+
+         A new kind of recommendation is shown only to Coalesce Quality staff until
+         its wording and remediation have been checked against real workspaces;
+         everyone else reads only the released kinds (`Recommendation.released`).
+
+         A recommendation about an integration is also governed by that
+         integration's permissions: reading it needs a credential that can read
+         integrations, and deciding about it one that can edit them. One that cannot
+         does not see it listed.
+
+         Related services: `synq.integrations.v1.IntegrationsService` manages the
+         integrations recommendations can be about.
+    - name: synq.savedviews.v1.SavedViewsService
+      description: |-
+        SavedViewsService manages saved views — named, reusable selections over your
+         entities (and other surfaces) with display configuration, sharing and
+         per-user pinning.
+
+         A saved view is owned by the user who created it. It can be kept private,
+         shared with the whole workspace, or granted to specific users. Reads return,
+         for the calling user, how each view relates to them (mine / shared / granted)
+         and what they are allowed to do with it. Workspace administrators can manage
+         any view in the workspace.
+    - name: synq.schedule.v1.ScheduleService
+      description: ScheduleService provides schedule evaluation utilities.
+    - name: synq.users.v1.UsersService

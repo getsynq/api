@@ -242,6 +242,9 @@ message BatchGetPopularityResponse {
   // The end of the window the ranks were computed for, exclusive, when it differs from to: the ranks
   // of the default window are computed once a day, for the window ending at 00:00 UTC.
   google.protobuf.Timestamp ranks_window_to = 7;
+  // Why an hour of the window that was not read was not. Warn about its missing_hours only:
+  // covered_hours short of the window is normal for its newest hours and for a new integration.
+  QueryHistory query_history = 8;
 }
 
 message EntityPopularity {
@@ -488,6 +491,8 @@ message GetEntityActivitySeriesResponse {
   // The lens's directions, then WRITE, each only when it has counted access.
   repeated DirectionSeries directions = 5;
   NotCountedActivity not_counted = 6;
+  // Why an hour of the window that was not read was not. Each point carries its own missing_hours.
+  QueryHistory query_history = 7;
 }
 
 // DirectionSeries is one direction's access over the window.
