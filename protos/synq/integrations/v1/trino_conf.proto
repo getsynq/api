@@ -27,8 +27,9 @@ message TrinoCloudConf {
   }
   // Catalogs to ingest metadata from (e.g. ["hive", "postgresql"]).
   repeated string catalogs = 4 [(buf.validate.field).repeated.items.string.min_len = 1];
-  // Ingest query logs from system tables.
-  optional bool fetch_query_logs = 5;
+  // Has no effect. Trino keeps only the coordinator's recent queries in memory, which is not a
+  // complete history, so Trino query logs are not read.
+  optional bool fetch_query_logs = 5 [deprecated = true];
   // Disable SHOW CREATE VIEW for view DDL.
   optional bool no_show_create_view = 6;
   // Disable SHOW CREATE TABLE for table DDL.

@@ -1,0 +1,25 @@
+syntax = "proto3";
+package synq.entities.v1;
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// SchemaTagKind is what a data warehouse means by a tag. The platforms use the
+// word for things that work differently, so the kind says which one a tag is
+// rather than its name.
+enum SchemaTagKind {
+  // The kind was not reported.
+  SCHEMA_TAG_KIND_UNSPECIFIED = 0;
+  // Free key-value metadata on a table or a column: BigQuery labels and
+  // Databricks tags. The name is the key, and the value may be empty.
+  SCHEMA_TAG_KIND_LABEL = 1;
+  // A tag that is an object of its own in the data warehouse, with the values
+  // it allows and the policies it carries: Snowflake tags. The name is
+  // `<TAG_DATABASE>.<TAG_SCHEMA>.<TAG_NAME>`, unquoted, as Snowflake stores it.
+  SCHEMA_TAG_KIND_GOVERNED_TAG = 2;
+  // A classification in a taxonomy that controls who can read a column:
+  // BigQuery policy tags, on columns only. The name is the display name of the
+  // taxonomy, and the value the display path of the policy tag inside it,
+  // `<parent>:...:<tag>`. When the taxonomy cannot be read, the name is the
+  // taxonomy's resource name and the value the policy tag's resource name.
+  SCHEMA_TAG_KIND_POLICY_TAG = 3;
+}

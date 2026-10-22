@@ -20353,6 +20353,7 @@ components:
                 - ENTITY_TYPE_DATABRICKS_QUERY
                 - ENTITY_TYPE_DATABRICKS_DASHBOARD
                 - ENTITY_TYPE_DATABRICKS_METRIC_VIEW
+                - ENTITY_TYPE_DATABRICKS_APP
                 - ENTITY_TYPE_SQLMESH_PROJECT
                 - ENTITY_TYPE_SQLMESH_SQL_MODEL
                 - ENTITY_TYPE_SQLMESH_PYTHON_MODEL
@@ -21324,6 +21325,14 @@ components:
                         $ref: '#/components/schemas/synq.entities.v1.SchemaColumn'
                     maxItems: 1000
                     description: Columns of the schema
+                tags:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.SchemaTag'
+                    maxItems: 100
+                    description: |-
+                        Tags the data warehouse assigns to the table, view or other object itself,
+                         sorted by name and then value.
             title: Schema
             required:
                 - id
@@ -21404,6 +21413,14 @@ components:
                         What kind of number the column holds. Unspecified for a non-numeric column,
                          and for one whose type is not recognised.
                     $ref: '#/components/schemas/synq.entities.v1.NumericCategory'
+                tags:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.SchemaTag'
+                    maxItems: 100
+                    description: |-
+                        Tags the data warehouse assigns to the column, sorted by name and then
+                         value. Only top-level columns carry tags.
                 isNullable:
                     type: boolean
                     description: |-
@@ -21574,6 +21591,41 @@ components:
             required:
                 - name
             additionalProperties: false
+        synq.entities.v1.SchemaTag:
+            type: object
+            properties:
+                tagName:
+                    type: string
+                    maxLength: 512
+                    minLength: 1
+                    description: Name of the tag, in the form its kind describes.
+                tagValue:
+                    type: string
+                    maxLength: 1000
+                    description: Value of the tag, empty for a tag that carries none.
+                kind:
+                    description: What the data warehouse means by the tag.
+                    $ref: '#/components/schemas/synq.entities.v1.SchemaTagKind'
+            title: SchemaTag
+            required:
+                - tagName
+            additionalProperties: false
+            description: |-
+                SchemaTag is a tag or label the data warehouse assigns to a table or a column.
+                 Its kind says which of the platform's tags it is, and the name is the
+                 platform's own.
+        synq.entities.v1.SchemaTagKind:
+            type: string
+            title: SchemaTagKind
+            enum:
+                - SCHEMA_TAG_KIND_UNSPECIFIED
+                - SCHEMA_TAG_KIND_LABEL
+                - SCHEMA_TAG_KIND_GOVERNED_TAG
+                - SCHEMA_TAG_KIND_POLICY_TAG
+            description: |-
+                SchemaTagKind is what a data warehouse means by a tag. The platforms use the
+                 word for things that work differently, so the kind says which one a tag is
+                 rather than its name.
         synq.entities.v1.SnowflakeTableIdentifier:
             type: object
             properties:
@@ -23987,8 +24039,12 @@ components:
             properties:
                 tagName:
                     type: string
+                    description: Name of the tag, in the form its kind describes.
                 tagValue:
                     type: string
+                kind:
+                    description: What the data warehouse means by the tag.
+                    $ref: '#/components/schemas/synq.entities.v1.SchemaTagKind'
             title: Tag
             additionalProperties: false
         synq.ingest.dwh.v1.WholeConnectionScope:
@@ -25698,8 +25754,11 @@ components:
                     fetchQueryLogs:
                         type: boolean
                         title: fetch_query_logs
-                        description: Ingest query logs from system tables.
+                        description: |-
+                            Has no effect. Trino keeps only the coordinator's recent queries in memory, which is not a
+                             complete history, so Trino query logs are not read.
                         nullable: true
+                        deprecated: true
                     noShowCreateView:
                         type: boolean
                         title: no_show_create_view

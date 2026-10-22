@@ -5,6 +5,7 @@ package synq.ingest.dwh.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/numeric_category.proto";
+import "synq/entities/v1/schema_tag_kind.proto";
 
 option go_package = "github.com/getsynq/api/ingest/dwh/v1";
 
@@ -94,8 +95,11 @@ message ObjectMetrics {
 }
 
 message Tag {
+  // Name of the tag, in the form its kind describes.
   string tag_name = 1;
   string tag_value = 2;
+  // What the data warehouse means by the tag.
+  synq.entities.v1.SchemaTagKind kind = 3;
 }
 
 // TableConstraints contains all constraints and indexes for a single table.
