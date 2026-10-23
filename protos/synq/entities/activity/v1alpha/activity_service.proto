@@ -548,9 +548,9 @@ message GetActorSummaryResponse {
   // The actor's queries that moved files, per operation and location, such as the files it put to a
   // stage, by queries, highest first.
   repeated ActorFileOperation file_operations = 13;
-  // For a job, task or step: every entity orchestration lineage says it runs, sorted, whether or not it
-  // ran it in the window, so a job that runs less often than the window still names what it runs. A
-  // dbt Cloud job names what its steps run. entities and totals count only what the window saw.
+  // For a job, task or step: every entity it ran in the 31 days up to the end of the window, sorted,
+  // so a job that runs less often than a shorter window still names what it runs. A dbt Cloud job
+  // names what its steps ran. entities and totals count only what the window saw.
   repeated string orchestrated_entity_ids = 14;
 }
 
@@ -868,9 +868,9 @@ enum UsageEvidence {
   USAGE_EVIDENCE_QUERIES = 3;
   // Opens of a BI asset.
   USAGE_EVIDENCE_VIEWS = 4;
-  // Metadata names the actor, with no activity in the window: a job or task that orchestration lineage
-  // shows runs it, the tool Coalesce Catalog says transforms it, or the loader a dbt source names.
-  // count is 0.
+  // The actor is known to do this, with no activity in the window: a job or task that ran it in the 31
+  // days up to the end of the window, the tool Coalesce Catalog says transforms it, or the loader a dbt
+  // source names. count is 0.
   USAGE_EVIDENCE_DECLARED = 5;
 }
 

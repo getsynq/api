@@ -11863,9 +11863,9 @@ components:
                     items:
                         type: string
                     description: |-
-                        For a job, task or step: every entity orchestration lineage says it runs, sorted, whether or not it
-                         ran it in the window, so a job that runs less often than the window still names what it runs. A
-                         dbt Cloud job names what its steps run. entities and totals count only what the window saw.
+                        For a job, task or step: every entity it ran in the 31 days up to the end of the window, sorted,
+                         so a job that runs less often than a shorter window still names what it runs. A dbt Cloud job
+                         names what its steps ran. entities and totals count only what the window saw.
             title: GetActorSummaryResponse
             additionalProperties: false
         synq.entities.activity.v1alpha.GetEntityActivitySeriesRequest:
@@ -17491,8 +17491,9 @@ components:
             title: CoalesceLoginExclusion
             additionalProperties: false
             description: |-
-                CoalesceLoginExclusion says whether a former login of Coalesce Quality is still ours. A login that
-                 a Coalesce Quality integration connects as now cannot be excluded.
+                CoalesceLoginExclusion says whether a former login of Coalesce Quality, or a login claimed through
+                 ServiceAccountChanges.claim_coalesce_logins, is still ours. A login that a Coalesce Quality
+                 integration connects as now cannot be excluded.
         synq.entities.platformusers.v1alpha.Evidence:
             type: object
             properties:
@@ -17506,7 +17507,7 @@ components:
                     type: array
                     items:
                         type: string
-                    description: 'What the evidence names: the tool, the pattern, the kind, the cadence or the email.'
+                    description: 'What the evidence names: the tool, the pattern, the kind, the cadence, the reach or the email.'
                 text:
                     type: string
                     description: One line for a person, such as "99% Looker Studio queries" or "writes every hour".
@@ -17528,6 +17529,7 @@ components:
                 - EVIDENCE_KIND_LOAD_OPERATIONS
                 - EVIDENCE_KIND_NAME_TOKEN
                 - EVIDENCE_KIND_PERSON_NAME
+                - EVIDENCE_KIND_BROAD_REACH
             description: EvidenceKind is a kind of hint about what a login is.
         synq.entities.platformusers.v1alpha.LinkCandidateMember:
             type: object
@@ -17688,6 +17690,11 @@ components:
                 pagination:
                     description: Without a page size every matching login is returned.
                     $ref: '#/components/schemas/synq.v1.Pagination'
+                activeOnly:
+                    type: boolean
+                    description: |-
+                        Only the active logins: those that ran queries in the window other than Coalesce Quality's
+                         own, whatever the queries touched.
             title: ListPlatformUsersRequest
             additionalProperties: false
         synq.entities.platformusers.v1alpha.ListPlatformUsersResponse:
@@ -17971,7 +17978,10 @@ components:
                 share:
                     type: number
                     format: double
-                    description: Its share of the workspace's reads, inputs and writes in the window, from 0 to 1.
+                    description: |-
+                        Its share of the workspace's reads, inputs and writes in the window, from 0 to 1. It counts
+                         only queries that touched an entity, so a login whose queries touched none has share 0 and
+                         can still be active: query_share says how much it ran.
                 weights:
                     type: array
                     items:
@@ -17996,6 +18006,20 @@ components:
                 suggested:
                     type: boolean
                     description: A service account suggestion includes the login.
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        The queries it ran in the window, whatever they touched, Coalesce Quality's own queries left
+                         out.
+                queryShare:
+                    type: number
+                    format: double
+                    description: |-
+                        Its share of the workspace's queries in the window, from 0 to 1, Coalesce Quality's own
+                         queries left out. Unlike share, it counts queries that touched no entity.
             title: PlatformUser
             additionalProperties: false
             description: PlatformUser is one login on one platform instance.
@@ -18038,17 +18062,30 @@ components:
                 classifiedShare:
                     type: number
                     format: double
-                    description: The share of the workspace's activity in the window whose login is classified, from 0 to 1.
+                    description: |-
+                        The share of the workspace's reads, inputs and writes in the window whose login is
+                         classified, from 0 to 1. It is 0 when there are none to divide, as with active_logins 0 or
+                         when the active logins' queries touched no entity, and the share then says nothing.
                 countedShare:
                     type: number
                     format: double
-                    description: The share of the workspace's reads that count toward popularity, from 0 to 1.
+                    description: |-
+                        The share of the workspace's reads that count toward popularity, from 0 to 1. It is 0 when
+                         there are no reads, so with active_logins 0 it says nothing either.
                 unclassifiedLogins:
                     type: integer
+                    description: The active logins with a slice no service account takes and no person link or email links.
                 suggestedLogins:
                     type: integer
+                    description: The active logins a service account suggestion includes.
                 logins:
                     type: integer
+                    description: Every login, active or not.
+                activeLogins:
+                    type: integer
+                    description: |-
+                        The logins that ran queries in the window other than Coalesce Quality's own, whatever the
+                         queries touched.
             title: PlatformUsersSummary
             additionalProperties: false
             description: PlatformUsersSummary is the whole window of the workspace, whatever the filters.
@@ -18156,8 +18193,9 @@ components:
                     items:
                         type: string
                     description: |-
-                        Output only, on `built_in.coalesce-quality`: the former logins of Coalesce Quality that a person
-                         said are no longer ours. Changed through ServiceAccountChanges.coalesce_logins.
+                        Output only, on `built_in.coalesce-quality`: the former logins of Coalesce Quality, and the logins
+                         claimed through ServiceAccountChanges.claim_coalesce_logins, that a person said are no longer
+                         ours. Changed through ServiceAccountChanges.coalesce_logins.
                 etag:
                     type: string
                     maxLength: 256
@@ -18228,6 +18266,24 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.CoalesceLoginExclusion'
                     maxItems: 1000
+                    description: |-
+                        Takes a former login of Coalesce Quality out of the Coalesce Quality account, or puts it back. A
+                         claimed login is taken out and put back the same way.
+                claimCoalesceLogins:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 2048
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: |-
+                        Platform user ids of logins that run Coalesce Quality's queries although no Coalesce Quality
+                         integration of the workspace connects as them. A claimed login joins the Coalesce Quality
+                         account: every slice of it reads as CLASSIFICATION_COALESCE, as a login an integration connects
+                         as does, and its queries never count. Each must be a platform user of the workspace. To undo a
+                         claim, exclude the login through coalesce_logins: the account then lists it in
+                         excluded_platform_user_ids, as an excluded former login. Claiming an excluded login puts it back.
             title: ServiceAccountChanges
             additionalProperties: false
             description: |-
@@ -18240,8 +18296,10 @@ components:
                     $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SuggestionSource'
                 changes:
                     description: |-
-                        The account to create, with one matcher. Its ids are generated, so applying it twice creates it
-                         once.
+                        What accepting it changes. A suggestion from SUGGESTION_SOURCE_COALESCE_QUALITY_MARKER claims its
+                         logins for the Coalesce Quality account (claim_coalesce_logins) and creates no account. Any
+                         other creates its account, with one matcher. Its ids are generated, so applying it twice creates
+                         it once.
                     $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ServiceAccountChanges'
                 evidence:
                     type: array
@@ -18251,6 +18309,14 @@ components:
                 confidence:
                     description: The least confidence of its logins' evidence.
                     $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.SuggestionConfidence'
+                id:
+                    type: string
+                    description: |-
+                        A UUID, stable for the same evidence: the id of the account it creates, or for a claim one of
+                         its own, the same for every claim the workspace is suggested.
+                name:
+                    type: string
+                    description: The name of the account it creates, or of the Coalesce Quality account for a claim.
             title: ServiceAccountSuggestion
             additionalProperties: false
         synq.entities.platformusers.v1alpha.SliceChange:
@@ -18297,7 +18363,9 @@ components:
                     description: Such as `email:jane@example.com`, to resolve with synq.users.v1.
                 personLinkId:
                     type: string
-                    description: The person link that made it, empty when it is the email the platform states.
+                    description: |-
+                        The person link that made it, empty when it is the email the platform states or a login the
+                         platform spells as the person's email.
             title: SlicePerson
             additionalProperties: false
             description: SlicePerson is the person a login slice is linked to.
@@ -21890,8 +21958,16 @@ components:
                 isEnforced:
                     type: boolean
                     description: |-
-                        Whether this constraint is enforced by the database.
-                         nil/unset = unknown, true = enforced, false = not enforced (e.g. Snowflake NORELY, Oracle DISABLED).
+                        Whether the database checks this constraint on every write.
+                         unset = the question does not apply (a sort, partition or distribution key, a plain index),
+                         true = enforced, false = recorded but never checked (every Snowflake key outside a hybrid table,
+                         every Redshift key, an Oracle constraint that is DISABLED or NOVALIDATE).
+                    nullable: true
+                isRely:
+                    type: boolean
+                    description: |-
+                        Snowflake's RELY: the optimizer may assume the key holds. It says nothing about whether the
+                         key is enforced. Unset on every other platform.
                     nullable: true
             title: TableConstraint
             additionalProperties: false
@@ -24097,8 +24173,12 @@ components:
                 isEnforced:
                     type: boolean
                     description: |-
-                        Whether this constraint is enforced by the database.
-                         nil/unset = unknown, true = enforced, false = not enforced.
+                        Whether the database checks this constraint on every write.
+                         nil/unset = the question does not apply, true = enforced, false = recorded but never checked.
+                    nullable: true
+                isRely:
+                    type: boolean
+                    description: 'Snowflake''s RELY: the optimizer may assume the key holds. Unset on every other platform.'
                     nullable: true
             title: TableConstraint
             additionalProperties: false
@@ -45262,8 +45342,8 @@ paths:
                 - synq.entities.platformusers.v1alpha.PlatformUsersService
             summary: ListPlatformUsers
             description: |-
-                List the workspace's logins by their share of the workspace's activity, highest first. The first
-                 page carries a summary of the whole window.
+                List the workspace's logins by their share of the workspace's activity, highest first, then by
+                 their share of its queries. The first page carries a summary of the whole window.
             operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.ListPlatformUsers
             requestBody:
                 content:
@@ -45375,8 +45455,11 @@ paths:
             description: |-
                 Suggest service accounts for the logins the evidence says are not a person, each as a change set
                  with its evidence. A login a workspace account, a person link or Coalesce Quality takes is left
-                 out. A login only a built-in account holds is suggested too, so it can get an account of its own. A suggestion changes nothing by itself: edit it if needed, plan it with
-                 PlanServiceAccountChanges, then apply it.
+                 out, and so is a login with no queries in the window. A login a built-in account holds is
+                 suggested only when the evidence names a tool the built-in account does not: a login the platform
+                 states is a service, which the built-in account of such logins already holds with the same
+                 purpose and policy, is not suggested for that alone. A suggestion changes nothing by itself: edit
+                 it if needed, plan it with PlanServiceAccountChanges, then apply it.
             operationId: synq.entities.platformusers.v1alpha.ServiceAccountsService.ListServiceAccountSuggestions
             requestBody:
                 content:

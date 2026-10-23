@@ -46,7 +46,8 @@ message SliceMembership {
 message SlicePerson {
   // Such as `email:jane@example.com`, to resolve with synq.users.v1.
   string identity = 1;
-  // The person link that made it, empty when it is the email the platform states.
+  // The person link that made it, empty when it is the email the platform states or a login the
+  // platform spells as the person's email.
   string person_link_id = 2;
 }
 
@@ -114,6 +115,8 @@ enum EvidenceKind {
   // about it says it is a service. A hint about the login, not who it is: the login stays unclassified
   // until a person rule, a stated email or a link names its person.
   EVIDENCE_KIND_PERSON_NAME = 10;
+  // It reaches far more entities than the workspace's people do, with no write cadence.
+  EVIDENCE_KIND_BROAD_REACH = 11;
 }
 
 // Evidence is one hint about what a login is.
@@ -121,7 +124,7 @@ message Evidence {
   EvidenceKind kind = 1;
   string platform_user_id = 2;
   string login = 3;
-  // What the evidence names: the tool, the pattern, the kind, the cadence or the email.
+  // What the evidence names: the tool, the pattern, the kind, the cadence, the reach or the email.
   repeated string values = 4;
   // One line for a person, such as "99% Looker Studio queries" or "writes every hour".
   string text = 5;
@@ -158,7 +161,9 @@ message PlatformUser {
   // Reads and writes over the window, Coalesce Quality's own queries left out.
   uint64 reads = 8;
   uint64 writes = 9;
-  // Its share of the workspace's reads, inputs and writes in the window, from 0 to 1.
+  // Its share of the workspace's reads, inputs and writes in the window, from 0 to 1. It counts
+  // only queries that touched an entity, so a login whose queries touched none has share 0 and
+  // can still be active: query_share says how much it ran.
   double share = 10;
   // What its queries cost, per platform.
   repeated synq.entities.activity.v1alpha.PlatformWeights weights = 11;
@@ -170,15 +175,30 @@ message PlatformUser {
   repeated Evidence evidence = 14;
   // A service account suggestion includes the login.
   bool suggested = 15;
+  // The queries it ran in the window, whatever they touched, Coalesce Quality's own queries left
+  // out.
+  uint64 queries = 16;
+  // Its share of the workspace's queries in the window, from 0 to 1, Coalesce Quality's own
+  // queries left out. Unlike share, it counts queries that touched no entity.
+  double query_share = 17;
 }
 
 // PlatformUsersSummary is the whole window of the workspace, whatever the filters.
 message PlatformUsersSummary {
-  // The share of the workspace's activity in the window whose login is classified, from 0 to 1.
+  // The share of the workspace's reads, inputs and writes in the window whose login is
+  // classified, from 0 to 1. It is 0 when there are none to divide, as with active_logins 0 or
+  // when the active logins' queries touched no entity, and the share then says nothing.
   double classified_share = 1;
-  // The share of the workspace's reads that count toward popularity, from 0 to 1.
+  // The share of the workspace's reads that count toward popularity, from 0 to 1. It is 0 when
+  // there are no reads, so with active_logins 0 it says nothing either.
   double counted_share = 2;
+  // The active logins with a slice no service account takes and no person link or email links.
   uint32 unclassified_logins = 3;
+  // The active logins a service account suggestion includes.
   uint32 suggested_logins = 4;
+  // Every login, active or not.
   uint32 logins = 5;
+  // The logins that ran queries in the window other than Coalesce Quality's own, whatever the
+  // queries touched.
+  uint32 active_logins = 6;
 }

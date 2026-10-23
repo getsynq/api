@@ -18,8 +18,8 @@ option go_package = "github.com/getsynq/api/entities/platformusers/v1alpha";
 // Logins, their emails and what they read are often personal data, so every read here needs the
 // platform users scope, which a Developer and an Admin have.
 service PlatformUsersService {
-  // List the workspace's logins by their share of the workspace's activity, highest first. The first
-  // page carries a summary of the whole window.
+  // List the workspace's logins by their share of the workspace's activity, highest first, then by
+  // their share of its queries. The first page carries a summary of the whole window.
   rpc ListPlatformUsers(ListPlatformUsersRequest) returns (ListPlatformUsersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -133,6 +133,9 @@ message ListPlatformUsersRequest {
   PlatformUserView view = 10 [(buf.validate.field).enum.defined_only = true];
   // Without a page size every matching login is returned.
   synq.v1.Pagination pagination = 11;
+  // Only the active logins: those that ran queries in the window other than Coalesce Quality's
+  // own, whatever the queries touched.
+  bool active_only = 12;
 }
 
 message ListPlatformUsersResponse {
