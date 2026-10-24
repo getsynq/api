@@ -18,8 +18,8 @@ option go_package = "github.com/getsynq/api/entities/platformusers/v1alpha";
 // Logins, their emails and what they read are often personal data, so every read here needs the
 // platform users scope, which a Developer and an Admin have.
 service PlatformUsersService {
-  // List the workspace's logins by their share of the workspace's activity, highest first, then by
-  // their share of its queries. The first page carries a summary of the whole window.
+  // List the workspace's logins by their share of the workspace's queries, highest first, then by
+  // their share of its activity. The first page carries a summary of the whole window.
   rpc ListPlatformUsers(ListPlatformUsersRequest) returns (ListPlatformUsersResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

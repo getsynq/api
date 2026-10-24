@@ -17492,7 +17492,7 @@ components:
             additionalProperties: false
             description: |-
                 CoalesceLoginExclusion says whether a former login of Coalesce Quality, or a login claimed through
-                 ServiceAccountChanges.claim_coalesce_logins, is still ours. A login that a Coalesce Quality
+                 ServiceAccountChanges.claim_coalesce_logins, still belongs to the Coalesce Quality account. A login that a Coalesce Quality
                  integration connects as now cannot be excluded.
         synq.entities.platformusers.v1alpha.Evidence:
             type: object
@@ -18195,7 +18195,7 @@ components:
                     description: |-
                         Output only, on `built_in.coalesce-quality`: the former logins of Coalesce Quality, and the logins
                          claimed through ServiceAccountChanges.claim_coalesce_logins, that a person said are no longer
-                         ours. Changed through ServiceAccountChanges.coalesce_logins.
+                         Coalesce Quality's. Changed through ServiceAccountChanges.coalesce_logins.
                 etag:
                     type: string
                     maxLength: 256
@@ -45342,8 +45342,8 @@ paths:
                 - synq.entities.platformusers.v1alpha.PlatformUsersService
             summary: ListPlatformUsers
             description: |-
-                List the workspace's logins by their share of the workspace's activity, highest first, then by
-                 their share of its queries. The first page carries a summary of the whole window.
+                List the workspace's logins by their share of the workspace's queries, highest first, then by
+                 their share of its activity. The first page carries a summary of the whole window.
             operationId: synq.entities.platformusers.v1alpha.PlatformUsersService.ListPlatformUsers
             requestBody:
                 content:
