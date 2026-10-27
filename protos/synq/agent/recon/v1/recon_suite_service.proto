@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "synq/agent/recon/v1/recon_suite.proto";
 import "synq/agent/recon/v1/recon_suite_config.proto";
 import "synq/agent/recon/v1/recon_suite_deployment_service.proto";
+import "synq/agent/recon/v1/recon_suite_validation.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
@@ -106,6 +107,78 @@ service SuiteConfigService {
       ]
     };
   }
+
+  // CheckSuiteInWarehouse checks a suite against the warehouses of its
+  // connections and gives all the problems that it finds. Each problem has the
+  // path of its field, in the same form as YamlService.ValidateSuite. The
+  // suite is not saved and does not run.
+  //
+  // CheckSuiteInWarehouse does the same checks as
+  // `synq-recon check-config --db`:
+  //   - It opens each connection.
+  //   - It plans each source, target and cutoff query. The warehouse plans the
+  //     query with `LIMIT 0` or its own describe statement, so no table is
+  //     scanned. A query that refers to a table or column that does not exist
+  //     is an error.
+  //   - For each row_checksum reconciliation with comparison settings, it
+  //     compares the column types of the two sides. Each column that its
+  //     settings cannot be applied to is an error, for example a column with
+  //     `numeric_scale: exact` that has a different scale on each side.
+  //   - It reads the table metadata of each side that is a table. A key
+  //     column that no index, partition or sort key covers is a warning.
+  //
+  // A suite that ValidateSuite finds an error in is not checked against a
+  // warehouse. The response then has those errors.
+  //
+  // Each connection binds to an integration in the same way as for
+  // SubmitAdhocSuite: from connection_mappings, else from the workspace
+  // integration with the same name. If a connection does not bind, the call
+  // fails with FAILED_PRECONDITION and a ConnectionResolutionFailure detail.
+  // This includes a workspace where ad-hoc reconciliation runs are disabled.
+  //
+  // The check has the same time limit as a run of the suite.
+  rpc CheckSuiteInWarehouse(CheckSuiteInWarehouseRequest) returns (CheckSuiteInWarehouseResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_RECON_EDIT,
+        SCOPE_INGEST_RECON
+      ]
+    };
+  }
+}
+
+message CheckSuiteInWarehouseRequest {
+  // The suite to check.
+  oneof input {
+    option (buf.validate.oneof).required = true;
+
+    // The suite_id of a saved suite. The latest version is checked.
+    string suite_id = 1 [(buf.validate.field).string.min_len = 1];
+
+    // A suite that is not saved, for example the draft in an editor. The
+    // request does not apply the validation rules of ReconciliationSuite. Thus
+    // an incorrect suite gets to the check, and the response has its errors.
+    ReconciliationSuite suite = 2 [(buf.validate.field).ignore = IGNORE_ALWAYS];
+  }
+
+  // The integration of each connection name of the suite, as for
+  // SubmitAdhocSuite. A connection name that is not in the list binds to the
+  // workspace integration with the same name.
+  repeated ConnectionMapping connection_mappings = 3;
+}
+
+message CheckSuiteInWarehouseResponse {
+  // True when no issue has the ERROR severity.
+  bool valid = 1;
+
+  // All the problems that the check found. The errors come first, then the
+  // warnings. Empty when the suite has no problems.
+  //
+  // A connection that does not open is an error on the connection field of
+  // each side that uses it. A connection that only setup or teardown uses has
+  // an empty field_path.
+  repeated SuiteValidationIssue issues = 2;
 }
 
 // --- Managed suite requests ---

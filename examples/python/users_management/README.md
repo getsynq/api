@@ -14,7 +14,7 @@ manage their roles using the `UsersService` API.
 ## Prerequisites
 
 Create client credentials at
-[Coalesce Quality → API settings](https://app.synq.io/settings/api) with the
+Coalesce Quality → API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) with the
 **Read Users** scope (for `list`) and the **Edit Users** scope (for the role
 commands), and export them:
 

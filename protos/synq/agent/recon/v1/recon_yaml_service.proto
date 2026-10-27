@@ -47,7 +47,8 @@ service YamlService {
   // Coalesce Quality.
   //
   // ValidateSuite does not connect to a warehouse. Thus it does not find a
-  // query that refers to a table that does not exist.
+  // query that refers to a table that does not exist. To find these
+  // problems, use SuiteConfigService.CheckSuiteInWarehouse.
   //
   // ValidateSuite does not compare the connection names with the integrations
   // of the workspace. A suite gets its integrations when it runs or when you

@@ -24,7 +24,7 @@ safe to re-run.
 ## Prerequisites
 
 Create client credentials at
-[Coalesce Quality → API settings](https://app.synq.io/settings/api) with these
+Coalesce Quality → API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) with these
 scopes and export them:
 
 - `dataproducts/`: **Read/Edit Data Products**.

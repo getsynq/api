@@ -77,7 +77,7 @@ The generated code is added to the `./gen` folder. You can change the location t
 
 You need a valid access token to communicate with the Coalesce Quality servers. To generate the access token, you need client credentials.
 
-You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from the [Coalesce Quality application](https://app.synq.io/settings/api). The credentials are scoped so make sure to select the one best suited to execute the RPCs that you wish to.
+You can generate an client credentials (`CLIENT_ID` and `CLIENT_SECRET`) from the Coalesce Quality application ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)). The credentials are scoped so make sure to select the one best suited to execute the RPCs that you wish to.
 
 You can now fetch the token source by making the following `POST` call to our OAuth2 server.
 

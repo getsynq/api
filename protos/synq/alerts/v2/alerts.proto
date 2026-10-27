@@ -67,11 +67,14 @@ message Alert {
     IncidentLifecycleAlert incident_lifecycle = 13;
   }
 
-  // Config ID this alert was deployed from through configuration as code, unset
-  // otherwise. Immutable after creation; an empty string is the config of a
+  // Namespace of the configuration-as-code config this alert was deployed from,
+  // unset otherwise. Immutable after creation; an empty string is the config of a
   // deploy that declares no namespace. To move an alert to another config,
-  // delete it and recreate it under the same `fqn`.
-  optional string config_id = 14;
+  // delete it and recreate it under the same `fqn`. The monitor, SQL test and
+  // deployment rule APIs call the same value `config_id`; alerts name it a
+  // namespace because an alert is itself an alert configuration, so a
+  // `config_id` would read as the alert's own id.
+  optional string config_namespace = 14;
 
   // Output-only opaque tag, changed by every write. Pass it back as `etag` on a
   // write to guard against overwriting a concurrent change.

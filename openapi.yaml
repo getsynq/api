@@ -4206,19 +4206,21 @@ components:
                     $ref: '#/components/schemas/synq.alerts.v2.Alert'
             title: AlertsEntry
             additionalProperties: false
-        synq.alerts.services.v2.ConfigsFilter:
+        synq.alerts.services.v2.ConfigNamespacesFilter:
             type: object
             properties:
-                ids:
+                namespaces:
                     type: array
                     items:
                         type: string
                     description: |-
-                        Config IDs to match. An empty string matches the config a deploy without a
-                         namespace uses.
-            title: ConfigsFilter
+                        Config namespaces to match. An empty string matches the config a deploy
+                         without a namespace uses.
+            title: ConfigNamespacesFilter
             additionalProperties: false
-            description: ConfigsFilter selects alerts by the config that manages them.
+            description: |-
+                ConfigNamespacesFilter selects alerts by the namespace of the config that
+                 manages them (see `Alert.config_namespace`).
         synq.alerts.services.v2.CreateRequest:
             type: object
             allOf:
@@ -4244,13 +4246,13 @@ components:
                              alert kind; currently applied only to issue alerts.
                         nullable: true
                         $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
-                    configId:
+                    configNamespace:
                         type: string
-                        title: config_id
+                        title: config_namespace
                         description: |-
-                            Config ID that owns this alert when deployed from configuration as code
-                             (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
-                             combined with `owner.ownership_id`.
+                            Namespace of the config that owns this alert when deployed from
+                             configuration as code (see `Alert.config_namespace`); omit it for an alert
+                             authored directly. Cannot be combined with `owner.ownership_id`.
                         nullable: true
                 - oneOf:
                     - properties:
@@ -4344,13 +4346,14 @@ components:
                          change alerts carry an owner; filtering by owner therefore returns those only.
                     nullable: true
                     $ref: '#/components/schemas/synq.alerts.v2.Owner'
-                configsFilter:
+                configNamespacesFilter:
                     description: |-
-                        Optional filter by the config the alerts were deployed from.
-                         Unset: no config filtering. Empty `ids`: only alerts managed by some config.
-                         Non-empty `ids`: only alerts managed by one of those configs.
+                        Optional filter by the namespace of the config the alerts were deployed
+                         from. Unset: no config filtering. Empty `namespaces`: only alerts managed by
+                         some config. Non-empty `namespaces`: only alerts managed by one of those
+                         configs.
                     nullable: true
-                    $ref: '#/components/schemas/synq.alerts.services.v2.ConfigsFilter'
+                    $ref: '#/components/schemas/synq.alerts.services.v2.ConfigNamespacesFilter'
             title: ListRequest
             additionalProperties: false
             description: ListRequest filters alert configurations to retrieve.
@@ -4682,14 +4685,15 @@ components:
                              alerts; accepted and ignored for other kinds.
                         nullable: true
                         $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
-                    configId:
+                    configNamespace:
                         type: string
-                        title: config_id
+                        title: config_namespace
                         description: |-
-                            Config ID that owns this alert when deployed from configuration as code
-                             (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
-                             combined with `owner.ownership_id`. For an existing alert it must equal the
-                             stored value, where omitted and the empty string are different values.
+                            Namespace of the config that owns this alert when deployed from
+                             configuration as code (see `Alert.config_namespace`); omit it for an alert
+                             authored directly. Cannot be combined with `owner.ownership_id`. For an
+                             existing alert it must equal the stored value, where omitted and the empty
+                             string are different values.
                         nullable: true
                     isDisabled:
                         type: boolean
@@ -4740,7 +4744,7 @@ components:
                  `template` clears it and the targets replace the stored ones. The only
                  exception is `is_disabled`, described on the field.
 
-                 The alert kind, the `owner` inside it, and `config_id` are fixed when an alert
+                 The alert kind, the `owner` inside it, and `config_namespace` are fixed when an alert
                  is created. When an alert already holds `fqn` and any of them differs from the
                  stored value, the request fails with FAILED_PRECONDITION and nothing is
                  written; to change one, delete the alert and upsert it again.
@@ -5379,14 +5383,17 @@ components:
                              accepted and ignored until templating is supported for them.
                         nullable: true
                         $ref: '#/components/schemas/synq.alerts.templates.v2.AlertTemplate'
-                    configId:
+                    configNamespace:
                         type: string
-                        title: config_id
+                        title: config_namespace
                         description: |-
-                            Config ID this alert was deployed from through configuration as code, unset
-                             otherwise. Immutable after creation; an empty string is the config of a
+                            Namespace of the configuration-as-code config this alert was deployed from,
+                             unset otherwise. Immutable after creation; an empty string is the config of a
                              deploy that declares no namespace. To move an alert to another config,
-                             delete it and recreate it under the same `fqn`.
+                             delete it and recreate it under the same `fqn`. The monitor, SQL test and
+                             deployment rule APIs call the same value `config_id`; alerts name it a
+                             namespace because an alert is itself an alert configuration, so a
+                             `config_id` would read as the alert's own id.
                         nullable: true
                     etag:
                         type: string
@@ -33760,7 +33767,8 @@ paths:
                  Coalesce Quality.
 
                  ValidateSuite does not connect to a warehouse. Thus it does not find a
-                 query that refers to a table that does not exist.
+                 query that refers to a table that does not exist. To find these
+                 problems, use SuiteConfigService.CheckSuiteInWarehouse.
 
                  ValidateSuite does not compare the connection names with the integrations
                  of the workspace. A suite gets its integrations when it runs or when you

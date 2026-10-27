@@ -16,7 +16,7 @@ Two scripts are included:
 ## Prerequisites
 
 Create client credentials with the **Manage Integrations** scope at
-[Coalesce Quality → API settings](https://app.synq.io/settings/api) and export them:
+Coalesce Quality → API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) and export them:
 
 ```bash
 export SYNQ_CLIENT_ID=...

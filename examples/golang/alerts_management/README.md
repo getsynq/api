@@ -6,7 +6,7 @@ This example demonstrates how to manage alert configurations using the Coalesce 
 
 ### Client Credentials
 
-Head over to [Coalesce Quality](https://app.synq.io/settings/api) to create client credentials with the `Manage Alerts` scope. Set the credentials in the environment as `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`.
+Head over to Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) to create client credentials with the `Manage Alerts` scope. Set the credentials in the environment as `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`.
 
 ### Slack Channel (for notifications)
 

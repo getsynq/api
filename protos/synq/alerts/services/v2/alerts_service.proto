@@ -265,10 +265,10 @@ message CreateRequest {
     synq.alerts.v2.IncidentLifecycleAlert incident_lifecycle = 10;
   }
 
-  // Config ID that owns this alert when deployed from configuration as code
-  // (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
-  // combined with `owner.ownership_id`.
-  optional string config_id = 11;
+  // Namespace of the config that owns this alert when deployed from
+  // configuration as code (see `Alert.config_namespace`); omit it for an alert
+  // authored directly. Cannot be combined with `owner.ownership_id`.
+  optional string config_namespace = 11;
 }
 
 // CreateResponse returns the created alert configuration.
@@ -282,7 +282,7 @@ message CreateResponse {
 // `template` clears it and the targets replace the stored ones. The only
 // exception is `is_disabled`, described on the field.
 //
-// The alert kind, the `owner` inside it, and `config_id` are fixed when an alert
+// The alert kind, the `owner` inside it, and `config_namespace` are fixed when an alert
 // is created. When an alert already holds `fqn` and any of them differs from the
 // stored value, the request fails with FAILED_PRECONDITION and nothing is
 // written; to change one, delete the alert and upsert it again.
@@ -326,11 +326,12 @@ message UpsertRequest {
     synq.alerts.v2.IncidentLifecycleAlert incident_lifecycle = 6;
   }
 
-  // Config ID that owns this alert when deployed from configuration as code
-  // (see `Alert.config_id`); omit it for an alert authored directly. Cannot be
-  // combined with `owner.ownership_id`. For an existing alert it must equal the
-  // stored value, where omitted and the empty string are different values.
-  optional string config_id = 7;
+  // Namespace of the config that owns this alert when deployed from
+  // configuration as code (see `Alert.config_namespace`); omit it for an alert
+  // authored directly. Cannot be combined with `owner.ownership_id`. For an
+  // existing alert it must equal the stored value, where omitted and the empty
+  // string are different values.
+  optional string config_namespace = 7;
 
   // Whether the alert is paused. When omitted, a new alert is created enabled
   // and an existing alert keeps its current state, so a deploy that does not
@@ -542,17 +543,19 @@ message ListRequest {
   // change alerts carry an owner; filtering by owner therefore returns those only.
   optional synq.alerts.v2.Owner owner = 1;
 
-  // Optional filter by the config the alerts were deployed from.
-  // Unset: no config filtering. Empty `ids`: only alerts managed by some config.
-  // Non-empty `ids`: only alerts managed by one of those configs.
-  optional ConfigsFilter configs_filter = 2;
+  // Optional filter by the namespace of the config the alerts were deployed
+  // from. Unset: no config filtering. Empty `namespaces`: only alerts managed by
+  // some config. Non-empty `namespaces`: only alerts managed by one of those
+  // configs.
+  optional ConfigNamespacesFilter config_namespaces_filter = 2;
 }
 
-// ConfigsFilter selects alerts by the config that manages them.
-message ConfigsFilter {
-  // Config IDs to match. An empty string matches the config a deploy without a
-  // namespace uses.
-  repeated string ids = 1;
+// ConfigNamespacesFilter selects alerts by the namespace of the config that
+// manages them (see `Alert.config_namespace`).
+message ConfigNamespacesFilter {
+  // Config namespaces to match. An empty string matches the config a deploy
+  // without a namespace uses.
+  repeated string namespaces = 1;
 }
 
 // ListResponse returns the filtered list of alert configurations.
