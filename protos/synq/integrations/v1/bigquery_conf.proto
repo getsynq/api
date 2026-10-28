@@ -18,7 +18,8 @@ message BigQueryCloudConf {
   // Dataset name patterns to exclude from ingestion. Mutually exclusive with
   // `datasets` — when `datasets` is set, this is ignored.
   repeated string blacklisted_datasets = 2;
-  // Service-account key JSON. Write-only — masked on reads.
+  // Service-account key JSON, used with BIGQUERY_AUTHENTICATION_SERVICE_ACCOUNT_KEY.
+  // Write-only — masked on reads.
   optional string service_account_key = 3;
   // Google Cloud region for the project (e.g. "us-central1", "EU").
   optional string region = 4 [(buf.validate.field).string.min_len = 1];
@@ -36,4 +37,30 @@ message BigQueryCloudConf {
   // datacatalog.taxonomies.get. Off by default, as a denied call shows in the
   // audit log. Without it a policy tag keeps its resource name.
   optional bool fetch_policy_tags = 8;
+  // How Coalesce Quality authenticates to BigQuery. An integration that never set it
+  // uses a service account key. Switching to a keyless authentication removes the
+  // stored key.
+  optional BigqueryAuthentication authentication = 9 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Email of your service account that Coalesce Quality impersonates, used with
+  // BIGQUERY_AUTHENTICATION_IMPERSONATION. Grant roles/iam.serviceAccountTokenCreator
+  // on it to the workspace service account.
+  optional string impersonated_service_account = 10 [(buf.validate.field).string.max_len = 254];
+}
+
+// How a BigQuery integration authenticates. The workspace service account is a Google
+// service account that Coalesce Quality creates for your workspace, in a project of the
+// region that serves it, and uses only for that workspace. Its email is in the outputs
+// of the integration's create response.
+enum BigqueryAuthentication {
+  BIGQUERY_AUTHENTICATION_UNSPECIFIED = 0;
+  // A key of your service account, in `service_account_key`.
+  BIGQUERY_AUTHENTICATION_SERVICE_ACCOUNT_KEY = 1;
+  // No key: the workspace service account impersonates `impersonated_service_account`,
+  // which holds the BigQuery roles.
+  BIGQUERY_AUTHENTICATION_IMPERSONATION = 2;
+  // No key: you grant the BigQuery roles to the workspace service account itself.
+  BIGQUERY_AUTHENTICATION_WORKSPACE_SERVICE_ACCOUNT = 3;
 }

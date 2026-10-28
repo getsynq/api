@@ -7,6 +7,14 @@ option go_package = "github.com/getsynq/api/git/commits/v1";
 message FileDiff {
   string file_path = 1;
   string diff = 2;
+  // True when `diff` is only the start of the file's diff. A diff over the
+  // stored size limit is cut after its last whole line. The hunk headers keep
+  // the line counts of the whole diff, so the last hunk is shorter than its
+  // header says. The rest of the diff is not available.
+  bool is_truncated = 3;
+  // Size in bytes of the whole diff. A diff always holds at least its header,
+  // so zero means the size was not recorded.
+  uint64 original_size = 4;
 }
 
 message CommitDiff {
