@@ -7064,6 +7064,17 @@ components:
                          by a deployment rule rather than authored directly. OUTPUT ONLY. A test with
                          this set is rule-managed: direct edits through this API are rejected.
                     nullable: true
+                integrationId:
+                    type: string
+                    description: |-
+                        Coalesce Quality integration the test runs on. OUTPUT ONLY: a write names
+                         the integration through `platform`, or through the template's entity for a
+                         templated test, and this field is ignored there.
+
+                         `platform` on a read is rebuilt from the integration's connection settings,
+                         so it describes the warehouse rather than naming the integration. To write a
+                         test onto the same integration, send this value as
+                         `platform.synq_integration_id`.
             title: SqlTest
             required:
                 - id
