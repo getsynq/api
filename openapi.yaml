@@ -24758,15 +24758,15 @@ components:
                     fetchTableMetrics:
                         type: boolean
                         title: fetch_table_metrics
-                        description: Run ANALYZE TABLE to refresh and collect statistics.
+                        description: Replaced by analyze_tables, read only while analyze_tables is unset.
                         nullable: true
+                        deprecated: true
                     fetchTableMetricsScan:
                         type: boolean
                         title: fetch_table_metrics_scan
-                        description: |-
-                            Run ANALYZE TABLE ... SCAN for detailed metrics incl. row counts
-                             (more resource-intensive).
+                        description: Replaced by analyze_tables_scan, read only while analyze_tables_scan is unset.
                         nullable: true
+                        deprecated: true
                     catalogBlocklist:
                         type: array
                         items:
@@ -24796,6 +24796,18 @@ components:
                              already computes lineage from query logs, so the Unity Catalog edges can be
                              redundant noise. When unset/false, Unity Catalog table-to-table lineage is
                              retrieved and published (the default).
+                        nullable: true
+                    analyzeTables:
+                        type: boolean
+                        title: analyze_tables
+                        description: Run ANALYZE TABLE before table statistics are read, so they are fresh.
+                        nullable: true
+                    analyzeTablesScan:
+                        type: boolean
+                        title: analyze_tables_scan
+                        description: |-
+                            Run ANALYZE TABLE with a full scan, which also counts the rows. It costs more
+                             warehouse time than analyze_tables.
                         nullable: true
                 - oneOf:
                     - properties:

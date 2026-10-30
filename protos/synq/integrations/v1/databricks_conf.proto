@@ -25,11 +25,10 @@ message DatabricksCloudConf {
   optional string warehouse_id = 4;
   // Ingest query logs from system tables.
   optional bool fetch_query_logs = 5;
-  // Run ANALYZE TABLE to refresh and collect statistics.
-  optional bool fetch_table_metrics = 6;
-  // Run ANALYZE TABLE ... SCAN for detailed metrics incl. row counts
-  // (more resource-intensive).
-  optional bool fetch_table_metrics_scan = 7;
+  // Replaced by analyze_tables, read only while analyze_tables is unset.
+  optional bool fetch_table_metrics = 6 [deprecated = true];
+  // Replaced by analyze_tables_scan, read only while analyze_tables_scan is unset.
+  optional bool fetch_table_metrics_scan = 7 [deprecated = true];
   // Catalog name patterns to exclude from ingestion.
   repeated string catalog_blocklist = 8;
   // Retrieve Unity Catalog table tags.
@@ -43,6 +42,11 @@ message DatabricksCloudConf {
   // redundant noise. When unset/false, Unity Catalog table-to-table lineage is
   // retrieved and published (the default).
   optional bool disable_unity_table_lineage = 12;
+  // Run ANALYZE TABLE before table statistics are read, so they are fresh.
+  optional bool analyze_tables = 13;
+  // Run ANALYZE TABLE with a full scan, which also counts the rows. It costs more
+  // warehouse time than analyze_tables.
+  optional bool analyze_tables_scan = 14;
 }
 
 // Databricks OAuth 2.0 machine-to-machine (service principal) credentials.
