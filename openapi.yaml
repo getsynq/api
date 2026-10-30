@@ -25883,6 +25883,21 @@ components:
                         title: account_usage_db
                         description: Database where the ACCOUNT_USAGE schema lives (defaults to "SNOWFLAKE").
                         nullable: true
+                    catalogFromAccountUsage:
+                        type: boolean
+                        title: catalog_from_account_usage
+                        description: |-
+                            Read databases, schemas, tables, columns and view definitions from ACCOUNT_USAGE, for a role
+                             with only IMPORTED PRIVILEGES on the SNOWFLAKE database. New objects show up to three hours
+                             late.
+                        nullable: true
+                    tableMetricsFromAccountUsage:
+                        type: boolean
+                        title: table_metrics_from_account_usage
+                        description: |-
+                            Read table row counts, sizes and last change times from ACCOUNT_USAGE. Freshness is then up
+                             to three hours late.
+                        nullable: true
                 - oneOf:
                     - properties:
                         keyPair:

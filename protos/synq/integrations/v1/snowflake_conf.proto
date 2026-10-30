@@ -51,6 +51,13 @@ message SnowflakeCloudConf {
   repeated string fetch_table_lineage_databases = 17;
   // Database where the ACCOUNT_USAGE schema lives (defaults to "SNOWFLAKE").
   optional string account_usage_db = 18;
+  // Read databases, schemas, tables, columns and view definitions from ACCOUNT_USAGE, for a role
+  // with only IMPORTED PRIVILEGES on the SNOWFLAKE database. New objects show up to three hours
+  // late.
+  optional bool catalog_from_account_usage = 19;
+  // Read table row counts, sizes and last change times from ACCOUNT_USAGE. Freshness is then up
+  // to three hours late.
+  optional bool table_metrics_from_account_usage = 20;
 }
 
 // Snowflake key-pair authentication.

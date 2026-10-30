@@ -253,6 +253,13 @@ message SnowflakeConf {
   // Authentication type: empty (default, uses password or private_key), "externalbrowser" (SSO via browser)
   // When set to "externalbrowser", opens browser for SSO login and caches the token locally.
   optional string auth_type = 12;
+  // Read databases, schemas, tables, columns and view definitions from ACCOUNT_USAGE, for a role
+  // with only IMPORTED PRIVILEGES on the SNOWFLAKE database. New objects show up to three hours
+  // late.
+  optional bool catalog_from_account_usage = 13;
+  // Read table row counts, sizes and last change times from ACCOUNT_USAGE. Freshness is then up
+  // to three hours late.
+  optional bool table_metrics_from_account_usage = 14;
 }
 
 // Trino specific configuration
