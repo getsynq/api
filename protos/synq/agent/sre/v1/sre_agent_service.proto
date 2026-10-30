@@ -196,6 +196,9 @@ message GetConfigResponse {
   string issue_grouping_system_prompt = 6;
   // Indicates that SRE shouldn't group any issues
   bool issue_grouping_disabled = 7;
+  // Upper bound on how many characters of each value column sampling returns.
+  // Unset means the agent's own default applies.
+  optional int32 max_sampled_value_length = 8;
 }
 
 // PromptField identifies which SRE agent system-prompt a suggestion targets.

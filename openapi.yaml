@@ -25098,6 +25098,14 @@ components:
                              warehouse, ScopeRule.schema = schema, ScopeRule.table = table / view.
                         nullable: true
                         $ref: '#/components/schemas/synq.common.v1.ScopeFilter'
+                    auditTableFqn:
+                        type: string
+                        title: audit_table_fqn
+                        description: |-
+                            Fully-qualified table for storing SQL test audit logs, as a three-part
+                             [warehouse].[schema].[table]. The warehouse must be a Fabric Warehouse in
+                             the same workspace, not a read-only Lakehouse SQL analytics endpoint.
+                        nullable: true
                 - oneOf:
                     - properties:
                         servicePrincipal:

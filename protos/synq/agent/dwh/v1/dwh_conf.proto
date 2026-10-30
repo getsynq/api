@@ -11,8 +11,8 @@ option go_package = "github.com/getsynq/api/agent/dwh/v1";
 message BigQueryConf {
   option (buf.validate.message).cel = {
     id: "bigquery_auth"
-    message: "Either service_account_key or service_account_key_file must be provided, but not both"
-    expression: "(this.service_account_key != '' && this.service_account_key_file == '') || (this.service_account_key == '' && this.service_account_key_file != '')"
+    message: "Set at most one of service_account_key, service_account_key_file and impersonate_service_accounts. With none, the agent uses the host's Application Default Credentials"
+    expression: "[this.service_account_key != '', this.service_account_key_file != '', this.impersonate_service_accounts.size() > 0].filter(x, x).size() <= 1"
   };
 
   // GCP project ID
@@ -33,6 +33,16 @@ message BigQueryConf {
   // Off by default, as a denied call shows in the audit log. Without it a policy tag keeps its
   // resource name.
   bool fetch_policy_tags = 6;
+  // Service accounts to impersonate, in order, instead of a key. The host's Application Default
+  // Credentials get a token for the first one, each one gets a token for the next, and BigQuery
+  // sees the last. Each service account must grant roles/iam.serviceAccountTokenCreator to the
+  // identity before it.
+  repeated string impersonate_service_accounts = 7 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {email: true}
+    }
+  }];
 }
 
 message ClickhouseConf {

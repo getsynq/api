@@ -47,6 +47,10 @@ message FabricCloudConf {
   // Include/exclude scope filter. ScopeRule.database = Fabric database /
   // warehouse, ScopeRule.schema = schema, ScopeRule.table = table / view.
   optional synq.common.v1.ScopeFilter scope = 6;
+  // Fully-qualified table for storing SQL test audit logs, as a three-part
+  // [warehouse].[schema].[table]. The warehouse must be a Fabric Warehouse in
+  // the same workspace, not a read-only Lakehouse SQL analytics endpoint.
+  optional string audit_table_fqn = 7;
 }
 
 // Microsoft Fabric Entra service-principal credentials.
