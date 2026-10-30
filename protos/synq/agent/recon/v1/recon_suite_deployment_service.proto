@@ -266,6 +266,9 @@ enum UnresolvedConnectionReason {
   // off for the whole workspace, for every integration and every credential.
   // No mapping resolves it.
   UNRESOLVED_CONNECTION_REASON_DISABLED_FOR_WORKSPACE = 6;
+  // The mapped integration is disabled. Nothing queries its warehouse until
+  // an Admin enables it again.
+  UNRESOLVED_CONNECTION_REASON_INTEGRATION_DISABLED = 7;
 }
 
 // One entry per connection name the server failed to resolve. Returned

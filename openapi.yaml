@@ -6203,6 +6203,11 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.datachecks.sqltests.v1.BatchUpsertSqlTestsResponse.UpsertError'
                     description: Errors raised while upsert. This list will be empty if there were no errors.
+                warnings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.datachecks.sqltests.v1.BatchUpsertSqlTestsResponse.UpsertWarning'
+                    description: Warnings about items that were stored. Empty if there were none.
             title: BatchUpsertSqlTestsResponse
             additionalProperties: false
         synq.datachecks.sqltests.v1.BatchUpsertSqlTestsResponse.UpsertError:
@@ -6215,6 +6220,16 @@ components:
             title: UpsertError
             additionalProperties: false
             description: Details of errors encountered during the upsert operation.
+        synq.datachecks.sqltests.v1.BatchUpsertSqlTestsResponse.UpsertWarning:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
+            title: UpsertWarning
+            additionalProperties: false
+            description: Non-fatal notes about items that were stored, e.g. a setting that has no effect.
         synq.datachecks.sqltests.v1.BusinessQueryTest:
             type: object
             properties:
