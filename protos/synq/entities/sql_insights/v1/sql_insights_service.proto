@@ -470,6 +470,13 @@ message Join {
   // Index of the join within its statement, counting from 0. Together with
   // `source_entity_id` and `statement_index` it identifies the join.
   uint32 join_index = 6;
+  // The other joins this one stands for. They compare the same columns with
+  // the same operators, so they are listed here and not on their own. Each is
+  // a separate join in the SQL, with its own kind and position, like several
+  // CTEs that read one table, each joined back on its key, or the same join in
+  // a dbt model's SQL and in the warehouse's definition of the table it
+  // builds. In the order they were found. A repeat has no repeats of its own.
+  repeated Join repeats = 7;
 }
 
 // JoinCondition is one comparison a join matches rows on: a column of one table

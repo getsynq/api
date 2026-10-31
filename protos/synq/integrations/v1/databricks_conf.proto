@@ -25,10 +25,10 @@ message DatabricksCloudConf {
   optional string warehouse_id = 4;
   // Ingest query logs from system tables.
   optional bool fetch_query_logs = 5;
-  // Replaced by analyze_tables, read only while analyze_tables is unset.
-  optional bool fetch_table_metrics = 6 [deprecated = true];
-  // Replaced by analyze_tables_scan, read only while analyze_tables_scan is unset.
-  optional bool fetch_table_metrics_scan = 7 [deprecated = true];
+  reserved 6;
+  reserved "fetch_table_metrics";
+  reserved 7;
+  reserved "fetch_table_metrics_scan";
   // Catalog name patterns to exclude from ingestion.
   repeated string catalog_blocklist = 8;
   // Retrieve Unity Catalog table tags.
