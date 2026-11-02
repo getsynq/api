@@ -1,5 +1,5 @@
 """
-Contains helper classes for authorization to the SYNQ server.
+Contains helper classes for authorization to the Coalesce Quality API.
 """
 
 import requests
@@ -40,11 +40,12 @@ class TokenSource:
                 "grant_type": "client_credentials",
             },
         )
-        return resp.json()
+        resp.raise_for_status()
+        self.token = resp.json()
+        self.expires_at = time.time() + self.token["expires_in"]
+        return self.token
 
     def get_token(self) -> str:
-        expires_at = self.token["expires_in"] + time.time()
-        is_expired = time.time() > expires_at
-        if is_expired:
-            self.token = self.obtain_token()
+        if time.time() > self.expires_at:
+            self.obtain_token()
         return self.token["access_token"]

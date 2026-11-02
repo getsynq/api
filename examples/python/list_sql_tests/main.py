@@ -11,13 +11,14 @@ from synq.datachecks.sqltests.v1 import (
     sql_tests_service_pb2_grpc,
 )
 
-## You can set the client ID and secret in the env or load it from a dotenv file.
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+# Set the client ID and secret in the environment or in a .env file.
+# The credentials need the Read SQL Tests scope.
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if CLIENT_ID is None or CLIENT_SECRET is None:
-    raise Exception("missing SYNQ_CLIENT_ID or SYNQ_CLIENT_SECRET env vars")
+    raise Exception("missing QUALITY_CLIENT_ID or QUALITY_CLIENT_SECRET env vars")
 
 # initialize authorization
 token_source = TokenSource(CLIENT_ID, CLIENT_SECRET, API_ENDPOINT)

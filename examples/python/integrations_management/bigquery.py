@@ -7,13 +7,15 @@ Unlike dbt Cloud, a warehouse integration is "refreshable" (Capabilities.
 can_refresh == True) and the server derives read-only Outputs from the supplied
 credentials (for BigQuery, the service-account email to grant dataset access to).
 
-The service-account key can be invalid for this demo: create still succeeds and
-the management calls work end to end. A bad key simply surfaces later as an
-unhealthy status from GetIntegrationHealth.
+The service-account key can be invalid for this demo. Create still succeeds
+and the management calls work. A bad key shows up later as an unhealthy status
+from GetIntegrationHealth.
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scope: Manage Integrations)
-- Optionally BIGQUERY_* connection settings (defaults are illustrative).
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET (scope: Edit Integration Settings)
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io
+  for US, api.au.synq.io for AU)
+- Optional BIGQUERY_* connection settings (the defaults are placeholders).
 """
 
 import os
@@ -34,14 +36,14 @@ from synq.integrations.v1 import (
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    raise SystemExit("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scope: Manage Integrations)")
+    raise SystemExit("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scope: Edit Integration Settings)")
 
-# BigQuery connection settings. Defaults are illustrative placeholders.
+# BigQuery connection settings. The defaults are placeholders.
 BQ_PROJECT_ID = os.getenv("BIGQUERY_PROJECT_ID", "example-project")
 BQ_REGION = os.getenv("BIGQUERY_REGION", "EU")
 
@@ -128,7 +130,7 @@ def main():
         except grpc.RpcError as e:
             print(f"Deleted {integration_id}; Get after delete -> {e.code().name}")
 
-        print("\nDone: warehouse lifecycle (outputs, refresh, health) exercised end to end.")
+        print("\nDone: ran the warehouse lifecycle (outputs, refresh, health).")
 
 
 if __name__ == "__main__":

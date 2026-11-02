@@ -5,14 +5,16 @@ with a dbt Cloud connection as the example type:
     create -> get -> list -> update (with etag) -> disable -> enable -> health -> delete
 
 dbt Cloud is a "managed" type: Coalesce Quality stores the connection and syncs
-it in the background. This script works even with an invalid / disabled dbt Cloud
-token: every management call (create, update, enable/disable, delete) still
-succeeds because they operate on the stored configuration. Only the background
-sync would fail, which you can observe later via GetIntegrationHealth.
+it in the background. This script works even with an invalid or disabled dbt Cloud
+token. Every management call (create, update, enable, disable, delete) still
+succeeds, because these calls work on the stored configuration. Only the
+background sync fails, and you can see that later with GetIntegrationHealth.
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scope: Manage Integrations)
-- Optionally DBT_CLOUD_* connection settings (defaults are illustrative).
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET (scope: Edit Integration Settings)
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io
+  for US, api.au.synq.io for AU)
+- Optional DBT_CLOUD_* connection settings (the defaults are placeholders).
 """
 
 import os
@@ -33,15 +35,15 @@ from synq.integrations.v1 import (
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    raise SystemExit("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scope: Manage Integrations)")
+    raise SystemExit("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scope: Edit Integration Settings)")
 
-# dbt Cloud connection settings. Defaults are illustrative placeholders — the
-# token can be invalid/disabled; the management calls below still succeed.
+# dbt Cloud connection settings. The defaults are placeholders. The token can
+# be invalid or disabled, and the management calls below still succeed.
 DBT_ACCOUNT_ID = os.getenv("DBT_CLOUD_ACCOUNT_ID", "12345")
 DBT_PROJECT_ID = os.getenv("DBT_CLOUD_PROJECT_ID", "example-dbt-project")
 DBT_TOKEN = os.getenv("DBT_CLOUD_TOKEN", "dbtc_disabled-demo-token")
@@ -103,10 +105,10 @@ def main():
         print(f"Workspace has {len(listed.integrations)} integration(s)\n")
 
         # --- Step 4: Patch the tracked job ids (with optimistic concurrency) ---
-        # The config is replaced wholesale, so job_ids is replace-semantics: send
-        # the FULL desired set, not a delta. Here we drop one job and add another.
-        # We omit the token to keep the stored one, and pass the etag we last read
-        # so we only update the version we saw (a stale etag -> ABORTED / 409).
+        # The server replaces the whole config, so job_ids must hold the full set
+        # you want, not only the changes. Here we drop one job and add another.
+        # We omit the token to keep the stored one. We pass the etag we last read,
+        # so we only update the version we saw (a stale etag gives ABORTED / 409).
         patched_job_ids = ["100", "300"]  # was ["100","200"]: keep 100, drop 200, add 300
         print("=== Step 4: Patch tracked job ids ===")
         updated = stub.UpdateIntegration(
@@ -120,7 +122,7 @@ def main():
         print(f"Patched job ids: {DBT_JOB_IDS} -> {list(updated.config.dbt_cloud.job_ids)}")
         print(f"new etag={updated.etag}")
 
-        # Re-using the now-stale etag is rejected — the concurrency guard.
+        # The etag from step 1 is now stale, so the server rejects it.
         try:
             stub.UpdateIntegration(
                 svc.UpdateIntegrationRequest(
@@ -160,7 +162,7 @@ def main():
         except grpc.RpcError as e:
             print(f"Deleted {integration_id}; Get after delete -> {e.code().name}")
 
-        print("\nDone: full management lifecycle exercised end to end.")
+        print("\nDone: ran the full management lifecycle.")
 
 
 if __name__ == "__main__":

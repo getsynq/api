@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
 
 	entitiesschemasv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/schemas/v1/schemasv1grpc"
 	entitiesschemasv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/schemas/v1"
@@ -21,10 +22,8 @@ func main() {
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	//clientID := os.Getenv("SYNQ_CLIENT_ID")
-	//clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
-	clientID := "F43y9TAnrSHrfBRLsAuYjEdF9qvXuTom"
-	clientSecret := "dXlDaElSN3ZXS3N4UXFTNWpHY1pmZ0VoblptdUhWeEY="
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
 	config := &clientcredentials.Config{

@@ -4,11 +4,11 @@
 //	create -> get -> list -> update (with etag) -> disable -> enable -> delete
 //
 // dbt Cloud is a "managed" type: Coalesce Quality stores the connection and
-// syncs it in the background. The example deliberately works even with an
-// invalid / disabled dbt Cloud token: every management call (create, update,
-// enable/disable, delete) still succeeds, because those operate on the stored
-// configuration — proving the API works end to end. Only the background sync
-// would fail, which you can observe later via GetIntegrationHealth.
+// syncs it in the background. The example also works with an invalid or
+// disabled dbt Cloud token. Every management call (create, update, enable,
+// disable, delete) still succeeds, because these calls change only the stored
+// configuration. Only the background sync fails, and GetIntegrationHealth shows
+// that later.
 package main
 
 import (
@@ -32,18 +32,18 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := getenv("API_ENDPOINT", "developer.synq.io")
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 	apiURL := fmt.Sprintf("%s:443", host)
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	if clientID == "" || clientSecret == "" {
-		panic("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scope: Manage Integrations)")
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scope: Edit Integration Settings)")
 	}
 
-	// dbt Cloud connection settings. Defaults are illustrative — replace them
-	// with your own (the token can be invalid/disabled; the management calls
-	// below still succeed).
+	// dbt Cloud connection settings. The defaults are examples. Replace them
+	// with your own values (the token can be invalid or disabled, and the
+	// management calls below still succeed).
 	dbtAccountID := getenv("DBT_CLOUD_ACCOUNT_ID", "12345")
 	dbtProjectID := getenv("DBT_CLOUD_PROJECT_ID", "example-dbt-project")
 	dbtToken := getenv("DBT_CLOUD_TOKEN", "dbtc_disabled-demo-token")
@@ -149,7 +149,7 @@ func main() {
 		dbtJobIDs, updated.GetIntegration().GetConfig().GetDbtCloud().GetJobIds())
 	fmt.Printf("new etag=%s\n", newEtag)
 
-	// Re-using the now-stale etag is rejected — this is the concurrency guard.
+	// The server rejects the stale etag. This is the concurrency guard.
 	_, staleErr := client.UpdateIntegration(ctx, &integrationsv1.UpdateIntegrationRequest{
 		IntegrationId: id,
 		Etag:          proto.String(integration.GetEtag()), // stale: we are at newEtag now
@@ -181,7 +181,7 @@ func main() {
 	// --- Step 6: Health ---
 	// dbt Cloud syncs in the background. Right after create there are usually no
 	// runs yet (status UNSPECIFIED). If the token is invalid/disabled, a later
-	// run shows ERROR here — that is the end-to-end proof the connection is live.
+	// run shows ERROR here. This shows that the background sync runs.
 	fmt.Println("=== Step 6: Health ===")
 	health, err := client.GetIntegrationHealth(ctx, &integrationsv1.GetIntegrationHealthRequest{IntegrationId: id})
 	if err != nil {

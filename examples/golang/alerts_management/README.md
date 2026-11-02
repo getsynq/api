@@ -1,140 +1,141 @@
-# Alerts Management
+# Alerts management
 
-This example demonstrates how to manage alert configurations using the Coalesce Quality Alerts API (v2). The examples show how to create, update, list, get, toggle, and delete alerts programmatically.
+This example shows how to manage alert configurations with the Coalesce Quality Alerts API (v2). It creates, updates, lists, gets, toggles and deletes alerts from code.
 
 ## Prerequisites
 
-### Client Credentials
+### Client credentials
 
-Head over to Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) to create client credentials with the `Manage Alerts` scope. Set the credentials in the environment as `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`.
+Go to Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) and create client credentials with the `Edit Alerts` and `Read Alerts` scopes. Set them in the environment as `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`.
 
-### Slack Channel (for notifications)
+### Slack channel
 
-To receive alert notifications, you'll need a Slack channel configured in your Coalesce Quality workspace. Set the channel name in the environment as `SLACK_CHANNEL` (e.g. `C1234567890`).
+The alerts send their notifications to Slack, so your Coalesce Quality workspace needs a connected Slack channel. Set the channel name or ID in the environment as `SLACK_CHANNEL` (for example `#alerts` or `C1234567890`).
 
-## Environment Variables
+## Environment variables
 
-Set the following environment variables:
-1. `SYNQ_CLIENT_ID` - Your client ID
-2. `SYNQ_CLIENT_SECRET` - Your client secret
-3. `SLACK_CHANNEL` - The Slack channel where alerts should be sent (e.g., `C1234567890`)
+Set these environment variables:
+1. `QUALITY_CLIENT_ID`: your client ID.
+2. `QUALITY_CLIENT_SECRET`: your client secret.
+3. `SLACK_CHANNEL`: the Slack channel that receives the alerts (for example `C1234567890`).
 
-## Running the Examples
+## Running the examples
 
-There are two main examples:
+There are two examples.
 
-### 1. Global Alert (Complete Lifecycle)
-Demonstrates the complete alert lifecycle in a single script: create, update, toggle, and delete.
+### 1. Global alert (complete lifecycle)
+
+One program that creates, updates, toggles and deletes an alert.
 
 ```bash
 cd global_alert
 go run main.go
 ```
 
-Or with environment variables:
+Or with the environment variables from a `.env` file:
 ```bash
 export $(cat .env | xargs) && go run global_alert/main.go
 ```
 
-### 2. Owned Alert (Self-Contained)
-Creates an alert with owner information, lists by owner, verifies, and cleans up.
+### 2. Owned alert (self-contained)
+
+Creates an alert with an owner, lists alerts by owner, checks the result and deletes the alert.
 
 ```bash
 cd owned_alert
 go run main.go
 ```
 
-Or with environment variables:
+Or with the environment variables from a `.env` file:
 ```bash
 export $(cat .env | xargs) && go run owned_alert/main.go
 ```
 
-## Selecting entities: the Trigger
+## Selecting entities: the trigger
 
-An issue alert fires on the entities its `Trigger` selects. A trigger carries the
+An issue alert fires on the entities that its `Trigger` selects. A trigger holds the
 selection in one of two forms:
 
-- A **structured `Query`** — composed from parts such as `WithType`. The
-  `global_alert` example uses this form to match ClickHouse tables.
-- A **ResolverQL string** — a more expressive selection language for cases a
-  structured query cannot express (lineage walks, column predicates). The
-  `owned_alert` example uses `with_type("clickhouse_table")`. When set, the
-  ResolverQL string takes precedence over the structured query.
+- A structured `Query`, built from parts such as `WithType`. The `global_alert`
+  example uses this form to match ClickHouse tables.
+- A ResolverQL string. ResolverQL can express selections that a structured query
+  cannot, such as lineage walks and column predicates. The `owned_alert` example
+  uses `with_type("clickhouse_table")`. When you set a ResolverQL string, it takes
+  precedence over the structured query.
 
-Either way, the created alert reads back a canonical `rendered_resolver_ql`, so
-you can see how any selection reads as ResolverQL.
+In both cases, the created alert returns a canonical `rendered_resolver_ql`, so you
+can see each selection written as ResolverQL.
 
 ## Updating an alert
 
-Alerts are updated through intent-specific RPCs rather than a single catch-all
-update:
+There is one RPC for each kind of change:
 
-- `Rename` — change the alert's name.
-- `UpdateSettings` — change the trigger and/or the kind-specific settings (e.g.
-  severities).
-- `UpdateTargets` — replace the delivery targets.
-- `ToggleEnabled` — enable or disable the alert.
+- `Rename` changes the alert's name.
+- `UpdateSettings` changes the trigger, the settings of the alert kind (for
+  example the severities), or both.
+- `UpdateTargets` replaces the delivery targets.
+- `ToggleEnabled` enables or disables the alert.
 
 The `global_alert` example renames the alert and then adds the `ERROR` severity
-via `UpdateSettings`.
+with `UpdateSettings`.
 
-## Alert Configuration
+## Alert configuration
 
-### Global Alert
-The example creates an alert that:
-- **Trigger**: Structured query matching ClickHouse tables
-- **Severity**: FATAL failures (initially), then updated to include ERROR failures
-- **Target**: Sends notifications to the configured Slack channel
-- **FQN**: Uses `example.alerts.critical-failures` to reference the alert
-- **Ongoing Strategy**: Disabled to prevent alert spam
+### Global alert
 
-### Owned Alert
-The example creates an alert that:
-- **Trigger**: ResolverQL selection matching ClickHouse tables
-- **Severity**: FATAL failures only
-- **Target**: Sends notifications to the configured Slack channel
-- **FQN**: Uses `example.alerts.owned-alert` to reference the alert
-- **Owner**: Demonstrates setting an owner (`team.data-platform` path plus an ownership ID) on the alert kind
-- **Ongoing Strategy**: Disabled to prevent alert spam
+The example creates an alert with:
+- A structured query trigger that matches ClickHouse tables.
+- The `FATAL` severity at first. The update step adds `ERROR`.
+- The configured Slack channel as the target.
+- The FQN `example.alerts.critical-failures`, which the later steps use to find the alert.
+- The ongoing strategy disabled, so an open issue does not send repeated alerts.
 
-## What the Examples Demonstrate
+### Owned alert
 
-### Global Alert (`global_alert`)
-A complete alert lifecycle demonstration in a single script:
+The example creates an alert with:
+- A ResolverQL trigger that matches ClickHouse tables.
+- The `FATAL` severity only.
+- The configured Slack channel as the target.
+- The FQN `example.alerts.owned-alert`, which the later steps use to find the alert.
+- An owner on the alert kind: the owner path `team.data-platform` and an ownership ID.
+- The ongoing strategy disabled, so an open issue does not send repeated alerts.
 
-**Step 1: Create Alert**
-- Creates an issue lifecycle alert configuration with FQN for easy reference
-- Sets up a structured trigger to monitor ClickHouse tables
-- Configures FATAL severity monitoring
-- Sets Slack as the notification target
-- Prints the canonical ResolverQL rendering of the selection
-- Lists all alerts to verify creation
+## What the examples do
 
-**Step 2: Update Alert**
-- Retrieves the alert by FQN using BatchGet
-- Renames the alert to reflect the update
-- Adds the ERROR severity via UpdateSettings
-- Validates the update succeeded
+### Global alert (`global_alert`)
 
-**Step 3: Toggle Alert**
-- Toggles the alert off (disables it)
-- Verifies the disabled state
-- Re-enables the alert
-- Confirms the alert is active again
+Step 1, create the alert:
+- Creates an issue lifecycle alert with an FQN.
+- Uses a structured trigger that selects ClickHouse tables.
+- Alerts on the `FATAL` severity.
+- Sends notifications to Slack.
+- Prints the canonical ResolverQL form of the selection.
+- Lists all alerts to check that the new alert is there.
 
-**Step 4: Delete Alert**
-- Verifies the alert exists before deletion
-- Deletes the alert by FQN
-- Confirms successful deletion
+Step 2, update the alert:
+- Gets the alert by FQN with `BatchGet`.
+- Renames the alert.
+- Adds the `ERROR` severity with `UpdateSettings`.
+- Checks that the update was applied.
 
-### Owned Alert (`owned_alert`)
-A self-contained example demonstrating alert ownership:
+Step 3, toggle the alert:
+- Disables the alert.
+- Checks that it is disabled.
+- Enables the alert again.
+- Checks that it is enabled.
 
-- Creates a new alert with owner information on the alert kind (owner path and ownership ID)
-- Lists alerts filtered by owner
-- Verifies the alert appears in the owner's alerts list
-- Confirms the owner information is correctly set
-- Cleans up by deleting the alert
-- Verifies deletion
+Step 4, delete the alert:
+- Checks that the alert exists.
+- Deletes the alert by FQN.
+- Checks that the alert is gone.
 
-**Note:** This example is self-contained and can be run independently. It uses a different FQN (`example.alerts.owned-alert`) to avoid conflicts with the global alert example.
+### Owned alert (`owned_alert`)
+
+- Creates a new alert with an owner on the alert kind (owner path and ownership ID).
+- Lists the alerts of that owner.
+- Checks that the new alert is in the list.
+- Checks that the owner is set correctly.
+- Deletes the alert.
+- Checks that the alert is gone.
+
+This example runs on its own. It uses a different FQN (`example.alerts.owned-alert`), so it does not conflict with the global alert example.

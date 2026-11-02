@@ -5,17 +5,19 @@ DataproductsService (v2):
     upsert -> set-definition -> add/remove parts -> list-members -> batch-get ->
     partial update (with etag) -> delete
 
-A data product is a named, owned grouping of assets with a membership
-definition. The id is a caller-supplied UUID, so every write is idempotent —
-re-running this example converges instead of duplicating.
+A data product is a named, owned group of assets with a membership
+definition. The caller supplies the id (a UUID), so every write is idempotent.
+If you run this example again, it updates the same product and does not create
+a copy.
 
-The membership definition is authored here in ResolverQL, the compact text
-query language. The server compiles and stores it canonically and echoes it
-back on reads as `rendered_resolver_ql`.
+This example writes the membership definition in ResolverQL, a short text
+query language. The server compiles the query, stores it in a canonical form,
+and returns it on reads as `rendered_resolver_ql`.
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scopes: Read/Edit Data Products).
-- Optionally API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET (scopes: Read Data Products,
+  Edit Data Products).
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
   api.au.synq.io for AU).
 """
 
@@ -39,12 +41,12 @@ from synq.v1 import pagination_pb2
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    raise SystemExit("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scopes: Read/Edit Data Products)")
+    raise SystemExit("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scopes: Read/Edit Data Products)")
 
 
 def print_definition(product):
@@ -80,20 +82,20 @@ def main():
         print("=== Step 1: Create data product ===")
         created = stub.Upsert(svc.UpsertRequest(
             id=product_id,
-            title="API Example — Orders",
+            title="API Example: Orders",
             description="Created by the owners_ownership Python example.",
             folder="API Examples",
             priority=dp.Dataproduct.PRIORITY_P1,
         )).dataproduct
         print(f"Created id={created.id}")
-        # entity_id is server-derived (dataproduct-<uuid>) — the value other APIs
-        # (lineage, entities, alerts) accept as a reference to this product.
+        # The server derives entity_id (dataproduct-<uuid>). Other APIs (lineage,
+        # entities, alerts) accept it as a reference to this product.
         print(f"entity_id={created.entity_id} (use this to reference the product elsewhere)")
         print(f"etag={created.etag} priority={dp.Dataproduct.Priority.Name(created.priority)}\n")
 
         # --- Step 2: Replace the whole definition (SetDefinition) ---
-        # A definition is a list of parts OR'd together. Here a single ResolverQL
-        # query part. Replace the placeholder query with one matching your workspace.
+        # A definition is a list of parts. An asset is a member if it matches any
+        # part. Here there is one ResolverQL query part. Replace the placeholder query with one matching your workspace.
         print("=== Step 2: Set definition (ResolverQL) ===")
         set_resp = stub.SetDefinition(svc.SetDefinitionRequest(
             id=product_id,
@@ -156,14 +158,14 @@ def main():
         stale_etag = product.etag
         product = stub.Upsert(svc.UpsertRequest(
             id=product_id,
-            title="API Example — Orders (P2)",
+            title="API Example: Orders (P2)",
             priority=dp.Dataproduct.PRIORITY_P2,
             etag=product.etag,
         )).dataproduct
         print(f'Updated title="{product.title}" '
               f"priority={dp.Dataproduct.Priority.Name(product.priority)} new etag={product.etag}")
 
-        # Re-using the now-stale etag is rejected — the concurrency guard.
+        # The previous etag is now stale, so the server rejects it.
         try:
             stub.Upsert(svc.UpsertRequest(id=product_id, title="should be rejected", etag=stale_etag))
             print("Unexpected: stale etag accepted\n")
@@ -177,7 +179,7 @@ def main():
         after = stub.BatchGet(svc.BatchGetRequest(ids=[product_id]))
         print(f"Deleted {product_id}; BatchGet after delete returned {len(after.dataproducts)} product(s)")
 
-        print("\nDone: data-product maintenance lifecycle exercised end to end.")
+        print("\nDone: ran the data-product lifecycle.")
 
 
 if __name__ == "__main__":

@@ -12,9 +12,10 @@ Commands:
 <role> is one of: admin, developer, analyst, business_user.
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET environment variables
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET environment variables
   (Read Users scope for `list`, Edit Users scope for the role commands)
-- Optional API_ENDPOINT (defaults to developer.synq.io)
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+  api.au.synq.io for AU)
 """
 
 import argparse
@@ -28,12 +29,12 @@ from synq.users.v1 import users_pb2, users_service_pb2, users_service_pb2_grpc
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if CLIENT_ID is None or CLIENT_SECRET is None:
-    raise Exception("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set")
+    raise Exception("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set")
 
 ROLES = {
     "admin": users_pb2.USER_ROLE_ADMIN,

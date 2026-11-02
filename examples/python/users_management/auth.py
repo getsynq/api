@@ -1,5 +1,5 @@
 """
-Contains helper classes for authorization to the SYNQ server.
+Contains helper classes for authorization to the Coalesce Quality API.
 """
 
 import requests

@@ -77,8 +77,8 @@ func main() {
 	}
 
 	// Get deployment overview.
-	// Use existing deployment rule Id with new/updated config to see changes in overview
-	// Use new deployment rule Id to to see overview of new deployment rule
+	// Use an existing deployment rule id with a new or updated config to see the changes in the overview.
+	// Use a new deployment rule id to see the overview of a new deployment rule.
 	{
 		fmt.Println("Getting deployment overview...")
 		depRule := &deploymentrulesv1.MonitorsDeploymentRule{
@@ -162,7 +162,7 @@ func main() {
 		fmt.Println("--------------------------------")
 	}
 
-	// deploy deployment rule.
+	// Deploy the deployment rule.
 	{
 		fmt.Println("Deploying deployment rule...")
 		uuid := uuid.New().String()
@@ -202,9 +202,9 @@ func main() {
 		fmt.Println("--------------------------------")
 	}
 
-	// deployment rule overview for delete rule.
+	// Get the overview for deleting the deployment rule.
 	{
-		fmt.Println("Deleting deployment rule overview...")
+		fmt.Println("Getting the overview for deleting the deployment rule...")
 		overview, err := deploymentrulesapi.GetDeployDeleteOverview(
 			ctx,
 			&deploymentrulesv1.GetDeployDeleteOverviewRequest{Id: "dep-rule-uuid-1"},
@@ -217,7 +217,7 @@ func main() {
 		fmt.Println("--------------------------------")
 	}
 
-	// delete deployment rule.
+	// Delete the deployment rule.
 	{
 		fmt.Println("Deleting deployment rule...")
 		_, err := deploymentrulesapi.DeleteDeploymentRule(

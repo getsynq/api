@@ -8,17 +8,17 @@ This example demonstrates the complete alert lifecycle in a single script:
 4. Delete the alert
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET environment variables
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET environment variables
+  (Edit Alerts and Read Alerts scopes)
 - SLACK_CHANNEL environment variable
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+  api.au.synq.io for AU)
 """
 
 import os
 import sys
 import grpc
 from dotenv import load_dotenv
-
-# Add parent directory to path to import auth module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from auth import TokenSource, TokenAuth
 from synq.alerts.services.v2 import (
@@ -33,13 +33,13 @@ from synq.v1 import severity_pb2
 load_dotenv()
 
 # Load environment variables
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
 SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if CLIENT_ID is None or CLIENT_SECRET is None:
-    raise Exception("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set")
+    raise Exception("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set")
 
 if SLACK_CHANNEL is None:
     raise Exception("SLACK_CHANNEL must be set (e.g., 'C1234567890')")

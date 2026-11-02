@@ -2,7 +2,7 @@
 
 A replication tool (Airbyte, Fivetran, a CDC pipeline, your own loader) copies a
 table from one database into a table in another warehouse. Coalesce Quality
-already has both tables; what it does not have is the hop between them. This
+already has both tables, but not the hop between them. This
 example declares it, with column lineage, and reads it back.
 
 ```
@@ -23,7 +23,7 @@ relationship needs a custom entity on at least one side. Model the thing that
 copies the rows, because it is what fails, lags or drops a column, and it is where
 you want an incident to land.
 
-Declare **one entity per replicated table**. A single entity for the whole
+Declare one entity per replicated table. A single entity for the whole
 connection would make every source table read as upstream of every target table
 the connection writes.
 
@@ -34,7 +34,7 @@ lands in which target column, including renames, and the parser classifies each
 one as a passthrough, a rename or a transformation.
 
 The SQL is never executed, only parsed. Its two table names are placeholders, and
-each is **bound** to the real table with a `SqlTableReference`. That is what lets
+each is bound to the real table with a `SqlTableReference`. That is what lets
 the source and the target sit on different platforms: a bound name resolves to
 its entity directly, instead of being looked up by warehouse address on the
 SQL's own platform.
@@ -51,8 +51,9 @@ export QUALITY_CLIENT_SECRET=...
 go run .
 ```
 
-The client needs `SCOPE_ENTITY_EDIT`, `SCOPE_ENTITY_TYPE_EDIT` and
-`SCOPE_LINEAGE_READ`.
+The client credentials need the `Edit Entities`, `Edit Entity Types` and
+`Read Lineage` scopes. Create them on the API settings page of your Coalesce
+Quality app.
 
 Edit `streams` in `main.go` to point at tables that exist in your workspace. The
 identifiers must match how the tables are already known: an identifier that

@@ -1,19 +1,20 @@
 # yaml-language-server: $schema=https://schemas.synq.io/governance-as-code/draft/governance.schema.json
 #
-# Coalesce Quality governance-as-code — declarative data products, owners,
-# ownership and alert routing. Apply with:  governance-as-code apply -f this.yaml
+# Coalesce Quality governance-as-code: data products, owners, ownership and
+# alert routing in one file. Apply it with:  governance-as-code apply -f this.yaml
 #
-# This file contains NO credentials — auth is passed separately (see the README).
+# This file holds no credentials. Authentication is configured separately (see
+# the README).
 #
-# Identity works like the API: each resource has a UUID `id`. Omit it (as below)
-# and the tool will, on the next run, either adopt an existing resource with the
-# same title or generate a new id — and write that id back into this file.
+# Identity works like the API: each resource has a UUID `id`. If you omit it (as
+# below), the next run adopts an existing resource with the same title or
+# generates a new id, and writes that id back into this file.
 
 dataproducts:
   - title: "Sales & Orders"
     folder: "Domains"
     priority: P1
-    # ResolverQL. A data product is a leaf (no in_dataproduct / in_domain).
+    # ResolverQL. A data product is a leaf (no in_product / in_domain).
     resolver_ql: 'and(with_type("table"), or(with_name("sales"), with_name("order")))'
 
   - title: "Dashboards"

@@ -1,26 +1,25 @@
-// Owners & ownership maintenance lifecycle — "alert routing as code" — using
-// the Coalesce Quality OwnersService (v1):
+// Owners and ownership lifecycle (alert routing as code) with the Coalesce
+// Quality OwnersService (v1):
 //
 //	create owner (+contacts) -> assign assets (ownership + alert config) ->
 //	list -> partial update (with etag) -> delete
 //
 // An owner is a named responsible party with notification channels (contacts).
 // An ownership assigns a set of assets to an owner and configures the alerts
-// routed to it. Owner is the resource; ownership is its sub-resource — deleting
-// an owner deletes its ownerships.
+// sent to it. The owner is the resource, and an ownership is its sub-resource.
+// Deleting an owner deletes its ownerships.
 //
-// Both ids are caller-supplied UUIDs, so every write is idempotent. Together
-// they replace clicking owners and alert rules together in the UI: define the
-// responsible party, its channels, what it owns, and how it should be alerted —
-// all as code.
+// You choose both ids (UUIDs), so every write is idempotent. With these calls you
+// define in code what you would otherwise set up in the app: the responsible
+// party, its channels, what it owns, and how it gets alerts.
 //
 // To make the "assign a data product" path concrete, the example first creates
 // a throwaway data product to own, and deletes it at the end.
 //
 // Prerequisites:
-//   - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET with scopes:
+//   - QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET with scopes:
 //     Read/Edit Owners, Read/Edit Ownership, Read/Edit Data Products.
-//   - Optionally API_ENDPOINT (defaults to the EU endpoint developer.synq.io;
+//   - Optionally QUALITY_API_ENDPOINT (defaults to the EU endpoint developer.synq.io;
 //     other regions: api.us.synq.io for US, api.au.synq.io for AU).
 package main
 
@@ -48,12 +47,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	host := getenv("API_ENDPOINT", "developer.synq.io")
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	if clientID == "" || clientSecret == "" {
-		panic("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scopes: Read/Edit Owners, Ownership, Data Products)")
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scopes: Read/Edit Owners, Ownership, Data Products)")
 	}
 
 	// --- Connect (OAuth2 client-credentials) ---
@@ -83,7 +82,7 @@ func main() {
 	productID := uuid.NewString()
 	if _, err := products.Upsert(ctx, &dpv2.UpsertRequest{
 		Id:       productID,
-		Title:    proto.String("API Example — Owned Product"),
+		Title:    proto.String("API Example: Owned Product"),
 		Folder:   proto.String("API Examples"),
 		Priority: dpv2.Dataproduct_PRIORITY_P1.Enum(),
 		Definition: &dpv2.DataproductDefinition{
@@ -105,7 +104,7 @@ func main() {
 	ownerID := uuid.NewString()
 	upOwner, err := owners.UpsertOwner(ctx, &ownersv1.UpsertOwnerRequest{
 		Id:    ownerID,
-		Title: proto.String("API Example — Data Platform"),
+		Title: proto.String("API Example: Data Platform"),
 		Contacts: &ownersv1.ContactList{Contacts: []*ownersv1.Contact{
 			{ContactMethod: &ownersv1.Contact_Slack{Slack: &ownersv1.SlackChannelContact{Channel: "#data-alerts"}}},
 			{ContactMethod: &ownersv1.Contact_Email{Email: &ownersv1.EmailContact{RecipientEmails: []string{"data-team@example.com"}}}},
@@ -116,14 +115,14 @@ func main() {
 	}
 	owner := upOwner.GetOwner()
 	fmt.Printf("Created owner id=%s\n", owner.GetId())
-	// entity_id is server-derived (owner-<uuid>) — the value the alerts API and
-	// other surfaces accept as an owner reference.
+	// The server creates entity_id (owner-<uuid>). The alerts API and other APIs
+	// accept it as a reference to the owner.
 	fmt.Printf("entity_id=%s contacts=%d etag=%s\n\n", owner.GetEntityId(), len(owner.GetContacts()), owner.GetEtag())
 
 	// --- Step 2: Assign the data product to the owner (ownership #1) ---
 	// The ownership's AlertConfig is the "routing as code": which severities
 	// fire, whether upstream issues count, and the repeat strategy.
-	fmt.Println("=== Step 2: Ownership #1 — own the data product, with alert routing ===")
+	fmt.Println("=== Step 2: Ownership #1: own the data product, with alert routing ===")
 	ownershipProductID := uuid.NewString()
 	up1, err := owners.UpsertOwnership(ctx, &ownersv1.UpsertOwnershipRequest{
 		OwnerId: ownerID,
@@ -145,10 +144,10 @@ func main() {
 	printOwnership("ownership #1", up1.GetOwnership())
 
 	// --- Step 3: A second ownership selecting assets by query (ownership #2) ---
-	// Unlike a data-product definition (a leaf), an ownership query MAY reference
-	// data products and domains — routing alerts for everything in a product or
-	// domain is a first-class use.
-	fmt.Println("=== Step 3: Ownership #2 — select by ResolverQL, daily digest ===")
+	// A data product definition cannot reference data products or domains, but an
+	// ownership query can. So you can route the alerts for everything in a data
+	// product or domain to one owner.
+	fmt.Println("=== Step 3: Ownership #2: select by ResolverQL, daily digest ===")
 	ownershipQueryID := uuid.NewString()
 	up2, err := owners.UpsertOwnership(ctx, &ownersv1.UpsertOwnershipRequest{
 		OwnerId: ownerID,
@@ -204,7 +203,7 @@ func main() {
 	owner = updOwner.GetOwner()
 	fmt.Printf("Updated owner now has %d contacts, new etag=%s\n", len(owner.GetContacts()), owner.GetEtag())
 
-	// Re-using the stale etag is rejected — the concurrency guard.
+	// The server rejects the stale etag. This is the concurrency guard.
 	_, staleErr := owners.UpsertOwner(ctx, &ownersv1.UpsertOwnerRequest{
 		Id:    ownerID,
 		Title: proto.String("should be rejected"),
@@ -217,8 +216,8 @@ func main() {
 	}
 
 	// --- How this ties to the alerts API ---
-	// A fired issue on an owned asset is attributed via owner.entity_id and the
-	// ownership id — the same values the alerts API reports and filters on.
+	// An issue on an owned asset is linked to owner.entity_id and the ownership id.
+	// The alerts API reports and filters on the same values.
 	fmt.Println("=== Reference: how alerts point back here ===")
 	fmt.Printf("owner entity_id : %s\n", owner.GetEntityId())
 	fmt.Printf("ownership ids   : %s, %s\n\n", ownershipProductID, ownershipQueryID)

@@ -20,8 +20,8 @@ func main() {
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
 	config := &clientcredentials.Config{
@@ -47,7 +47,7 @@ func main() {
 
 	integrationsApi := extensionsatlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
 
-	// Deactivate integraton.
+	// Deactivate the integration.
 	// This stops the scheduled synchronization.
 	{
 		_, err := integrationsApi.Activate(ctx, &extensionsatlanintegrationsv1.ActivateRequest{
@@ -59,7 +59,7 @@ func main() {
 		fmt.Println("Deactivated Atlan integration.")
 	}
 
-	// Optionally delete integration.
+	// Optionally, delete the integration.
 	{
 		_, err := integrationsApi.Remove(ctx, &extensionsatlanintegrationsv1.RemoveRequest{})
 		if err != nil {
@@ -68,6 +68,6 @@ func main() {
 		fmt.Println("Removed Atlan integration.")
 	}
 
-	// Note that the domains and products created on SYNQ by the synchronization
-	// are *NOT* automatically removed. You can remove them from SYNQ if you wish to.
+	// The domains and data products that the synchronization created in Coalesce
+	// Quality are not removed. You can remove them in Coalesce Quality yourself.
 }

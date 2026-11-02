@@ -1,7 +1,7 @@
 package main
 
 // -----------------------------------------------------------------------------
-// The BI tool's own metadata — the input half of the example.
+// The BI tool's own metadata: the input half of the example.
 // -----------------------------------------------------------------------------
 //
 // Metabase stands in for "a BI tool Coalesce Quality has no integration for".
@@ -16,14 +16,14 @@ package main
 //	subscription schedule      scheduled send  a delivery of a dashboard
 //	alert        alert         alert           a condition watched on a question
 //
-// Rename the structs and the mapping in sync.go is unchanged, which is the point
-// of reading this file first: modelling a new tool is a mapping exercise, not an
-// API exercise.
+// Rename the structs and the mapping in sync.go stays the same. This is why you
+// read this file first: to model a new tool, you map its objects. The API calls
+// stay the same.
 //
-// A real integration fetches all of this from the tool — for Metabase that is
-// GET /api/card, GET /api/dashboard/:id and GET /api/alert. It is declared inline
-// here so the example runs with nothing but Coalesce Quality credentials; the
-// `omni_types` example shows the fetch half against a live BI tool.
+// A real integration gets all of this from the tool. For Metabase, that is
+// GET /api/card, GET /api/dashboard/:id and GET /api/alert. Here it is declared
+// in the code, so the example runs with only Coalesce Quality credentials. The
+// `omni_types` example shows how to fetch it from a live BI tool.
 
 // column is one field the tool exposes on a model, question or dashboard.
 type column struct {
@@ -46,9 +46,9 @@ type model struct {
 
 	// sqlName is the name a DOWNSTREAM query writes when it reads this model.
 	// Metabase itself compiles a nested question into a subquery and never emits
-	// such a name, so the integration picks one — and picks it from the model's
-	// stable id rather than its title, so renaming the model in Metabase does not
-	// silently repoint every binding. A readable name is used here to keep the
+	// such a name, so the integration picks one. It picks it from the model's
+	// stable id and not from its title, so a rename in Metabase does not silently
+	// change every binding. A readable name is used here to keep the
 	// example legible.
 	sqlName string
 
@@ -100,8 +100,8 @@ type card struct {
 	fromQuestion int
 
 	// fromWarehouseTable is set instead when a tile reads the warehouse directly
-	// — a filter widget populated from a column, say — rather than through a
-	// question.
+	// and not through a question (for example, a filter widget filled from a
+	// column).
 	fromWarehouseTable string
 
 	fromColumn string
@@ -128,7 +128,7 @@ type alert struct {
 	question int
 
 	// kind is the tool's own name for what the alert does. It is reported as-is
-	// and deliberately not mapped to a check category — see sync.go.
+	// and on purpose it is not mapped to a check category. See sync.go.
 	kind string
 }
 

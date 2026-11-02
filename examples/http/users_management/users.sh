@@ -14,9 +14,10 @@
 #
 # Prerequisites:
 # - curl and jq
-# - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET environment variables
+# - QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET environment variables
 #   (Read Users scope for `list`, Edit Users scope for the role commands)
-# - Optional API_ENDPOINT (defaults to developer.synq.io)
+# - Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+#   api.au.synq.io for AU)
 
 set -euo pipefail
 
@@ -27,11 +28,13 @@ if [[ -f .env ]]; then
   set +a
 fi
 
-API_ENDPOINT="${API_ENDPOINT:-developer.synq.io}"
+API_ENDPOINT="${QUALITY_API_ENDPOINT:-${API_ENDPOINT:-developer.synq.io}}"
+CLIENT_ID="${QUALITY_CLIENT_ID:-${SYNQ_CLIENT_ID:-}}"
+CLIENT_SECRET="${QUALITY_CLIENT_SECRET:-${SYNQ_CLIENT_SECRET:-}}"
 BASE_URL="https://${API_ENDPOINT}/api/users/v1"
 
-if [[ -z "${SYNQ_CLIENT_ID:-}" || -z "${SYNQ_CLIENT_SECRET:-}" ]]; then
-  echo "SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set" >&2
+if [[ -z "${CLIENT_ID}" || -z "${CLIENT_SECRET}" ]]; then
+  echo "QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set" >&2
   exit 1
 fi
 
@@ -68,8 +71,8 @@ TOKEN=""
 
 obtain_token() {
   TOKEN=$(curl -sS --fail-with-body "https://${API_ENDPOINT}/oauth2/token" \
-    --data-urlencode "client_id=${SYNQ_CLIENT_ID}" \
-    --data-urlencode "client_secret=${SYNQ_CLIENT_SECRET}" \
+    --data-urlencode "client_id=${CLIENT_ID}" \
+    --data-urlencode "client_secret=${CLIENT_SECRET}" \
     --data-urlencode "grant_type=client_credentials" | jq -r '.access_token')
 }
 

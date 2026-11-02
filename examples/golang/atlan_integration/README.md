@@ -1,24 +1,24 @@
-# Atlan Integration
+# Atlan integration
 
-You can set up and manage your integration with [Atlan](https://atlan.com/) using the API. To set it up, you will need the following.
+You can set up and manage your integration with [Atlan](https://atlan.com/) through the API. You need the following.
 
-## SYNQ Client Credentials
+## Coalesce Quality client credentials
 
-Head over to SYNQ ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) to create client credentials with the `Manage Extensions` scope. Set the credentials in the environment as `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`.
+Go to Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) and create client credentials with the `Manage Extensions` and `Read Integration Settings` scopes. Set them in the environment as `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`.
 
 ## Atlan API token
 
-You will need to create an API token with appropriate permissions on Atlan.
+Create an API token with the correct permissions in Atlan.
 
-- In `Governance > Personas` , create a new persona. Name it something indicative like `SYNQ API Access`.
-    - Within the persona, create the following policies:
-        - `Domain Policy` with `Read` permission for domains. You can choose `All Domains` or cherry pick the ones you want to be visible on SYNQ.
-        - `Metadata Policy` for each connection that you want to be visible on SYNQ. Choose the permission `Assets -> Read`
-- In `Admin > API Tokens` create a new API token. Name it something indicative like `SYNQ`
-    - Choose `Expiry Never`
-    - Add the persona you just created in the step above (`SYNQ API Access`)
-    - Download or copy the API token that you see.
+- In `Governance > Personas`, create a new persona. Give it a clear name, for example `Coalesce Quality API Access`.
+    - In the persona, create these policies:
+        - A `Domain Policy` with `Read` permission for domains. Choose `All Domains`, or only the domains you want to see in Coalesce Quality.
+        - A `Metadata Policy` for each connection you want to see in Coalesce Quality. Choose the permission `Assets -> Read`.
+- In `Admin > API Tokens`, create a new API token. Give it a clear name, for example `Coalesce Quality`.
+    - Choose `Expiry Never`.
+    - Add the persona you created in the step above (`Coalesce Quality API Access`).
+    - Download or copy the API token.
 
-Set the following enviroment variables:
-1. `ATLAN_TENANT_URL` - This is the URL you use to access Atlan (eg. `https://<your-org>.atlan.com`)
-2. `ATLAN_API_TOKEN`  - This is the API token you generated above.
+Set these environment variables:
+1. `ATLAN_TENANT_URL`: the URL you use to open Atlan (for example `https://<your-org>.atlan.com`).
+2. `ATLAN_API_TOKEN`: the API token you created above.

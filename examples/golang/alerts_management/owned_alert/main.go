@@ -24,12 +24,12 @@ func main() {
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	slackChannel := os.Getenv("SLACK_CHANNEL")
 
 	if clientID == "" || clientSecret == "" {
-		panic("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set")
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set")
 	}
 	if slackChannel == "" {
 		panic("SLACK_CHANNEL must be set (e.g., 'C1234567890')")

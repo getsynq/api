@@ -28,11 +28,11 @@ import (
 // Both are triggered with a single TriggerDatachecks call. The response contains
 // SqlTestResult entries for SQL tests and MonitorResult entries for custom monitors.
 //
-// Required auth scopes:
-//   - SCOPE_ENTITY_READ — resolve table FQNs to entity identifiers
-//   - SCOPE_DATACHECKS_SQLTESTS_EDIT — create/update SQL tests
-//   - SCOPE_DATACHECKS_TRIGGER — trigger SQL tests and custom monitors
-//   - SCOPE_MONITORS_CUSTOM_EDIT — create/update custom monitors
+// Required scopes:
+//   - Read Entities (SCOPE_ENTITY_READ): resolve table FQNs to entity identifiers
+//   - Edit SQL Tests (SCOPE_DATACHECKS_SQLTESTS_EDIT): create and update SQL tests
+//   - Trigger Data Checks (SCOPE_DATACHECKS_TRIGGER): trigger SQL tests and custom monitors
+//   - Edit Custom Monitors (SCOPE_MONITORS_CUSTOM_EDIT): create and update custom monitors
 
 func main() {
 	ctx := context.Background()
@@ -82,7 +82,7 @@ func main() {
 
 	tableIdentifier := coordResp.MatchedCoordinates[0].Candidates[0].Identifiers[0]
 
-	// Step 1: Create a SQL test without scheduling (on-demand — no Recurrence Rule).
+	// Step 1: Create a SQL test without a schedule (on demand, no recurrence rule).
 	{
 		_, err := sqltestapi.BatchUpsertSqlTests(ctx, &datacheckssqltestsv1.BatchUpsertSqlTestsRequest{
 			SqlTests: []*datacheckssqltestsv1.SqlTest{
@@ -108,18 +108,18 @@ func main() {
 
 	// Step 2: Create a custom monitor with on_demand schedule.
 	//
-	// Use the on_demand schedule to disable automatic scheduling — the monitor will only
-	// run when explicitly triggered via TriggerDatachecks. This is the recommended pattern
-	// for pipeline integration: create the monitor once, then call TriggerDatachecks after
-	// each table update to run checks synchronously and fail the pipeline on violations.
+	// The on_demand schedule turns off automatic runs. The monitor runs only when
+	// TriggerDatachecks triggers it. We recommend this pattern for pipelines: create the
+	// monitor once, then call TriggerDatachecks after each table update. The checks run
+	// synchronously, so the pipeline can fail when a check fails.
 	//
 	// Compare schedule options:
-	//   on_demand  — only runs when triggered via TriggerDatachecks (no automatic runs)
-	//   daily      — runs automatically once per day at a configured time
-	//   hourly     — runs automatically once per hour at a configured minute
+	//   on_demand: runs only when TriggerDatachecks triggers it (no automatic runs)
+	//   daily:     runs automatically once per day at a configured time
+	//   hourly:    runs automatically once per hour at a configured minute
 	//
-	// table_stats monitors row count, null rate, and uniqueness for all columns without
-	// requiring a time partitioning column. This makes them suitable for any table.
+	// table_stats tracks the row count, freshness and delay of a table. It does not need a
+	// time partitioning column, so you can use it on any table.
 	{
 		customMonitorClient := custommonitorsv1grpc.NewCustomMonitorsServiceClient(conn)
 		_, err := customMonitorClient.BatchCreateMonitor(ctx, &custommonitorsv1.BatchCreateMonitorRequest{
@@ -153,8 +153,8 @@ func main() {
 
 	// Step 3: Trigger all datachecks on the entity in a single call.
 	//
-	// TriggerDatachecks runs every datacheck — SQL tests and custom monitors — associated
-	// with the given entities. Batching all entities into one call avoids rate limiting.
+	// TriggerDatachecks runs every datacheck (SQL tests and custom monitors) of the given
+	// entities. Send all entities in one call to avoid rate limiting.
 	// The response contains a DatacheckResult per check; use GetSqlTestResult() and
 	// GetMonitorResult() to distinguish between the two types.
 	{
@@ -181,7 +181,7 @@ func main() {
 			}
 			// Fail the pipeline if any check detected a violation.
 			if result.Status == datachecksv1.DatacheckStatus_DATACHECK_STATUS_FAILED {
-				panic("datacheck FAILED — aborting pipeline")
+				panic("datacheck FAILED, stopping the pipeline")
 			}
 		}
 	}

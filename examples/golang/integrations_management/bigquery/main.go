@@ -32,13 +32,13 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := getenv("API_ENDPOINT", "developer.synq.io")
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 	apiURL := fmt.Sprintf("%s:443", host)
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	if clientID == "" || clientSecret == "" {
-		panic("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scope: Manage Integrations)")
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scope: Edit Integration Settings)")
 	}
 
 	// BigQuery connection settings. Defaults are illustrative placeholders.

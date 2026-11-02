@@ -155,9 +155,9 @@ func main() {
 	// Declare column-level lineage that SQL cannot express.
 	//
 	// A SQL definition is parsed and its column lineage derived from the tables the SQL names, so it
-	// can only reach objects that exist in a database. When the upstream is another custom entity —
-	// a dashboard reading from a semantic-layer model, say — there is no SQL to give, and this is
-	// how the result is stated directly.
+	// can only reach objects that exist in a database. When the upstream is another custom entity
+	// (for example, a dashboard that reads from a semantic-layer model), there is no SQL to give.
+	// Use this feature to state the result directly.
 	//
 	// The declaration is complete: every write replaces the previous one, so an edge left out is
 	// withdrawn and re-sending the same set changes nothing. That makes it safe to regenerate the
@@ -206,7 +206,7 @@ func main() {
 							Column:         "kernel_accounts.roles",
 						},
 						// An upstream on a connected platform works the same way. It does not
-						// have to exist yet — the edge appears once it is next ingested.
+						// have to exist yet. The edge appears when it is next ingested.
 						{
 							Upstream: &entitiesv1.Identifier{
 								Id: &entitiesv1.Identifier_ClickhouseTable{

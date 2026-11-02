@@ -1,27 +1,26 @@
 """
-Owners & ownership maintenance lifecycle — "alert routing as code" — using the
+Owners and ownership lifecycle ("alert routing as code") using the
 Coalesce Quality OwnersService (v1):
 
     create owner (+contacts) -> assign assets (ownership + alert config) ->
     list -> partial update (with etag) -> delete
 
-An owner is a named responsible party with notification channels (contacts). An
-ownership assigns a set of assets to an owner and configures the alerts routed
-to it. Owner is the resource; ownership is its sub-resource — deleting an owner
-deletes its ownerships.
+An owner is a named responsible party with notification channels (contacts).
+An ownership assigns a set of assets to an owner and configures the alerts sent
+to it. An ownership belongs to an owner, so deleting an owner deletes its
+ownerships.
 
-Both ids are caller-supplied UUIDs, so every write is idempotent. Together they
-replace clicking owners and alert rules together in the UI: define the
-responsible party, its channels, what it owns, and how it should be alerted —
-all as code.
+The caller supplies both ids (UUIDs), so every write is idempotent. With these
+two resources you define in code what you would otherwise set up in the UI: the
+responsible party, its channels, what it owns, and how it is alerted.
 
-To make the "assign a data product" path concrete, the example first creates a
-throwaway data product to own, and deletes it at the end.
+To show how to assign a data product, the example first creates a temporary
+data product to own, and deletes it at the end.
 
 Prerequisites:
-- SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET (scopes: Read/Edit Owners, Read/Edit
-  Ownership, Read/Edit Data Products).
-- Optionally API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
+- QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET (scopes: Read/Edit Owners,
+  Read/Edit Ownership, Read/Edit Data Products).
+- Optional QUALITY_API_ENDPOINT (defaults to developer.synq.io; api.us.synq.io for US,
   api.au.synq.io for AU).
 """
 
@@ -52,12 +51,12 @@ from synq.v1 import severity_pb2, pagination_pb2
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SYNQ_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SYNQ_CLIENT_SECRET")
-API_ENDPOINT = os.getenv("API_ENDPOINT", "developer.synq.io")
+CLIENT_ID = os.getenv("QUALITY_CLIENT_ID") or os.getenv("SYNQ_CLIENT_ID")
+CLIENT_SECRET = os.getenv("QUALITY_CLIENT_SECRET") or os.getenv("SYNQ_CLIENT_SECRET")
+API_ENDPOINT = os.getenv("QUALITY_API_ENDPOINT") or os.getenv("API_ENDPOINT") or "developer.synq.io"
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    raise SystemExit("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scopes: Read/Edit Owners, Ownership, Data Products)")
+    raise SystemExit("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scopes: Read/Edit Owners, Ownership, Data Products)")
 
 
 def print_ownership(label, o):
@@ -90,7 +89,7 @@ def main():
         product_id = str(uuid.uuid4())
         products.Upsert(dp_svc.UpsertRequest(
             id=product_id,
-            title="API Example — Owned Product",
+            title="API Example: Owned Product",
             folder="API Examples",
             priority=dp.Dataproduct.PRIORITY_P1,
             definition=dp_def.DataproductDefinition(parts=[
@@ -109,21 +108,21 @@ def main():
         owner_id = str(uuid.uuid4())
         owner = owners.UpsertOwner(svc.UpsertOwnerRequest(
             id=owner_id,
-            title="API Example — Data Platform",
+            title="API Example: Data Platform",
             contacts=svc.ContactList(contacts=[
                 contact.Contact(slack=contact.SlackChannelContact(channel="#data-alerts")),
                 contact.Contact(email=contact.EmailContact(recipient_emails=["data-team@example.com"])),
             ]),
         )).owner
         print(f"Created owner id={owner.id}")
-        # entity_id is server-derived (owner-<uuid>) — the value the alerts API
-        # and other surfaces accept as an owner reference.
+        # The server derives entity_id (owner-<uuid>). The alerts API and other
+        # APIs accept it as a reference to this owner.
         print(f"entity_id={owner.entity_id} contacts={len(owner.contacts)} etag={owner.etag}\n")
 
         # --- Step 2: Assign the data product to the owner (ownership #1) ---
         # The ownership's AlertConfig is the "routing as code": which severities
         # fire, whether upstream issues count, and the repeat strategy.
-        print("=== Step 2: Ownership #1 — own the data product, with alert routing ===")
+        print("=== Step 2: Ownership #1: own the data product, with alert routing ===")
         ownership_product_id = str(uuid.uuid4())
         up1 = owners.UpsertOwnership(svc.UpsertOwnershipRequest(
             owner_id=owner_id,
@@ -138,9 +137,9 @@ def main():
         print_ownership("ownership #1", up1)
 
         # --- Step 3: A second ownership selecting assets by query (ownership #2) ---
-        # Unlike a data-product definition (a leaf), an ownership query MAY
-        # reference data products and domains.
-        print("=== Step 3: Ownership #2 — select by ResolverQL, weekly digest ===")
+        # A data-product definition cannot reference data products or domains.
+        # An ownership query can.
+        print("=== Step 3: Ownership #2: select by ResolverQL, weekly digest ===")
         ownership_query_id = str(uuid.uuid4())
         up2 = owners.UpsertOwnership(svc.UpsertOwnershipRequest(
             owner_id=owner_id,
@@ -163,8 +162,8 @@ def main():
         print(f"Owner has {len(listed.ownerships)} ownership(s)\n")
 
         # --- Step 5: Partial owner update with optimistic concurrency ---
-        # Contacts are replace-semantics behind a presence wrapper: omit `contacts`
-        # to leave them unchanged, or send the full desired set to replace them.
+        # Omit `contacts` to leave them unchanged. Send the full list you want to
+        # replace them.
         print("=== Step 5: Replace contacts (add MS Teams) with etag ===")
         stale_etag = owner.etag
         owner = owners.UpsertOwner(svc.UpsertOwnerRequest(
@@ -197,7 +196,7 @@ def main():
         products.Delete(dp_svc.DeleteRequest(id=product_id, purge=True))
         print(f"Deleted ownerships, owner {owner_id}, and product {product_id}")
 
-        print("\nDone: owners & ownership lifecycle exercised end to end.")
+        print("\nDone: ran the owners and ownership lifecycle.")
 
 
 if __name__ == "__main__":

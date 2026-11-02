@@ -25,21 +25,20 @@ import (
 //
 // Required:
 //
-//	-client-id / SYNQ_CLIENT_ID, -client-secret / SYNQ_CLIENT_SECRET  — SCOPE_MONITORS_READ
-//	-monitor-path / MONITOR_PATH  — e.g. monitor::ch-prod::default::runs::volume
+//	-client-id / QUALITY_CLIENT_ID, -client-secret / QUALITY_CLIENT_SECRET: credentials with the Read Monitors scope
+//	-monitor-path / MONITOR_PATH: e.g. monitor::ch-prod::default::runs::volume
 //
 // Optional:
 //
-//	-endpoint / API_ENDPOINT     — developer.synq.io (EU, default), api.us.synq.io (US), api.au.synq.io (AU)
-//	-metrics-version / METRICS_VERSION  — default 1
-//	-from / FROM, -to / TO       — RFC3339 (default: last 7 days → now)
-//	-segments / SEGMENTS         — comma-separated; empty string is the unsegmented series.
-//	                               omit to return all segments
+//	-endpoint / QUALITY_API_ENDPOINT: developer.synq.io (EU, default), api.us.synq.io (US), api.au.synq.io (AU)
+//	-metrics-version / METRICS_VERSION: default 1
+//	-from / FROM, -to / TO: RFC3339 (default: last 7 days to now)
+//	-segments / SEGMENTS: comma-separated. An empty string is the unsegmented series. Omit to return all segments.
 func main() {
-	clientID := flag.String("client-id", os.Getenv("SYNQ_CLIENT_ID"), "OAuth client id (SYNQ_CLIENT_ID)")
-	clientSecret := flag.String("client-secret", os.Getenv("SYNQ_CLIENT_SECRET"), "OAuth client secret (SYNQ_CLIENT_SECRET)")
+	clientID := flag.String("client-id", os.Getenv("QUALITY_CLIENT_ID"), "OAuth client id (QUALITY_CLIENT_ID)")
+	clientSecret := flag.String("client-secret", os.Getenv("QUALITY_CLIENT_SECRET"), "OAuth client secret (QUALITY_CLIENT_SECRET)")
 	monitorPath := flag.String("monitor-path", os.Getenv("MONITOR_PATH"), "monitor synq path (MONITOR_PATH)")
-	host := flag.String("endpoint", envOr("API_ENDPOINT", "developer.synq.io"), "API host without port (API_ENDPOINT)")
+	host := flag.String("endpoint", envOr("QUALITY_API_ENDPOINT", "developer.synq.io"), "API host without port (QUALITY_API_ENDPOINT)")
 	metricsVersion := flag.Int("metrics-version", envInt("METRICS_VERSION", 1), "metrics version (METRICS_VERSION)")
 	fromRaw := flag.String("from", os.Getenv("FROM"), "RFC3339 start (FROM); default now-7d")
 	toRaw := flag.String("to", os.Getenv("TO"), "RFC3339 end (TO); default now")
@@ -54,7 +53,7 @@ func main() {
 	})
 
 	if *clientID == "" || *clientSecret == "" {
-		panic("-client-id / SYNQ_CLIENT_ID and -client-secret / SYNQ_CLIENT_SECRET must be set")
+		panic("-client-id / QUALITY_CLIENT_ID and -client-secret / QUALITY_CLIENT_SECRET must be set")
 	}
 	if *monitorPath == "" {
 		panic("-monitor-path / MONITOR_PATH must be set (e.g. monitor::<asset_path>::volume)")

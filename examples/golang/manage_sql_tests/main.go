@@ -114,7 +114,7 @@ func main() {
 		}
 
 		if len(upsertRes.CreatedIds)+len(upsertRes.UpdatedIds) != 2 {
-			panic("all tests were not created")
+			panic("not all tests were created")
 		}
 
 		fmt.Printf("Created tests: %+v\n\n", append(upsertRes.CreatedIds, upsertRes.GetUpdatedIds()...))
@@ -161,7 +161,7 @@ func main() {
 		}
 
 		if len(upsertRes.UpdatedIds) != 1 {
-			panic("all tests were not updated")
+			panic("not all tests were updated")
 		}
 
 		fmt.Printf("Updated tests: %+v\n\n", upsertRes.UpdatedIds)

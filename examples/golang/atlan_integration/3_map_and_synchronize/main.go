@@ -24,8 +24,8 @@ func main() {
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
 	config := &clientcredentials.Config{
@@ -52,9 +52,9 @@ func main() {
 	integrationsApi := extensionsatlanintegrationsv1grpc.NewAtlanIntegrationServiceClient(conn)
 	workflowsApi := extensionsatlanworkflowsv1grpc.NewAtlanWorkflowServiceClient(conn)
 
-	// Requires valid integration created in 1_setup_integration.
+	// Requires the valid integration that 1_setup_integration creates.
 
-	// Map Atlan connections to SYNQ integrations.
+	// Map Atlan connections to Coalesce Quality integrations.
 	// Use 2_fetch_atlan_resources to find visible connections.
 	{
 		_, err := workflowsApi.SetConnectionMappings(ctx, &extensionsatlanworkflowsv1.SetConnectionMappingsRequest{
@@ -79,7 +79,7 @@ func main() {
 	}
 
 	// Activate integration once you are ready to synchronize.
-	// This runs a synchronization every 5 minutes.
+	// This runs a synchronization on a regular schedule.
 	{
 		_, err := integrationsApi.Activate(ctx, &extensionsatlanintegrationsv1.ActivateRequest{
 			Activate: true,
@@ -89,8 +89,8 @@ func main() {
 		}
 	}
 
-	// You can also manually synchronize with atlan.
-	// This creates the dataproducts and associated domains visible from Atlan into SYNQ
+	// You can also start a synchronization manually.
+	// It creates the data products and domains visible in Atlan in Coalesce Quality.
 	{
 		resp, err := workflowsApi.Synchronize(ctx, &extensionsatlanworkflowsv1.SynchronizeRequest{})
 		if err != nil {

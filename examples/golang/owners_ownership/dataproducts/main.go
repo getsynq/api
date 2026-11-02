@@ -1,21 +1,21 @@
-// Data-products maintenance lifecycle using the Coalesce Quality
-// DataproductsService (v2):
+// Data product lifecycle with the Coalesce Quality DataproductsService (v2):
 //
 //	upsert -> batch-get -> set-definition -> add/remove parts -> list-members ->
 //	list -> partial update (with etag) -> delete
 //
 // A data product is a named, owned grouping of assets with a membership
-// definition. The id is a caller-supplied UUID, so every write is idempotent —
-// re-running this example converges instead of duplicating.
+// definition. You choose the id (a UUID), so every write is idempotent. If you
+// run this example again, it updates the same data product and does not create
+// a duplicate.
 //
-// The membership definition is authored here in ResolverQL, the compact text
-// query language (see lib/resolverql). The server compiles and stores it
-// canonically and echoes it back on reads as `rendered_resolver_ql`.
+// The membership definition is written here in ResolverQL, a short text query
+// language. The server compiles it, stores it in canonical form, and returns it
+// on reads as `rendered_resolver_ql`.
 //
 // Prerequisites:
-//   - SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET with scopes:
+//   - QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET with scopes:
 //     Read/Edit Data Products.
-//   - Optionally API_ENDPOINT (defaults to the EU endpoint developer.synq.io;
+//   - Optionally QUALITY_API_ENDPOINT (defaults to the EU endpoint developer.synq.io;
 //     other regions: api.us.synq.io for US, api.au.synq.io for AU).
 package main
 
@@ -40,12 +40,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	host := getenv("API_ENDPOINT", "developer.synq.io")
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 
-	clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	if clientID == "" || clientSecret == "" {
-		panic("SYNQ_CLIENT_ID and SYNQ_CLIENT_SECRET must be set (scopes: Read/Edit Data Products)")
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set (scopes: Read/Edit Data Products)")
 	}
 
 	// --- Connect (OAuth2 client-credentials) ---
@@ -77,7 +77,7 @@ func main() {
 	fmt.Println("=== Step 1: Create data product ===")
 	created, err := client.Upsert(ctx, &dpv2.UpsertRequest{
 		Id:          id,
-		Title:       proto.String("API Example — Orders"),
+		Title:       proto.String("API Example: Orders"),
 		Description: proto.String("Created by the owners_ownership Go example."),
 		Folder:      proto.String("API Examples"),
 		Priority:    dpv2.Dataproduct_PRIORITY_P1.Enum(),
@@ -95,7 +95,7 @@ func main() {
 	// --- Step 2: Replace the whole definition (SetDefinition) ---
 	// A definition is a list of parts OR'd together. Here a single ResolverQL
 	// query part. Replace the placeholder query with one that matches assets in
-	// your workspace (copy paths/ids from the Synq UI).
+	// your workspace (copy paths and ids from the Coalesce Quality app).
 	fmt.Println("=== Step 2: Set definition (ResolverQL) ===")
 	setResp, err := client.SetDefinition(ctx, &dpv2.SetDefinitionRequest{
 		Id:   id,
@@ -191,7 +191,7 @@ func main() {
 	staleEtag := dp.GetEtag()
 	upd, err := client.Upsert(ctx, &dpv2.UpsertRequest{
 		Id:    id,
-		Title: proto.String("API Example — Orders (P2)"),
+		Title: proto.String("API Example: Orders (P2)"),
 		// Only title + priority set; description/folder/definition untouched.
 		Priority: dpv2.Dataproduct_PRIORITY_P2.Enum(),
 		Etag:     proto.String(dp.GetEtag()),
@@ -202,7 +202,7 @@ func main() {
 	dp = upd.GetDataproduct()
 	fmt.Printf("Updated title=%q priority=%s new etag=%s\n", dp.GetTitle(), dp.GetPriority(), dp.GetEtag())
 
-	// Re-using the now-stale etag is rejected — the concurrency guard.
+	// The server rejects the stale etag. This is the concurrency guard.
 	_, staleErr := client.Upsert(ctx, &dpv2.UpsertRequest{
 		Id:    id,
 		Title: proto.String("should be rejected"),

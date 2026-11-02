@@ -2,14 +2,14 @@
 Modelling a BI tool Coalesce Quality has no integration for, end to end.
 
 The estate this builds is four layers deep, and each hop uses a DIFFERENT
-lineage mechanism, on purpose — picking the right one per hop is the whole skill
-of modelling a new tool:
+lineage mechanism, on purpose. Picking the right one for each hop is the main
+skill in modelling a new tool:
 
     warehouse tables                 (already in Coalesce Quality)
       |  SQL, resolved by warehouse address
       v
     BI models                        custom entities, SqlDefinition
-      |  SQL, resolved by a BINDING — a model has no warehouse address
+      |  SQL, resolved by a BINDING (a model has no warehouse address)
       v
     BI questions                     custom entities, SqlDefinition + references
       |  no SQL at all: declared column lineage
@@ -22,7 +22,7 @@ of modelling a new tool:
     and off to one side, a BI alert   custom entity, CheckCategory feature
                                       attached with a check relationship
 
-Read metabase.py first — it is the tool's own metadata, and the mapping below is
+Read metabase.py first. It is the tool's own metadata, and the mapping below is
 easier to follow once you know what is being mapped.
 
 Everything written here is idempotent: re-running the script produces the same
@@ -77,7 +77,7 @@ from synq.entities.v1 import (
 )
 
 # Custom type ids are workspace-wide and yours to allocate: 1..1000, one number
-# per kind of thing your tool has. Pick a free band and keep it — an entity's
+# per kind of thing your tool has. Pick a free band and keep it. An entity's
 # type is its id, so reusing a number silently reclassifies everything that had
 # it. check_type_ids_are_free below refuses to start if one of these is already
 # in use under another name.
@@ -125,8 +125,8 @@ ICON_WARNING = (
 class Config:
     def __init__(self):
         # developer.synq.io (EU) is the default. The other deployments are
-        # api.us.synq.io (US) and api.au.synq.io (AU); set QUALITY_API_ENDPOINT
-        # to the one your workspace lives in.
+        # api.us.synq.io (US) and api.au.synq.io (AU). Set QUALITY_API_ENDPOINT
+        # to the one your workspace is in.
         self.endpoint = os.environ.get("QUALITY_API_ENDPOINT") or "developer.synq.io"
 
         # The warehouse the BI tool queries. These name the DEFAULT execution
@@ -165,7 +165,7 @@ class Clients:
 # A custom entity's id is yours, and it is the one thing that must never change:
 # every feature, relationship and declared edge hangs off it, and changing it
 # creates a second entity rather than renaming the first. So build it from what
-# is STABLE in the source system — the object's id — and never from its title.
+# is STABLE in the source system (the object's id), never from its title.
 # The kind is in the id purely so a human reading a lineage graph can tell a
 # model from a question.
 
@@ -228,7 +228,7 @@ def now() -> Timestamp:
 
 
 # -----------------------------------------------------------------------------
-# Step 1 — types
+# Step 1: types
 # -----------------------------------------------------------------------------
 
 
@@ -305,7 +305,7 @@ def sync_types(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 2 — entities
+# Step 2: entities
 # -----------------------------------------------------------------------------
 
 
@@ -390,7 +390,7 @@ def sync_entities(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 3 — schemas
+# Step 3: schemas
 # -----------------------------------------------------------------------------
 
 
@@ -424,7 +424,7 @@ def sync_schemas(api: Clients, cfg: Config):
                 feature=features_service_pb2.Feature(
                     entity_id=entity_id,
                     # One schema feature per entity, so the id is a constant.
-                    # Never generate it — a fresh id on every run creates a new
+                    # Never generate it. A fresh id on every run creates a new
                     # feature each time instead of replacing the previous one.
                     feature_id="schema",
                     schema=schema,
@@ -442,7 +442,7 @@ def sync_schemas(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 4 — model SQL, resolved by warehouse address
+# Step 4: model SQL, resolved by warehouse address
 # -----------------------------------------------------------------------------
 
 
@@ -454,8 +454,8 @@ def warehouse_context(cfg: Config) -> database_context_pb2.DatabaseContext:
     warehouse object.
 
     object_name is deliberately left empty. It is for a definition that
-    MATERIALIZES something — `CREATE TABLE x AS SELECT ...` — and nothing in a BI
-    tool does; a model is a saved query, not a table.
+    MATERIALIZES something (`CREATE TABLE x AS SELECT ...`), and nothing in a BI
+    tool does. A model is a saved query, not a table.
     """
     return database_context_pb2.DatabaseContext(
         # BigQuery has no instance above the project, so instance_name stays
@@ -469,8 +469,8 @@ def warehouse_context(cfg: Config) -> database_context_pb2.DatabaseContext:
 def sync_model_sql(api: Clients, cfg: Config):
     """
     Declare the models' SQL. Every table name in it is a real warehouse object,
-    so it resolves by address and no binding is needed — this is the plain case,
-    and the one to reach for whenever it fits.
+    so it resolves by address and no binding is needed. This is the plain case,
+    and the one to use whenever it fits.
 
     Coalesce Quality parses the SQL and derives BOTH grains from it: the model
     appears downstream of `order_items` and `products`, and `net_revenue` traces
@@ -498,7 +498,7 @@ def sync_model_sql(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 5 — question SQL, resolved by a binding
+# Step 5: question SQL, resolved by a binding
 # -----------------------------------------------------------------------------
 
 
@@ -509,8 +509,8 @@ def sync_question_sql(api: Clients, cfg: Config):
     A question reads a MODEL, and a model is not something the warehouse can
     address: it has no database, schema and table for a lookup to land on. Left
     alone, `FROM order_items_enriched` resolves to nothing, is dropped, and the
-    question ends up with no upstream at all — with no error anywhere, and an
-    empty result indistinguishable from a query that genuinely reads nothing.
+    question ends up with no upstream at all. There is no error anywhere, and the
+    empty result looks the same as a query that really reads nothing.
 
     `references` is how the definition says what such a name means. Each binding
     pairs a name AS THE SQL WRITES IT with the entity it stands for, and the
@@ -521,8 +521,8 @@ def sync_question_sql(api: Clients, cfg: Config):
     Three things worth knowing:
 
       - A binding wins over the warehouse. If a real table happened to share the
-        name, the binding is still what resolves — which is what makes it usable
-        as a manual override, not just a fallback.
+        name, the binding is still what resolves. So you can also use a
+        binding as a manual override.
       - Empty parts of a binding default from the definition's own
         database_context, exactly as an unqualified name in the SQL does. So a
         bare object_name matches both `FROM order_items_enriched` and
@@ -575,7 +575,7 @@ def sync_question_sql(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 6 — dashboard column lineage, declared
+# Step 6: dashboard column lineage, declared
 # -----------------------------------------------------------------------------
 
 
@@ -586,7 +586,7 @@ def sync_dashboard_column_lineage(api: Clients, cfg: Config):
     A dashboard runs no SQL: a tile takes a question's result and shows it,
     possibly under a different label. There is nothing for a parser to read, so
     the answer is declared instead of derived. That is the rule of thumb for the
-    whole exercise — SqlDefinition when the component has SQL, ColumnLineage when
+    whole exercise: SqlDefinition when the component has SQL, ColumnLineage when
     it does not.
 
     The declaration is COMPLETE and replaces the previous one whole: an edge left
@@ -613,7 +613,7 @@ def sync_dashboard_column_lineage(api: Clients, cfg: Config):
                     upstream=upstream,
                     upstream_column=c.from_column,
                     # The two sides are named independently, so they need not
-                    # match — here the dashboard prefixes each field with the
+                    # match. Here the dashboard prefixes each field with the
                     # tile it sits on.
                     column=c.field,
                 )
@@ -634,7 +634,7 @@ def sync_dashboard_column_lineage(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 7 — the tool's own definitions, as code
+# Step 7: the tool's own definitions, as code
 # -----------------------------------------------------------------------------
 
 
@@ -647,7 +647,7 @@ def sync_code(api: Clients, cfg: Config):
 
     Code and SqlDefinition are not alternatives: SqlDefinition is parsed and
     produces lineage, Code is displayed and produces history. The models below
-    have both — the SQL for the graph, the card definition for the diff.
+    have both: the SQL for the graph, the card definition for the diff.
 
     Unlike schema and SQL, an entity may carry several code features, so the
     feature id is the file name it stands for.
@@ -671,7 +671,7 @@ def sync_code(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 8 — the serialized export in git
+# Step 8: the serialized export in git
 # -----------------------------------------------------------------------------
 
 
@@ -708,7 +708,7 @@ def sync_git_file_references(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 9 — relationships with no columns
+# Step 9: relationships with no columns
 # -----------------------------------------------------------------------------
 
 
@@ -716,9 +716,9 @@ def sync_relationships(api: Clients, cfg: Config):
     """
     Join each subscription to the dashboard it sends.
 
-    A subscription has no columns of its own — it is a delivery, not a
-    transformation — so there is nothing to state at column grain and a plain
-    relationship is the right shape. Reach for one whenever the edge is real but
+    A subscription has no columns of its own (it is a delivery, not a
+    transformation), so there is nothing to state at column grain and a plain
+    relationship is the right shape. Use one whenever the edge is real but
     the column mapping is not: a reverse-ETL job, an export, a downstream
     service.
 
@@ -745,7 +745,7 @@ def sync_relationships(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 10 — the alert as a check
+# Step 10: the alert as a check
 # -----------------------------------------------------------------------------
 
 
@@ -759,9 +759,9 @@ def sync_alerts(api: Clients, cfg: Config):
     The categories are deliberately left unset. `category` (what kind of check
     this is, mechanically) and `governance_category` (what the check is for) are
     resolved by the workspace's own categorisation rules, and a value sent here
-    OUTRANKS those rules. Deriving one from `kind` — which is the obvious thing
-    to do, and wrong — would silently switch off every rule the workspace wrote,
-    with nothing in the product explaining why. Send what the tool actually says
+    OUTRANKS those rules. Deriving one from `kind` is the obvious thing to do,
+    and it is wrong: it silently switches off every rule the workspace wrote, and
+    nothing in the product explains why. Send what the tool actually says
     (`package` and `kind`) and let the rules decide the rest.
     """
     for a in ALERTS:
@@ -793,7 +793,7 @@ def sync_alerts(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 11 — the group, which is what makes deletion work
+# Step 11: the group, which is what makes deletion work
 # -----------------------------------------------------------------------------
 
 
@@ -804,11 +804,10 @@ def sync_group(api: Clients, cfg: Config):
     The server holds the previous set, diffs it, and deletes what is no longer
     there. That is the whole reason to use a group: without one, an integration
     has to remember on its own side what it created last time in order to clean
-    up after a dashboard someone deleted in the BI tool — and any state it keeps
-    for that will eventually disagree with reality.
+    up after a dashboard someone deleted in the BI tool, and any state it keeps
+    for that will eventually be wrong.
 
-    Send the FULL set every run. A partial send is not an update, it is a
-    deletion of everything omitted.
+    Send the FULL set every run. A partial send deletes everything it leaves out.
     """
     ids = every_entity()
     resp = api.groups.UpsertEntitiesGroup(
@@ -822,7 +821,7 @@ def sync_group(api: Clients, cfg: Config):
 
 
 # -----------------------------------------------------------------------------
-# Step 12 — executions
+# Step 12: executions
 # -----------------------------------------------------------------------------
 
 
@@ -899,7 +898,7 @@ def poll(budget_seconds, once):
         if done:
             return lineage
         if time.time() > deadline:
-            print(f"   (gave up after {budget_seconds}s — the graph may still be building)")
+            print(f"   (gave up after {budget_seconds}s, the graph may still be building)")
             return lineage
         time.sleep(10)
 
@@ -908,8 +907,8 @@ def verify(api: Clients, cfg: Config, budget_seconds=120):
     """
     Read the graph back.
 
-    None of this is needed to write the estate — it is here because the way this
-    goes wrong is silent. A missing binding, a schema that was never declared, a
+    None of this is needed to write the estate. It is here because when this
+    goes wrong, nothing tells you. A missing binding, a schema that was never declared, a
     column edge whose table edge is absent: each of them leaves a valid-looking
     write and an empty result. Reading the lineage back after a sync is the only
     thing that distinguishes "no upstreams" from "upstreams that did not
@@ -1024,8 +1023,8 @@ def main():
             grpc.metadata_call_credentials(TokenAuth(token_source)),
         ),
         # Without an explicit authority the port travels in the Host header and
-        # every RPC comes back UNIMPLEMENTED with no message — which reads as a
-        # missing service rather than a routing miss.
+        # every RPC comes back UNIMPLEMENTED with no message. That looks like a
+        # missing service, but the cause is routing.
         options=(("grpc.default_authority", cfg.endpoint),),
     )
 

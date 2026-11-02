@@ -1,5 +1,5 @@
 """
-The BI tool's own metadata — the input half of the example.
+The BI tool's own metadata: the input half of the example.
 
 Metabase stands in for "a BI tool Coalesce Quality has no integration for". It is
 a real product, and its object model is the one most BI tools have under
@@ -17,10 +17,9 @@ Rename the dataclasses and the mapping in sync.py is unchanged, which is the
 point of reading this file first: modelling a new tool is a mapping exercise, not
 an API exercise.
 
-A real integration fetches all of this from the tool — for Metabase that is
+A real integration fetches all of this from the tool. For Metabase that is
 GET /api/card, GET /api/dashboard/:id and GET /api/alert. It is declared inline
-here so the example runs with nothing but Coalesce Quality credentials; the
-`integrations_management` example shows the fetch half against a live system.
+here so the example runs with nothing but Coalesce Quality credentials.
 """
 
 from dataclasses import dataclass, field
@@ -52,7 +51,7 @@ class Model:
 
     # The name a DOWNSTREAM query writes when it reads this model. Metabase
     # itself compiles a nested question into a subquery and never emits such a
-    # name, so the integration picks one — and picks it from the model's stable
+    # name, so the integration picks one. It picks it from the model's stable
     # id rather than its title, so renaming the model in Metabase does not
     # silently repoint every binding. A readable name is used here to keep the
     # example legible.
@@ -95,8 +94,8 @@ class Card:
     field: str
     from_column: str
     from_question: Optional[int] = None
-    # Set instead when a tile reads the warehouse directly — a filter widget
-    # populated from a column, say — rather than through a question.
+    # Set instead when a tile reads the warehouse directly, without a question
+    # in between (for example, a filter widget filled from a column).
     from_warehouse_table: Optional[str] = None
 
 
@@ -147,7 +146,7 @@ class Alert:
     description: str
     question: int
     # The tool's own name for what the alert does. Reported as-is and
-    # deliberately not mapped to a check category — see sync.py.
+    # deliberately not mapped to a check category (see sync.py).
     kind: str
 
 

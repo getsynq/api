@@ -1,19 +1,20 @@
 """
 Credential resolution for the governance-as-code tool.
 
-Auth is kept SEPARATE from the governance definition file — the YAML never holds
-secrets. Credentials come from CLI flags or the environment, in priority order:
+Credentials never live in the governance definition file. They come from CLI
+flags or the environment, in this order:
 
   1. A bearer token       (--token             / QUALITY_TOKEN)
   2. OAuth2 client creds  (--client-id/-secret / QUALITY_CLIENT_ID + QUALITY_CLIENT_SECRET)
   3. A cached browser login for this tool (`governance-as-code login`)
 
-The cached login is stored under this tool's own config directory
-(``$XDG_CONFIG_HOME/coalesce-quality`` by default, override with
-``GOVERNANCE_HOME``) — not shared with other tools.
+The cached login is stored in this tool's own config directory
+(``$XDG_CONFIG_HOME/coalesce-quality``, or ``~/.config/coalesce-quality`` when
+``XDG_CONFIG_HOME`` is not set; override with ``GOVERNANCE_HOME``). Other
+Coalesce Quality CLIs do not read it.
 
-The legacy ``SYNQ_*`` names are also accepted for back-compat; ``QUALITY_*`` wins.
-The ``synq.io`` endpoints are the live product addresses.
+Each ``QUALITY_*`` variable also accepts its ``SYNQ_*`` alias. When both are set,
+``QUALITY_*`` wins. The ``synq.io`` endpoints are the live product addresses.
 """
 
 import base64
@@ -30,6 +31,10 @@ from datetime import datetime, timezone
 
 import grpc
 import requests
+
+
+class AuthError(Exception):
+    """A credential or sign-in problem; the CLI reports it like any other error."""
 
 
 def config_home():
@@ -124,7 +129,7 @@ def _cached_login(endpoint):
             return tok["access_token"]
         refresh = tok.get("refresh_token")
         if not refresh or not os.path.exists(client_path):
-            raise RuntimeError("cached login expired; run `governance-as-code login` again")
+            raise AuthError("cached login expired; run `governance-as-code login` again")
         with open(client_path) as f:
             client_id = json.load(f)["client_id"]
         r = requests.post(_token_url(endpoint), data={
@@ -161,7 +166,7 @@ def login(endpoint):
         except OSError:
             continue
     if httpd is None:
-        raise SystemExit(f"could not bind a callback port ({ports})")
+        raise AuthError(f"could not bind a callback port ({ports})")
 
     # Reuse or dynamically register a public client.
     client_id = None
@@ -169,11 +174,10 @@ def login(endpoint):
         with open(client_path) as f:
             client_id = json.load(f).get("client_id")
     if not client_id:
-        # Dynamic client registration (RFC 7591). The metadata below is what the
-        # consent screen shows — keep client_name/client_uri friendly. logo_uri
-        # can be added if you host a logo the IdP can fetch.
+        # Dynamic client registration (RFC 7591). The consent screen shows this
+        # metadata, so keep client_name and client_uri readable.
         reg = requests.post(meta["registration_endpoint"], json={
-            "client_name": "Coalesce Quality — governance-as-code (CLI)",
+            "client_name": "Coalesce Quality governance-as-code (CLI)",
             "client_uri": "https://coalesce.io",
             "logo_uri": "https://schemas.synq.io/coalesce-quality-logo.svg",
             "redirect_uris": [f"http://127.0.0.1:{p}/callback" for p in ports],
@@ -201,7 +205,7 @@ def login(endpoint):
     httpd.handle_request()  # serves exactly one /callback
     result = getattr(httpd, "result", {})
     if result.get("state") != state or not result.get("code"):
-        raise SystemExit("login failed (state mismatch or no code)")
+        raise AuthError("login failed (state mismatch or no code)")
 
     tok = requests.post(_token_url(endpoint), data={
         "grant_type": "authorization_code", "code": result["code"],
@@ -235,7 +239,8 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
 # ---- resolution ------------------------------------------------------------
 
-def _env(*names):
+def getenv(*names):
+    """Return the first non-empty variable, so an empty QUALITY_* does not hide its SYNQ_* alias."""
     for n in names:
         v = os.getenv(n)
         if v:
@@ -244,10 +249,10 @@ def _env(*names):
 
 
 def resolve(endpoint, token=None, client_id=None, client_secret=None):
-    # QUALITY_* is preferred; SYNQ_* accepted for back-compat.
-    token = token or _env("QUALITY_TOKEN", "SYNQ_TOKEN")
-    client_id = client_id or _env("QUALITY_CLIENT_ID", "SYNQ_CLIENT_ID")
-    client_secret = client_secret or _env("QUALITY_CLIENT_SECRET", "SYNQ_CLIENT_SECRET")
+    # QUALITY_* wins; SYNQ_* is the alias.
+    token = token or getenv("QUALITY_TOKEN", "SYNQ_TOKEN")
+    client_id = client_id or getenv("QUALITY_CLIENT_ID", "SYNQ_CLIENT_ID")
+    client_secret = client_secret or getenv("QUALITY_CLIENT_SECRET", "SYNQ_CLIENT_SECRET")
     if token:
         return _static(token)
     if client_id and client_secret:
@@ -255,15 +260,18 @@ def resolve(endpoint, token=None, client_id=None, client_secret=None):
     cached = _cached_login(endpoint)
     if cached:
         return cached
-    raise SystemExit(
+    raise AuthError(
         "no credentials: set QUALITY_TOKEN, or QUALITY_CLIENT_ID + QUALITY_CLIENT_SECRET, "
         "or run `governance-as-code login`."
     )
 
 
 def channel(endpoint, auth_plugin):
+    # Accept both "host" and "host:port", the form other Coalesce Quality CLIs use.
+    host = endpoint.split(":")[0]
+    target = endpoint if ":" in endpoint else f"{endpoint}:443"
     creds = grpc.composite_channel_credentials(
         grpc.ssl_channel_credentials(), grpc.metadata_call_credentials(auth_plugin))
-    ch = grpc.secure_channel(f"{endpoint}:443", creds, options=(("grpc.default_authority", endpoint),))
+    ch = grpc.secure_channel(target, creds, options=(("grpc.default_authority", host),))
     grpc.channel_ready_future(ch).result(timeout=10)
     return ch

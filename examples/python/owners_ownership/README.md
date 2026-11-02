@@ -1,49 +1,48 @@
-# Owners, Ownership & Data Products (Python)
+# Owners, ownership and data products (Python)
 
-This example manages **governance as code** with two new APIs:
+This example manages governance as code with two APIs:
 
-- **`DataproductsService` (v2)** — data products: named, owned groupings of
-  assets with a membership definition, priority and folder.
-- **`OwnersService` (v1)** — owners and ownership: "alert routing as code". An
-  owner is a responsible party with notification channels (contacts); an
-  ownership assigns assets to an owner and configures the alerts routed to it.
+- `DataproductsService` (v2) manages data products. A data product is a named,
+  owned group of assets with a membership definition, a priority and a folder.
+- `OwnersService` (v1) manages owners and ownership ("alert routing as code").
+  An owner is a responsible party with notification channels (contacts). An
+  ownership assigns assets to an owner and configures the alerts sent to it.
 
-Two runnable scripts (the Python counterparts of the `golang/owners_ownership`
-example):
+There are two scripts. They are the Python versions of the
+[`golang/owners_ownership`](../../golang/owners_ownership) example.
 
-- **`dataproducts.py`** — the data-product maintenance lifecycle:
-  create → set/patch definition (ResolverQL parts) → list resolved members →
-  batch-get → partial update (with `etag`) → delete.
-- **`owners.py`** — the owners lifecycle: create an owner with contacts → assign
-  a data product to it (ownership + alert config) → add a query-based ownership →
-  list → replace contacts (with `etag`) → delete. It creates a throwaway data
-  product to own and cleans everything up at the end.
+- `dataproducts.py` runs the data-product lifecycle: create, set and change the
+  definition (ResolverQL parts), list the resolved members, batch-get, partial
+  update (with `etag`), delete.
+- `owners.py` runs the owners lifecycle: create an owner with contacts, assign a
+  data product to it (ownership and alert config), add a query-based ownership,
+  list, replace the contacts (with `etag`), delete. It creates a temporary data
+  product to own, and deletes everything at the end.
 
-Both create real resources, exercise the API, and delete them again, so they are
-safe to re-run.
+Both scripts create real resources, call the API, and delete the resources at
+the end, so you can run them again safely.
 
-> Looking for a declarative, file-driven way to manage these? See the
-> **`governance-as-code`** tool under `proto_public/_repo/governance-as-code`.
+> To manage these resources from files instead, see the
+> [`governance-as-code`](../../../governance-as-code) tool.
 
 ## Prerequisites
 
-Create client credentials at
-Coalesce Quality → API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) with these
-scopes and export them:
+Create client credentials in Coalesce Quality → API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) with these
+scopes, and export them:
 
-- `dataproducts.py`: **Read/Edit Data Products**.
-- `owners.py`: **Read/Edit Owners**, **Read/Edit Ownership**, **Read/Edit Data
-  Products**.
+- `dataproducts.py`: Read Data Products and Edit Data Products.
+- `owners.py`: Read Owners, Edit Owners, Read Ownership, Edit Ownership, Read
+  Data Products and Edit Data Products.
 
 ```bash
-export SYNQ_CLIENT_ID=...
-export SYNQ_CLIENT_SECRET=...
-# Optional; defaults to the EU endpoint developer.synq.io.
-# For other regions: api.us.synq.io for US, api.au.synq.io for AU.
-export API_ENDPOINT=developer.synq.io
+export QUALITY_CLIENT_ID=...
+export QUALITY_CLIENT_SECRET=...
+# Optional. The default is the EU endpoint, developer.synq.io.
+# Other regions: api.us.synq.io for US, api.au.synq.io for AU.
+export QUALITY_API_ENDPOINT=developer.synq.io
 ```
 
-## Setup & running
+## Setup and running
 
 ```bash
 python -m venv venv && source venv/bin/activate
@@ -53,23 +52,24 @@ python dataproducts.py
 python owners.py
 ```
 
-## Key API concepts
+## API concepts
 
-- **Caller-supplied UUID ids → idempotent writes.** You pass the `id` on create;
-  repeating a request converges instead of duplicating.
-- **Partial updates.** On `Upsert`, a field you set is written and a field you
-  omit is left unchanged. Contacts / definitions use a presence wrapper: an
-  omitted list means "leave unchanged", a present (possibly empty) list means
-  "replace".
-- **Optimistic concurrency via `etag`.** Read the `etag`, pass it back on
-  update/delete to change only the version you last saw. A stale `etag` is
-  rejected with `ABORTED` (HTTP 409). Omit it for last-write-wins.
-- **`entity_id` is the cross-API reference.** Server-derived
-  (`dataproduct-<uuid>`, `owner-<uuid>`); read it here and pass it to other APIs
-  (lineage, entities, alerts). To assign a product to an owner, pass the bare
-  `id`.
-- **Ownership = routing as code.** An ownership's `AlertConfig` (severities,
-  `notify_upstream`, ongoing strategy) is what the alerts API reports and filters
-  on, attributed via the owner's `entity_id` and the ownership id.
-- **Data products are leaves.** A data-product definition may not reference
-  another data product or domain. An *ownership* query may.
+- The caller supplies the ids (UUIDs), so writes are idempotent. You pass the
+  `id` on create, and if you repeat a request, it updates the same resource and
+  does not create a copy.
+- Partial updates. On `Upsert`, a field you set is written and a field you omit
+  is left unchanged. Contacts and definitions use a presence wrapper: if you omit
+  the list, it is left unchanged. If you send a list (even an empty one), it
+  replaces the stored list.
+- Optimistic concurrency with `etag`. Read the `etag` and pass it back on update
+  or delete, so you only change the version you last read. A stale `etag` is
+  rejected with `ABORTED` (HTTP 409). Omit it if the last write should win.
+- `entity_id` is the reference you use in other APIs. The server derives it
+  (`dataproduct-<uuid>`, `owner-<uuid>`). Read it here and pass it to other APIs
+  (lineage, entities, alerts). To assign a data product to an owner, pass either
+  the bare `id` or the `entity_id`.
+- An ownership is alert routing as code. The alerts API reports and filters on
+  an ownership's `AlertConfig` (severities, `notify_upstream`, ongoing
+  strategy), and attributes it with the owner's `entity_id` and the ownership id.
+- A data-product definition cannot reference another data product or a domain.
+  An ownership query can.

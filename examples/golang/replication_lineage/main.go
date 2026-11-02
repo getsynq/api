@@ -9,11 +9,11 @@
 //	  v
 //	Snowflake table                  (already in Coalesce Quality)
 //
-// Two tables cannot be joined by a relationship directly: a relationship needs a
-// custom entity on at least one side. That is not a limitation to work around,
-// it is the model — the rows do not move by themselves, something copies them,
-// and that something is what fails, lags or drops a column. So it gets an
-// entity, one per replicated table (a "stream"), and the two tables hang off it.
+// A relationship cannot join two tables directly: it needs a custom entity on at
+// least one side. This matches what happens: the rows do not move by themselves.
+// A tool copies them, and the tool is what fails, lags or drops a column. So the
+// tool gets an entity, one per replicated table (a "stream"), and both tables
+// connect to it.
 //
 // One entity per stream, never one for the whole connection: with a single
 // entity in the middle, every source table would read as upstream of every
@@ -51,9 +51,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Custom type ids are workspace-wide and yours to allocate: 1..1000. Pick a free
-// one and keep it — an entity's type is its id, so reusing a number silently
-// reclassifies everything that had it.
+// Custom type ids are workspace-wide and you choose them: 1..1000. Pick a free
+// one and keep it. An entity's type is its id, so if you reuse a number, every
+// entity that had it silently gets the new type.
 const typeStream = 60
 
 // groupID makes a re-sync self-cleaning: a stream removed from the replication
@@ -186,10 +186,10 @@ func main() {
 // streamSql is the hop, written as the SQL a replication would run if source and
 // target were in one database.
 //
-// The dialect is the SOURCE side's, and nothing in the SQL is ever executed: it
-// is parsed for lineage only. The two names it uses are placeholders — they only
-// have to match the references' object_name — which is what lets the target sit
-// in a different warehouse from the source.
+// The dialect is the SOURCE side's. The SQL is never executed, only parsed for
+// lineage. The two names it uses are placeholders that only have to match the
+// references' object_name. This is what lets the target be in a different
+// warehouse from the source.
 func streamSql(s stream) *customfeaturesv1.SqlDefinition {
 	targetColumns := make([]string, 0, len(s.columns))
 	selectList := make([]string, 0, len(s.columns))

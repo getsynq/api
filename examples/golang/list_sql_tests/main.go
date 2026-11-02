@@ -16,8 +16,8 @@ import (
 func main() {
 	ctx := context.Background()
 
-	token := os.Getenv("SYNQ_TOKEN")
-	host := os.Getenv("API_ENDPOINT")
+	token := os.Getenv("QUALITY_TOKEN")
+	host := os.Getenv("QUALITY_API_ENDPOINT")
 
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)

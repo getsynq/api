@@ -8,7 +8,6 @@
 import json
 import os
 import re
-import time
 import urllib.request
 import urllib.error
 from urllib.parse import unquote_plus, quote
@@ -17,8 +16,15 @@ import boto3
 
 S3 = boto3.client("s3")
 
-SYNQ_TOKEN = os.environ["SYNQ_TOKEN"]
-SYNQ_API_URL = os.environ.get("SYNQ_API_URL", "https://developer.synq.io")
+# The Airflow integration's logs upload token. SYNQ_TOKEN is accepted as an alias.
+QUALITY_TOKEN = os.environ.get("QUALITY_TOKEN") or os.environ.get("SYNQ_TOKEN")
+if not QUALITY_TOKEN:
+    raise RuntimeError("QUALITY_TOKEN must be set")
+# https://developer.synq.io (EU), https://api.us.synq.io (US) or
+# https://api.au.synq.io (AU). SYNQ_API_URL is accepted as an alias.
+QUALITY_API_URL = (
+    os.environ.get("QUALITY_API_URL") or os.environ.get("SYNQ_API_URL") or "https://developer.synq.io"
+)
 LOG_PREFIX = os.environ.get("LOG_PREFIX", "")
 
 # Pattern: dag_id=<v>/run_id=<v>/task_id=<v>/attempt=<n>.log
@@ -28,10 +34,10 @@ LOG_PATH_RE = re.compile(
 
 
 def handler(event, _):
-    """Read airflow log objects from S3 and forward them to the SYNQ API.
+    """Read Airflow log objects from S3 and forward them to the Coalesce Quality API.
 
-    Invoked via SQS event source mapping. Each SQS record body contains
-    a JSON-encoded S3 event notification with its own Records list.
+    An SQS event source mapping invokes this handler. The body of each SQS
+    record is a JSON-encoded S3 event notification with its own Records list.
     """
     total = 0
     for sqs_record in event.get("Records", []):
@@ -57,13 +63,16 @@ def handler(event, _):
             obj = S3.get_object(Bucket=bucket, Key=key)
             body = obj["Body"].read().decode("utf-8")
 
-            now = int(time.time())
+            # The object's LastModified time is the log time. A retry of the same
+            # object sends the same log_time, so the server replaces the row
+            # instead of adding a second one.
+            log_time = int(obj["LastModified"].timestamp())
             url = (
-                f"{SYNQ_API_URL}/api/ingest/airflow/v1"
+                f"{QUALITY_API_URL}/api/ingest/airflow/v1"
                 f"/{quote(dag_id, safe='')}"
                 f"/{quote(task_id, safe='')}"
                 f"/{quote(run_id, safe='')}"
-                f"/logs?attempt={attempt}&logTime.seconds={now}&logTime.nanos=0"
+                f"/logs?attempt={attempt}&logTime.seconds={log_time}&logTime.nanos=0"
             )
 
             payload = json.dumps(body).encode("utf-8")
@@ -73,7 +82,7 @@ def handler(event, _):
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {SYNQ_TOKEN}",
+                    "Authorization": f"Bearer {QUALITY_TOKEN}",
                 },
                 method="POST",
             )

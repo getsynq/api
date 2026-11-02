@@ -3,15 +3,15 @@ module github.com/getsynq/api/examples/golang/3_create_features
 go 1.25.3
 
 require (
-	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20260616084327-c48cce8d4d51.1
-	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.11-20260616084327-c48cce8d4d51.1
+	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20260918175424-08ac973bcbc5.1
+	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.12-20260918175424-08ac973bcbc5.2
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/grpc v1.81.1
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20250717185734-6c6e0d3c608e.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260709200747-435963d16310.2 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect

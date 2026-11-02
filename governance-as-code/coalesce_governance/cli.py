@@ -1,30 +1,32 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 """
-governance-as-code — manage Coalesce Quality data products, owners, ownership and
-alert routing declaratively from a YAML file, via the public API.
+governance-as-code: manage Coalesce Quality data products, owners, ownership and
+alert routing from a YAML file, through the public API.
 
 Commands:
-  status   (default) Live workspace summary + next steps. Running with no command
-           shows this, not help text.
-  login    Sign in via the browser and cache a token for this tool.
-  plan     Validate the file and show what apply would change (no writes to the API).
-  apply    Apply the file (create/update). Human runs get a confirm prompt;
-           agents pass --yes.
+  status   (default) Live workspace summary and next steps. Running with no
+           command shows this instead of the help text.
+  login    Sign in with the browser and cache a token for this tool.
+  plan     Validate the file and show what apply would change (no writes).
+  apply    Create or update what the file describes. Asks for confirmation
+           unless you pass --yes.
   prune    Delete the resources the file manages.
-  export   Read products + owners from the workspace into a YAML file.
-  pull     Refresh the fields of resources listed in a file from the API,
-           preserving comments and formatting.
+  export   Write the workspace's data products and owners to a YAML file.
+  pull     Refresh the data products and owners listed in a file from the API.
+           Comments and formatting are kept.
 
-Identity (as in the API): every resource has a UUID `id`. Omit it and the tool
-either adopts an existing resource with the same title, or generates one — either
-way it writes the id back to the file so future runs are idempotent.
+Identity works as in the API: every resource has a UUID `id`. If you omit it,
+the tool adopts an existing resource with the same title or generates a new id.
+It then writes the id back to the file, so later runs are idempotent.
 
-Regions: --region eu|us|au, or --endpoint to override.
+Region: --region eu|us|au (or QUALITY_REGION), or --endpoint (or
+QUALITY_API_ENDPOINT) for a different host.
 Auth (never in the definition file): --token / QUALITY_TOKEN, or
---client-id/--client-secret / QUALITY_CLIENT_ID+SECRET, or a cached `login`.
-Agentic use: `apply --yes`, `plan --json`; errors are structured on stdout;
-exit 0 = ok, 1 = error, 2 = bad flags.
+--client-id and --client-secret / QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET,
+or a cached `login`.
+For agents: `apply --yes`, `plan --json`. Errors print as JSON on stdout.
+Exit codes: 0 ok, 1 error, 2 bad flags.
 """
 
 import argparse
@@ -56,11 +58,16 @@ class CliError(Exception):
 
 
 def resolve_endpoint(args):
+    # Flags beat the environment, and an endpoint beats a region.
     if args.endpoint:
         return args.endpoint
-    if os.getenv("API_ENDPOINT"):
-        return os.getenv("API_ENDPOINT")
-    region = (args.region or "eu").lower()
+    region = args.region
+    if not region:
+        endpoint = auth.getenv("QUALITY_API_ENDPOINT", "SYNQ_API_ENDPOINT", "API_ENDPOINT")
+        if endpoint:
+            return endpoint
+        region = auth.getenv("QUALITY_REGION", "SYNQ_REGION") or "eu"
+    region = region.lower()
     if region not in REGIONS:
         raise CliError(f"unknown region {region!r}; choose from: {', '.join(REGIONS)}")
     return REGIONS[region]
@@ -93,8 +100,8 @@ def load_doc(path):
 
 
 def check_unique_ids(doc):
-    """Reject a file that reuses the same id for two resources — ids are the
-    identity, so a duplicate would make two resources fight over one."""
+    """Reject a file that uses the same id for two resources. The id is the
+    identity, so two resources with one id would overwrite each other."""
     seen = {}
     def note(kind, node):
         i = node.get("id")
@@ -286,7 +293,7 @@ def print_plan(actions):
 def do_apply(doc, client, actions, assume_yes):
     to_write = [a for a in actions if a["action"] in ("create", "update")]
     if not to_write:
-        print("Nothing to apply — workspace already matches the file.")
+        print("Nothing to apply. The workspace already matches the file.")
         return
     confirm_or_die(f"Apply {len(to_write)} change(s)?", assume_yes)
     wanted = {a["id"] for a in to_write}
@@ -326,7 +333,7 @@ def do_prune(doc, client, assume_yes):
     victims = [("owner", o["id"], o["title"]) for o in owners if o.get("id") in present_owners] + \
               [("dataproduct", p["id"], p["title"]) for p in products if p.get("id") in present_products]
     if not victims:
-        print("Nothing to prune — none of the file's resources exist.")
+        print("Nothing to prune. None of the file's resources exist.")
         return
     for kind, _, title in victims:
         print(f"  - {kind:<11} {title}")
@@ -489,27 +496,42 @@ def _connect(args):
     return api.Client(auth.channel(endpoint, plugin))
 
 
+def _add_connection_args(parser, default):
+    parser.add_argument("--region", choices=sorted(REGIONS), default=default,
+                        help="eu (default), us or au (else QUALITY_REGION)")
+    parser.add_argument("--endpoint", default=default, help="API host, overrides --region (else QUALITY_API_ENDPOINT)")
+    parser.add_argument("--token", default=default, help="bearer token (else QUALITY_TOKEN)")
+    parser.add_argument("--client-id", default=default, help="OAuth2 client id (else QUALITY_CLIENT_ID)")
+    parser.add_argument("--client-secret", default=default, help="OAuth2 client secret (else QUALITY_CLIENT_SECRET)")
+
+
 def build_parser():
     ap = argparse.ArgumentParser(prog="governance-as-code", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--region", choices=sorted(REGIONS), help="EU (default), US, AU")
-    ap.add_argument("--endpoint", help="override the API host directly")
-    ap.add_argument("--token", help="bearer token (else QUALITY_TOKEN)")
-    ap.add_argument("--client-id", help="OAuth2 client id (else QUALITY_CLIENT_ID)")
-    ap.add_argument("--client-secret", help="OAuth2 client secret (else QUALITY_CLIENT_SECRET)")
+    _add_connection_args(ap, None)
+    # The same options are accepted after the command (`login --region us`).
+    # SUPPRESS keeps a value given before the command when none is given after it.
+    common = argparse.ArgumentParser(add_help=False)
+    _add_connection_args(common, argparse.SUPPRESS)
     sub = ap.add_subparsers(dest="cmd")
-    sub.add_parser("status", help="live workspace summary (default)")
-    sub.add_parser("login", help="browser sign-in; cache a token for this tool")
+    sub.add_parser("status", parents=[common], help="live workspace summary (default)")
+    sub.add_parser("login", parents=[common], help="browser sign-in; cache a token for this tool")
     cp = sub.add_parser("completion", help="print shell completion setup")
     cp.add_argument("shell", nargs="?", choices=["bash", "zsh", "fish"], default="bash")
-    for name in ("plan", "apply", "prune", "pull"):
-        sp = sub.add_parser(name)
+    file_cmds = {
+        "plan": "show what apply would change (no writes)",
+        "apply": "create or update what the file describes",
+        "prune": "delete the resources the file manages",
+        "pull": "refresh the file from the workspace, keeping comments",
+    }
+    for name, help_text in file_cmds.items():
+        sp = sub.add_parser(name, parents=[common], help=help_text)
         sp.add_argument("-f", "--file", default="governance.yaml")
         if name in ("apply", "prune"):
             sp.add_argument("-y", "--yes", action="store_true", help="skip the confirmation prompt")
         if name in ("plan", "apply"):
             sp.add_argument("--json", action="store_true", help="print the plan as JSON")
-    ep = sub.add_parser("export", help="read the workspace into a YAML file")
+    ep = sub.add_parser("export", parents=[common], help="read the workspace into a YAML file")
     ep.add_argument("-o", "--out", default="-", help="output file (default stdout)")
     return ap
 
@@ -556,7 +578,7 @@ def main():
     args = build_parser().parse_args()  # argparse exits 2 on unknown flags
     try:
         sys.exit(run(args))
-    except CliError as e:
+    except (CliError, auth.AuthError) as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
     except Exception as e:

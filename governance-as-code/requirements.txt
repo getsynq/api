@@ -1,5 +1,5 @@
-# For a plain venv install. Prefer `uv tool install .` or `pipx install .`
-# (see README) — those read pyproject.toml.
+# For a plain venv install. `uv tool install .` and `pipx install .` read
+# pyproject.toml instead (see the README).
 --extra-index-url https://buf.build/gen/python
 getsynq-api-grpc-python
 grpcio

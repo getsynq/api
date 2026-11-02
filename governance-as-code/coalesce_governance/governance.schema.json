@@ -3,7 +3,7 @@
   "$id": "https://schemas.synq.io/governance-as-code/draft/governance.schema.json",
   "x-status": "draft",
   "title": "Coalesce Quality: Governance as Code",
-  "description": "Declaratively manage your Coalesce Quality data products, owners, ownership and alert routing from a single YAML file. Define the desired state, then preview and apply it with the governance-as-code tool. No credentials live in the file — authentication is provided separately.",
+  "description": "Manage your Coalesce Quality data products, owners, ownership and alert routing from one YAML file. Describe the state you want, then preview and apply it with the governance-as-code tool. The file holds no credentials. Authentication is configured separately.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -14,7 +14,7 @@
     "id": {
       "type": "string",
       "format": "uuid",
-      "description": "Stable UUID id (as in the API). Omit to have one generated and written back on the next run."
+      "description": "Stable UUID, as in the API. If you omit it, the tool adopts an existing resource with the same title or generates an id, and writes it back to the file on the next run."
     },
     "dataproduct": {
       "type": "object",
@@ -29,7 +29,7 @@
         "resolver_ql": {
           "type": "string",
           "minLength": 1,
-          "description": "Membership query in ResolverQL. A data product is a leaf: no in_dataproduct / in_domain. E.g. with_type(\"table\", filter=with_name(\"orders\"))."
+          "description": "Membership query in ResolverQL. A data product is a leaf, so in_product and in_domain are not allowed. Example: with_type(\"table\", filter=with_name(\"orders\"))."
         }
       }
     },
@@ -51,10 +51,10 @@
       "maxProperties": 1,
       "description": "Exactly one channel kind.",
       "properties": {
-        "slack": { "type": "string" },
+        "slack": { "type": "string", "description": "Slack channel name (for example #data-alerts) or channel id." },
         "email": { "type": "array", "items": { "type": "string", "format": "email" }, "minItems": 1 },
-        "users": { "type": "array", "items": { "type": "string", "format": "email" }, "minItems": 1 },
-        "ms_teams": { "type": "string" }
+        "users": { "type": "array", "items": { "type": "string", "format": "email" }, "minItems": 1, "description": "Emails of Coalesce Quality users in the workspace." },
+        "ms_teams": { "type": "string", "description": "Microsoft Teams channel id." }
       }
     },
     "ownership": {
@@ -63,7 +63,7 @@
       "oneOf": [{ "required": ["dataproduct"] }, { "required": ["query"] }],
       "properties": {
         "id": { "$ref": "#/definitions/id" },
-        "dataproduct": { "type": "string", "minLength": 1, "description": "A data product to own (its whole membership), referenced by its `id` or its `title` (title is matched among the products in this file)." },
+        "dataproduct": { "type": "string", "minLength": 1, "description": "A data product to own, with all its members. Use its `id`, or its `title` if the product is defined in this file." },
         "query": { "$ref": "#/definitions/ownership_query" },
         "alert": { "$ref": "#/definitions/alert" }
       }
@@ -74,18 +74,18 @@
       "required": ["resolver_ql"],
       "properties": {
         "name": { "type": "string", "maxLength": 500 },
-        "resolver_ql": { "type": "string", "minLength": 1, "description": "Asset selection in ResolverQL; MAY reference data products and domains." }
+        "resolver_ql": { "type": "string", "minLength": 1, "description": "Asset selection in ResolverQL. It can reference data products (in_product) and domains (in_domain)." }
       }
     },
     "alert": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "severities": { "type": "array", "items": { "enum": ["WARN", "ERROR", "FATAL"] }, "uniqueItems": true, "description": "Empty = no failure alerts routed." },
+        "severities": { "type": "array", "items": { "enum": ["WARN", "ERROR", "FATAL"] }, "uniqueItems": true, "description": "Failure severities that send an alert. Empty means no failure alerts." },
         "notify_upstream": { "type": "boolean" },
         "allow_sql_test_audit_link": { "type": "boolean" },
         "ongoing": {
-          "description": "Repeat strategy for a still-open issue.",
+          "description": "Repeat notifications for an issue that is still open: disabled (no repeats), stream (on every failed run) or { schedule: <cron> } (a digest).",
           "oneOf": [
             { "enum": ["disabled", "stream"] },
             { "type": "object", "additionalProperties": false, "required": ["schedule"], "properties": { "schedule": { "type": "string" } } }

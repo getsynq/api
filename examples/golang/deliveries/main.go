@@ -1,12 +1,12 @@
-// Reads and replays the notifications Coalesce Quality sent to one of your
-// integrations — a webhook, PagerDuty or Opsgenie — using
+// Reads and replays the notifications that Coalesce Quality sent to one of your
+// integrations (a webhook, PagerDuty or Opsgenie) with
 // synq.deliveries.v1.DeliveriesService.
 //
 // It answers, in order: what has this integration been sent, which of those
 // failed, what exactly did we send and what came back, and does it work now.
 //
-// Reading needs a token with SCOPE_DELIVERY_READ; the redelivery at the end needs
-// SCOPE_DELIVERY_EDIT.
+// Reading needs credentials with the Read Deliveries scope (SCOPE_DELIVERY_READ).
+// The redelivery at the end needs Send and Replay Deliveries (SCOPE_DELIVERY_EDIT).
 package main
 
 import (
@@ -25,8 +25,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// The integration whose deliveries to read. Leave it empty to read the whole
-// workspace's feed instead — every filter below works either way.
+// The integration whose deliveries to read. Leave it empty to read the feed of
+// the whole workspace. Every filter below works in both cases.
 const integrationID = "d577b364-a867-11ed-b4b2-fe8020e7ba25"
 
 func main() {
@@ -112,9 +112,9 @@ func listRecent(ctx context.Context, client deliveriesv1grpc.DeliveriesServiceCl
 			IntegrationId: proto(integrationID),
 			Since:         since,
 			Pagination:    &synqv1.Pagination{Cursor: proto(cursor), PageSize: proto(int32(50))},
-			// Which alert configuration selected this integration for the event —
-			// the answer to "why did I get this". Off by default because it costs a
-			// second read per delivery.
+			// Which alert configuration selected this integration for the event.
+			// This answers "why did I get this". It is off by default, because it
+			// costs a second read per delivery.
 			IncludeRouting: true,
 		})
 		if err != nil {
@@ -133,9 +133,9 @@ func listRecent(ctx context.Context, client deliveriesv1grpc.DeliveriesServiceCl
 }
 
 // firstFailed narrows the same feed to one outcome. A delivery is FAILED when the
-// destination rejected it outright or was still failing when the retries ran out —
-// distinct from PENDING, where an attempt is still to come, which is why the
-// outcome is filtered on rather than the status code.
+// destination rejected it, or still failed when the retries ran out. PENDING
+// means another attempt is still to come. This is why the filter is on the
+// outcome and not on the status code.
 func firstFailed(
 	ctx context.Context,
 	client deliveriesv1grpc.DeliveriesServiceClient,
@@ -171,8 +171,8 @@ func showAttempts(ctx context.Context, client deliveriesv1grpc.DeliveriesService
 			attempt.GetAttemptedAt().AsTime().Format(time.RFC3339),
 			attempt.GetDuration().AsDuration())
 
-		// No response arrived at all — a connection failure, a TLS error, a
-		// timeout. There is no status to read in that case.
+		// No response arrived (a connection failure, a TLS error, a timeout).
+		// In that case there is no status to read.
 		if attempt.GetError() != "" {
 			fmt.Printf("    no response: %s\n", attempt.GetError())
 			continue
@@ -191,12 +191,12 @@ func showAttempts(ctx context.Context, client deliveriesv1grpc.DeliveriesService
 	}
 }
 
-// printHeaders shows every header that was present, including the ones whose value
-// is withheld. A withheld value still reports a fingerprint — stable for the same
-// value — so two deliveries can be compared to tell whether a credential changed,
-// which is the question without disclosing the answer. Signature headers are not
-// withheld: they are a digest of the body, not the secret, and reproducing a
-// failed verification needs the exact bytes.
+// printHeaders shows every header that was present, also the ones whose value is
+// withheld. A withheld value still has a fingerprint, which is the same for the
+// same value. So you can compare two deliveries to see whether a credential
+// changed, without seeing the credential. Signature headers are not withheld:
+// they are a digest of the body and not the secret, and you need the exact bytes
+// to reproduce a failed verification.
 func printHeaders(prefix string, headers []*deliveriesv1.Header) {
 	for _, header := range headers {
 		if header.GetWithheld() {
@@ -208,9 +208,9 @@ func printHeaders(prefix string, headers []*deliveriesv1.Header) {
 	}
 }
 
-// redeliver sends a stored event again, which is how to confirm a fix — or that a
-// rotated signing secret is accepted, since the replay is signed with the current
-// one rather than the secret the original used.
+// redeliver sends a stored event again. Use it to confirm a fix, or to confirm
+// that a rotated signing secret is accepted: the replay is signed with the
+// current secret, not with the secret of the original delivery.
 //
 // The replay is a new delivery with its own id, linked to the original through
 // redelivery_of, and it appears in the feed like any other. The send is
@@ -260,8 +260,8 @@ func describe(delivery *deliveriesv1.Delivery) {
 		delivery.GetEventType(),
 		delivery.GetSubject().GetTitle())
 
-	// Set exactly when nothing was sent, and each value names something specific
-	// to change — an event type to subscribe to, an integration to enable.
+	// Set only when nothing was sent. Each value names what to change, for
+	// example an event type to subscribe to or an integration to enable.
 	if delivery.GetSkipReason() != deliveriesv1.SkipReason_SKIP_REASON_UNSPECIFIED {
 		fmt.Printf("      nothing sent: %s\n", delivery.GetSkipReason())
 	} else {
@@ -269,8 +269,8 @@ func describe(delivery *deliveriesv1.Delivery) {
 			delivery.GetAttemptCount(), delivery.GetStatusCode(), delivery.GetDuration().AsDuration())
 	}
 
-	// Shared by every integration the same event reached, and the same value the
-	// receiver got in the webhook payload — so filter ListDeliveries on it to see
+	// The same for every integration that the event reached, and the same value
+	// the receiver got in the webhook payload. Filter ListDeliveries on it to see
 	// where else one event went.
 	fmt.Printf("      event %s\n", delivery.GetEventId())
 

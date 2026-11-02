@@ -12,11 +12,11 @@ import (
 
 // verify reads the graph back.
 //
-// None of this is needed to write the estate — it is here because the way this
-// goes wrong is silent. A missing binding, a schema that was never declared, a
-// column edge whose table edge is absent: each of them leaves a valid-looking
-// write and an empty result. Reading the lineage back after a sync is the only
-// thing that distinguishes "no upstreams" from "upstreams that did not resolve".
+// The writes do not need this step. It is here because mistakes are silent. A
+// missing binding, a schema that was never declared, a column edge without its
+// table edge: each one gives a write that looks valid and an empty result. Only
+// reading the lineage back after a sync shows the difference between "no
+// upstreams" and "upstreams that did not resolve".
 //
 // Lineage is computed asynchronously from what was written: the SQL is parsed,
 // bindings are resolved, the graph is rebuilt. So this polls rather than asking
@@ -80,7 +80,7 @@ func poll(ctx context.Context, budget time.Duration, once func() (*lineagev1.Lin
 			return lin
 		}
 		if time.Now().After(deadline) {
-			fmt.Printf("   (gave up after %s — the graph may still be building)\n", budget)
+			fmt.Printf("   (gave up after %s, the graph may still be building)\n", budget)
 			return lin
 		}
 		select {

@@ -25,21 +25,20 @@ import (
 //
 // Required:
 //
-//	-client-id / SYNQ_CLIENT_ID, -client-secret / SYNQ_CLIENT_SECRET  — SCOPE_MONITORS_READ
-//	-synq-path / SYNQ_PATH  — monitor synq path, e.g. monitor::ch-prod::default::runs::volume
+//	-client-id / QUALITY_CLIENT_ID, -client-secret / QUALITY_CLIENT_SECRET: credentials with the Read Monitors scope
+//	-synq-path / SYNQ_PATH: monitor synq path, e.g. monitor::ch-prod::default::runs::volume
 //
 // Optional:
 //
-//	-endpoint / API_ENDPOINT     — developer.synq.io (EU, default), api.us.synq.io (US), api.au.synq.io (AU)
-//	-metrics-version / METRICS_VERSION  — omit to use the monitor's current version
-//	-from / FROM, -to / TO       — RFC3339; omit for server defaults (to=now, from=to-30d; max lookback 30d)
-//	-segments / SEGMENTS         — comma-separated; empty string is the unsegmented series.
-//	                               omit to return all segments
+//	-endpoint / QUALITY_API_ENDPOINT: developer.synq.io (EU, default), api.us.synq.io (US), api.au.synq.io (AU)
+//	-metrics-version / METRICS_VERSION: omit to use the monitor's current version
+//	-from / FROM, -to / TO: RFC3339; omit for server defaults (to=now, from=to-30d; max lookback 30d)
+//	-segments / SEGMENTS: comma-separated. An empty string is the unsegmented series. Omit to return all segments.
 func main() {
-	clientID := flag.String("client-id", os.Getenv("SYNQ_CLIENT_ID"), "OAuth client id (SYNQ_CLIENT_ID)")
-	clientSecret := flag.String("client-secret", os.Getenv("SYNQ_CLIENT_SECRET"), "OAuth client secret (SYNQ_CLIENT_SECRET)")
+	clientID := flag.String("client-id", os.Getenv("QUALITY_CLIENT_ID"), "OAuth client id (QUALITY_CLIENT_ID)")
+	clientSecret := flag.String("client-secret", os.Getenv("QUALITY_CLIENT_SECRET"), "OAuth client secret (QUALITY_CLIENT_SECRET)")
 	synqPath := flag.String("synq-path", envOr("SYNQ_PATH", os.Getenv("MONITOR_PATH")), "monitor synq path (SYNQ_PATH / MONITOR_PATH)")
-	host := flag.String("endpoint", envOr("API_ENDPOINT", "developer.synq.io"), "API host without port (API_ENDPOINT)")
+	host := flag.String("endpoint", envOr("QUALITY_API_ENDPOINT", "developer.synq.io"), "API host without port (QUALITY_API_ENDPOINT)")
 	metricsVersionRaw := flag.String("metrics-version", os.Getenv("METRICS_VERSION"), "metrics version (METRICS_VERSION); omit for current")
 	fromRaw := flag.String("from", os.Getenv("FROM"), "RFC3339 start (FROM); omit for server default")
 	toRaw := flag.String("to", os.Getenv("TO"), "RFC3339 end (TO); omit for now")
@@ -54,7 +53,7 @@ func main() {
 	})
 
 	if *clientID == "" || *clientSecret == "" {
-		panic("-client-id / SYNQ_CLIENT_ID and -client-secret / SYNQ_CLIENT_SECRET must be set")
+		panic("-client-id / QUALITY_CLIENT_ID and -client-secret / QUALITY_CLIENT_SECRET must be set")
 	}
 	if *synqPath == "" {
 		panic("-synq-path / SYNQ_PATH must be set (e.g. monitor::<asset_path>::volume)")

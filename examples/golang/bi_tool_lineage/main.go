@@ -1,14 +1,14 @@
 // Modelling a BI tool Coalesce Quality has no integration for, end to end.
 //
-// The estate this builds is four layers deep, and each hop uses a DIFFERENT
-// lineage mechanism, on purpose — picking the right one per hop is the whole
-// skill of modelling a new tool:
+// The program builds four layers, and each hop uses a DIFFERENT lineage
+// mechanism on purpose. To model a new tool, you pick the right mechanism for
+// each hop:
 //
 //	warehouse tables                 (already in Coalesce Quality)
 //	  |  SQL, resolved by warehouse address
 //	  v
 //	BI models                        custom entities, SqlDefinition
-//	  |  SQL, resolved by a BINDING — a model has no warehouse address
+//	  |  SQL, resolved by a BINDING (a model has no warehouse address)
 //	  v
 //	BI questions                     custom entities, SqlDefinition + references
 //	  |  no SQL at all: declared column lineage
@@ -21,11 +21,11 @@
 //	and off to one side, a BI alert   custom entity, CheckCategory feature
 //	                                  attached with a check relationship
 //
-// Read metabase.go first — it is the tool's own metadata, and the mapping in
-// sync.go is easier to follow once you know what is being mapped.
+// Read metabase.go first. It holds the tool's own metadata, and the mapping in
+// sync.go is easier to follow when you know what it maps.
 //
-// Everything written here is idempotent: re-running the program produces the
-// same estate, which is what lets it be a cron job rather than a migration.
+// Every write here is idempotent: if you run the program again, you get the
+// same result. So you can run it on a schedule.
 package main
 
 import (
@@ -43,10 +43,10 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 )
 
-// Custom type ids are workspace-wide and yours to allocate: 1..1000, one number
-// per kind of thing your tool has. Pick a free band and keep it — an entity's
-// type is its id, so reusing a number silently reclassifies everything that had
-// it. checkTypeIdsAreFree below refuses to start if one of these is already in
+// Custom type ids are workspace-wide and you choose them: 1..1000, one number
+// for each kind of object your tool has. Pick a free range and keep it. An
+// entity's type is its id, so if you reuse a number, every entity that had it
+// silently gets the new type. checkTypeIdsAreFree below refuses to start if one of these is already in
 // use under another name.
 const (
 	typeModel        = 40
@@ -56,10 +56,9 @@ const (
 	typeAlert        = 44
 )
 
-// groupID is the entity group every entity below is a member of. The group is
-// what makes a re-sync self-cleaning: content deleted in the BI tool simply
-// stops being sent, and the server deletes it. Nothing has to be remembered on
-// this side between runs.
+// groupID is the entity group that holds every entity below. The group cleans up
+// on each sync: content deleted in the BI tool is no longer sent, and the server
+// deletes it. This side does not have to remember anything between runs.
 const groupID = "metabase"
 
 type config struct {

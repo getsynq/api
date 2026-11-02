@@ -18,12 +18,12 @@ import (
 // Identifiers
 // -----------------------------------------------------------------------------
 //
-// A custom entity's id is yours, and it is the one thing that must never change:
-// every feature, relationship and declared edge hangs off it, and changing it
-// creates a second entity rather than renaming the first. So build it from what
-// is STABLE in the source system — the object's id — and never from its title.
-// The kind is in the id purely so a human reading a lineage graph can tell a
-// model from a question.
+// You choose a custom entity's id, and it must never change. Every feature,
+// relationship and declared edge is attached to it. If you change it, you create
+// a second entity, and the first one is not renamed. So build it from what is
+// STABLE in the source system (the object's id), never from its title. The kind
+// is in the id only so that a person who reads a lineage graph can tell a model
+// from a question.
 
 func modelID(id int) *entitiesv1.Identifier { return customID(fmt.Sprintf("metabase::model::%d", id)) }
 func questionID(id int) *entitiesv1.Identifier {
@@ -43,10 +43,10 @@ func customID(id string) *entitiesv1.Identifier {
 	}
 }
 
-// warehouseTable names an entity Coalesce Quality already has, from an
-// integration you did not write. Custom entities and native ones are the same
-// kind of thing to every API here: an edge, a binding or a declared column
-// works across the boundary without ceremony.
+// warehouseTable names an entity that Coalesce Quality already has, from an
+// integration you did not write. Every API here treats custom entities and native
+// entities the same way: an edge, a binding or a declared column works between
+// them with no extra steps.
 func warehouseTable(cfg config, table string) *entitiesv1.Identifier {
 	return &entitiesv1.Identifier{
 		Id: &entitiesv1.Identifier_BigqueryTable{
@@ -82,7 +82,7 @@ func everyEntity() []*entitiesv1.Identifier {
 }
 
 // -----------------------------------------------------------------------------
-// Step 1 — types
+// Step 1: types
 // -----------------------------------------------------------------------------
 
 // checkTypeIdsAreFree refuses to start if one of this example's type ids is
@@ -166,7 +166,7 @@ func syncTypes(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 2 — entities
+// Step 2: entities
 // -----------------------------------------------------------------------------
 
 // syncEntities creates every entity before anything points at one. Two later
@@ -250,17 +250,17 @@ func syncEntities(ctx context.Context, api *clients, cfg config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 3 — schemas
+// Step 3: schemas
 // -----------------------------------------------------------------------------
 
 // syncSchemas declares what columns each entity has.
 //
-// This is not decoration, and it is the step most easily skipped. A declared
-// schema is what lets the next entity down read the columns of this one: a
-// `SELECT *` over a bound model expands only over a model whose columns are
-// known, and a declared column edge only shows against a column the entity
-// actually has. A dashboard with no schema still appears in table-level
-// lineage, and silently carries no column lineage at all.
+// This step is required, and it is the easiest one to skip. The declared schema
+// lets the next entity downstream read the columns of this one: a `SELECT *`
+// over a bound model expands only when the model's columns are known, and a
+// declared column edge shows only for a column that the entity has. A dashboard
+// with no schema still appears in table-level lineage, but it silently has no
+// column lineage at all.
 func syncSchemas(ctx context.Context, api *clients, _ config) error {
 	put := func(id *entitiesv1.Identifier, cols []column) error {
 		schema := &customfeaturesv1.Schema{
@@ -279,8 +279,8 @@ func syncSchemas(ctx context.Context, api *clients, _ config) error {
 			Feature: &customv1.Feature{
 				EntityId: id,
 				// One schema feature per entity, so the id is a constant. Never
-				// generate it — a fresh id on every run creates a new feature
-				// each time instead of replacing the previous one.
+				// generate it: a new id on every run creates a new feature each
+				// time and does not replace the previous one.
 				FeatureId: "schema",
 				Feature:   &customv1.Feature_Schema{Schema: schema},
 			},
@@ -315,7 +315,7 @@ func syncSchemas(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 4 — model SQL, resolved by warehouse address
+// Step 4: model SQL, resolved by warehouse address
 // -----------------------------------------------------------------------------
 
 // warehouseContext is the default execution context of every query the BI tool
@@ -323,9 +323,9 @@ func syncSchemas(ctx context.Context, api *clients, _ config) error {
 // against. It is the tool's connection settings, expressed the way Coalesce
 // Quality addresses a warehouse object.
 //
-// object_name is deliberately left empty. It is for a definition that
-// MATERIALIZES something — `CREATE TABLE x AS SELECT ...` — and nothing in a BI
-// tool does; a model is a saved query, not a table.
+// object_name is empty on purpose. It is for a definition that MATERIALIZES
+// something (`CREATE TABLE x AS SELECT ...`), and nothing in a BI tool does. A
+// model is a saved query, not a table.
 func warehouseContext(cfg config) *coordinatesv1.DatabaseContext {
 	return &coordinatesv1.DatabaseContext{
 		// BigQuery has no instance above the project, so instance_name stays
@@ -337,15 +337,14 @@ func warehouseContext(cfg config) *coordinatesv1.DatabaseContext {
 }
 
 // syncModelSql declares the models' SQL. Every table name in it is a real
-// warehouse object, so it resolves by address and no binding is needed — this
-// is the plain case, and the one to reach for whenever it fits.
+// warehouse object, so it resolves by address and needs no binding. This is the
+// simple case. Use it whenever it fits.
 //
-// Coalesce Quality parses the SQL and derives BOTH grains from it: the model
-// appears downstream of `order_items` and `products`, and `net_revenue` traces
-// back to `order_items.quantity`, `order_items.unit_price` and
-// `order_items.discount` without any of that being stated. That is the whole
-// argument for giving SQL rather than declaring edges: the lineage follows the
-// SQL when the SQL changes.
+// Coalesce Quality parses the SQL and gets BOTH table and column lineage from
+// it: the model appears downstream of `order_items` and `products`, and
+// `net_revenue` traces back to `order_items.quantity`, `order_items.unit_price`
+// and `order_items.discount`, and you state none of this. This is why you give
+// SQL and do not declare edges: the lineage follows the SQL when the SQL changes.
 func syncModelSql(ctx context.Context, api *clients, cfg config) error {
 	for _, m := range models {
 		_, err := api.features.UpsertEntityFeature(ctx, &customv1.UpsertEntityFeatureRequest{
@@ -371,28 +370,28 @@ func syncModelSql(ctx context.Context, api *clients, cfg config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 5 — question SQL, resolved by a binding
+// Step 5: question SQL, resolved by a binding
 // -----------------------------------------------------------------------------
 
-// syncQuestionSql declares the questions' SQL, and this is the headline.
+// syncQuestionSql declares the questions' SQL. This is the main step.
 //
 // A question reads a MODEL, and a model is not something the warehouse can
-// address: it has no database, schema and table for a lookup to land on. Left
-// alone, `FROM order_items_enriched` resolves to nothing, is dropped, and the
-// question ends up with no upstream at all — with no error anywhere, and an
-// empty result indistinguishable from a query that genuinely reads nothing.
+// address: it has no database, schema and table for a lookup to find. Without a
+// binding, `FROM order_items_enriched` resolves to nothing and is dropped, and
+// the question gets no upstream at all. There is no error, and the empty result
+// looks the same as a query that reads nothing.
 //
-// `references` is how the definition says what such a name means. Each binding
-// pairs a name AS THE SQL WRITES IT with the entity it stands for, and the
-// parse then derives both grains from the SQL as usual: the table edge, and
-// `revenue` tracing through `order_items_enriched.net_revenue` all the way down
-// to the warehouse columns the model computed it from.
+// `references` tells the definition what such a name means. Each binding pairs a
+// name AS THE SQL WRITES IT with the entity that it stands for. The parse then
+// gets table and column lineage from the SQL as usual: the table edge, and
+// `revenue` traced through `order_items_enriched.net_revenue` down to the
+// warehouse columns that the model computed it from.
 //
-// Three things worth knowing:
+// Three things to know:
 //
-//   - A binding wins over the warehouse. If a real table happened to share the
-//     name, the binding is still what resolves — which is what makes it usable
-//     as a manual override, not just a fallback.
+//   - A binding has priority over the warehouse. If a real table has the same
+//     name, the binding still resolves. So you can also use a binding as a
+//     manual override.
 //   - Empty parts of a binding default from the definition's own
 //     database_context, exactly as an unqualified name in the SQL does. So a
 //     bare object_name matches both `FROM order_items_enriched` and
@@ -459,21 +458,20 @@ func syncQuestionSql(ctx context.Context, api *clients, cfg config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 6 — dashboard column lineage, declared
+// Step 6: dashboard column lineage, declared
 // -----------------------------------------------------------------------------
 
 // syncDashboardColumnLineage states the dashboard's column lineage outright.
 //
 // A dashboard runs no SQL: a tile takes a question's result and shows it,
-// possibly under a different label. There is nothing for a parser to read, so
-// the answer is declared instead of derived. That is the rule of thumb for the
-// whole exercise — SqlDefinition when the component has SQL, ColumnLineage when
-// it does not.
+// maybe under a different label. There is nothing for a parser to read, so you
+// declare the result. The general rule: use SqlDefinition when the component has
+// SQL, and ColumnLineage when it does not.
 //
-// The declaration is COMPLETE and replaces the previous one whole: an edge left
-// out of a write is withdrawn, and re-sending the same set changes nothing.
-// That is what makes it safe to regenerate from the tool's metadata on every
-// run rather than diffing against what was sent last time.
+// The declaration is COMPLETE and replaces the previous one: an edge left out of
+// a write is removed, and sending the same set again changes nothing. So you
+// can safely build it again from the tool's metadata on every run, and you do
+// not need to compare it with what you sent last time.
 //
 // Declaring a column edge also declares the table edge it implies, so the
 // dashboard appears downstream of each question here without a relationship
@@ -492,8 +490,8 @@ func syncDashboardColumnLineage(ctx context.Context, api *clients, cfg config) e
 			edges = append(edges, &customfeaturesv1.ColumnEdge{
 				Upstream:       upstream,
 				UpstreamColumn: c.fromColumn,
-				// The two sides are named independently, so they need not match —
-				// here the dashboard prefixes each field with the tile it sits on.
+				// The two sides are named separately, so the names do not have to
+				// match. Here the dashboard prefixes each field with its tile.
 				Column: c.field,
 			})
 		}
@@ -521,7 +519,7 @@ func syncDashboardColumnLineage(ctx context.Context, api *clients, cfg config) e
 }
 
 // -----------------------------------------------------------------------------
-// Step 7 — the tool's own definitions, as code
+// Step 7: the tool's own definitions, as code
 // -----------------------------------------------------------------------------
 
 // syncCode attaches each object's definition as it comes out of the BI tool.
@@ -529,9 +527,9 @@ func syncDashboardColumnLineage(ctx context.Context, api *clients, cfg config) e
 // versions, which is how a question that quietly started filtering differently
 // gets noticed.
 //
-// Code and SqlDefinition are not alternatives: SqlDefinition is parsed and
-// produces lineage, Code is displayed and produces history. The models below
-// have both — the SQL for the graph, the card definition for the diff.
+// You can use Code and SqlDefinition together: SqlDefinition is parsed and gives
+// lineage, and Code is displayed and gives history. The models below have both:
+// the SQL for the graph, and the card definition for the diff.
 //
 // Unlike schema and SQL, an entity may carry several code features, so the
 // feature id is the file name it stands for.
@@ -559,7 +557,7 @@ func syncCode(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 8 — the serialized export in git
+// Step 8: the serialized export in git
 // -----------------------------------------------------------------------------
 
 // syncGitFileReferences points each dashboard at the file its serialized export
@@ -599,20 +597,20 @@ func syncGitFileReferences(ctx context.Context, api *clients, cfg config) error 
 }
 
 // -----------------------------------------------------------------------------
-// Step 9 — relationships with no columns
+// Step 9: relationships with no columns
 // -----------------------------------------------------------------------------
 
 // syncRelationships joins each subscription to the dashboard it sends.
 //
-// A subscription has no columns of its own — it is a delivery, not a
-// transformation — so there is nothing to state at column grain and a plain
-// relationship is the right shape. Reach for one whenever the edge is real but
-// the column mapping is not: a reverse-ETL job, an export, a downstream service.
+// A subscription has no columns of its own, because it delivers data and does
+// not transform it. So there is nothing to state about columns, and a plain
+// relationship is correct. Use one whenever the edge is real but there is no
+// column mapping: a reverse-ETL job, an export, a downstream service.
 //
-// The response reports what each write DID. Read it rather than assuming: an
-// edge is held between the two entities the endpoints RESOLVE to, and one entity
-// accepts several spellings, so two relationships that look different can be the
-// same edge.
+// The response reports what each write DID. Read it, and do not assume: an edge
+// is stored between the two entities that the endpoints RESOLVE to, and one
+// entity accepts several spellings. So two relationships that look different can
+// be the same edge.
 func syncRelationships(ctx context.Context, api *clients, _ config) error {
 	var rels []*customv1.Relationship
 	for _, s := range subscriptions {
@@ -639,22 +637,21 @@ func syncRelationships(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 10 — the alert as a check
+// Step 10: the alert as a check
 // -----------------------------------------------------------------------------
 
 // syncAlerts models the BI tool's alert as a CHECK on the question it watches,
-// rather than as another node data flows through. A check relationship is a
-// different edge from a lineage one: it says "this validates that", so the
-// alert's state rolls up to the question's health instead of extending the
-// graph.
+// not as another node that data flows through. A check relationship is a
+// different edge from a lineage edge: it says "this validates that". So the
+// alert's state adds to the question's health, and the graph does not get
+// longer.
 //
-// The categories are deliberately left unset. `category` (what kind of check
-// this is, mechanically) and `governance_category` (what the check is for) are
-// resolved by the workspace's own categorisation rules, and a value sent here
-// OUTRANKS those rules. Deriving one from `kind` — which is the obvious thing to
-// do, and wrong — would silently switch off every rule the workspace wrote, with
-// nothing in the product explaining why. Send what the tool actually says
-// (`package` and `kind`) and let the rules decide the rest.
+// The categories are unset on purpose. The workspace's own categorisation rules
+// set `category` (the technical kind of check) and `governance_category` (what
+// the check is for), and a value sent here OVERRIDES those rules. It is tempting
+// to derive one from `kind`, but then every rule that the workspace wrote
+// silently stops applying, and nothing in the product explains why. Send what
+// the tool reports (`package` and `kind`) and let the rules decide the rest.
 func syncAlerts(ctx context.Context, api *clients, _ config) error {
 	for _, a := range alerts {
 		_, err := api.features.UpsertEntityFeature(ctx, &customv1.UpsertEntityFeatureRequest{
@@ -694,19 +691,19 @@ func syncAlerts(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 11 — the group, which is what makes deletion work
+// Step 11: the group, which is what makes deletion work
 // -----------------------------------------------------------------------------
 
 // syncGroup sends the complete set of entities this integration owns.
 //
-// The server holds the previous set, diffs it, and deletes what is no longer
-// there. That is the whole reason to use a group: without one, an integration
-// has to remember on its own side what it created last time in order to clean up
-// after a dashboard someone deleted in the BI tool — and any state it keeps for
-// that will eventually disagree with reality.
+// The server keeps the previous set, compares the two, and deletes what is not
+// in the new set. This is why you use a group. Without one, an integration must
+// remember on its own side what it created last time, so it can clean up after
+// someone deletes a dashboard in the BI tool. Any record it keeps for that will
+// drift from the real state.
 //
-// Send the FULL set every run. A partial send is not an update, it is a
-// deletion of everything omitted.
+// Send the FULL set on every run. A partial send deletes everything you leave
+// out.
 func syncGroup(ctx context.Context, api *clients, _ config) error {
 	ids := everyEntity()
 	resp, err := api.groups.UpsertEntitiesGroup(ctx, &customv1.UpsertEntitiesGroupRequest{
@@ -723,15 +720,15 @@ func syncGroup(ctx context.Context, api *clients, _ config) error {
 }
 
 // -----------------------------------------------------------------------------
-// Step 12 — executions
+// Step 12: executions
 // -----------------------------------------------------------------------------
 
-// syncExecutions reports each dashboard's last refresh, which is what gives a
-// custom entity a status: fresh, stale, failing. Without one it is a node in a
-// graph with nothing known about its health.
+// syncExecutions reports the last refresh of each dashboard. This gives a custom
+// entity a status: fresh, stale or failing. Without it, the entity is a node in
+// a graph with no known health.
 //
-// Report what the tool tells you and nothing more. `created_at` must be in the
-// past, so a refresh that has not happened yet is simply not reported.
+// Report only what the tool tells you. `created_at` must be in the past, so do
+// not report a refresh that has not happened yet.
 func syncExecutions(ctx context.Context, api *clients, _ config) error {
 	// A real integration takes this from the tool's own run history.
 	finished := time.Now().Add(-15 * time.Minute)

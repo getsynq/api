@@ -19,39 +19,39 @@ import (
 )
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    host := "developer.synq.io"
-    port := "443"
-    apiUrl := fmt.Sprintf("%s:%s", host, port)
+	host := "developer.synq.io"
+	port := "443"
+	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-    clientID := os.Getenv("SYNQ_CLIENT_ID")
-	clientSecret := os.Getenv("SYNQ_CLIENT_SECRET")
-    tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
+	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
-    config := &clientcredentials.Config{
-        ClientID:     clientID,
-        ClientSecret: clientSecret,
-        TokenURL:     tokenURL,
-    }
-    oauthTokenSource := oauth.TokenSource{TokenSource: config.TokenSource(ctx)}
-    creds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: false})
-    opts := []grpc.DialOption{
-        grpc.WithTransportCredentials(creds),
-        grpc.WithPerRPCCredentials(oauthTokenSource),
-        grpc.WithAuthority(host),
-    }
+	config := &clientcredentials.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		TokenURL:     tokenURL,
+	}
+	oauthTokenSource := oauth.TokenSource{TokenSource: config.TokenSource(ctx)}
+	creds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: false})
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(oauthTokenSource),
+		grpc.WithAuthority(host),
+	}
 
-    conn, err := grpc.DialContext(ctx, apiUrl, opts...)
-    if err != nil {
-        panic(err)
-    }
-    defer conn.Close()
+	conn, err := grpc.DialContext(ctx, apiUrl, opts...)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 
-    dataproductsapi := dataproductsv1grpc.NewDataproductsServiceClient(conn)
+	dataproductsapi := dataproductsv1grpc.NewDataproductsServiceClient(conn)
 
 	resp, err := dataproductsapi.Upsert(ctx, &dataproductsv1.UpsertRequest{
-		Title: "Dim Payment Types",
+		Title:       "Dim Payment Types",
 		Description: "A data product that contains the payment types used in the system.",
 	})
 	if err != nil {
@@ -83,7 +83,6 @@ func main() {
 									},
 								},
 							},
-
 						},
 					},
 				},

@@ -1,12 +1,12 @@
-# Alerts Management (Python)
+# Alerts management (Python)
 
-This example demonstrates how to manage alert configurations using the Coalesce Quality Alerts API (v2). The examples show how to create, update, list, get, toggle, and delete alerts programmatically using Python.
+This example shows how to manage alert configurations with the Coalesce Quality Alerts API (v2). The scripts create, update, list, get, toggle and delete alerts from Python.
 
 ## Prerequisites
 
-### Python Environment
+### Python environment
 
-This example requires Python 3.7 or later. We recommend using a virtual environment:
+This example needs Python 3.7 or later. We recommend a virtual environment:
 
 ```bash
 python -m venv venv
@@ -14,165 +14,152 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Client Credentials
+### Client credentials
 
-Head over to Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) to create client credentials with the `Manage Alerts` scope. Set the credentials in the environment as `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`.
+Create client credentials in Coalesce Quality ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)) with the `Edit Alerts` and `Read Alerts` scopes. Set them in the environment as `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`.
 
-### Slack Channel (for notifications)
+### Slack channel
 
-To receive alert notifications, you'll need a Slack channel configured in your Coalesce Quality workspace. Set the channel name in the environment as `SLACK_CHANNEL` (e.g. `C1234567890`).
+The alerts send notifications to a Slack channel. Your Coalesce Quality workspace must have Slack connected. Set the channel in the environment as `SLACK_CHANNEL` (for example `C1234567890`).
 
-## Environment Variables
+## Environment variables
 
-Set the following environment variables in the `.env` file:
-1. `SYNQ_CLIENT_ID` - Your client ID
-2. `SYNQ_CLIENT_SECRET` - Your client secret
-3. `SLACK_CHANNEL` - The Slack channel where alerts should be sent (e.g., `C1234567890`)
+Set these variables in the environment or in a `.env` file:
 
-## Installation
+- `QUALITY_CLIENT_ID`: your client ID.
+- `QUALITY_CLIENT_SECRET`: your client secret.
+- `SLACK_CHANNEL`: the Slack channel that receives the alerts (for example `C1234567890`).
+- `QUALITY_API_ENDPOINT` (optional): `developer.synq.io` (EU, the default), `api.us.synq.io` (US) or `api.au.synq.io` (AU).
 
-1. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+## Running the examples
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+There are two scripts.
 
-3. Configure your environment variables in the `.env` file
+### Global alert (full lifecycle)
 
-## Running the Examples
-
-There are two main examples:
-
-### 1. Global Alert (Complete Lifecycle)
-Demonstrates the complete alert lifecycle in a single script: create, update, toggle, and delete.
+Creates, updates, toggles and deletes one alert.
 
 ```bash
 python global_alert.py
 ```
 
-### 2. Owned Alert (Self-Contained)
-Creates an alert with owner information, lists by owner, verifies, and cleans up.
+### Owned alert
+
+Creates an alert with an owner, lists alerts by owner, checks the result and deletes the alert.
 
 ```bash
 python owned_alert.py
 ```
 
-## Selecting entities: the Trigger
+## Selecting entities: the trigger
 
-An issue alert fires on the entities its `Trigger` selects. A trigger carries the
-selection in one of two forms:
+An issue alert fires on the entities that its `Trigger` selects. A trigger holds the selection in one of two forms:
 
-- A **structured `Query`** — composed from parts such as `WithType`. The
-  `global_alert.py` example uses this form to match ClickHouse tables.
-- A **ResolverQL string** — a more expressive selection language for cases a
-  structured query cannot express (lineage walks, column predicates). The
-  `owned_alert.py` example uses `with_type("clickhouse_table")`. When set, the
-  ResolverQL string takes precedence over the structured query.
+- A structured `Query`, built from parts such as `WithType`. `global_alert.py` uses this form to match ClickHouse tables.
+- A ResolverQL string. ResolverQL can express selections that a structured query cannot, such as lineage walks and column predicates. `owned_alert.py` uses `with_type("clickhouse_table")`. When both are set, the ResolverQL string takes precedence.
 
-Either way, the created alert reads back a canonical `rendered_resolver_ql`, so
-you can see how any selection reads as ResolverQL.
+In both cases, the alert you read back has a canonical `rendered_resolver_ql`, so you can see any selection as ResolverQL.
 
 ## Updating an alert
 
-Alerts are updated through intent-specific RPCs rather than a single catch-all
-update:
+Each kind of change has its own RPC:
 
-- `Rename` — change the alert's name.
-- `UpdateSettings` — change the trigger and/or the kind-specific settings (e.g.
-  severities).
-- `UpdateTargets` — replace the delivery targets.
-- `ToggleEnabled` — enable or disable the alert.
+- `Rename` changes the alert's name.
+- `UpdateSettings` changes the trigger, the kind-specific settings (for example the severities), or both.
+- `UpdateTargets` replaces the delivery targets.
+- `ToggleEnabled` enables or disables the alert.
 
-The `global_alert.py` example renames the alert and then adds the `ERROR`
-severity via `UpdateSettings`.
+`global_alert.py` renames the alert and then adds the `ERROR` severity with `UpdateSettings`.
 
-## Alert Configuration
+## Alert configuration
 
-### Global Alert
-The example creates an alert that:
-- **Trigger**: Structured query matching ClickHouse tables
-- **Severity**: FATAL failures (initially), then updated to include ERROR failures
-- **Target**: Sends notifications to the configured Slack channel
-- **FQN**: Uses `example.alerts.critical-failures` to reference the alert
-- **Ongoing Strategy**: Disabled to prevent alert spam
+### Global alert
 
-### Owned Alert
-The example creates an alert that:
-- **Trigger**: ResolverQL selection matching ClickHouse tables
-- **Severity**: FATAL failures only
-- **Target**: Sends notifications to the configured Slack channel
-- **FQN**: Uses `example.alerts.owned-alert` to reference the alert
-- **Owner**: Demonstrates setting an owner (`team.data-platform` path plus an ownership ID) on the alert kind
-- **Ongoing Strategy**: Disabled to prevent alert spam
+The example creates an alert with:
 
-## What the Examples Demonstrate
+- Trigger: a structured query that matches ClickHouse tables.
+- Severity: FATAL failures at first, then ERROR failures too.
+- Target: the Slack channel from `SLACK_CHANNEL`.
+- FQN: `example.alerts.critical-failures`, used to refer to the alert.
+- Ongoing strategy: disabled, so an ongoing issue does not send repeated alerts.
 
-### Global Alert (`global_alert`)
-A complete alert lifecycle demonstration in a single script:
+### Owned alert
 
-**Step 1: Create Alert**
-- Creates an issue lifecycle alert configuration with FQN for easy reference
-- Sets up a structured trigger to monitor ClickHouse tables
-- Configures FATAL severity monitoring
-- Sets Slack as the notification target
-- Prints the canonical ResolverQL rendering of the selection
-- Lists all alerts to verify creation
+The example creates an alert with:
 
-**Step 2: Update Alert**
-- Retrieves the alert by FQN using BatchGet
-- Renames the alert to reflect the update
-- Adds the ERROR severity via UpdateSettings
-- Validates the update succeeded
+- Trigger: a ResolverQL selection that matches ClickHouse tables.
+- Severity: FATAL failures only.
+- Target: the Slack channel from `SLACK_CHANNEL`.
+- FQN: `example.alerts.owned-alert`, used to refer to the alert.
+- Owner: an owner path (`team.data-platform`) and an ownership ID, set on the alert kind.
+- Ongoing strategy: disabled.
 
-**Step 3: Toggle Alert**
-- Toggles the alert off (disables it)
-- Verifies the disabled state
-- Re-enables the alert
-- Confirms the alert is active again
+## What the examples do
 
-**Step 4: Delete Alert**
-- Verifies the alert exists before deletion
-- Deletes the alert by FQN
-- Confirms successful deletion
+### Global alert (`global_alert.py`)
 
-### Owned Alert (`owned_alert`)
-A self-contained example demonstrating alert ownership:
+Step 1, create the alert:
 
-- Creates a new alert with owner information on the alert kind (owner path and ownership ID)
-- Lists alerts filtered by owner
-- Verifies the alert appears in the owner's alerts list
-- Confirms the owner information is correctly set
-- Cleans up by deleting the alert
-- Verifies deletion
+- Creates an issue lifecycle alert with an FQN.
+- Sets a structured trigger that matches ClickHouse tables.
+- Sets the FATAL severity.
+- Sets Slack as the notification target.
+- Prints the canonical ResolverQL form of the selection.
+- Lists all alerts to check that the new one is there.
 
-**Note:** This example is self-contained and can be run independently. It uses a different FQN (`example.alerts.owned-alert`) to avoid conflicts with the global alert example.
+Step 2, update the alert:
 
-## Project Structure
+- Gets the alert by FQN with `BatchGet`.
+- Renames the alert.
+- Adds the ERROR severity with `UpdateSettings`.
+- Checks that the update worked.
+
+Step 3, toggle the alert:
+
+- Disables the alert and checks that it is disabled.
+- Enables the alert again and checks that it is active.
+
+Step 4, delete the alert:
+
+- Checks that the alert exists.
+- Deletes the alert by FQN.
+- Checks that the alert is gone.
+
+### Owned alert (`owned_alert.py`)
+
+- Creates an alert with an owner path and an ownership ID on the alert kind.
+- Lists alerts filtered by that owner.
+- Checks that the new alert is in the list.
+- Checks that the owner fields are set correctly.
+- Deletes the alert and checks that it is gone.
+
+This script runs on its own. It uses a different FQN (`example.alerts.owned-alert`), so it does not conflict with `global_alert.py`.
+
+## Project structure
 
 ```
 alerts_management/
 ├── auth.py                    # Authentication helper (OAuth2 token management)
 ├── requirements.txt           # Python dependencies
-├── .env                       # Environment variables (configure before running)
-├── global_alert.py            # Complete alert lifecycle example
+├── .env                       # Environment variables (create it before running)
+├── global_alert.py            # Full alert lifecycle example
 └── owned_alert.py             # Alert with owner example
 ```
 
 ## Troubleshooting
 
-### Import Errors
-If you encounter import errors, ensure you've installed all dependencies:
+### Import errors
+
+Check that you installed all dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### Authentication Errors
-Verify that your `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET` are correct and have the `Manage Alerts` scope.
+### Authentication errors
 
-### gRPC Connection Issues
-Ensure you can reach `developer.synq.io:443` and that the certificate validation is working correctly.
+Check that `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` are correct and that the credentials have the `Edit Alerts` and `Read Alerts` scopes. Also check that `QUALITY_API_ENDPOINT` points to the region of your workspace.
+
+### gRPC connection issues
+
+Check that you can reach the API endpoint on port 443 (`developer.synq.io:443` by default) and that certificate validation works.
