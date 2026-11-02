@@ -8,7 +8,7 @@ import "synq/entities/v1/code_type.proto";
 option go_package = "github.com/getsynq/api/entities/custom/features/v1";
 
 // Code feature represents a code snippet associated with the entity.
-// If support for code parsing and dependency extraction is needed use [SqlDefinition](sql_definition.proto).
+// If support for code parsing and dependency extraction is needed use the `SqlDefinition` feature.
 message Code {
   // Might be e.g. name of the file or a function.
   string name = 1 [(buf.validate.field) = {

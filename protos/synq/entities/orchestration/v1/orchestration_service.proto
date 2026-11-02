@@ -19,7 +19,7 @@ option go_package = "github.com/getsynq/api/entities/orchestration/v1";
 service OrchestrationService {
   option deprecated = true;
 
-  // BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it
+  // Return, for each requested entity, the jobs, job steps and tasks that ran it
   // in the last 31 days (upstream), and the entities it ran (downstream).
   rpc BatchOrchestration(BatchOrchestrationRequest) returns (BatchOrchestrationResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;

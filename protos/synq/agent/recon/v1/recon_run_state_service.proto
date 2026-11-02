@@ -15,8 +15,8 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // suites and display progress. No notifications are emitted; clients re-poll
 // to observe transitions.
 service RunStateService {
-  // BatchReconciliationRunState returns the latest concluded run and any ongoing
-  // (SCHEDULED or IN_PROGRESS) run for each suite_id. Returned map is keyed by suite_id.
+  // Return the latest concluded run and any ongoing (SCHEDULED or IN_PROGRESS)
+  // run for each suite_id. Returned map is keyed by suite_id.
   // Suites with no recorded runs are omitted from the response map.
   rpc BatchReconciliationRunState(BatchReconciliationRunStateRequest) returns (BatchReconciliationRunStateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -28,7 +28,7 @@ service RunStateService {
     };
   }
 
-  // ListReconciliationRunState returns runs filtered by status and/or suite_id.
+  // List reconciliation runs, filtered by status and/or suite_id.
   // Sorted newest-first by scheduled_at.
   rpc ListReconciliationRunState(ListReconciliationRunStateRequest) returns (ListReconciliationRunStateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -40,10 +40,9 @@ service RunStateService {
     };
   }
 
-  // CancelReconciliationRun marks a SCHEDULED or IN_PROGRESS run as
-  // CANCELLED so the suite is no longer "occupied" by a stuck occurrence
-  // — used to recover from local-dev / executor outages where a run was
-  // queued but never executed. Already-terminal runs are returned
+  // Mark a SCHEDULED or IN_PROGRESS run as CANCELLED, so that a stuck run no
+  // longer occupies the suite. Use it when a run was queued but never executed.
+  // Already-terminal runs are returned
   // unchanged. Idempotent: calling on an already-cancelled run is a
   // no-op.
   //

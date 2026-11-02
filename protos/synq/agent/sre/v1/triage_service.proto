@@ -40,8 +40,7 @@ service TriageService {
     };
   }
 
-  // Retrieves the latest triage state for one or more issues. This method is used by the LLM agent
-  // to retrieve the current state of the issues it is working on.
+  // Retrieves the latest triage conclusion, with its evidence, for one or more issues.
   rpc BatchLatestConclusions(BatchLatestConclusionsRequest) returns (BatchLatestConclusionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -66,8 +65,8 @@ service TriageService {
     option (google.api.http) = {get: "/api/triage/v1/states"};
   }
 
-  // Retrieves the triage state for one or more issues. This method is used by the LLM agent
-  // to retrieve the current state of the issues it is working on.
+  // Lists the triage states of the workspace's issues that have one of the given
+  // statuses, newest first.
   rpc ListTriageState(ListTriageStateRequest) returns (ListTriageStateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

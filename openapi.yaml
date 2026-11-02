@@ -693,7 +693,7 @@ components:
             additionalProperties: false
             description: |-
                 Maps a reconciliation-connection name (as referenced in the suite config)
-                 to a concrete SYNQ integration. Used at execution time to resolve DWH
+                 to a concrete Coalesce Quality integration. Used at execution time to resolve DWH
                  credentials.
 
                  Two credential planes are defined on the wire:
@@ -1172,7 +1172,7 @@ components:
                 integrationId:
                     type: string
                     description: |-
-                        Return only deployments wired to this SYNQ integration (match against
+                        Return only deployments wired to this Coalesce Quality integration (match against
                          the deployment's connection_mappings).
                     nullable: true
                 triggerableByApi:
@@ -1843,7 +1843,7 @@ components:
                          reconciliation case under the suite. Merged with per-case annotations and
                          deployment-level annotations at promote time — the final, deduplicated
                          list is exposed on PromotedReconSuiteMetadata / PromotedReconCaseMetadata
-                         and surfaced to the rest of the SYNQ platform via EntityAnnotations.
+                         and surfaced to the rest of the Coalesce Quality platform via EntityAnnotations.
                 execution:
                     description: |-
                         How runs of this suite execute: the wall-clock budget of a run and how
@@ -5726,7 +5726,10 @@ components:
                 ownerPath:
                     type: string
                     minLength: 1
-                    description: Path identifying the owner of this alert config.
+                    description: |-
+                        The owner of this alert config: the owner's `entity_id` from
+                         `synq.owners.v1.OwnersService` (`owner-<uuid>`). The bare owner `id` is not
+                         accepted.
                 ownershipId:
                     type: string
                     description: |-
@@ -5744,8 +5747,9 @@ components:
                     type: string
                     minLength: 1
                     description: |-
-                        Path that identifies the ownership context for this target.
-                         This determines how the system will resolve the actual owner.
+                        The owner to notify: the owner's `entity_id` from
+                         `synq.owners.v1.OwnersService` (`owner-<uuid>`). The alert goes to the
+                         contacts of that owner.
             title: OwnerTarget
             additionalProperties: false
             description: |-
@@ -6499,7 +6503,7 @@ components:
                     $ref: '#/components/schemas/synq.ingest.dwh.v1.Fqn'
                 tablePath:
                     type: string
-                    description: Synq-internal path for the table asset (e.g. "bq-prod::project::dataset::table").
+                    description: Coalesce Quality path of the table asset (e.g. "bq-prod::project::dataset::table").
             title: InputTable
             additionalProperties: false
             description: InputTable is a table reference resolved from the SQL expression of a SqlTest.
@@ -7140,11 +7144,11 @@ components:
             properties:
                 tablePath:
                     type: string
-                    description: Synq path of the table or view the test targets or would target.
+                    description: Coalesce Quality path of the table or view the test targets or would target.
                 sqlTestPath:
                     type: string
                     description: |-
-                        Synq path of the SqlTest, when it already exists (create-side changes may
+                        Coalesce Quality path of the SqlTest, when it already exists (create-side changes may
                          leave this empty until the test is actually deployed).
                 testName:
                     type: string
@@ -7399,7 +7403,7 @@ components:
             properties:
                 tablePath:
                     type: string
-                    description: Synq path of the skipped table or view.
+                    description: Coalesce Quality path of the skipped table or view.
                 reason:
                     type: string
                     description: |-
@@ -7431,11 +7435,11 @@ components:
             properties:
                 tablePath:
                     type: string
-                    description: Synq path of the table or view carrying the test.
+                    description: Coalesce Quality path of the table or view carrying the test.
                 sqlTestPath:
                     type: string
                     description: |-
-                        Synq path of the SqlTest, when it already exists (empty while the owning
+                        Coalesce Quality path of the SqlTest, when it already exists (empty while the owning
                          rule has not deployed it yet).
                 testName:
                     type: string
@@ -7482,7 +7486,7 @@ components:
                 referencedTablePath:
                     type: string
                     description: |-
-                        Synq path of the *referenced* table, for a `relationships` test skipped
+                        Coalesce Quality path of the *referenced* table, for a `relationships` test skipped
                          because that table (rather than the table under test) lacks the column.
                          Empty otherwise.
             title: SkippedTest
@@ -7615,7 +7619,7 @@ components:
                 path:
                     type: string
                     minLength: 1
-                    description: Synq path of the table or view this rule exclusively owns.
+                    description: Coalesce Quality path of the table or view this rule exclusively owns.
             title: SqlTestsExclusiveStaticConfig
             additionalProperties: false
             description: |-
@@ -7700,7 +7704,7 @@ components:
                 path:
                     type: string
                     minLength: 1
-                    description: Synq path of the table or view this rule deploys tests onto.
+                    description: Coalesce Quality path of the table or view this rule deploys tests onto.
                 tests:
                     type: array
                     items:
@@ -8771,7 +8775,7 @@ components:
                     description: |-
                         Stable, opaque platform identifier of this data product (of the form
                          "dataproduct-<uuid>"). Output-only — the server derives it; never construct
-                         it by hand. This is the value other SYNQ APIs accept as an entity reference
+                         it by hand. This is the value other Coalesce Quality APIs accept as an entity reference
                          for this product (lineage, entities, alerts), so read it here and pass it
                          there to point at the same product without needing to know how it is formed.
                          `synq.owners.v1.OwnershipSelection.dataproduct_id` accepts this `entity_id`
@@ -14783,7 +14787,7 @@ components:
             additionalProperties: false
             description: |-
                 Code feature represents a code snippet associated with the entity.
-                 If support for code parsing and dependency extraction is needed use [SqlDefinition](sql_definition.proto).
+                 If support for code parsing and dependency extraction is needed use the `SqlDefinition` feature.
         synq.entities.custom.features.v1.ColumnEdge:
             type: object
             properties:
@@ -14973,8 +14977,10 @@ components:
                 entity:
                     description: |-
                         The entity this name stands for. Any entity: another custom entity, or a
-                         table, model or dashboard from a connected platform. An entity that does not
-                         exist yet is remembered and the edge appears once it does.
+                         table, model or dashboard from a connected platform. A custom entity must
+                         already exist, otherwise the write is refused. An entity from a connected
+                         platform that does not exist yet is kept, and the edge appears once the
+                         entity is ingested.
                     $ref: '#/components/schemas/synq.entities.v1.Identifier'
             title: SqlTableReference
             required:
@@ -15468,7 +15474,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.v1.Type'
-                    description: List of entities.
+                    description: Custom entity types.
                 pageInfo:
                     description: |-
                         Paging information for this response. Always populated. Repeat the request
@@ -15670,7 +15676,7 @@ components:
             type: object
             properties:
                 type:
-                    description: Entity to create or update.
+                    description: Custom entity type to create or update.
                     $ref: '#/components/schemas/synq.entities.v1.Type'
             title: UpsertTypeRequest
             required:
@@ -24541,8 +24547,16 @@ components:
                 serviceAccountEmail:
                     type: string
                     description: |-
-                        Email of the service account derived from the supplied credentials. Grant
-                         this principal access to the datasets you want Coalesce Quality to read.
+                        Email of the service account that Coalesce Quality connects as. It depends on
+                         the `BigqueryAuthentication` of the integration:
+                           - BIGQUERY_AUTHENTICATION_SERVICE_ACCOUNT_KEY: the service account of the
+                             supplied key. Grant it access to the datasets you want Coalesce Quality
+                             to read.
+                           - BIGQUERY_AUTHENTICATION_IMPERSONATION: the workspace service account.
+                             Grant it roles/iam.serviceAccountTokenCreator on
+                             `impersonated_service_account`.
+                           - BIGQUERY_AUTHENTICATION_WORKSPACE_SERVICE_ACCOUNT: the workspace service
+                             account. Grant it the BigQuery roles directly.
             title: BigQueryOutputs
             additionalProperties: false
             description: BigQuery generated outputs.
@@ -24557,8 +24571,8 @@ components:
             description: |-
                 How a BigQuery integration authenticates. The workspace service account is a Google
                  service account that Coalesce Quality creates for your workspace, in a project of the
-                 region that serves it, and uses only for that workspace. Its email is in the outputs
-                 of the integration's create response.
+                 region that serves it, and uses only for that workspace. For a keyless authentication,
+                 its email is `BigQueryOutputs.service_account_email` in the create and update responses.
         synq.integrations.v1.Capabilities:
             type: object
             properties:
@@ -25484,7 +25498,7 @@ components:
                 - properties:
                     bigquery:
                         title: bigquery
-                        description: 'BigQuery: the service-account identity to grant dataset access to.'
+                        description: 'BigQuery: the service account that Coalesce Quality connects as.'
                         $ref: '#/components/schemas/synq.integrations.v1.BigQueryOutputs'
                   title: bigquery
                   required:
@@ -30207,7 +30221,7 @@ components:
             description: |-
                 How alerts fire for the assets an ownership covers. Deliberately mirrors the
                  settings on the public alerts API (`synq.alerts.v2`) so alerting behaviour
-                 reads the same across SYNQ.
+                 reads the same across Coalesce Quality.
         synq.owners.v1.BatchGetOwnersRequest:
             type: object
             properties:
@@ -30527,9 +30541,9 @@ components:
                     description: |-
                         Stable, opaque platform identifier of this owner (of the form
                          "owner-<uuid>"). Output-only — the server derives it; never construct it by
-                         hand. This is the exact value other SYNQ APIs accept as an owner reference
-                         (for example the `synq.alerts.services.v2.AlertsService` owner path — see
-                         `synq.alerts.v2.Owner`), so read it here and pass it there to point at
+                         hand. This is the exact value other Coalesce Quality APIs accept as an owner
+                         reference (for example `owner_path` in `synq.alerts.v2.Owner` and
+                         `synq.alerts.v2.OwnerTarget`), so read it here and pass it there to point at
                          the same owner without needing to know how it is formed.
                 title:
                     type: string
@@ -30907,7 +30921,7 @@ components:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 catalog:
                     type: string
                     description: |-
@@ -32958,7 +32972,7 @@ components:
                  On write, provide the query in ONE of two forms:
                    - `public_query` — a structured query (the same shape used elsewhere for
                      asset selection), convenient to build from a filter UI; or
-                   - `resolver_ql` — the SYNQ resolver query language, a compact text form
+                   - `resolver_ql` — the ResolverQL query language, a compact text form
                      that additionally expresses severity/status and time-window filters
                      (e.g. `with_severity(statuses=["error"], since="24h")`).
                  When both are set, `resolver_ql` wins. The server compiles the query and
@@ -33817,7 +33831,7 @@ paths:
                 - synq.agent.recon.v1.YamlService
             summary: ParseYaml
             description: |-
-                ParseYaml parses a YAML config string into a ReconciliationSuite proto.
+                Parse a YAML config string into a ReconciliationSuite proto.
                  Only the suite configuration fields are extracted (connections are ignored).
 
                  ParseYaml refuses two types of suite with INVALID_ARGUMENT and a
@@ -33845,7 +33859,7 @@ paths:
             tags:
                 - synq.agent.recon.v1.YamlService
             summary: RenderYaml
-            description: RenderYaml renders a ReconciliationSuite proto as a YAML config string.
+            description: Render a ReconciliationSuite proto as a YAML config string.
             operationId: synq.agent.recon.v1.YamlService.RenderYaml
             requestBody:
                 content:
@@ -33866,7 +33880,7 @@ paths:
                 - synq.agent.recon.v1.YamlService
             summary: ValidateSuite
             description: |-
-                ValidateSuite checks a suite and gives all the problems that it finds.
+                Check a suite and give all the problems that it finds.
                  Each problem has the path of its field. ValidateSuite does not save the
                  suite, so an editor can call it after each change.
 
@@ -35034,7 +35048,7 @@ paths:
                 - synq.entities.changes.v1.ChangesService
             summary: BatchChange
             description: |-
-                BatchChange retrieves multiple entity changes by their IDs in a single request.
+                Get multiple entity changes by their IDs in a single request.
                  This is an optimized endpoint for fetching specific changes when you already know their IDs,
                  rather than listing changes for an entity.
             operationId: synq.entities.changes.v1.ChangesService.BatchChange
@@ -35057,7 +35071,7 @@ paths:
                 - synq.entities.code.v1.CodeService
             summary: ListCode
             description: |-
-                ListCode retrieves all code artifacts associated with a specific entity.
+                List all code artifacts associated with a specific entity.
                  This includes SQL queries, Python scripts, dbt models, and other code configurations
                  that define or are part of the entity's functionality.
             operationId: synq.entities.code.v1.CodeService.ListCode
@@ -36427,7 +36441,7 @@ paths:
             tags:
                 - synq.datachecks.v1.TriggerService
             summary: TriggerDatachecks
-            description: TriggerDatachecks executes datachecks for the specified entities.
+            description: Run the datachecks of the specified entities.
             operationId: synq.datachecks.v1.TriggerService.TriggerDatachecks
             requestBody:
                 content:
@@ -37605,7 +37619,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -37613,7 +37627,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -38451,12 +38465,12 @@ paths:
                          populated for every rule, ignored on write.
                 - name: deploymentRule.staticConfig.path
                   in: query
-                  description: Synq path of the table or view this rule deploys tests onto.
+                  description: Coalesce Quality path of the table or view this rule deploys tests onto.
                   schema:
                     type: string
                     title: path
                     minLength: 1
-                    description: Synq path of the table or view this rule deploys tests onto.
+                    description: Coalesce Quality path of the table or view this rule deploys tests onto.
                 - name: deploymentRule.staticConfig.recurrenceRule
                   in: query
                   description: |-
@@ -38502,12 +38516,12 @@ paths:
                     description: Applied to every test this rule deploys. Toggles saving of failure runs.
                 - name: deploymentRule.exclusiveStaticConfig.path
                   in: query
-                  description: Synq path of the table or view this rule exclusively owns.
+                  description: Coalesce Quality path of the table or view this rule exclusively owns.
                   schema:
                     type: string
                     title: path
                     minLength: 1
-                    description: Synq path of the table or view this rule exclusively owns.
+                    description: Coalesce Quality path of the table or view this rule exclusively owns.
                 - name: deploymentRule.source
                   in: query
                   schema:
@@ -40049,8 +40063,8 @@ paths:
                 - synq.ingest.dwh.v1.DwhService
             summary: IngestLineage
             description: |-
-                IngestLineage pushes data-flow lineage between warehouse objects (and,
-                 optionally, between their columns) into the platform. Send the lineage you
+                Push data-flow lineage between warehouse objects (and, optionally, between
+                 their columns) into the platform. Send the lineage you
                  extract from the warehouse — for example from Snowflake's GET_LINEAGE — as a
                  batch of directed edges. Use `replace_mode` to choose between an
                  incremental update (MERGE) and an authoritative refresh of a region of the
@@ -41793,9 +41807,7 @@ paths:
             tags:
                 - synq.entities.checks.v1.ChecksCategoriesService
             summary: ListCheckCategories
-            description: |-
-                ListCheckCategories returns every explicit check category in the
-                 caller's workspace.
+            description: List every explicit check category in the caller's workspace.
             operationId: synq.entities.checks.v1.ChecksCategoriesService.ListCheckCategories
             responses:
                 "200":
@@ -41810,8 +41822,8 @@ paths:
                 - synq.entities.checks.v1.ChecksCategoriesService
             summary: DeleteCheckCategories
             description: |-
-                DeleteCheckCategories clears the explicit category (both dimensions)
-                 for the given checks. Checks fall back to their rule-computed
+                Clear the explicit category (both dimensions) for the given checks. Checks
+                 fall back to their rule-computed
                  categories afterwards.
             operationId: synq.entities.checks.v1.ChecksCategoriesService.DeleteCheckCategories
             requestBody:
@@ -41833,10 +41845,9 @@ paths:
                 - synq.entities.checks.v1.ChecksCategoriesService
             summary: UpsertCheckCategories
             description: |-
-                UpsertCheckCategories sets (or replaces) the explicit category for
-                 one or more checks. Each entry is the complete state for its check —
-                 both dimensions — so an empty `category` / `governance_category` means
-                 "no explicit value for that dimension".
+                Set (or replace) the explicit category for one or more checks. Each entry is
+                 the complete state for its check, on both dimensions, so an empty `category` /
+                 `governance_category` means "no explicit value for that dimension".
             operationId: synq.entities.checks.v1.ChecksCategoriesService.UpsertCheckCategories
             requestBody:
                 content:
@@ -41856,7 +41867,10 @@ paths:
             tags:
                 - synq.entities.custom.v1.EntityExecutionsService
             summary: UpsertExecution
-            description: Execution affects status of the custom entity
+            description: |-
+                Record a run of a custom entity, with its status. The status of the run counts
+                 toward the status of the entity. Sending a run with the same `created_at`, to
+                 the second, replaces it.
             operationId: synq.entities.custom.v1.EntityExecutionsService.UpsertExecution
             requestBody:
                 content:
@@ -41876,7 +41890,9 @@ paths:
             tags:
                 - synq.entities.custom.v1.EntityExecutionsService
             summary: UpsertLogEntry
-            description: LogEntry is a log message for the custom entity
+            description: |-
+                Record a log message for a custom entity. A log entry does not change the
+                 status of the entity.
             operationId: synq.entities.custom.v1.EntityExecutionsService.UpsertLogEntry
             requestBody:
                 content:
@@ -41967,7 +41983,7 @@ paths:
             tags:
                 - synq.entities.custom.v1.EntitiesService
             summary: ListEntities
-            description: List all entities.
+            description: List the custom entities of the workspace.
             operationId: synq.entities.custom.v1.EntitiesService.ListEntities
             parameters:
                 - name: pagination.cursor
@@ -42001,7 +42017,10 @@ paths:
             tags:
                 - synq.entities.custom.v1.EntitiesService
             summary: UpsertEntity
-            description: Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+            description: |-
+                Create or update a custom entity. If the entity does not exist, it is created,
+                 otherwise it is updated. Entities are identified by their Identifier in the
+                 workspace.
             operationId: synq.entities.custom.v1.EntitiesService.UpsertEntity
             requestBody:
                 content:
@@ -42020,7 +42039,9 @@ paths:
             tags:
                 - synq.entities.custom.v1.EntitiesService
             summary: DeleteEntity
-            description: Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+            description: |-
+                Delete a custom entity by its identifier. Deleting an entity that does not
+                 exist succeeds.
             operationId: synq.entities.custom.v1.EntitiesService.DeleteEntity
             parameters:
                 - name: id.entityId
@@ -42684,7 +42705,11 @@ paths:
             tags:
                 - synq.entities.custom.v1.FeaturesService
             summary: UpsertEntityFeature
-            description: Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+            description: |-
+                Create or update a feature of a custom entity. A feature is identified by the
+                 entity and its `feature_id`: an existing feature with the same pair is replaced,
+                 otherwise a new one is created. The custom entity must already exist, and so
+                 must any other custom entity that the feature names.
             operationId: synq.entities.custom.v1.FeaturesService.UpsertEntityFeature
             requestBody:
                 content:
@@ -42703,7 +42728,9 @@ paths:
             tags:
                 - synq.entities.custom.v1.FeaturesService
             summary: DeleteEntityFeature
-            description: Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+            description: |-
+                Delete one feature of a custom entity, by the entity and the `feature_id`. The
+                 entity itself is kept. Deleting a feature that does not exist succeeds.
             operationId: synq.entities.custom.v1.FeaturesService.DeleteEntityFeature
             requestBody:
                 content:
@@ -42746,9 +42773,9 @@ paths:
                 - synq.entities.custom.v1.GroupsService
             summary: UpsertEntitiesGroup
             description: |-
-                UpsertEntitiesGroup updates current definition of group to the server. As part of the upsert operation
-                 the difference of entity ids is calculated between past state and the current state and entities that are
-                 no longer part of the group are removed.
+                Set the entities of a group, and create the group if it does not exist. Every
+                 entity in the group must be a custom entity. The entities that were in the group
+                 before and are not in the new list are deleted.
             operationId: synq.entities.custom.v1.GroupsService.UpsertEntitiesGroup
             requestBody:
                 content:
@@ -42767,7 +42794,9 @@ paths:
             tags:
                 - synq.entities.custom.v1.GroupsService
             summary: DeleteEntitiesGroup
-            description: DeleteEntitiesGroup deletes a group by its identifier. If the group does not exist, it will be a no-op.
+            description: |-
+                Delete a group by its identifier. The entities of the group are kept. Deleting
+                 a group that does not exist succeeds.
             operationId: synq.entities.custom.v1.GroupsService.DeleteEntitiesGroup
             requestBody:
                 content:
@@ -42787,7 +42816,7 @@ paths:
             tags:
                 - synq.entities.custom.v1.GroupsService
             summary: ListEntityGroups
-            description: ListEntityGroups lists all groups.
+            description: List the entity groups of the workspace, each with the ids of its entities.
             operationId: synq.entities.custom.v1.GroupsService.ListEntityGroups
             requestBody:
                 content:
@@ -42879,7 +42908,10 @@ paths:
             tags:
                 - synq.entities.custom.v1.TypesService
             summary: UpsertType
-            description: Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+            description: |-
+                Create or update a custom entity type. A type is identified by its `type_id`
+                 in the workspace: an existing type with the same id is replaced, otherwise a
+                 new one is created. Upserting a deleted type restores it.
             operationId: synq.entities.custom.v1.TypesService.UpsertType
             requestBody:
                 content:
@@ -42898,7 +42930,9 @@ paths:
             tags:
                 - synq.entities.custom.v1.TypesService
             summary: DeleteType
-            description: Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+            description: |-
+                Delete a custom entity type by its `type_id`. The request is refused while an
+                 entity still uses the type. Deleting a type that does not exist succeeds.
             operationId: synq.entities.custom.v1.TypesService.DeleteType
             requestBody:
                 content:
@@ -42918,7 +42952,7 @@ paths:
             tags:
                 - synq.entities.custom.v1.TypesService
             summary: ListTypes
-            description: List all entities.
+            description: List the custom entity types of the workspace.
             operationId: synq.entities.custom.v1.TypesService.ListTypes
             requestBody:
                 content:
@@ -43912,7 +43946,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -43920,7 +43954,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: filter.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -45163,7 +45197,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -45171,7 +45205,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: filter.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -46643,7 +46677,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -46651,7 +46685,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: query.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -47321,7 +47355,10 @@ paths:
             tags:
                 - synq.entities.executions.v1.EntityExecutionsService
             summary: UpsertExecution
-            description: Execution affects status of the custom entity
+            description: |-
+                Record a run of a custom entity, with its status. The status of the run counts
+                 toward the status of the entity. Sending a run with the same `created_at`, to
+                 the second, replaces it.
             operationId: synq.entities.executions.v1.EntityExecutionsService.UpsertExecution
             requestBody:
                 content:
@@ -47341,7 +47378,9 @@ paths:
             tags:
                 - synq.entities.executions.v1.EntityExecutionsService
             summary: UpsertLogEntry
-            description: LogEntry is a log message for the custom entity
+            description: |-
+                Record a log message for a custom entity. A log entry does not change the
+                 status of the entity.
             operationId: synq.entities.executions.v1.EntityExecutionsService.UpsertLogEntry
             requestBody:
                 content:
@@ -47362,7 +47401,7 @@ paths:
                 - synq.entities.executions.v2.EntityExecutionsService
             summary: BatchGetExecutions
             description: |-
-                BatchGetExecutions retrieves multiple executions by their IDs.
+                Get multiple executions by their IDs.
                  This is useful when you already know the execution IDs and want to fetch their details.
             operationId: synq.entities.executions.v2.EntityExecutionsService.BatchGetExecutions
             requestBody:
@@ -47384,7 +47423,7 @@ paths:
                 - synq.entities.executions.v2.EntityExecutionsService
             summary: GetLatestExecutions
             description: |-
-                GetLatestExecutions retrieves the most recent execution for each specified entity.
+                Get the most recent execution of each specified entity.
                  IMPORTANT: Only returns executions where the entity appears in EntityExecution.entities (what executed).
                  This means it returns executions OF the entity (e.g., model runs, monitor runs, task runs),
                  NOT executions that merely reference the entity in targets or extra_references.
@@ -47411,7 +47450,7 @@ paths:
                 - synq.entities.executions.v2.EntityExecutionsService
             summary: ListExecutions
             description: |-
-                ListExecutions retrieves a paginated list of executions for one or more entities.
+                List the executions of one or more entities, paginated.
                  Executions are returned in reverse chronological order (newest first).
 
                  Supports filtering by:
@@ -48174,7 +48213,7 @@ paths:
                 - synq.entities.executions.v2.EntityExecutionsService
             summary: GetExecutionsSummary
             description: |-
-                GetExecutionsSummary provides aggregated statistics about executions for specified entities.
+                Get aggregated statistics about the executions of the specified entities.
                  This is useful for quickly understanding execution patterns without fetching all execution details.
 
                  Returns:
@@ -48481,7 +48520,7 @@ paths:
                 - synq.agent.sre.v1.FeatureRequestService
             summary: SubmitFeatureRequest
             description: |-
-                SubmitFeatureRequest submits a feature request to the Coalesce Quality product team.
+                Submit a feature request to the Coalesce Quality product team.
                  This method should only be called as a last resort when the user's request cannot be
                  fulfilled by any existing tool. It logs the request for product team review.
             operationId: synq.agent.sre.v1.FeatureRequestService.SubmitFeatureRequest
@@ -48572,7 +48611,7 @@ paths:
             tags:
                 - synq.auth.iam.v1.IamService
             summary: Iam
-            description: Iam returns information about caller authentication
+            description: Return information about how the caller is authenticated.
             operationId: synq.auth.iam.v1.IamService.Iam
             responses:
                 "200":
@@ -52402,7 +52441,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -52410,7 +52449,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: entitiesQuery.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -54616,7 +54655,7 @@ paths:
                   description: |-
                     AWS account and region the Athena workgroup runs in, formatted as
                      "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                     by SYNQ from sts:GetCallerIdentity at integration setup time.
+                     by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                   required: true
                   schema:
                     type: string
@@ -54624,7 +54663,7 @@ paths:
                     description: |-
                         AWS account and region the Athena workgroup runs in, formatted as
                          "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-                         by SYNQ from sts:GetCallerIdentity at integration setup time.
+                         by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.inDataPlatform.identifier.athena.catalog
                   in: query
                   description: |-
@@ -56582,7 +56621,7 @@ paths:
                 - synq.entities.orchestration.v1.OrchestrationService
             summary: BatchOrchestration
             description: |-
-                BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it
+                Return, for each requested entity, the jobs, job steps and tasks that ran it
                  in the last 31 days (upstream), and the entities it ran (downstream).
             operationId: synq.entities.orchestration.v1.OrchestrationService.BatchOrchestration
             parameters:
@@ -57743,7 +57782,7 @@ paths:
             tags:
                 - synq.queries.v1.NLQueryService
             summary: GenerateQuery
-            description: GenerateQuery generates a Query from a natural language description.
+            description: Generate a Query from a natural language description.
             operationId: synq.queries.v1.NLQueryService.GenerateQuery
             requestBody:
                 content:
@@ -58231,7 +58270,7 @@ paths:
                 - synq.schedule.v1.ScheduleService
             summary: PreviewSchedules
             description: |-
-                PreviewSchedules returns the next occurrences for one or more schedule expressions.
+                Return the next occurrences for one or more schedule expressions.
                  Never fails at the RPC level; per-schedule errors are returned in the response items.
                  Response items match request items by index.
             operationId: synq.schedule.v1.ScheduleService.PreviewSchedules
@@ -58917,7 +58956,7 @@ paths:
             tags:
                 - synq.entities.schemas.v1.SchemasService
             summary: GetSchema
-            description: Get schema of the entity its identifier.
+            description: Get the schema of an entity by its identifier.
             operationId: synq.entities.schemas.v1.SchemasService.GetSchema
             parameters:
                 - name: id.entityId
@@ -59582,8 +59621,8 @@ paths:
                 - synq.entities.sql_insights.v1.SqlInsightsService
             summary: ListSqlConstructs
             description: |-
-                ListSqlConstructs returns the distribution of SQL constructs across all
-                 entities in the workspace. Every count is a number of entities, not a number
+                Return the distribution of SQL constructs across all entities in the
+                 workspace. Every count is a number of entities, not a number
                  of occurrences: an entity whose SQL contains five GROUP BY clauses adds one
                  to the HAS_GROUP_BY count, not five. The result is workspace-scoped (derived
                  from the authenticated request) — no entity paths are supplied. Useful for
@@ -59603,8 +59642,8 @@ paths:
                 - synq.entities.sql_insights.v1.SqlInsightsService
             summary: BatchSqlDetails
             description: |-
-                BatchSqlDetails returns the SQL details for each of the requested entities,
-                 keyed by their synq path: the set of detected SQL constructs and, when the
+                Return the SQL details for each of the requested entities, keyed by their
+                 Coalesce Quality path: the set of detected SQL constructs and, when the
                  request asks for them, the joins that building the entity makes. Every
                  requested path appears in the response, including a path with no SQL
                  details and a path matching no entity; both are returned with an empty set
@@ -59629,7 +59668,7 @@ paths:
                 - synq.entities.sql_insights.v1.SqlInsightsService
             summary: ListJoinPatterns
             description: |-
-                ListJoinPatterns lists how other SQL joins a table, or one of its columns:
+                List how other SQL joins a table, or one of its columns:
                  every join key that the SQL of a table, view or model in the workspace
                  uses to join the requested entity, read from the requested entity's side,
                  and which SQL makes it. It is the reverse of `BatchSqlDetails` joins, which
@@ -59814,7 +59853,9 @@ paths:
             tags:
                 - synq.entities.status.v1.EntityIncidentsService
             summary: BatchGetIncidents
-            description: Get multiple entity statuses by their identifiers.
+            description: |-
+                Get the open incidents of multiple entities, and optionally of their upstream
+                 entities.
             operationId: synq.entities.status.v1.EntityIncidentsService.BatchGetIncidents
             requestBody:
                 content:
@@ -59834,7 +59875,9 @@ paths:
             tags:
                 - synq.entities.status.v1.EntityIssuesService
             summary: BatchGetIssuesStatus
-            description: Get multiple entity statuses by their identifiers.
+            description: |-
+                Get the issues status of multiple entities, and optionally of their upstream
+                 entities.
             operationId: synq.entities.status.v1.EntityIssuesService.BatchGetIssuesStatus
             requestBody:
                 content:
@@ -59854,9 +59897,7 @@ paths:
             tags:
                 - synq.agent.sre.v1.TriageService
             summary: BatchLatestConclusions
-            description: |-
-                Retrieves the latest triage state for one or more issues. This method is used by the LLM agent
-                 to retrieve the current state of the issues it is working on.
+            description: Retrieves the latest triage conclusion, with its evidence, for one or more issues.
             operationId: synq.agent.sre.v1.TriageService.BatchLatestConclusions
             parameters:
                 - name: issueIds
@@ -59948,8 +59989,8 @@ paths:
                 - synq.agent.sre.v1.TriageService
             summary: ListTriageState
             description: |-
-                Retrieves the triage state for one or more issues. This method is used by the LLM agent
-                 to retrieve the current state of the issues it is working on.
+                Lists the triage states of the workspace's issues that have one of the given
+                 statuses, newest first.
             operationId: synq.agent.sre.v1.TriageService.ListTriageState
             parameters:
                 - name: statuses
@@ -60281,8 +60322,8 @@ tags:
 
          SuiteConfigService is the developer/authoring sandbox (edit, version, run
          ad-hoc with your own credentials — preview-only, no Entity, no Run, no
-         Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
-         a frozen snapshot of a suite config, mapped to workspace-level SYNQ
+         Issue). A deployment is what Coalesce Quality actually runs on the workspace's behalf:
+         a frozen snapshot of a suite config, mapped to workspace-level Coalesce Quality
          integrations, optionally scheduled or triggerable by API.
 
          Identity: every deployment has a stable deployment_id (UUIDv7) assigned on

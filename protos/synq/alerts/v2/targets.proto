@@ -46,8 +46,9 @@ message EmailTarget {
 // OwnerTarget configures alert delivery to the owner of the monitored entity.
 // This allows alerts to be automatically sent to whoever owns the data being monitored.
 message OwnerTarget {
-  // Path that identifies the ownership context for this target.
-  // This determines how the system will resolve the actual owner.
+  // The owner to notify: the owner's `entity_id` from
+  // `synq.owners.v1.OwnersService` (`owner-<uuid>`). The alert goes to the
+  // contacts of that owner.
   string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
 }
 

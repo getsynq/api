@@ -14,7 +14,7 @@ option go_package = "github.com/getsynq/api/agent/dwh/v1";
 // - Coalesce Quality Scout: On-premise AI agent for data exploration and analysis
 // Both agents share the same or very similar configuration file format.
 service ConnectionsService {
-  // ListConnections retrieves data warehouse connections for a workspace.
+  // List the data warehouse connections of a workspace.
   // Converts Coalesce Quality integration configurations to a standardized connection format.
   // Requires workspace context in the request metadata.
   rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse) {
@@ -30,7 +30,7 @@ service ConnectionsService {
     };
   }
 
-  // GenerateConnectionsYaml converts data warehouse connections to YAML configuration format.
+  // Convert data warehouse connections to a YAML configuration.
   // The generated YAML can be used directly as a config file for DWH Agent or Coalesce Quality Scout.
   // Secret fields are replaced with environment variable placeholders (e.g., `${CONNECTION_ID_PASSWORD}`).
   // Documentation: https://docs.synq.io/dw-integrations/agent#config-file-schema

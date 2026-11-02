@@ -13,7 +13,7 @@ option go_package = "github.com/getsynq/api/entities/schemas/v1";
 // EntitiesService is a service for retriving any entity.
 //
 service SchemasService {
-  // Get schema of the entity its identifier.
+  // Get the schema of an entity by its identifier.
   rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

@@ -149,7 +149,7 @@ message SqlTestsExclusiveQueryConfig {
 // the query-based configs, a static rule never resyncs against a changing
 // match set — it pins one path.
 message SqlTestsStaticConfig {
-  // Synq path of the table or view this rule deploys tests onto.
+  // Coalesce Quality path of the table or view this rule deploys tests onto.
   string path = 1 [(buf.validate.field).string.min_len = 1];
   // Tests deployed onto the table or view at `path`.
   repeated RuleTest tests = 2 [(buf.validate.field).repeated.min_items = 1];
@@ -171,7 +171,7 @@ message SqlTestsStaticConfig {
 // this rule — used to carve out a per-table override from a broader query rule
 // (see SqlTestDeploymentRule precedence).
 message SqlTestsExclusiveStaticConfig {
-  // Synq path of the table or view this rule exclusively owns.
+  // Coalesce Quality path of the table or view this rule exclusively owns.
   string path = 1 [(buf.validate.field).string.min_len = 1];
 }
 
@@ -281,9 +281,9 @@ enum SqlTestSkipReason {
 // SqlTestDeploymentChange describes one test's planned or applied change for a
 // single table or view within a SqlTestsDeploymentOverview.
 message SqlTestDeploymentChange {
-  // Synq path of the table or view the test targets or would target.
+  // Coalesce Quality path of the table or view the test targets or would target.
   string table_path = 1;
-  // Synq path of the SqlTest, when it already exists (create-side changes may
+  // Coalesce Quality path of the SqlTest, when it already exists (create-side changes may
   // leave this empty until the test is actually deployed).
   string sql_test_path = 2;
   // Name of the test, resolved from its RuleTest.name (or the generated name for
@@ -320,7 +320,7 @@ message SqlTestsDeploymentOverview {
   // SkippedTable names a table or view the rule's selection matched, but that
   // this deploy could not deploy tests onto.
   message SkippedTable {
-    // Synq path of the skipped table or view.
+    // Coalesce Quality path of the skipped table or view.
     string table_path = 1;
     // Why the table or view was skipped, as a stable SCREAMING_SNAKE token:
     //
@@ -348,9 +348,9 @@ message SqlTestsDeploymentOverview {
   // Rules covering the same table merge additively: each deploys the tests that are
   // not there yet, and never touches a test another rule owns.
   message SkippedTest {
-    // Synq path of the table or view carrying the test.
+    // Coalesce Quality path of the table or view carrying the test.
     string table_path = 1;
-    // Synq path of the SqlTest, when it already exists (empty while the owning
+    // Coalesce Quality path of the SqlTest, when it already exists (empty while the owning
     // rule has not deployed it yet).
     string sql_test_path = 2;
     // Name of the test, resolved the same way as in SqlTestDeploymentChange.
@@ -382,7 +382,7 @@ message SqlTestsDeploymentOverview {
     // `b` but deploys neither column — so this names the gap, not the test's
     // column list.
     repeated string missing_columns = 8;
-    // Synq path of the *referenced* table, for a `relationships` test skipped
+    // Coalesce Quality path of the *referenced* table, for a `relationships` test skipped
     // because that table (rather than the table under test) lacks the column.
     // Empty otherwise.
     string referenced_table_path = 9;

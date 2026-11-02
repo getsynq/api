@@ -26,7 +26,7 @@ import (
 // Required:
 //
 //	-client-id / QUALITY_CLIENT_ID, -client-secret / QUALITY_CLIENT_SECRET: credentials with the Read Monitors scope
-//	-synq-path / SYNQ_PATH: monitor synq path, e.g. monitor::ch-prod::default::runs::volume
+//	-entity-path / QUALITY_ENTITY_PATH: the monitor's entity path, e.g. monitor::ch-prod::default::runs::volume
 //
 // Optional:
 //
@@ -37,7 +37,7 @@ import (
 func main() {
 	clientID := flag.String("client-id", os.Getenv("QUALITY_CLIENT_ID"), "OAuth client id (QUALITY_CLIENT_ID)")
 	clientSecret := flag.String("client-secret", os.Getenv("QUALITY_CLIENT_SECRET"), "OAuth client secret (QUALITY_CLIENT_SECRET)")
-	synqPath := flag.String("synq-path", envOr("SYNQ_PATH", os.Getenv("MONITOR_PATH")), "monitor synq path (SYNQ_PATH / MONITOR_PATH)")
+	entityPath := flag.String("entity-path", os.Getenv("QUALITY_ENTITY_PATH"), "monitor entity path (QUALITY_ENTITY_PATH)")
 	host := flag.String("endpoint", envOr("QUALITY_API_ENDPOINT", "developer.synq.io"), "API host without port (QUALITY_API_ENDPOINT)")
 	metricsVersionRaw := flag.String("metrics-version", os.Getenv("METRICS_VERSION"), "metrics version (METRICS_VERSION); omit for current")
 	fromRaw := flag.String("from", os.Getenv("FROM"), "RFC3339 start (FROM); omit for server default")
@@ -55,12 +55,12 @@ func main() {
 	if *clientID == "" || *clientSecret == "" {
 		panic("-client-id / QUALITY_CLIENT_ID and -client-secret / QUALITY_CLIENT_SECRET must be set")
 	}
-	if *synqPath == "" {
-		panic("-synq-path / SYNQ_PATH must be set (e.g. monitor::<asset_path>::volume)")
+	if *entityPath == "" {
+		panic("-entity-path / QUALITY_ENTITY_PATH must be set (e.g. monitor::<asset_path>::volume)")
 	}
 
 	req := &predictionsv1.GetMonitorPredictionsRequest{
-		SynqPath: *synqPath,
+		SynqPath: *entityPath,
 	}
 
 	if *metricsVersionRaw != "" {
@@ -131,7 +131,7 @@ func main() {
 	}
 
 	fmt.Printf("synq_path=%s version=%s from=%s to=%s predictions=%d\n",
-		*synqPath, versionLabel, fromLabel, toLabel, len(resp.Predictions))
+		*entityPath, versionLabel, fromLabel, toLabel, len(resp.Predictions))
 
 	for i, p := range resp.Predictions {
 		seg := "<nil>"

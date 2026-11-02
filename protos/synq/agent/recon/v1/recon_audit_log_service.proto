@@ -13,7 +13,7 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 
 // AuditLogService provides methods to ingest and query reconciliation audit logs.
 service AuditLogService {
-  // IngestAuditLog stores a reconciliation run audit log.
+  // Store the audit log of a reconciliation run.
   //
   // Reporting a locally executed run is part of running one, so the scope that
   // authorises editing and running suites also authorises reporting their
@@ -28,7 +28,7 @@ service AuditLogService {
     };
   }
 
-  // ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and time range.
+  // List audit logs from newest to oldest, optionally filtered by suite and time range.
   rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -40,7 +40,7 @@ service AuditLogService {
     };
   }
 
-  // GetAuditLog returns a single audit log by invocation ID.
+  // Get one audit log by its invocation ID.
   rpc GetAuditLog(GetAuditLogRequest) returns (GetAuditLogResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

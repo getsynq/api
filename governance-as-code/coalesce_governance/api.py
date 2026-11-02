@@ -3,6 +3,11 @@ Thin API client + mapping between the YAML governance model and the public
 protos, in both directions (apply: dict -> proto; export/pull: proto -> dict).
 """
 
+import json
+import sys
+
+import grpc
+
 from synq.dataproducts.v2 import (
     dataproducts_service_pb2 as dp_svc,
     dataproducts_service_pb2_grpc as dp_grpc,
@@ -16,9 +21,23 @@ from synq.owners.v1 import (
     contact_pb2 as contact,
 )
 from synq.alerts.v1 import alerts_pb2
+from synq.queries.v1 import (
+    queries_service_pb2 as q_svc,
+    queries_service_pb2_grpc as q_grpc,
+)
 from synq.v1 import severity_pb2, pagination_pb2
 
 _PAGE = 500
+
+# BatchGet and BatchGetOwners accept at most this many ids per call (the
+# `max_items` validation on their `ids` field).
+_BATCH_GET_MAX = 200
+
+
+def _chunks(ids, size=_BATCH_GET_MAX):
+    ids = list(dict.fromkeys(ids))  # the API also rejects duplicate ids
+    for i in range(0, len(ids), size):
+        yield ids[i:i + size]
 
 
 # ---- scalar enum helpers ---------------------------------------------------
@@ -121,9 +140,27 @@ def definition_to_proto(resolver_ql, part_id):
     ])
 
 
+def _rql_string(value):
+    # ResolverQL string literals use the same escapes as JSON for the
+    # characters a path can hold (quotes and backslashes).
+    return json.dumps(value, ensure_ascii=False)
+
+
+def static_paths_rql(paths):
+    """Render pinned paths the way the server renders static_paths: the short
+    form for one path, the `paths=` keyword form for several."""
+    if len(paths) == 1:
+        return f"static_paths({_rql_string(paths[0])})"
+    return "static_paths(paths=[{}])".format(", ".join(_rql_string(p) for p in paths))
+
+
 def rendered_resolver_ql(product):
-    """Best-effort single-string ResolverQL for a product's definition (rendered).
-    One query part -> its rendered form; multiple -> or(...) of the parts."""
+    """Single-string ResolverQL for a product's definition (rendered).
+    One part -> its rendered form; several -> or(...) of the parts.
+
+    A pinned part's `entity_id` is the asset's resolver path, so pinned parts
+    are written as one static_paths(...) query. Applying that string stores
+    the pins as a query part, which selects the same assets."""
     qs, statics = [], []
     for p in product.definition.parts:
         if p.HasField("query") and p.query.rendered_resolver_ql:
@@ -131,7 +168,7 @@ def rendered_resolver_ql(product):
         elif p.entity_id:
             statics.append(p.entity_id)
     if statics:
-        qs.append('static_paths([{}])'.format(", ".join(f'"{s}"' for s in statics)))
+        qs.append(static_paths_rql(statics))
     if not qs:
         return ""
     return qs[0] if len(qs) == 1 else "or({})".format(", ".join(qs))
@@ -143,13 +180,45 @@ class Client:
     def __init__(self, channel):
         self.dp = dp_grpc.DataproductsServiceStub(channel)
         self.ow = ow_grpc.OwnersServiceStub(channel)
+        self.q = q_grpc.QueriesServiceStub(channel)
+        self._canonical = {}
+        self._canonical_off = False
+
+    # queries
+    def canonical_resolver_ql(self, resolver_ql):
+        """Return the server's canonical rendering of a ResolverQL string, the
+        same form it returns as `rendered_resolver_ql` on a stored query. Raises
+        ValueError if the server cannot compile it. Without the Read Entities
+        scope (SCOPE_ENTITY_READ) it returns the text with outer whitespace
+        removed, so only an exact match counts as unchanged."""
+        text = (resolver_ql or "").strip()
+        if not text or self._canonical_off:
+            return text
+        if text in self._canonical:
+            return self._canonical[text]
+        try:
+            resp = self.q.TranslateResolverQl(q_svc.TranslateResolverQlRequest(resolver_ql=text))
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.INVALID_ARGUMENT:
+                raise ValueError(f"invalid resolver_ql {text!r}: {e.details()}")
+            if e.code() in (grpc.StatusCode.PERMISSION_DENIED, grpc.StatusCode.UNIMPLEMENTED):
+                self._canonical_off = True
+                print("warning: cannot normalise resolver_ql (needs the Read Entities scope); "
+                      "plan compares it as written. Run `pull` to copy the server's form into the file.",
+                      file=sys.stderr)
+                return text
+            raise
+        out = resp.rendered_resolver_ql or text
+        self._canonical[text] = out
+        return out
 
     # products
     def get_products(self, ids):
         """Return {id: Dataproduct} for the given ids (missing ids omitted)."""
-        if not ids:
-            return {}
-        return dict(self.dp.BatchGet(dp_svc.BatchGetRequest(ids=list(ids))).dataproducts)
+        out = {}
+        for chunk in _chunks(ids):
+            out.update(self.dp.BatchGet(dp_svc.BatchGetRequest(ids=chunk)).dataproducts)
+        return out
 
     def list_products(self):
         out, cursor = [], None
@@ -194,9 +263,10 @@ class Client:
 
     # owners
     def get_owners(self, ids):
-        if not ids:
-            return {}
-        return dict(self.ow.BatchGetOwners(ow_svc.BatchGetOwnersRequest(ids=list(ids))).owners)
+        out = {}
+        for chunk in _chunks(ids):
+            out.update(self.ow.BatchGetOwners(ow_svc.BatchGetOwnersRequest(ids=chunk)).owners)
+        return out
 
     def list_owners(self):
         out, cursor = [], None

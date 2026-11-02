@@ -23,12 +23,17 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.io"
+	// EU is developer.synq.io (the default). Set QUALITY_API_ENDPOINT to
+	// api.us.synq.io for US or api.au.synq.io for AU.
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
 	clientID := os.Getenv("QUALITY_CLIENT_ID")
 	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
+	if clientID == "" || clientSecret == "" {
+		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set")
+	}
 	clickhouseHost := os.Getenv("CLICKHOUSE_HOST")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
@@ -185,4 +190,11 @@ func main() {
 			fmt.Printf("Upserted custom Omni Dashboard entity relationships.\n")
 		}
 	}
+}
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

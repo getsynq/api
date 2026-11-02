@@ -114,7 +114,7 @@ message OwnershipQuery {
 
 // How alerts fire for the assets an ownership covers. Deliberately mirrors the
 // settings on the public alerts API (`synq.alerts.v2`) so alerting behaviour
-// reads the same across SYNQ.
+// reads the same across Coalesce Quality.
 message AlertConfig {
   // Failure severities that fire an alert (Warning / Error / Fatal). Empty
   // means no severity is selected and the ownership routes no failure alerts.

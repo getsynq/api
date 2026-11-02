@@ -13,7 +13,7 @@ option go_package = "github.com/getsynq/api/entities/status/v1";
 // EntityIssuesService is the service which retrieves entity issues status.
 //
 service EntityIssuesService {
-  // Get specific entity status by its identifier.
+  // Get the issues status of one entity, and optionally of its upstream entities.
   rpc GetIssuesStatus(GetIssuesStatusRequest) returns (GetIssuesStatusResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -24,7 +24,8 @@ service EntityIssuesService {
     };
   }
 
-  // Get multiple entity statuses by their identifiers.
+  // Get the issues status of multiple entities, and optionally of their upstream
+  // entities.
   rpc BatchGetIssuesStatus(BatchGetIssuesStatusRequest) returns (BatchGetIssuesStatusResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

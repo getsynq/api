@@ -43,7 +43,7 @@ service ChangesService {
     option (google.api.http) = {get: "/api/changes/v1"};
   }
 
-  // BatchChange retrieves multiple entity changes by their IDs in a single request.
+  // Get multiple entity changes by their IDs in a single request.
   // This is an optimized endpoint for fetching specific changes when you already know their IDs,
   // rather than listing changes for an entity.
   rpc BatchChange(BatchChangeRequest) returns (BatchChangeResponse) {

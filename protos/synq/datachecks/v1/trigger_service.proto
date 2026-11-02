@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/datachecks/v1";
 
 // TriggerService provides synchronous execution of datachecks on entities.
 service TriggerService {
-  // TriggerDatachecks executes datachecks for the specified entities.
+  // Run the datachecks of the specified entities.
   rpc TriggerDatachecks(TriggerDatachecksRequest) returns (TriggerDatachecksResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {

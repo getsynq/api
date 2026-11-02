@@ -3,6 +3,9 @@
 MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
 EXAMPLES_FOLDER="${MY_PATH}/../examples"
 DOCS_DIR="./tmp"
+# The docs site route of DOCS_DIR. The index links are absolute, as the docs
+# site resolves a relative link against the site root, not against the page.
+DOCS_ROUTE="/api-reference"
 
 set -e
 
@@ -76,7 +79,11 @@ for folder in $EXAMPLES_FOLDER/*/; do
 """
 
     for example_folder in $folder*/; do
-        readarray -d '' code_files < <(find $example_folder -type f -name \*.$extension -print0)
+        # A read loop rather than readarray, so the script also runs on the bash 3 macOS ships.
+        code_files=()
+        while IFS= read -r -d '' code_file; do
+            code_files+=("$code_file")
+        done < <(find $example_folder -type f -name \*.$extension -print0)
         if [[ "${#code_files[@]}" == "0" ]]; then
             continue
         fi
@@ -84,7 +91,7 @@ for folder in $EXAMPLES_FOLDER/*/; do
         example_name=$(basename $example_folder)
 
         index_content="""${index_content}
-* [${example_name}](examples/${lang}/${example_name})
+* [${example_name}](${DOCS_ROUTE}/examples/${lang}/${example_name})
 """
         
         content="""

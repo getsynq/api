@@ -78,7 +78,7 @@ message IntegrationConfig {
 // produce no outputs leave this message empty.
 message IntegrationOutputs {
   oneof outputs {
-    // BigQuery: the service-account identity to grant dataset access to.
+    // BigQuery: the service account that Coalesce Quality connects as.
     BigQueryOutputs bigquery = 1;
     // Snowflake: the public key to register when using key-pair auth.
     SnowflakeOutputs snowflake = 2;
@@ -89,8 +89,16 @@ message IntegrationOutputs {
 
 // BigQuery generated outputs.
 message BigQueryOutputs {
-  // Email of the service account derived from the supplied credentials. Grant
-  // this principal access to the datasets you want Coalesce Quality to read.
+  // Email of the service account that Coalesce Quality connects as. It depends on
+  // the `BigqueryAuthentication` of the integration:
+  //   - BIGQUERY_AUTHENTICATION_SERVICE_ACCOUNT_KEY: the service account of the
+  //     supplied key. Grant it access to the datasets you want Coalesce Quality
+  //     to read.
+  //   - BIGQUERY_AUTHENTICATION_IMPERSONATION: the workspace service account.
+  //     Grant it roles/iam.serviceAccountTokenCreator on
+  //     `impersonated_service_account`.
+  //   - BIGQUERY_AUTHENTICATION_WORKSPACE_SERVICE_ACCOUNT: the workspace service
+  //     account. Grant it the BigQuery roles directly.
   string service_account_email = 1;
 }
 

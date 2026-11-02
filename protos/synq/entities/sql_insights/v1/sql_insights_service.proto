@@ -17,8 +17,8 @@ option go_package = "github.com/getsynq/api/entities/sql_insights/v1";
 // this specific entity use" and "which columns does building this entity join
 // on", without requiring the caller to re-parse any SQL.
 service SqlInsightsService {
-  // ListSqlConstructs returns the distribution of SQL constructs across all
-  // entities in the workspace. Every count is a number of entities, not a number
+  // Return the distribution of SQL constructs across all entities in the
+  // workspace. Every count is a number of entities, not a number
   // of occurrences: an entity whose SQL contains five GROUP BY clauses adds one
   // to the HAS_GROUP_BY count, not five. The result is workspace-scoped (derived
   // from the authenticated request) — no entity paths are supplied. Useful for
@@ -36,8 +36,8 @@ service SqlInsightsService {
     option (google.api.http) = {get: "/api/sql-insights/v1/constructs"};
   }
 
-  // BatchSqlDetails returns the SQL details for each of the requested entities,
-  // keyed by their synq path: the set of detected SQL constructs and, when the
+  // Return the SQL details for each of the requested entities, keyed by their
+  // Coalesce Quality path: the set of detected SQL constructs and, when the
   // request asks for them, the joins that building the entity makes. Every
   // requested path appears in the response, including a path with no SQL
   // details and a path matching no entity; both are returned with an empty set
@@ -57,7 +57,7 @@ service SqlInsightsService {
     };
   }
 
-  // ListJoinPatterns lists how other SQL joins a table, or one of its columns:
+  // List how other SQL joins a table, or one of its columns:
   // every join key that the SQL of a table, view or model in the workspace
   // uses to join the requested entity, read from the requested entity's side,
   // and which SQL makes it. It is the reverse of `BatchSqlDetails` joins, which

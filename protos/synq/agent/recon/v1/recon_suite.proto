@@ -76,7 +76,7 @@ message ReconciliationSuite {
   // reconciliation case under the suite. Merged with per-case annotations and
   // deployment-level annotations at promote time — the final, deduplicated
   // list is exposed on PromotedReconSuiteMetadata / PromotedReconCaseMetadata
-  // and surfaced to the rest of the SYNQ platform via EntityAnnotations.
+  // and surfaced to the rest of the Coalesce Quality platform via EntityAnnotations.
   repeated synq.entities.v1.Annotation annotations = 11;
 
   // How runs of this suite execute: the wall-clock budget of a run and how

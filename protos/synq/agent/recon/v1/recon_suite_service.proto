@@ -108,8 +108,8 @@ service SuiteConfigService {
     };
   }
 
-  // CheckSuiteInWarehouse checks a suite against the warehouses of its
-  // connections and gives all the problems that it finds. Each problem has the
+  // Check a suite against the warehouses of its connections and give all the
+  // problems that it finds. Each problem has the
   // path of its field, in the same form as YamlService.ValidateSuite. The
   // suite is not saved and does not run.
   //

@@ -321,8 +321,8 @@ service DwhService {
     };
   }
 
-  // IngestLineage pushes data-flow lineage between warehouse objects (and,
-  // optionally, between their columns) into the platform. Send the lineage you
+  // Push data-flow lineage between warehouse objects (and, optionally, between
+  // their columns) into the platform. Send the lineage you
   // extract from the warehouse — for example from Snowflake's GET_LINEAGE — as a
   // batch of directed edges. Use `replace_mode` to choose between an
   // incremental update (MERGE) and an authoritative refresh of a region of the

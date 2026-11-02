@@ -77,7 +77,9 @@ message SqlTableReference {
   }];
 
   // The entity this name stands for. Any entity: another custom entity, or a
-  // table, model or dashboard from a connected platform. An entity that does not
-  // exist yet is remembered and the edge appears once it does.
+  // table, model or dashboard from a connected platform. A custom entity must
+  // already exist, otherwise the write is refused. An entity from a connected
+  // platform that does not exist yet is kept, and the edge appears once the
+  // entity is ingested.
   synq.entities.v1.Identifier entity = 5 [(buf.validate.field).required = true];
 }

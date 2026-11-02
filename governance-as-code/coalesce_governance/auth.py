@@ -41,8 +41,18 @@ def config_home():
     base = os.environ.get("GOVERNANCE_HOME") or os.path.join(
         os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "coalesce-quality"
     )
-    os.makedirs(base, exist_ok=True)
+    os.makedirs(base, mode=0o700, exist_ok=True)
     return base
+
+
+def _write_private(path, data):
+    """Write JSON readable only by the current user (0600), as the other
+    Coalesce Quality CLIs store their tokens. The chmod covers a file an
+    older version created with default permissions."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        os.chmod(path, 0o600)
+        json.dump(data, f, indent=2)
 
 
 def _token_url(endpoint):
@@ -109,6 +119,12 @@ def _cached_login(endpoint):
     token_path, client_path = _paths(endpoint)
     if not os.path.exists(token_path):
         return None
+    # Tighten files an older version wrote with default permissions.
+    for path in (token_path, client_path):
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
 
     def load():
         with open(token_path) as f:
@@ -142,8 +158,7 @@ def _cached_login(endpoint):
             tok["refresh_token"] = b["refresh_token"]
         if b.get("expires_in"):
             tok["expires_at"] = datetime.fromtimestamp(time.time() + b["expires_in"], timezone.utc).isoformat()
-        with open(token_path, "w") as f:
-            json.dump(tok, f, indent=2)
+        _write_private(token_path, tok)
         return tok["access_token"]
 
     return _Bearer(token, "cached browser login")
@@ -188,8 +203,7 @@ def login(endpoint):
         })
         reg.raise_for_status()
         client_id = reg.json()["client_id"]
-        with open(client_path, "w") as f:
-            json.dump({"client_id": client_id}, f, indent=2)
+        _write_private(client_path, {"client_id": client_id})
 
     verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode()
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
@@ -214,13 +228,12 @@ def login(endpoint):
     tok.raise_for_status()
     b = tok.json()
     expires_at = datetime.fromtimestamp(time.time() + b.get("expires_in", 3600), timezone.utc).isoformat()
-    with open(token_path, "w") as f:
-        json.dump({
-            "access_token": b["access_token"],
-            "refresh_token": b.get("refresh_token", ""),
-            "token_type": b.get("token_type", "Bearer"),
-            "expires_at": expires_at,
-        }, f, indent=2)
+    _write_private(token_path, {
+        "access_token": b["access_token"],
+        "refresh_token": b.get("refresh_token", ""),
+        "token_type": b.get("token_type", "Bearer"),
+        "expires_at": expires_at,
+    })
     print(f"Signed in. Token cached at {token_path}")
 
 

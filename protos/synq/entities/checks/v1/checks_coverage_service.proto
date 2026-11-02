@@ -26,7 +26,7 @@ enum PropagationFilter {
 // for entities in the system. It helps track which checks are applied to entities, including
 // both direct checks and propagated checks from upstream entities.
 service ChecksCoverageService {
-  // GetCoverage retrieves the coverage of checks for a specific entity.
+  // Get the coverage of checks for a specific entity.
   // This includes both direct checks applied to the entity and checks propagated
   // from upstream entities. The response provides detailed information about:
   // - Table-level checks

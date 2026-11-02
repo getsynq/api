@@ -8,7 +8,7 @@ import "synq/v1/scope_authorization.proto";
 option go_package = "github.com/getsynq/api/auth/iam/v1";
 
 service IamService {
-  // Iam returns information about caller authentication
+  // Return information about how the caller is authenticated.
   rpc Iam(IamRequest) returns (IamResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {get: "/api/iam/v1"};

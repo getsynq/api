@@ -18,7 +18,9 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 // Entities are identified by a unique identifier and can be created, updated, read and deleted.
 //
 service EntitiesService {
-  // Create or update an entity. If the entity does not exist, it will be created, otherwise it will be updated. Entities are identified and deduplicated by their Identifier in a scope of a given customer workspace.
+  // Create or update a custom entity. If the entity does not exist, it is created,
+  // otherwise it is updated. Entities are identified by their Identifier in the
+  // workspace.
   rpc UpsertEntity(UpsertEntityRequest) returns (UpsertEntityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -30,7 +32,8 @@ service EntitiesService {
     };
   }
 
-  // Delete an entity by its identifier. If the entity does not exist, it will be a no-op.
+  // Delete a custom entity by its identifier. Deleting an entity that does not
+  // exist succeeds.
   rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -39,7 +42,7 @@ service EntitiesService {
     option (google.api.http) = {delete: "/api/entities/custom/v1/entities"};
   }
 
-  // List all entities.
+  // List the custom entities of the workspace.
   rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

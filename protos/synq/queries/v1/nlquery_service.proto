@@ -11,7 +11,7 @@ option go_package = "github.com/getsynq/api/queries/v1";
 
 // NLQueryService generates structured Query protos from natural language descriptions using an LLM.
 service NLQueryService {
-  // GenerateQuery generates a Query from a natural language description.
+  // Generate a Query from a natural language description.
   rpc GenerateQuery(GenerateQueryRequest) returns (GenerateQueryResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

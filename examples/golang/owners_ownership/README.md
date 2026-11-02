@@ -76,8 +76,9 @@ normal.
   (lineage, ownership, alerts) to point at the same resource. Do not build it
   yourself.
 - An ownership routes alerts. Its `AlertConfig` (severities, `notify_upstream`,
-  ongoing strategy) is what the alerts API reports and filters on. The alerts API
-  identifies it by the owner's `entity_id` and the ownership ID.
+  ongoing strategy) is what the alerts API reports and filters on. An alert names
+  its owner in `Owner.owner_path`, which takes the owner's `entity_id`
+  (`owner-<uuid>`, not the bare `id`), and the ownership in `Owner.ownership_id`.
 - A data product cannot point to other data products. Its definition cannot
   reference another data product or a domain. An ownership query can, so you can
   route the alerts of a whole data product or domain to one owner.

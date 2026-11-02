@@ -52,8 +52,8 @@ message BigQueryCloudConf {
 
 // How a BigQuery integration authenticates. The workspace service account is a Google
 // service account that Coalesce Quality creates for your workspace, in a project of the
-// region that serves it, and uses only for that workspace. Its email is in the outputs
-// of the integration's create response.
+// region that serves it, and uses only for that workspace. For a keyless authentication,
+// its email is `BigQueryOutputs.service_account_email` in the create and update responses.
 enum BigqueryAuthentication {
   BIGQUERY_AUTHENTICATION_UNSPECIFIED = 0;
   // A key of your service account, in `service_account_key`.

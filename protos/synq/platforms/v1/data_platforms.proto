@@ -121,7 +121,7 @@ message OracleIdentifier {
 message AthenaIdentifier {
   // AWS account and region the Athena workgroup runs in, formatted as
   // "<account-id>.<region>" (e.g. "123456789012.eu-west-1"). Auto-derived
-  // by SYNQ from sts:GetCallerIdentity at integration setup time.
+  // by Coalesce Quality from sts:GetCallerIdentity at integration setup time.
   string instance = 1 [(buf.validate.field).required = true];
   // Glue Data Catalog name. Almost always "AwsDataCatalog" — the default
   // catalog for Athena unless the customer registered a federated catalog.

@@ -20,10 +20,9 @@ option go_package = "github.com/getsynq/api/entities/checks/v1";
 // API. The workspace and the acting identity are always taken from the
 // request context, never from the payload.
 service ChecksCategoriesService {
-  // UpsertCheckCategories sets (or replaces) the explicit category for
-  // one or more checks. Each entry is the complete state for its check —
-  // both dimensions — so an empty `category` / `governance_category` means
-  // "no explicit value for that dimension".
+  // Set (or replace) the explicit category for one or more checks. Each entry is
+  // the complete state for its check, on both dimensions, so an empty `category` /
+  // `governance_category` means "no explicit value for that dimension".
   rpc UpsertCheckCategories(UpsertCheckCategoriesRequest) returns (UpsertCheckCategoriesResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -35,8 +34,8 @@ service ChecksCategoriesService {
     };
   }
 
-  // DeleteCheckCategories clears the explicit category (both dimensions)
-  // for the given checks. Checks fall back to their rule-computed
+  // Clear the explicit category (both dimensions) for the given checks. Checks
+  // fall back to their rule-computed
   // categories afterwards.
   rpc DeleteCheckCategories(DeleteCheckCategoriesRequest) returns (DeleteCheckCategoriesResponse) {
     option idempotency_level = IDEMPOTENT;
@@ -49,8 +48,7 @@ service ChecksCategoriesService {
     };
   }
 
-  // ListCheckCategories returns every explicit check category in the
-  // caller's workspace.
+  // List every explicit check category in the caller's workspace.
   rpc ListCheckCategories(ListCheckCategoriesRequest) returns (ListCheckCategoriesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {

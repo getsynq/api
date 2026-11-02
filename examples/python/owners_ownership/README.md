@@ -70,6 +70,8 @@ python owners.py
   the bare `id` or the `entity_id`.
 - An ownership is alert routing as code. The alerts API reports and filters on
   an ownership's `AlertConfig` (severities, `notify_upstream`, ongoing
-  strategy), and attributes it with the owner's `entity_id` and the ownership id.
+  strategy). An alert names its owner in `Owner.owner_path`, which takes the
+  owner's `entity_id` (`owner-<uuid>`, not the bare `id`), and the ownership in
+  `Owner.ownership_id`.
 - A data-product definition cannot reference another data product or a domain.
   An ownership query can.

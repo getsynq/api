@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/schedule/v1";
 
 // ScheduleService provides schedule evaluation utilities.
 service ScheduleService {
-  // PreviewSchedules returns the next occurrences for one or more schedule expressions.
+  // Return the next occurrences for one or more schedule expressions.
   // Never fails at the RPC level; per-schedule errors are returned in the response items.
   // Response items match request items by index.
   rpc PreviewSchedules(PreviewSchedulesRequest) returns (PreviewSchedulesResponse) {

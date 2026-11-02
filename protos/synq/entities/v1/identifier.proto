@@ -435,7 +435,7 @@ message MonitorIdentifier {
 }
 
 //
-// SYNQ PATH
+// COALESCE QUALITY PATH
 //
 
 message SynqPathIdentifier {

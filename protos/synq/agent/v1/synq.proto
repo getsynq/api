@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 
 option go_package = "github.com/getsynq/api/agent/v1";
 
-// SYNQ contains authentication and connection details for the Coalesce Quality platform
+// Authentication and connection details for the Coalesce Quality platform.
 message SYNQ {
   // Client ID for OAuth authentication
   string client_id = 1 [(buf.validate.field) = {

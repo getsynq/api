@@ -84,7 +84,9 @@ message Alert {
 // Owner attributes an alert to an owner and ownership. Only entity-scoped alerts
 // (issue and schema change) can be owned.
 message Owner {
-  // Path identifying the owner of this alert config.
+  // The owner of this alert config: the owner's `entity_id` from
+  // `synq.owners.v1.OwnersService` (`owner-<uuid>`). The bare owner `id` is not
+  // accepted.
   string owner_path = 1 [(buf.validate.field).string = {min_len: 1}];
   // Ownership identifier. Empty for an alert scoped to the owner as a whole
   // rather than to one of its ownerships.

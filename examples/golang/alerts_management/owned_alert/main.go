@@ -20,7 +20,9 @@ import (
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.io"
+	// EU is developer.synq.io (the default). Set QUALITY_API_ENDPOINT to
+	// api.us.synq.io for US or api.au.synq.io for AU.
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
@@ -259,4 +261,11 @@ func main() {
 	}
 
 	fmt.Println("\nDone! Alert with owner created, verified, and cleaned up successfully.")
+}
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

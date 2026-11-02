@@ -5,7 +5,8 @@ a YAML file, through the public API. Write the state you want once, `plan` it,
 `apply` it, and run it again safely. You can also `export` your live workspace
 into a file and `pull` later changes back into it. Your comments are kept.
 
-The tool uses the public `synq.dataproducts.v2` and `synq.owners.v1` APIs. It
+The tool uses the public `synq.dataproducts.v2` and `synq.owners.v1` APIs, and
+`synq.queries.v1` to compare queries. It
 works the same for people and for agents (see [Use from agents](#use-from-agents)).
 
 ## Install
@@ -79,6 +80,12 @@ Grant the scopes for the commands you run:
 |---|---|
 | `status`, `plan`, `export`, `pull` (read only) | Read Data Products (`SCOPE_DATAPRODUCT_READ`), Read Owners (`SCOPE_OWNERS_READ`), Read Ownership (`SCOPE_OWNERSHIP_READ`) |
 | `apply`, `prune` (read and write) | The three read scopes, plus Edit Data Products (`SCOPE_DATAPRODUCT_EDIT`), Edit Owners (`SCOPE_OWNERS_EDIT`), Edit Ownership (`SCOPE_OWNERSHIP_EDIT`) |
+
+Also grant Read Entities (`SCOPE_ENTITY_READ`) if you can. `plan` and `apply`
+use it to compile your `resolver_ql` into the form the server stores, so a query
+that is written differently but means the same thing shows no change. Without
+it, a query counts as unchanged only if its text is the same as the server's
+form, and the tool prints a warning. Run `pull` to copy that form into the file.
 
 [`scopes.mdx`](../scopes.mdx) lists every scope and the methods it allows.
 
@@ -191,8 +198,8 @@ duplicates, and `prune` deletes only what the file manages. Before any write,
 the tool validates the file and checks that no `id` is used twice.
 
 A typical round trip is `export -o f.yaml`, then edit, then `apply -f f.yaml`.
-`pull -f f.yaml` refreshes the data products and owners in the file from the
-workspace and keeps your comments.
+`pull -f f.yaml` refreshes the data products, owners and ownerships in the file
+from the workspace and keeps your comments.
 
 ## Writing selections (ResolverQL)
 
@@ -200,9 +207,15 @@ Data product membership and ownership queries use ResolverQL. A data product
 definition is a leaf, so it cannot use `in_product` or `in_domain`. An ownership
 query can reference data products and domains.
 
-The server stores each query in a canonical form. `pull` replaces the
-`resolver_ql` of each data product with that rendered form, so the next `plan`
-shows no drift for it.
+The server compiles each query and keeps only the compiled form, not your text.
+`plan` compiles your `resolver_ql` the same way (with the Read Entities scope,
+see [Permissions](#permissions)) and compares the two compiled forms. `pull`
+replaces the `resolver_ql` of each data product and ownership query with the
+server's rendered form.
+
+Assets pinned to a data product by id are written as one
+`static_paths(...)` query of their paths. `apply` stores that as a query part,
+which selects the same assets.
 
 ## Alerting
 

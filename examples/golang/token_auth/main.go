@@ -10,16 +10,23 @@ import (
 	"github.com/getsynq/api/examples/golang/token_auth/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"os"
 )
 
 func main() {
 	ctx := context.Background()
 
-	host := "developer.synq.io"
+	// EU is developer.synq.io (the default). Set QUALITY_API_ENDPOINT to
+	// api.us.synq.io for US or api.au.synq.io for AU.
+	host := getenv("QUALITY_API_ENDPOINT", "developer.synq.io")
 	port := "443"
 	apiUrl := fmt.Sprintf("%s:%s", host, port)
 
-	longLivedToken := "st-long-lived-token"
+	// A long-lived API token, from the API tokens section of Settings > API.
+	longLivedToken := os.Getenv("QUALITY_TOKEN")
+	if longLivedToken == "" {
+		panic("QUALITY_TOKEN must be set")
+	}
 
 	oauthTokenSource, err := auth.LongLivedTokenSource(longLivedToken, host)
 	if err != nil {
@@ -103,4 +110,11 @@ func main() {
 
 	fmt.Println("issuesStatus:", issuesStatus)
 
+}
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

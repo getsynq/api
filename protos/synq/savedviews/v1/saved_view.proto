@@ -92,7 +92,7 @@ message SavedViewConfig {
 // On write, provide the query in ONE of two forms:
 //   - `public_query` — a structured query (the same shape used elsewhere for
 //     asset selection), convenient to build from a filter UI; or
-//   - `resolver_ql` — the SYNQ resolver query language, a compact text form
+//   - `resolver_ql` — the ResolverQL query language, a compact text form
 //     that additionally expresses severity/status and time-window filters
 //     (e.g. `with_severity(statuses=["error"], since="24h")`).
 // When both are set, `resolver_ql` wins. The server compiles the query and

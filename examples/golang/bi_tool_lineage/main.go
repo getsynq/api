@@ -91,8 +91,8 @@ func main() {
 		gitBranch: env("BI_EXPORT_GIT_BRANCH", "main"),
 	}
 
-	clientID := env("QUALITY_CLIENT_ID", os.Getenv("SYNQ_CLIENT_ID"))
-	clientSecret := env("QUALITY_CLIENT_SECRET", os.Getenv("SYNQ_CLIENT_SECRET"))
+	clientID := os.Getenv("QUALITY_CLIENT_ID")
+	clientSecret := os.Getenv("QUALITY_CLIENT_SECRET")
 	if clientID == "" || clientSecret == "" {
 		fmt.Println("set QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET (see README.md)")
 		os.Exit(1)

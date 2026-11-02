@@ -19,8 +19,8 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 //
 // SuiteConfigService is the developer/authoring sandbox (edit, version, run
 // ad-hoc with your own credentials — preview-only, no Entity, no Run, no
-// Issue). A deployment is what SYNQ actually runs on the workspace's behalf:
-// a frozen snapshot of a suite config, mapped to workspace-level SYNQ
+// Issue). A deployment is what Coalesce Quality actually runs on the workspace's behalf:
+// a frozen snapshot of a suite config, mapped to workspace-level Coalesce Quality
 // integrations, optionally scheduled or triggerable by API.
 //
 // Identity: every deployment has a stable deployment_id (UUIDv7) assigned on
@@ -144,8 +144,8 @@ service SuiteDeploymentService {
   }
 
   // List deployments for the caller's workspace. Filters support answering
-  // "what is SYNQ running on behalf of this workspace?" and "which
-  // deployments use this SYNQ integration?".
+  // "what is Coalesce Quality running on behalf of this workspace?" and "which
+  // deployments use this integration?".
   rpc ListSuiteDeployments(ListSuiteDeploymentsRequest) returns (ListSuiteDeploymentsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -199,7 +199,7 @@ service SuiteDeploymentService {
 }
 
 // Maps a reconciliation-connection name (as referenced in the suite config)
-// to a concrete SYNQ integration. Used at execution time to resolve DWH
+// to a concrete Coalesce Quality integration. Used at execution time to resolve DWH
 // credentials.
 //
 // Two credential planes are defined on the wire:
@@ -857,7 +857,7 @@ message GetSuiteDeploymentResponse {
 message ListSuiteDeploymentsRequest {
   optional synq.v1.Pagination pagination = 1;
 
-  // Return only deployments wired to this SYNQ integration (match against
+  // Return only deployments wired to this Coalesce Quality integration (match against
   // the deployment's connection_mappings).
   optional string integration_id = 2;
 

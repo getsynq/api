@@ -15,7 +15,9 @@ option go_package = "github.com/getsynq/api/entities/executions/v1";
 service EntityExecutionsService {
   option deprecated = true;
 
-  // Execution affects status of the custom entity
+  // Record a run of a custom entity, with its status. The status of the run counts
+  // toward the status of the entity. Sending a run with the same `created_at`, to
+  // the second, replaces it.
   rpc UpsertExecution(UpsertExecutionRequest) returns (UpsertExecutionResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -27,7 +29,8 @@ service EntityExecutionsService {
     };
   }
 
-  // LogEntry is a log message for the custom entity
+  // Record a log message for a custom entity. A log entry does not change the
+  // status of the entity.
   rpc UpsertLogEntry(UpsertLogEntryRequest) returns (UpsertLogEntryResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {

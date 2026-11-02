@@ -12,7 +12,7 @@ option go_package = "github.com/getsynq/api/agent/recon/v1";
 // YamlService provides stateless conversion between YAML config format and proto.
 // This is useful for UI editors that need to display/edit suite configs as YAML.
 service YamlService {
-  // ParseYaml parses a YAML config string into a ReconciliationSuite proto.
+  // Parse a YAML config string into a ReconciliationSuite proto.
   // Only the suite configuration fields are extracted (connections are ignored).
   //
   // ParseYaml refuses two types of suite with INVALID_ARGUMENT and a
@@ -29,7 +29,7 @@ service YamlService {
     };
   }
 
-  // RenderYaml renders a ReconciliationSuite proto as a YAML config string.
+  // Render a ReconciliationSuite proto as a YAML config string.
   rpc RenderYaml(RenderYamlRequest) returns (RenderYamlResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {
@@ -38,7 +38,7 @@ service YamlService {
     };
   }
 
-  // ValidateSuite checks a suite and gives all the problems that it finds.
+  // Check a suite and give all the problems that it finds.
   // Each problem has the path of its field. ValidateSuite does not save the
   // suite, so an editor can call it after each change.
   //

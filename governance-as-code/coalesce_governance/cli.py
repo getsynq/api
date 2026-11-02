@@ -13,7 +13,8 @@ Commands:
            unless you pass --yes.
   prune    Delete the resources the file manages.
   export   Write the workspace's data products and owners to a YAML file.
-  pull     Refresh the data products and owners listed in a file from the API.
+  pull     Refresh the data products, owners and ownerships listed in a file
+           from the API.
            Comments and formatting are kept.
 
 Identity works as in the API: every resource has a UUID `id`. If you omit it,
@@ -224,7 +225,7 @@ def plan(doc, client):
             changed.append("folder")
         if "priority" in p and p["priority"] != api.priority_from_proto(cur.priority):
             changed.append("priority")
-        if p["resolver_ql"].strip() != api.rendered_resolver_ql(cur).strip():
+        if not _same_query(client, p["resolver_ql"], api.rendered_resolver_ql(cur)):
             changed.append("definition")
         actions.append({"kind": "dataproduct", "id": pid, "title": p["title"],
                         "action": "update" if changed else "unchanged", "changed": changed})
@@ -257,15 +258,26 @@ def plan(doc, client):
                 if not c.selection.HasField("dataproduct_id") or c.selection.dataproduct_id != resolve_ref(os_spec["dataproduct"]):
                     changed.append("selection")
             else:
-                desired_q = os_spec["query"]["resolver_ql"].strip()
-                cur_q = c.selection.query.rendered_resolver_ql.strip() if c.selection.HasField("query") else ""
-                if desired_q != cur_q:
+                if not c.selection.HasField("query") or not _same_query(
+                        client, os_spec["query"]["resolver_ql"], c.selection.query.rendered_resolver_ql):
+                    changed.append("selection")
+                elif os_spec["query"].get("name", "") != c.selection.query.name:
                     changed.append("selection")
             if _alert_norm(_plain(os_spec.get("alert", {}))) != _alert_norm(api.alert_from_proto(c.alert)):
                 changed.append("alert")
             actions.append({"kind": "ownership", "id": osid, "owner_id": oid, "title": label,
                             "action": "update" if changed else "unchanged", "changed": changed})
     return actions
+
+
+def _same_query(client, desired, current):
+    """Compare two ResolverQL strings in the server's canonical form. The
+    server does not keep the text it was given, only the compiled query, so a
+    hand-written query never matches the rendered one as text."""
+    try:
+        return client.canonical_resolver_ql(desired) == client.canonical_resolver_ql(current)
+    except ValueError as e:
+        raise CliError(str(e))
 
 
 def _plain(x):
@@ -418,6 +430,7 @@ def do_pull(path, client):
         if rql:
             p["resolver_ql"] = rql
         n += 1
+    resolve_ref = _product_ref_resolver(doc)
     remote_o = client.get_owners([o["id"] for o in doc.get("owners", []) if o.get("id")])
     for o in doc.get("owners", []):
         ro = remote_o.get(o.get("id"))
@@ -427,6 +440,29 @@ def do_pull(path, client):
         if ro.contacts:
             o["contacts"] = [api.contact_from_proto(c) for c in ro.contacts]
         n += 1
+        remote_os = {r.id: r for r in client.list_ownerships(ro.id)}
+        for os_ in o.get("ownerships", []):
+            r = remote_os.get(os_.get("id"))
+            if not r:
+                continue
+            sel = api.selection_from_proto(r.selection)
+            if "dataproduct_id" in sel:
+                # Keep a reference by title if it still points at the same product.
+                if resolve_ref(os_.get("dataproduct")) != sel["dataproduct_id"]:
+                    os_["dataproduct"] = sel["dataproduct_id"]
+                os_.pop("query", None)
+            else:
+                q = os_.get("query")
+                if q is None:
+                    os_.pop("dataproduct", None)
+                    os_["query"] = q = {}
+                if sel["query"]["name"]:
+                    q["name"] = sel["query"]["name"]
+                q["resolver_ql"] = sel["query"]["resolver_ql"]
+            remote_alert = api.alert_from_proto(r.alert)
+            if _alert_norm(_plain(os_.get("alert", {}))) != _alert_norm(remote_alert):
+                os_["alert"] = remote_alert
+            n += 1
     with open(path, "w") as f:
         _yaml_rt().dump(doc, f)
     print(f"Pulled {n} resource(s) into {path} (comments preserved).")

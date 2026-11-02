@@ -22,7 +22,7 @@ option go_package = "github.com/getsynq/api/entities/executions/v2";
 // - Get aggregated summaries of execution activity
 // - Track execution trends and patterns
 service EntityExecutionsService {
-  // ListExecutions retrieves a paginated list of executions for one or more entities.
+  // List the executions of one or more entities, paginated.
   // Executions are returned in reverse chronological order (newest first).
   //
   // Supports filtering by:
@@ -42,7 +42,7 @@ service EntityExecutionsService {
     option (google.api.http) = {get: "/api/executions/v2/list"};
   }
 
-  // BatchGetExecutions retrieves multiple executions by their IDs.
+  // Get multiple executions by their IDs.
   // This is useful when you already know the execution IDs and want to fetch their details.
   rpc BatchGetExecutions(BatchGetExecutionsRequest) returns (BatchGetExecutionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -59,7 +59,7 @@ service EntityExecutionsService {
     };
   }
 
-  // GetExecutionsSummary provides aggregated statistics about executions for specified entities.
+  // Get aggregated statistics about the executions of the specified entities.
   // This is useful for quickly understanding execution patterns without fetching all execution details.
   //
   // Returns:
@@ -82,7 +82,7 @@ service EntityExecutionsService {
     };
   }
 
-  // GetLatestExecutions retrieves the most recent execution for each specified entity.
+  // Get the most recent execution of each specified entity.
   // IMPORTANT: Only returns executions where the entity appears in EntityExecution.entities (what executed).
   // This means it returns executions OF the entity (e.g., model runs, monitor runs, task runs),
   // NOT executions that merely reference the entity in targets or extra_references.

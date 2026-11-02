@@ -135,7 +135,7 @@ message SqlTest {
 message InputTable {
   // Fully-qualified name of the referenced table.
   ingest.dwh.v1.Fqn fqn = 1;
-  // Synq-internal path for the table asset (e.g. "bq-prod::project::dataset::table").
+  // Coalesce Quality path of the table asset (e.g. "bq-prod::project::dataset::table").
   string table_path = 2;
 }
 
