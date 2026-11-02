@@ -1,13 +1,13 @@
 ---
 title: "API Scopes"
-description: "Scopes that can be granted to Coalesce Quality API tokens and OAuth clients, and the public API methods each one unlocks"
+description: "Scopes for Coalesce Quality API clients and API tokens, and the public API methods each scope allows"
 ---
 
-Every Coalesce Quality API token and OAuth client credential is granted a set of **scopes**. A scope authorises a group of related API methods; a call succeeds when the token carries **at least one** of the scopes required by that method (OR semantics).
+Every Coalesce Quality API client and API token has a set of scopes. A scope allows a group of related API methods. A call succeeds when the client or token has at least one of the scopes that its method requires.
 
-Choose the narrowest set of scopes that covers the methods your integration calls. Scopes are selected when you create a token or client in API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)), in the order listed below.
+Select the smallest set of scopes that covers the methods your integration calls. You select the scopes when you create a client or token in the API settings ([EU](https://app.synq.io/settings/api) · [US](https://app.us.synq.io/settings/api) · [AU](https://app.au.synq.io/settings/api)). The settings list the scopes in the same order as this page.
 
-There are 62 scopes available to API tokens and OAuth clients. Internal scopes reserved for managed integrations are not listed here.
+API clients and API tokens can have 62 scopes. Internal scopes for managed integrations are not on this page.
 
 ## Edit Issues
 
@@ -23,7 +23,7 @@ Create and update data quality issues, including changing their status and assig
 | `MarkNoActionNeeded`<br/>_synq.issues.issues.v1.IssuesService_<br/>`PATCH /api/issues/v1/{issue_id}/mark-no-action-needed` | Mark issue as no action needed. |
 | `PostComment`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/{issue_id}/comment` | Post a comment on an issue. |
 | `ClearStatus`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/clear-status` | Clear the triage status of an issue, returning it to an untriaged state. |
-| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. Only the actor who posted the comment may |
+| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. |
 | `MarkExpected`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-expected` | Mark issue as expected. |
 | `MarkFixed`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-fixed` | Mark issue as fixed. |
 | `MarkInvestigating`<br/>_synq.issues.v2.IssuesService_<br/>`PATCH /api/issues/v2/{issue_id}/mark-investigating` | Mark issue as being investigated. |
@@ -57,7 +57,7 @@ Declare, update, and resolve incidents raised for confirmed issues with business
 | `CancelIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/cancel` | Cancel an incident |
 | `CloseIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`PATCH /api/incidents/v1/{incident_id}/close` | Close an incident |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
-| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. Only the actor who posted the comment may |
+| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. |
 | `MergeIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/merge` |  |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
 | `RemoveIssuesFromIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/issues` |  |
@@ -86,13 +86,13 @@ Create and update entities such as tables, dashboards, and jobs in the catalog.
 | Method | Description |
 | ------ | ----------- |
 | `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`DELETE /api/entities/custom/v1/check-relationships` | Delete relationships between checks and the entities they validate. |
-| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | Create or update relationships that attach a check (e.g. a SQL test) to the |
-| `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
-| `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
-| `DeleteEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`DELETE /api/entities/custom/v1/features` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
-| `UpsertEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
-| `DeleteEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`DELETE /api/entities/custom/v1/groups` | DeleteEntitiesGroup deletes a group by its identifier. If the group does not exist, it will be a no-... |
-| `UpsertEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups` | UpsertEntitiesGroup updates current definition of group to the server. As part of the upsert operati... |
+| `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | Create or update relationships that attach a check (e.g. a SQL test) to the entities it validates. |
+| `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | Delete an entity by its identifier. |
+| `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | Create or update an entity. |
+| `DeleteEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`DELETE /api/entities/custom/v1/features` | Delete an entity by its identifier. |
+| `UpsertEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features` | Create or update an entity. |
+| `DeleteEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`DELETE /api/entities/custom/v1/groups` | DeleteEntitiesGroup deletes a group by its identifier. |
+| `UpsertEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups` | UpsertEntitiesGroup updates current definition of group to the server. |
 
 ## Read Entities
 
@@ -105,12 +105,12 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GenerateConnectionsYaml`<br/>_synq.agent.dwh.v1.ConnectionsService_ | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
 | `ListConnections`<br/>_synq.agent.dwh.v1.ConnectionsService_ | ListConnections retrieves data warehouse connections for a workspace. |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
-| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and |
-| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, |
-| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read |
-| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point |
-| `ListAccessSignals`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/signals` | List the entities of the workspace, or of a selection, that one signal names, such as the tables |
-| `ListActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-list` | List the workspace's actors, the service accounts, tools, people, logins nothing classifies and |
+| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by Airflow, transformed by dbt, read by Looker Studio, 3 people and 12 logins". |
+| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, and its rank in each pool it has reads in. |
+| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read entities. |
+| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point per day in the asked time zone, and a weekday and hour grid. |
+| `ListAccessSignals`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/signals` | List the entities of the workspace, or of a selection, that one signal names, such as the tables a pipeline builds and nobody reads, or the tables nobody touched. |
+| `ListActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-list` | List the workspace's actors, the service accounts, tools, people, logins nothing classifies and Coalesce Quality, each with the totals GetActorSummary has for it: its queries and their weights, its reads, inputs and writes, and the entities it read and wrote. |
 | `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
@@ -119,40 +119,40 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | Get multiple DatabaseCoordinates for identifiers. |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | Given database FQN return possible entity ids. |
-| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it |
+| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it validates, across the whole workspace. |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | List all entities. |
-| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the |
+| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the workspace when entity_id is left unset. |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | ListEntityGroups lists all groups. |
 | `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | List all entities. |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | Get multiple entities by their identifiers. |
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | Get specific entity by its identifier. |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | List entities matching the given filter |
 | `SearchEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1/search` | Search for entities. |
-| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. With no `parent`, returns the |
-| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
-| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. Direct members only by |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — ordered root first, leaf (immediate parent) last. |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
-| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, |
-| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: |
-| `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
-| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last |
+| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, keyed by their synq path: the set of detected SQL constructs and, when the request asks for them, the joins that building the entity makes. |
+| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: every join key that the SQL of a table, view or model in the workspace uses to join the requested entity, read from the requested entity's side, and which SQL makes it. |
+| `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all entities in the workspace. |
+| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last modification and a link to the object in the warehouse console. |
 | `ListEntityTraitDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-traits/list` | List every trait a selection query can filter entities by. |
 | `ListEntityTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/entity-types/list` | List every kind of entity in your workspace, the built-in types and your own. |
 | `ListExecutionTypeDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/execution-types/list` | List every kind of run Coalesce Quality records against an entity. |
 | `ListPlatformDefs`<br/>_synq.entities.typedefs.v1.TypeDefsService_<br/>`POST /api/entities/typedefs/v1/platforms/list` | List every platform Coalesce Quality connects to, with its display name. |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
-| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for |
-| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, |
-| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of |
-| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a |
-| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
-| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
+| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for each one, and the knowledge pages pinned to it. |
+| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, who owns them and how they are tagged. |
+| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of the entities and of the other knowledge pages. |
+| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a part of their name and by certification. |
+| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each requested entity. |
+| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. |
 | `GenerateQuery`<br/>_synq.queries.v1.NLQueryService_<br/>`POST /api/queries/v1/generate` | GenerateQuery generates a Query from a natural language description. |
-| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. Pass a |
-| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. Unlike |
+| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. |
+| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. |
 
 ## Edit Entity Types
 
@@ -162,8 +162,8 @@ Define and update custom entity types.
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | Delete an entity by its identifier. If the entity does not exist, it will be a no-op. |
-| `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | Create or update an entity. If the entity does not exist, it will be created, otherwise it will be u... |
+| `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | Delete an entity by its identifier. |
+| `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | Create or update an entity. |
 
 ## Read Entity Types
 
@@ -187,13 +187,13 @@ Create and update lineage relationships between entities.
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | Delete relationships between entities. If the relationship does not exist, it will be ignored. |
-| `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | Create or update relationships between entities. If the relationship already exists, it will be upda... |
-| `CreateFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha` | Create a fold. Repeating the same request returns the fold it created; |
-| `DeleteFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/delete` | Delete a fold. Deleting a fold that does not exist succeeds. |
+| `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | Delete relationships between entities. |
+| `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | Create or update relationships between entities. |
+| `CreateFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha` | Create a fold. |
+| `DeleteFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/delete` | Delete a fold. |
 | `RenameFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/rename` | Change the name shown on a fold's node. |
-| `SetFoldEnabled`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/enabled` | Switch a fold on or off. A fold switched off is kept and listed, and |
-| `UpdateFoldMatcher`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/matcher` | Change which entities a fold matches. The fold's node keeps its entity id. |
+| `SetFoldEnabled`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/enabled` | Switch a fold on or off. |
+| `UpdateFoldMatcher`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/{id}/matcher` | Change which entities a fold matches. |
 
 ## Read Lineage
 
@@ -204,17 +204,17 @@ View upstream and downstream lineage between entities.
 | Method | Description |
 | ------ | ----------- |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
-| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and |
-| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
-| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the |
-| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in |
+| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by Airflow, transformed by dbt, read by Looker Studio, 3 people and 12 logins". |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and platform, and when it works. |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the tools and the logins. |
+| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in the workspace when ids is left empty. |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
-| `BatchGetFoldNodes`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/nodes/batch-get` | Read fold nodes by entity id: which fold a node in a lineage response |
-| `BatchGetFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/batch-get` | Read folds by id. An id with no fold is absent from the response. |
-| `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, |
-| `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and |
+| `BatchGetFoldNodes`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/nodes/batch-get` | Read fold nodes by entity id: which fold a node in a lineage response stands for, and which entities it showed. |
+| `BatchGetFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/batch-get` | Read folds by id. |
+| `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, oldest first. |
+| `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and lineage edges it matches, a sample of them, and the entities that stop being shown on the same node as a folded one. |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
-| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it |
+| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it in the last 31 days (upstream), and the entities it ran (downstream). |
 
 ## Read Entity Code
 
@@ -252,7 +252,7 @@ Create, update, and delete SQL tests.
 | `BatchDeleteSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/batch` |  |
 | `BatchDeploySqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/batch/deployed` |  |
 | `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
-| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests |
+| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests onto its current match set. |
 | `BatchDeleteSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`DELETE /api/datachecks/sqltests/v1` | Delete SqlTests by their IDs. |
 | `BatchUpsertSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1` | Upsert SqlTests based on a unique ID. |
 
@@ -267,7 +267,7 @@ View SQL tests and their configuration.
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
 | `BatchGetSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/by-id` |  |
 | `GetSqlTestDeployDeleteOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/{id}/deleted` | Preview the effect of deleting a rule, without deleting it. |
-| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without |
+| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without deploying it. |
 | `ListSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1` |  |
 | `BatchGetSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1/by-id` | Get SqlTests by their IDs. |
 | `ListSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`GET /api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
@@ -369,20 +369,20 @@ Create, update, and delete integrations and their connection settings.
 
 | Method | Description |
 | ------ | ----------- |
-| `AcceptPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | AcceptPromptSuggestion applies a pending suggestion to the matching SRE agent |
-| `DismissPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | DismissPromptSuggestion marks a pending suggestion as dismissed with an optional |
-| `RecordPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | RecordPromptSuggestion is the producer-side endpoint used by the offline |
-| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
-| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
-| `CreateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1` | Create a new integration. The server assigns the id and returns the created |
-| `DeleteIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`DELETE /api/integrations/v1/{integration_id}` | Delete an integration. The integration stops being scheduled and is removed |
-| `DisableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/disable` | Disable an integration without deleting it. The configuration is kept but |
-| `EnableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/enable` | Enable a previously disabled integration. No-op if already enabled. |
-| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. Secret config fields are masked. |
-| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an |
-| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
-| `RefreshIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/refresh` | Trigger an immediate, ad-hoc refresh of an integration. Available only for |
-| `UpdateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`PUT /api/integrations/v1/{integration_id}` | Update an integration. The `config` is replaced wholesale — send the |
+| `AcceptPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | AcceptPromptSuggestion applies a pending suggestion to the matching SRE agent prompt field. |
+| `DismissPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | DismissPromptSuggestion marks a pending suggestion as dismissed with an optional free-text reason. |
+| `RecordPromptSuggestion`<br/>_synq.agent.sre.v1.SreAgentService_ | RecordPromptSuggestion is the producer-side endpoint used by the offline analyser to register a new suggestion for a workspace. |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their run history: what `GetIntegrationHealth` returns as `health`, for each id. |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. |
+| `CreateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1` | Create a new integration. |
+| `DeleteIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`DELETE /api/integrations/v1/{integration_id}` | Delete an integration. |
+| `DisableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/disable` | Disable an integration without deleting it. |
+| `EnableIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/enable` | Enable a previously disabled integration. |
+| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. |
+| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an integration. |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled state). |
+| `RefreshIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/{integration_id}/refresh` | Trigger an immediate, ad-hoc refresh of an integration. |
+| `UpdateIntegration`<br/>_synq.integrations.v1.IntegrationsService_<br/>`PUT /api/integrations/v1/{integration_id}` | Update an integration. |
 | `SetPlatformAuthentication`<br/>_synq.platforms.v1.PlatformsService_<br/>`POST /api/platforms/v1` |  |
 
 ## Read Integration Settings
@@ -393,14 +393,14 @@ View integrations and their connection settings.
 
 | Method | Description |
 | ------ | ----------- |
-| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection |
-| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the |
+| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection summary) for the caller's workspace. |
+| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the caller's workspace. |
 | `Get`<br/>_synq.extensions.atlan.integrations.v1.AtlanIntegrationService_<br/>`GET /api/extensions/atlan/integrations/v1` |  |
-| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
-| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
-| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. Secret config fields are masked. |
-| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an |
-| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their run history: what `GetIntegrationHealth` returns as `health`, for each id. |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. |
+| `GetIntegration`<br/>_synq.integrations.v1.IntegrationsService_ | Fetch a single integration by id. |
+| `GetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return current health plus a paginated history of recent runs for an integration. |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled state). |
 
 ## Edit Users
 
@@ -457,10 +457,10 @@ View monitors and their configuration.
 | `ListMonitors`<br/>_synq.monitors.custom_monitors.v1.CustomMonitorsService_<br/>`GET /api/monitors/custom-monitors/v1` |  |
 | `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
-| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
-| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
-| `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
-| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and |
+| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each requested entity. |
+| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. |
+| `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. |
+| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and current label. |
 
 ## Edit Automatic Monitors
 
@@ -525,13 +525,13 @@ Create, update, and delete alert rules and notification channels.
 | `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | Create a new alert configuration. |
 | `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | Delete an existing alert configuration. |
 | `Rename`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/rename` | Rename an existing alert configuration. |
-| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | Delivers a static test message to the given targets so you can confirm that |
+| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | Delivers a static test message to the given targets so you can confirm that delivery reaches each channel before relying on a real alert. |
 | `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | Enables or disables an existing alert configuration. |
-| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. This alert notifies |
+| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. |
 | `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | Update the trigger and/or the kind-specific settings of an alert. |
 | `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | Replace the delivery targets of an existing alert configuration. |
 | `UpdateTemplate`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/template` | Set or clear the message template of an existing alert configuration. |
-| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored |
+| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored alert with the state given here in a single write. |
 
 ## Read Alerts
 
@@ -544,7 +544,7 @@ View alert rules and notification channels.
 | `BatchGet`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/get` | Get multiple alert configurations by their identifiers. |
 | `List`<br/>_synq.alerts.services.v1.AlertsService_<br/>`POST /api/alerts/v1/list` | Retrieves a list of alert configurations based on filters. |
 | `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | Get multiple alert configurations by their identifiers. |
-| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | Reports whether the workspace's incident-owner alert is on. This alert has |
+| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | Reports whether the workspace's incident-owner alert is on. |
 | `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | Retrieves a list of alert configurations based on filters. |
 
 ## Edit Owners
@@ -555,8 +555,8 @@ Create, update, and delete owners and their notification channels (Slack, email,
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. Idempotent — deleting an |
-| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. |
 
 ## Read Owners
 
@@ -568,9 +568,9 @@ View owners and their notification channels.
 | ------ | ----------- |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
-| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
-| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
-| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the assets themselves. |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and narrow them to what is or is not covered. |
+| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
 
 ## Edit Ownership
@@ -581,8 +581,8 @@ Create, update, and delete ownership assignments and the alerts they route to ow
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
-| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. The ownership id is supplied |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. |
 
 ## Read Ownership
 
@@ -592,7 +592,7 @@ View ownership assignments and their alert routing.
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
+| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). |
 | `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
 
 ## Edit Data Products
@@ -608,10 +608,10 @@ Create, update, and delete data products.
 | `SetDefinition`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition` | Set the definition for an existing dataproduct. |
 | `Upsert`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1` | Create or update a dataproduct. |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/definition/part` | Upsert definition part to the definition of an existing dataproduct. |
-| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
-| `RemoveDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`DELETE /api/dataproducts/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. Idempotent. |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. |
+| `RemoveDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`DELETE /api/dataproducts/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. |
 | `SetDefinition`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`PUT /api/dataproducts/v2/{id}/definition` | Replace the entire membership definition of a data product. |
-| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. |
 | `UpsertDefinitionPart`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/{id}/definition/parts` | Add or replace a single definition part (matched by its part id). |
 
 ## Read Data Products
@@ -624,13 +624,13 @@ View data products and their contents.
 | ------ | ----------- |
 | `Get`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/get` | Get multiple dataproducts by their identifiers. |
 | `List`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`GET /api/dataproducts/v1` | List all the dataproducts in the current scope. |
-| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
-| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
-| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
+| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. |
+| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. |
+| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its definition and returned as opaque entity ids. |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
-| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
-| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the assets themselves. |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and narrow them to what is or is not covered. |
 
 ## Edit Domains
 
@@ -645,10 +645,10 @@ Create, update, and delete domains.
 | `SetDefinition`<br/>_synq.domains.v1.DomainsService_<br/>`PUT /api/domains/v1/{domain_id}/definition` | Set the definition for an existing domain. |
 | `Upsert`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1` | Create or update a domain. |
 | `UpsertDefinitionPart`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/{domain_id}/definition/parts` | Upsert definition part to the definition of an existing domain. |
-| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. Idempotent — deleting an already-deleted or unknown domain |
-| `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. Idempotent. |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. |
+| `RemoveDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`DELETE /api/domains/v2/{id}/definition/parts/{part_id}` | Remove a single definition part by its part id. |
 | `SetDefinition`<br/>_synq.domains.v2.DomainsService_<br/>`PUT /api/domains/v2/{id}/definition` | Replace the entire membership definition of a domain. |
-| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. The id is supplied by the caller (a UUID); |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. |
 | `UpsertDefinitionPart`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/{id}/definition/parts` | Add or replace a single definition part (matched by its part id). |
 
 ## Read Domains
@@ -662,10 +662,10 @@ View domains and their contents.
 | `BatchGet`<br/>_synq.domains.v1.DomainsService_<br/>`POST /api/domains/v1/batch-get` | Get multiple domains by their identifiers. |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1/{domain_id}/sub-domains` | Get a domain with its sub-domains |
 | `List`<br/>_synq.domains.v1.DomainsService_<br/>`GET /api/domains/v1` | List all the domains in the current workspace. |
-| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. Ids that do not exist (or, unless |
+| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
-| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
-| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
+| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. |
+| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its definition — including everything contributed by the data products and domains it references, and by its own sub-domains — and returned as opaque entity ids. |
 
 ## Manage Extensions
 
@@ -716,76 +716,76 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GenerateConnectionsYaml`<br/>_synq.agent.dwh.v1.ConnectionsService_ | GenerateConnectionsYaml converts data warehouse connections to YAML configuration format. |
 | `ListConnections`<br/>_synq.agent.dwh.v1.ConnectionsService_ | ListConnections retrieves data warehouse connections for a workspace. |
 | `GetAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | GetAuditLog returns a single audit log by invocation ID. |
-| `ListAuditLogs`<br/>_synq.agent.recon.v1.AuditLogService_ | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and tim... |
-| `BatchReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | BatchReconciliationRunState returns the latest concluded run and any ongoing |
+| `ListAuditLogs`<br/>_synq.agent.recon.v1.AuditLogService_ | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and time range. |
+| `BatchReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | BatchReconciliationRunState returns the latest concluded run and any ongoing (SCHEDULED or IN_PROGRESS) run for each suite_id. |
 | `ListReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | ListReconciliationRunState returns runs filtered by status and/or suite_id. |
 | `GetSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get the latest version of a suite config by suite_id. |
 | `GetSuiteConfigVersion`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get a specific historical version of a suite config. |
 | `ListSuiteConfigVersions`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get version history for a suite config. |
 | `ListSuiteConfigs`<br/>_synq.agent.recon.v1.SuiteConfigService_ | List latest suite configs with filtering and pagination. |
 | `GetSuiteDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Fetch a deployment by suite_id or deployment_id. |
-| `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List the append-only history of a deployment (every promote, |
-| `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List deployments for the caller's workspace. Filters support answering |
+| `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List the append-only history of a deployment (every promote, re-promote, schedule/mapping change, pause/resume, unpromote). |
+| `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List deployments for the caller's workspace. |
 | `SubmitFeatureRequest`<br/>_synq.agent.sre.v1.FeatureRequestService_<br/>`POST /api/feature-request/v1/submit` | SubmitFeatureRequest submits a feature request to the Coalesce Quality product team. |
-| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection |
-| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the |
+| `GetConfig`<br/>_synq.agent.sre.v1.SreAgentService_ | GetConfig returns the Scout configuration (system prompts + DWH connection summary) for the caller's workspace. |
+| `ListPromptSuggestions`<br/>_synq.agent.sre.v1.SreAgentService_ | ListPromptSuggestions returns prompt-improvement suggestions recorded for the caller's workspace. |
 | `BatchSuggestionStates`<br/>_synq.agent.sre.v1.TestsSuggestionStateService_ |  |
 | `GetActiveSuggestionStatesFor`<br/>_synq.agent.sre.v1.TestsSuggestionStateService_ |  |
 | `ListSuggestionStates`<br/>_synq.agent.sre.v1.TestsSuggestionStateService_ |  |
-| `BatchLatestConclusions`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/conclusions` | Retrieves the latest triage state for one or more issues. This method is used by the LLM agent |
-| `BatchTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/states` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
-| `ListTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/statuses` | Retrieves the triage state for one or more issues. This method is used by the LLM agent |
+| `BatchLatestConclusions`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/conclusions` | Retrieves the latest triage state for one or more issues. |
+| `BatchTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/states` | Retrieves the triage state for one or more issues. |
+| `ListTriageState`<br/>_synq.agent.sre.v1.TriageService_<br/>`GET /api/triage/v1/statuses` | Retrieves the triage state for one or more issues. |
 | `BatchGet`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/get` | Get multiple alert configurations by their identifiers. |
-| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | Reports whether the workspace's incident-owner alert is on. This alert has |
+| `GetIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`GET /api/alerts/v2/incident-owner` | Reports whether the workspace's incident-owner alert is on. |
 | `List`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/list` | Retrieves a list of alert configurations based on filters. |
 | `BatchGetSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/by-id` |  |
 | `GetSqlTestDeployDeleteOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/{id}/deleted` | Preview the effect of deleting a rule, without deleting it. |
-| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without |
+| `GetSqlTestDeployOverview`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1/overview` | Preview the effect of deploying a rule (which have not yet been saved), without deploying it. |
 | `ListSqlTestDeploymentRules`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`GET /api/datachecks/sql-test-deployment-rules/v1` |  |
 | `BatchGetSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1/by-id` | Get SqlTests by their IDs. |
 | `ListSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`GET /api/datachecks/sqltests/v1` | List SqlTests for given annotations. |
 | `BatchGetTestSuggestionsForEntities`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`GET /api/datachecks/testsuggestions/v1` |  |
 | `Get`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/get` | Get multiple dataproducts by their identifiers. |
 | `List`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`GET /api/dataproducts/v1` | List all the dataproducts in the current scope. |
-| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. Ids that do not exist (or, unless |
-| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. Narrow with `folder` |
-| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its |
-| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. Ids that do not exist (or, unless |
+| `BatchGet`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/batch-get` | Fetch multiple data products by id. |
+| `List`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2` | List the data products in the workspace, paginated. |
+| `ListMembers`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`GET /api/dataproducts/v2/{id}/members` | List the assets that currently belong to a data product, resolved from its definition and returned as opaque entity ids. |
+| `BatchGet`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/batch-get` | Fetch multiple domains by id. |
 | `FetchDomainWithSubDomains`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/sub-domains` | Fetch a domain together with its direct sub-domains, keyed by id. |
-| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. Narrow to one level of the |
-| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its |
-| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and |
-| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, |
-| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read |
-| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
-| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point |
-| `ListAccessSignals`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/signals` | List the entities of the workspace, or of a selection, that one signal names, such as the tables |
-| `ListActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-list` | List the workspace's actors, the service accounts, tools, people, logins nothing classifies and |
-| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the |
+| `List`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2` | List the domains in the workspace, paginated. |
+| `ListMembers`<br/>_synq.domains.v2.DomainsService_<br/>`GET /api/domains/v2/{id}/members` | List the assets that currently belong to a domain, resolved from its definition — including everything contributed by the data products and domains it references, and by its own sub-domains — and returned as opaque entity ids. |
+| `BatchGetEntityUsage`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/usage` | Read how each asked entity is used over the window, in one line: what loads it, what runs and builds it, what else writes it, and who reads it, such as "loaded by Fivetran, orchestrated by Airflow, transformed by dbt, read by Looker Studio, 3 people and 12 logins". |
+| `BatchGetPopularity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/popularity` | Read how popular each asked entity is over the window: its counted reads and writes per measure, and its rank in each pool it has reads in. |
+| `GetActivityOverview`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/overview` | Read a workspace's queries and their cost per group of logins, per platform, and its most read entities. |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and platform, and when it works. |
+| `GetEntityActivitySeries`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/series` | Read how access to one entity moves over the window: per direction, a point per UTC hour, a point per day in the asked time zone, and a weekday and hour grid. |
+| `ListAccessSignals`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/signals` | List the entities of the workspace, or of a selection, that one signal names, such as the tables a pipeline builds and nobody reads, or the tables nobody touched. |
+| `ListActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-list` | List the workspace's actors, the service accounts, tools, people, logins nothing classifies and Coalesce Quality, each with the totals GetActorSummary has for it: its queries and their weights, its reads, inputs and writes, and the entities it read and wrote. |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the tools and the logins. |
 | `ListPersonActivity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/person` | Read what one person's logins read and wrote over the window, per entity, direction and measure. |
 | `BatchGetEntityAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`POST /api/entities/annotations/v1/batchGet` | Read the annotations carried by specific entities. |
 | `ListAnnotations`<br/>_synq.entities.annotations.v1.AnnotationsService_<br/>`GET /api/entities/annotations/v1` | List all available annotations with their usage counts across entities. |
 | `BatchChange`<br/>_synq.entities.changes.v1.ChangesService_<br/>`POST /api/changes/v1/by-id` | BatchChange retrieves multiple entity changes by their IDs in a single request. |
 | `List`<br/>_synq.entities.changes.v1.ChangesService_<br/>`GET /api/changes/v1` | Retrieves the complete change history for specified entities. |
 | `GetCoverage`<br/>_synq.entities.checks.v1.ChecksCoverageService_ | GetCoverage retrieves the coverage of checks for a specific entity. |
-| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
-| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
-| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
-| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
-| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
-| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
-| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
-| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on each dimension, whether a workspace or platform rule produces each one, and how many checks carry it. |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the platforms, entity types, packages and kinds available to build a categorisation rule or a listing filter from. |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a ResolvedCategory carries into the rule that produced it. |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of them — the state already applied, not a projection. |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus the platform-provided ones — in the order they are tried. |
 | `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
 | `ListCode`<br/>_synq.entities.code.v1.CodeService_<br/>`GET /api/code/v1` | ListCode retrieves all code artifacts associated with a specific entity. |
 | `GetTableConstraints`<br/>_synq.entities.constraints.v1.TableConstraintsService_<br/>`GET /api/constraints/v1/table-constraints` | Get table constraints (primary keys, foreign keys, indexes, etc.) for a given entity. |
 | `BatchDatabaseCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-id` | Get multiple DatabaseCoordinates for identifiers. |
 | `BatchIdsByCoordinates`<br/>_synq.entities.coordinates.v1.DatabaseCoordinatesService_<br/>`POST /api/coordinates/v1/database/by-fqn` | Given database FQN return possible entity ids. |
-| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it |
+| `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | List every relationship that attaches a check to the entities it validates, across the whole workspace. |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | List all entities. |
-| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the |
+| `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the workspace when entity_id is left unset. |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | ListEntityGroups lists all groups. |
-| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in |
+| `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in the workspace when ids is left empty. |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | Get multiple entities by their identifiers. |
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | Get specific entity by its identifier. |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | List entities matching the given filter |
@@ -794,72 +794,72 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `GetExecutionsSummary`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/summary` | GetExecutionsSummary provides aggregated statistics about executions for specified entities. |
 | `GetLatestExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`POST /api/executions/v2/latest` | GetLatestExecutions retrieves the most recent execution for each specified entity. |
 | `ListExecutions`<br/>_synq.entities.executions.v2.EntityExecutionsService_<br/>`GET /api/executions/v2/list` | ListExecutions retrieves a paginated list of executions for one or more entities. |
-| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. With no `parent`, returns the |
-| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
-| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. Direct members only by |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — ordered root first, leaf (immediate parent) last. |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. |
 | `GetImpact`<br/>_synq.entities.impact.v1.ImpactService_<br/>`POST /api/impact/v1` |  |
-| `BatchGetFoldNodes`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/nodes/batch-get` | Read fold nodes by entity id: which fold a node in a lineage response |
-| `BatchGetFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/batch-get` | Read folds by id. An id with no fold is absent from the response. |
-| `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, |
-| `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and |
+| `BatchGetFoldNodes`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/nodes/batch-get` | Read fold nodes by entity id: which fold a node in a lineage response stands for, and which entities it showed. |
+| `BatchGetFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/batch-get` | Read folds by id. |
+| `ListFolds`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`GET /api/lineage/folds/v1alpha` | List the ids of every fold in the workspace, switched off ones included, oldest first. |
+| `PreviewFold`<br/>_synq.entities.lineage.folds.v1alpha.LineageFoldsService_<br/>`POST /api/lineage/folds/v1alpha/preview` | Show what a matcher would fold, before it is saved: how many entities and lineage edges it matches, a sample of them, and the entities that stop being shown on the same node as a folded one. |
 | `GetLineage`<br/>_synq.entities.lineage.v1.LineageService_<br/>`POST /api/lineage/v1` |  |
-| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it |
-| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. Ids no integration declared and with no activity in the window |
-| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login |
-| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's queries, highest first, then by |
-| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
-| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set |
-| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
+| `BatchOrchestration`<br/>_synq.entities.orchestration.v1.OrchestrationService_<br/>`GET /api/orchestration/v1` | BatchOrchestration returns, for each requested entity, the jobs, job steps and tasks that ran it in the last 31 days (upstream), and the entities it ran (downstream). |
+| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. |
+| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login against the members the caller passes. |
+| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's queries, highest first, then by their share of its activity. |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set with its evidence. |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the person links in a second list. |
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get schema of the entity its identifier. |
-| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, |
-| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: |
-| `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all |
+| `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | BatchSqlDetails returns the SQL details for each of the requested entities, keyed by their synq path: the set of detected SQL constructs and, when the request asks for them, the joins that building the entity makes. |
+| `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | ListJoinPatterns lists how other SQL joins a table, or one of its columns: every join key that the SQL of a table, view or model in the workspace uses to join the requested entity, read from the requested entity's side, and which SQL makes it. |
+| `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | ListSqlConstructs returns the distribution of SQL constructs across all entities in the workspace. |
 | `BatchGetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_<br/>`POST /api/status/v1/incidents/by-id` | Get multiple entity statuses by their identifiers. |
 | `GetIncidents`<br/>_synq.entities.status.v1.EntityIncidentsService_ | Get specific entity status by its identifier. |
 | `BatchGetIssuesStatus`<br/>_synq.entities.status.v1.EntityIssuesService_<br/>`POST /api/status/v1/issues/by-id` | Get multiple entity statuses by their identifiers. |
-| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last |
+| `BatchGetTableInfo`<br/>_synq.entities.tableinfo.v1alpha.TableInfoService_<br/>`POST /api/entities/table-info/v1alpha/batch-get` | Warehouse facts about tables and views: owner, creation time, row count, size, last modification and a link to the object in the warehouse console. |
 | `GetDiffByChangeId`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/change/{change_id}` |  |
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
 | `BatchGetIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/by-id` |  |
 | `ListIncidents`<br/>_synq.incidents.v1.IncidentsService_<br/>`GET /api/incidents/v1` |  |
-| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their |
-| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. Ids not found (or not in the |
-| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled |
+| `BatchGetIntegrationHealth`<br/>_synq.integrations.v1.IntegrationsService_ | Return the current health of several integrations at once, without their run history: what `GetIntegrationHealth` returns as `health`, for each id. |
+| `BatchGetIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`POST /api/integrations/v1/by-id` | Fetch multiple integrations by id in one call. |
+| `ListIntegrations`<br/>_synq.integrations.v1.IntegrationsService_<br/>`GET /api/integrations/v1` | List all integrations in the workspace (optionally filtered by enabled state). |
 | `BatchGetIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`POST /api/issues/v1/by-id` |  |
 | `ListIssues`<br/>_synq.issues.issues.v1.IssuesService_<br/>`GET /api/issues/v1` |  |
 | `BatchGetIssues`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/by-id` |  |
 | `ListIssues`<br/>_synq.issues.v2.IssuesService_<br/>`GET /api/issues/v2` |  |
-| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for |
-| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, |
-| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of |
-| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a |
+| `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for each one, and the knowledge pages pinned to it. |
+| `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, who owns them and how they are tagged. |
+| `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of the entities and of the other knowledge pages. |
+| `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a part of their name and by certification. |
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
 | `GetDeployOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule` |  |
 | `ListDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules` |  |
 | `ListDeploymentRulesForAsset`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rules/{asset_path}` |  |
 | `History`<br/>_synq.monitors.history.v1.HistoryService_<br/>`GET /api/monitors/history/v1` |  |
 | `MonitorInfo`<br/>_synq.monitors.info.v1.MonitorInfoService_<br/>`GET /api/monitors/info/v1` |  |
-| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each |
-| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. Identity-aware: resolves |
-| `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. The monitor must exist |
-| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and |
+| `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each requested entity. |
+| `GetEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1/entity-metrics` | Returns raw metric timeseries for an entity. |
+| `GetMonitorPredictions`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`GET /api/monitors/predictions/v1` | Returns prediction timeseries for a monitor. |
+| `ListMonitorSegments`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`GET /api/monitors/segments/v1` | Lists the segments a monitor has ingested so far, with their raw value and current label. |
 | `BatchGetEntityOverlays`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/by-id` | For each entity, list every overlay that claims it. |
 | `BatchGetOverlayMemberCounts`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/member-counts` | Count the members of each named overlay. |
-| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the |
-| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and |
-| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. Ids that do not exist (or, unless |
-| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). Ids that do not exist (or, |
+| `GetCoverageSummary`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage-summary` | Count coverage over one or more named candidate sets, without listing the assets themselves. |
+| `ListEntityCoverage`<br/>_synq.overlays.v1.OverlaysService_<br/>`POST /api/overlays/v1/coverage` | List the candidate assets together with the overlays claiming each, and narrow them to what is or is not covered. |
+| `BatchGetOwners`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/batch-get` | Fetch multiple owners by id. |
+| `BatchGetOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/batch-get` | Fetch multiple ownerships by id (across owners). |
 | `ListOwners`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1` | List the owners in the workspace, paginated. |
 | `ListOwnerships`<br/>_synq.owners.v1.OwnersService_<br/>`GET /api/owners/v1/{owner_id}/ownerships` | List the ownerships of an owner, paginated. |
-| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. Pass a |
-| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. Unlike |
-| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
-| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
-| `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
-| `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
-| `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
+| `ResolveQuery`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/resolve` | Evaluate a selection and return the matched entity ids, paginated. |
+| `TranslateResolverQl`<br/>_synq.queries.v1.QueriesService_<br/>`POST /api/queries/v1/translate-resolver-ql` | Compile a ResolverQL expression into a structured public `Query`. |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by target and state. |
+| `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. |
+| `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. |
+| `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. |
 | `GetByEmail`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/by-email` |  |
 | `GetUserIdentities`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1/identities` | Returns all canonical identity strings for a user. |
 | `ListUsers`<br/>_synq.users.v1.UsersService_<br/>`GET /api/users/v1` |  |
@@ -875,41 +875,41 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `Create`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2` | Create a new alert configuration. |
 | `Delete`<br/>_synq.alerts.services.v2.AlertsService_<br/>`DELETE /api/alerts/v2` | Delete an existing alert configuration. |
 | `Rename`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/rename` | Rename an existing alert configuration. |
-| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | Delivers a static test message to the given targets so you can confirm that |
+| `SendTestAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/test` | Delivers a static test message to the given targets so you can confirm that delivery reaches each channel before relying on a real alert. |
 | `ToggleEnabled`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/toggle` | Enables or disables an existing alert configuration. |
-| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. This alert notifies |
+| `ToggleIncidentOwnerAlert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/incident-owner` | Turns the workspace's incident-owner alert on or off. |
 | `UpdateSettings`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/settings` | Update the trigger and/or the kind-specific settings of an alert. |
 | `UpdateTargets`<br/>_synq.alerts.services.v2.AlertsService_<br/>`POST /api/alerts/v2/targets` | Replace the delivery targets of an existing alert configuration. |
-| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored |
+| `Upsert`<br/>_synq.alerts.services.v2.AlertsService_<br/>`PUT /api/alerts/v2` | Creates the alert when no alert holds `fqn`, otherwise replaces the stored alert with the state given here in a single write. |
 | `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
-| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests |
+| `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests onto its current match set. |
 | `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
-| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. Idempotent — deleting an already-deleted or unknown |
-| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. The id is supplied by the caller (a UUID); |
-| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. Idempotent — deleting an already-deleted or unknown domain |
-| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. The id is supplied by the caller (a UUID); |
+| `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. |
+| `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. |
+| `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. |
+| `Upsert`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2` | Create or update a domain. |
 | `DeleteCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/delete` | Clear the explicit categories of one or more checks, on both dimensions. |
-| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. An explicit category is |
-| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. |
+| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
-| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. It is refused with FAILED_PRECONDITION when the |
-| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose |
+| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. |
+| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose classification moves, how many counted reads each adds or removes, and the entities whose rank moves most. |
 | `CreateIncident`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1` |  |
-| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. Only the actor who posted the comment may |
+| `DeleteComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`DELETE /api/incidents/v1/{incident_id}/comment/{comment_id}` | Delete a comment on an incident. |
 | `PostComment`<br/>_synq.incidents.v1.IncidentsService_<br/>`POST /api/incidents/v1/{incident_id}/comment` | Post a comment on an incident. |
-| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. Only the actor who posted the comment may |
+| `DeleteComment`<br/>_synq.issues.v2.IssuesService_<br/>`DELETE /api/issues/v2/{issue_id}/comment/{comment_id}` | Delete a comment on an issue. |
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | Post a comment on an issue. |
 | `DeleteDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rule/{id}` |  |
 | `DeployDeploymentRule`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`POST /api/monitors/automated/v1/deployment-rules/deployed` |  |
 | `BatchUpdateMonitorSegmentLabels`<br/>_synq.monitors.segments.v1.MonitorSegmentsService_<br/>`POST /api/monitors/segments/v1/labels` | Sets or clears the label of one or more segments. |
-| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. Idempotent — deleting an |
-| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. Idempotent — deleting an already-deleted or |
-| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. The id is supplied by the caller (a UUID); |
-| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. The ownership id is supplied |
-| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. Replaces |
+| `DeleteOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/delete` | Delete an owner and all of its ownerships. |
+| `DeleteOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/ownerships/delete` | Delete an ownership by id. |
+| `UpsertOwner`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1` | Create or update an owner. |
+| `UpsertOwnership`<br/>_synq.owners.v1.OwnersService_<br/>`POST /api/owners/v1/{owner_id}/ownerships` | Create or update an ownership under an owner. |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. |
 | `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | Ignore a recommendation for good, whatever is found about it later. |
-| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it |
-| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it is open again. |
+| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
 
 ## Read Reconciliation Audits and Settings
@@ -921,16 +921,16 @@ View reconciliation suites, settings, and audit results.
 | Method | Description |
 | ------ | ----------- |
 | `GetAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | GetAuditLog returns a single audit log by invocation ID. |
-| `ListAuditLogs`<br/>_synq.agent.recon.v1.AuditLogService_ | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and tim... |
-| `BatchReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | BatchReconciliationRunState returns the latest concluded run and any ongoing |
+| `ListAuditLogs`<br/>_synq.agent.recon.v1.AuditLogService_ | ListAuditLogs returns audit logs ordered from newest to oldest, optionally filtered by suite and time range. |
+| `BatchReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | BatchReconciliationRunState returns the latest concluded run and any ongoing (SCHEDULED or IN_PROGRESS) run for each suite_id. |
 | `ListReconciliationRunState`<br/>_synq.agent.recon.v1.RunStateService_ | ListReconciliationRunState returns runs filtered by status and/or suite_id. |
 | `GetSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get the latest version of a suite config by suite_id. |
 | `GetSuiteConfigVersion`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get a specific historical version of a suite config. |
 | `ListSuiteConfigVersions`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Get version history for a suite config. |
 | `ListSuiteConfigs`<br/>_synq.agent.recon.v1.SuiteConfigService_ | List latest suite configs with filtering and pagination. |
 | `GetSuiteDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Fetch a deployment by suite_id or deployment_id. |
-| `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List the append-only history of a deployment (every promote, |
-| `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List deployments for the caller's workspace. Filters support answering |
+| `ListSuiteDeploymentHistory`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List the append-only history of a deployment (every promote, re-promote, schedule/mapping change, pause/resume, unpromote). |
+| `ListSuiteDeployments`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | List deployments for the caller's workspace. |
 
 ## Edit Reconciliation Settings
 
@@ -941,11 +941,11 @@ Create and update reconciliation suites and their settings.
 | Method | Description |
 | ------ | ----------- |
 | `IngestAuditLog`<br/>_synq.agent.recon.v1.AuditLogService_ | IngestAuditLog stores a reconciliation run audit log. |
-| `CancelReconciliationRun`<br/>_synq.agent.recon.v1.RunStateService_ | CancelReconciliationRun marks a SCHEDULED or IN_PROGRESS run as |
-| `CheckSuiteInWarehouse`<br/>_synq.agent.recon.v1.SuiteConfigService_ | CheckSuiteInWarehouse checks a suite against the warehouses of its |
+| `CancelReconciliationRun`<br/>_synq.agent.recon.v1.RunStateService_ | CancelReconciliationRun marks a SCHEDULED or IN_PROGRESS run as CANCELLED so the suite is no longer "occupied" by a stuck occurrence — used to recover from local-dev / executor outages where a run was queued but never executed. |
+| `CheckSuiteInWarehouse`<br/>_synq.agent.recon.v1.SuiteConfigService_ | CheckSuiteInWarehouse checks a suite against the warehouses of its connections and gives all the problems that it finds. |
 | `DeleteSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Delete a managed suite config (soft delete — inserts a deleted version). |
 | `SubmitAdhocSuite`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Submit an ad-hoc suite for one-off execution. |
-| `UpsertSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Upsert a managed suite config. Creates if new, updates with new version if exists. |
+| `UpsertSuiteConfig`<br/>_synq.agent.recon.v1.SuiteConfigService_ | Upsert a managed suite config. |
 
 ## Promote Reconciliation Suites to run on Schedule or API
 
@@ -955,16 +955,16 @@ Promote reconciliation suites so they run on a schedule or via the API.
 
 | Method | Description |
 | ------ | ----------- |
-| `PauseDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Pause a deployment. Scheduled and API-triggered runs are suppressed until |
-| `PromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Promote a suite config into production. Freezes a snapshot of the config |
+| `PauseDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Pause a deployment. |
+| `PromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Promote a suite config into production. |
 | `ResumeDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Resume a paused deployment. |
-| `TriggerDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_<br/>`POST /api/recon/v1/deployments/trigger` | Trigger an on-demand execution of a promoted deployment. Enqueues a run |
-| `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Unpromote a deployment. Marks it inactive; scheduler and API triggers |
-| `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Replace the deployment-level annotation overlay on an existing |
-| `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Patch the per-case ReconciliationFailureImpact map on an existing deployment |
-| `UpdateDeploymentCategories`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change the categories declared for a deployment's reconciliation checks |
-| `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Rewire connection → integration mappings on an existing deployment |
-| `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change schedule and/or triggerable_by_api on an existing deployment |
+| `TriggerDeployment`<br/>_synq.agent.recon.v1.SuiteDeploymentService_<br/>`POST /api/recon/v1/deployments/trigger` | Trigger an on-demand execution of a promoted deployment. |
+| `UnpromoteSuite`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Unpromote a deployment. |
+| `UpdateDeploymentAnnotations`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Replace the deployment-level annotation overlay on an existing deployment. |
+| `UpdateDeploymentCaseImpacts`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Patch the per-case ReconciliationFailureImpact map on an existing deployment without re-promoting the suite snapshot. |
+| `UpdateDeploymentCategories`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change the categories declared for a deployment's reconciliation checks without re-promoting the suite snapshot. |
+| `UpdateDeploymentMappings`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Rewire connection → integration mappings on an existing deployment without re-promoting the config snapshot. |
+| `UpdateDeploymentSchedule`<br/>_synq.agent.recon.v1.SuiteDeploymentService_ | Change schedule and/or triggerable_by_api on an existing deployment without re-promoting the config snapshot or touching mappings. |
 
 ## Edit Check Categorisation Rules
 
@@ -974,20 +974,20 @@ Create and update rules that categorise data quality checks.
 
 | Method | Description |
 | ------ | ----------- |
-| `DeleteCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:delete` | DeleteCheckCategories clears the explicit category (both dimensions) |
-| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
-| `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | UpsertCheckCategories sets (or replaces) the explicit category for |
-| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
+| `DeleteCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:delete` | DeleteCheckCategories clears the explicit category (both dimensions) for the given checks. |
+| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the caller's workspace. |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`POST /api/entities/checks/v1/categories:upsert` | UpsertCheckCategories sets (or replaces) the explicit category for one or more checks. |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. |
 | `DeleteCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/delete` | Clear the explicit categories of one or more checks, on both dimensions. |
-| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
-| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
-| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
-| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. An explicit category is |
-| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
-| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. Checks the rule categorised fall back to the |
-| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
-| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
-| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on each dimension, whether a workspace or platform rule produces each one, and how many checks carry it. |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the platforms, entity types, packages and kinds available to build a categorisation rule or a listing filter from. |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. |
+| `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a ResolvedCategory carries into the rule that produced it. |
+| `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of them — the state already applied, not a projection. |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus the platform-provided ones — in the order they are tried. |
 | `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
 
@@ -999,15 +999,15 @@ View check categorisation rules and their status.
 
 | Method | Description |
 | ------ | ----------- |
-| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the |
-| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. Ids that do not exist are omitted |
-| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on |
-| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the |
-| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. Returns every |
-| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a |
-| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. The sweep |
-| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of |
-| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus |
+| `ListCheckCategories`<br/>_synq.entities.checks.v1.ChecksCategoriesService_<br/>`GET /api/entities/checks/v1/categories` | ListCheckCategories returns every explicit check category in the caller's workspace. |
+| `BatchGetCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/batch-get` | Read the categories of specific checks. |
+| `ListCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/vocabulary` | List the workspace's category vocabulary: the category names in use on each dimension, whether a workspace or platform rule produces each one, and how many checks carry it. |
+| `ListCategorisationFilters`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/filters` | List the attribute values the workspace's checks actually have — the platforms, entity types, packages and kinds available to build a categorisation rule or a listing filter from. |
+| `ListCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories/list` | List the workspace's checks with their resolved categories. |
+| `BatchGetRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/batch-get` | Read specific rules by id — typically to resolve the `rule_id` a ResolvedCategory carries into the rule that produced it. |
+| `GetRecategorisationStatus`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/recategorisation-status` | Progress of the re-categorisation sweep a rule change schedules. |
+| `ListRuleMatches`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/matches` | Report how many checks each rule currently categorises, with a sample of them — the state already applied, not a projection. |
+| `ListRules`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/list` | List the rules that apply to the caller's workspace — its own rules plus the platform-provided ones — in the order they are tried. |
 | `PreviewRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/preview` | Report what a candidate rule would change, without saving it. |
 
 ## Read Saved Views
@@ -1018,9 +1018,9 @@ View saved views the caller has access to.
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. Ids the caller cannot see, or that do not |
-| `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. By default returns every |
-| `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. Pinning is a |
+| `BatchGet`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/batch-get` | Fetch multiple saved views by id. |
+| `List`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/list` | List the saved views the calling user can see. |
+| `SetPin`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/set-pin` | Pin or unpin a saved view to the calling user's main screen. |
 
 ## Create and Edit Saved Views
 
@@ -1030,7 +1030,7 @@ Create, update, and delete the caller's own saved views.
 
 | Method | Description |
 | ------ | ----------- |
-| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
 
 ## Manage All Saved Views in the Workspace
@@ -1041,7 +1041,7 @@ Manage all saved views in the workspace, including those owned by other users.
 
 | Method | Description |
 | ------ | ----------- |
-| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. Idempotent — deleting an already-deleted or unknown |
+| `Delete`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1/delete` | Delete a saved view. |
 | `Upsert`<br/>_synq.savedviews.v1.SavedViewsService_<br/>`POST /api/saved-views/v1` | Create or update a saved view. |
 
 ## Read Folders
@@ -1052,9 +1052,9 @@ Browse the folder hierarchy and list the entities it contains.
 
 | Method | Description |
 | ------ | ----------- |
-| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. With no `parent`, returns the |
-| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — |
-| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. Direct members only by |
+| `Browse`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/browse`<br/>`GET /api/entities/folders/v1/browse` | Browse the hierarchy one level at a time. |
+| `GetFolderOf`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/folder-of`<br/>`GET /api/entities/folders/v1/folder-of` | Given entity ids, return the folder breadcrumb(s) each entity lives in — ordered root first, leaf (immediate parent) last. |
+| `ListMembers`<br/>_synq.entities.folders.v1.FoldersService_<br/>`POST /api/entities/folders/v1/members`<br/>`GET /api/entities/folders/v1/members` | List the entity ids contained in a folder, paginated. |
 
 ## Edit Folders
 
@@ -1062,7 +1062,7 @@ Browse the folder hierarchy and list the entities it contains.
 
 Create, update, and delete folders and their placements.
 
-_No public gRPC/REST methods require this scope directly (e.g. MCP tools or future methods)._
+_No public gRPC or REST method requires this scope directly. MCP tools, for example, can use it._
 
 ## Read Deliveries
 
@@ -1072,11 +1072,11 @@ Inspect notifications sent to your integrations, including the requests made and
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGetDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/by-id` | Fetch deliveries by id. Ids that do not exist, or have passed out of the |
-| `GetDelivery`<br/>_synq.deliveries.v1.DeliveriesService_ | Fetch a single delivery by id. `BatchGetDeliveries` does the same for many |
-| `ListAttempts`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`GET /api/deliveries/v1/{delivery_id}/attempts` | List every attempt made for one delivery, oldest first. A delivery is |
-| `ListDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`GET /api/deliveries/v1` | List deliveries, newest event first. With no `integration_id` this is the |
-| `SummariseDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/summarise` | Count deliveries over a window, bucketed by outcome, by skip reason and by |
+| `BatchGetDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/by-id` | Fetch deliveries by id. |
+| `GetDelivery`<br/>_synq.deliveries.v1.DeliveriesService_ | Fetch a single delivery by id. |
+| `ListAttempts`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`GET /api/deliveries/v1/{delivery_id}/attempts` | List every attempt made for one delivery, oldest first. |
+| `ListDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`GET /api/deliveries/v1` | List deliveries, newest event first. |
+| `SummariseDeliveries`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/summarise` | Count deliveries over a window, bucketed by outcome, by skip reason and by HTTP status class. |
 
 ## Send and Replay Deliveries
 
@@ -1086,8 +1086,8 @@ Send a test notification to an integration and replay an earlier delivery.
 
 | Method | Description |
 | ------ | ----------- |
-| `Redeliver`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/{delivery_id}/redeliver` | Send an earlier delivery again, to the same integration, with the same |
-| `SendTestDelivery`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/test` | Send a test delivery to an integration, to confirm the endpoint is reachable |
+| `Redeliver`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/{delivery_id}/redeliver` | Send an earlier delivery again, to the same integration, with the same event. |
+| `SendTestDelivery`<br/>_synq.deliveries.v1.DeliveriesService_<br/>`POST /api/deliveries/v1/test` | Send a test delivery to an integration, to confirm the endpoint is reachable and that it accepts what is sent. |
 
 ## Read Recommendations
 
@@ -1097,8 +1097,8 @@ View the changes Coalesce Quality recommends making in your workspace and the sy
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
-| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by target and state. |
 
 ## Manage Recommendations
 
@@ -1108,11 +1108,11 @@ Dismiss, ignore and restore recommendations.
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. Ids that are unknown, belong to another |
-| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. Replaces |
+| `BatchGetRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/by-id` | Fetch recommendations by id. |
+| `DismissRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/dismiss` | Dismiss a recommendation until something new is found about it. |
 | `IgnoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/ignore` | Ignore a recommendation for good, whatever is found about it later. |
-| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by |
-| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it |
+| `ListRecommendations`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`GET /api/recommendations/v1` | List the ids of the workspace's recommendations, optionally limited by target and state. |
+| `RestoreRecommendation`<br/>_synq.recommendations.v1.RecommendationsService_<br/>`POST /api/recommendations/v1/{recommendation_id}/restore` | Remove the dismissal or ignore standing against a recommendation, so it is open again. |
 
 ## Read Platform Users
 
@@ -1122,12 +1122,12 @@ View the logins on your connected platforms, such as warehouse users and service
 
 | Method | Description |
 | ------ | ----------- |
-| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and |
-| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the |
+| `GetActorSummary`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actor-summary` | Read what one actor read, built and wrote over the window, what its queries cost per compute and platform, and when it works. |
+| `ListEntityActors`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/actors` | Read who read and wrote each asked entity over the window: the jobs, the service accounts, the tools and the logins. |
 | `ListPersonActivity`<br/>_synq.entities.activity.v1alpha.ActivityService_<br/>`POST /api/entities/activity/v1alpha/person` | Read what one person's logins read and wrote over the window, per entity, direction and measure. |
-| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. Ids no integration declared and with no activity in the window |
-| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login |
-| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's queries, highest first, then by |
+| `BatchGetPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/batch-get` | Read logins by platform user id. |
+| `ListLinkSuggestions`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/link-suggestions` | Suggest which workspace member each unclassified login may belong to, by matching the login against the members the caller passes. |
+| `ListPlatformUsers`<br/>_synq.entities.platformusers.v1alpha.PlatformUsersService_<br/>`POST /api/entities/platform-users/v1alpha/list` | List the workspace's logins by their share of the workspace's queries, highest first, then by their share of its activity. |
 
 ## Link Platform Users
 
@@ -1148,9 +1148,9 @@ View service accounts, person links, popularity policies and suggested service a
 
 | Method | Description |
 | ------ | ----------- |
-| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
-| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set |
-| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set with its evidence. |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the person links in a second list. |
 
 ## Manage Service Accounts
 
@@ -1160,15 +1160,15 @@ Create and change service accounts, person links and popularity policies.
 
 | Method | Description |
 | ------ | ----------- |
-| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. It is refused with FAILED_PRECONDITION when the |
-| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. Ids that do not exist are left out. |
-| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set |
-| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the |
-| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose |
+| `ApplyServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/apply` | Write a planned change set, all of it or nothing. |
+| `BatchGetServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/batch-get` | Read service accounts by id, built-in ids included. |
+| `ListServiceAccountSuggestions`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/suggestions` | Suggest service accounts for the logins the evidence says are not a person, each as a change set with its evidence. |
+| `ListServiceAccounts`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/list` | List every workspace service account, then every built-in one, in the order they apply, and the person links in a second list. |
+| `PlanServiceAccountChanges`<br/>_synq.entities.platformusers.v1alpha.ServiceAccountsService_<br/>`POST /api/entities/service-accounts/v1alpha/plan` | Report what a change set would change, without writing it: every login slice whose classification moves, how many counted reads each adds or removes, and the entities whose rank moves most. |
 
 ## Endpoint reference
 
-Every public API method a customer token can call, and the scopes that satisfy it. A token needs any one of the listed scopes.
+Every public API method that a client or token can call, and the scopes that allow it. A call needs one of the listed scopes.
 
 | Method | Scopes |
 | ------ | ------ |
