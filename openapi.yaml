@@ -2535,6 +2535,19 @@ components:
                              effective value to a supported range.
                         nullable: true
                         $ref: '#/components/schemas/google.protobuf.Duration'
+                    invocationId:
+                        type: string
+                        title: invocation_id
+                        format: uuid
+                        description: |-
+                            Client-generated invocation ID for idempotency, as on
+                             SubmitAdhocSuiteRequest. It becomes the run_id of the triggered run. If a
+                             run of this deployment with this ID already exists, the call starts no
+                             second run and returns the existing one. The ID is scoped to the
+                             deployment: the same ID sent to another deployment starts a separate run
+                             there. Unset, the server generates the run_id and every call starts a new
+                             run.
+                        nullable: true
                 - oneOf:
                     - properties:
                         deploymentId:
@@ -5979,6 +5992,8 @@ components:
                          (Glue catalog), DuckDB (database). Ignored by single-database/-project
                          connections (Postgres, Redshift, MSSQL, Oracle, BigQuery project) and by
                          MySQL/ClickHouse, which filter their namespace at the schema level below.
+                         A BigQuery integration the Coalesce Catalog extractor ingests reads every
+                         project its key can see, and matches this level against the project.
                 schema:
                     type: string
                     maxLength: 256
@@ -15678,6 +15693,13 @@ components:
                 type:
                     description: Custom entity type to create or update.
                     $ref: '#/components/schemas/synq.entities.v1.Type'
+                allowRename:
+                    type: boolean
+                    description: |-
+                        Rename a live type that uses the same `type_id` under another name, instead
+                         of failing with `ALREADY_EXISTS`. Set it only for a type you own: the
+                         check is what stops two integrations that picked the same `type_id` from
+                         overwriting each other.
             title: UpsertTypeRequest
             required:
                 - type
@@ -42910,8 +42932,11 @@ paths:
             summary: UpsertType
             description: |-
                 Create or update a custom entity type. A type is identified by its `type_id`
-                 in the workspace: an existing type with the same id is replaced, otherwise a
-                 new one is created. Upserting a deleted type restores it.
+                 in the workspace: an existing type with the same id and name is replaced,
+                 otherwise a new one is created. Upserting a deleted type restores it, under
+                 any name. If a live type already uses the `type_id` under another name, the
+                 call fails with `ALREADY_EXISTS` and the type is left unchanged, unless
+                 `allow_rename` is set.
             operationId: synq.entities.custom.v1.TypesService.UpsertType
             requestBody:
                 content:
@@ -58112,6 +58137,10 @@ paths:
                      otherwise).
                    - Deployment must not be paused (FAILED_PRECONDITION when
                      `paused_until` is set and in the future).
+
+                 A retry that repeats the `invocation_id` of a run the deployment already
+                 has returns that run without checking the preconditions again, so a
+                 retried call never fails only because the first one went through.
             operationId: synq.agent.recon.v1.SuiteDeploymentService.TriggerDeployment
             requestBody:
                 content:

@@ -13,8 +13,11 @@ option go_package = "github.com/getsynq/api/entities/custom/v1";
 // TypesService is a service for managing custom entity types.
 service TypesService {
   // Create or update a custom entity type. A type is identified by its `type_id`
-  // in the workspace: an existing type with the same id is replaced, otherwise a
-  // new one is created. Upserting a deleted type restores it.
+  // in the workspace: an existing type with the same id and name is replaced,
+  // otherwise a new one is created. Upserting a deleted type restores it, under
+  // any name. If a live type already uses the `type_id` under another name, the
+  // call fails with `ALREADY_EXISTS` and the type is left unchanged, unless
+  // `allow_rename` is set.
   rpc UpsertType(UpsertTypeRequest) returns (UpsertTypeResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -59,6 +62,11 @@ service TypesService {
 message UpsertTypeRequest {
   // Custom entity type to create or update.
   synq.entities.v1.Type type = 1 [(buf.validate.field).required = true];
+  // Rename a live type that uses the same `type_id` under another name, instead
+  // of failing with `ALREADY_EXISTS`. Set it only for a type you own: the
+  // check is what stops two integrations that picked the same `type_id` from
+  // overwriting each other.
+  bool allow_rename = 2;
 }
 message UpsertTypeResponse {}
 

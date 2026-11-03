@@ -51,7 +51,7 @@ message ClickhouseConf {
     required: true
     string: {min_len: 1}
   }];
-  // Port number (default: 9000 for native protocol)
+  // Port number (default: 9440, the native TLS port, or 9000 with allow_insecure)
   int32 port = 2 [(buf.validate.field) = {
     int32: {
       gte: 0
@@ -67,7 +67,7 @@ message ClickhouseConf {
   string username = 4 [(buf.validate.field) = {required: true}];
   // Password for authentication
   string password = 5 [(buf.validate.field) = {required: true}];
-  // Whether to use disable SSL for connection
+  // Connect in plain text, without TLS
   bool allow_insecure = 6;
   // ClickHouse server settings applied to every connection, written as they
   // would be in a DSN query string (e.g. "max_execution_time": "300"). Values

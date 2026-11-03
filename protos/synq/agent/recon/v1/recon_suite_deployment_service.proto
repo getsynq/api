@@ -180,6 +180,10 @@ service SuiteDeploymentService {
   //     otherwise).
   //   - Deployment must not be paused (FAILED_PRECONDITION when
   //     `paused_until` is set and in the future).
+  //
+  // A retry that repeats the `invocation_id` of a run the deployment already
+  // has returns that run without checking the preconditions again, so a
+  // retried call never fails only because the first one went through.
   rpc TriggerDeployment(TriggerDeploymentRequest) returns (TriggerDeploymentResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -911,6 +915,15 @@ message TriggerDeploymentRequest {
   // run to a shorter or longer wall-clock budget; the server clamps the
   // effective value to a supported range.
   optional google.protobuf.Duration execution_timeout = 5;
+
+  // Client-generated invocation ID for idempotency, as on
+  // SubmitAdhocSuiteRequest. It becomes the run_id of the triggered run. If a
+  // run of this deployment with this ID already exists, the call starts no
+  // second run and returns the existing one. The ID is scoped to the
+  // deployment: the same ID sent to another deployment starts a separate run
+  // there. Unset, the server generates the run_id and every call starts a new
+  // run.
+  optional string invocation_id = 6 [(buf.validate.field).string.uuid = true];
 }
 
 message TriggerDeploymentResponse {
