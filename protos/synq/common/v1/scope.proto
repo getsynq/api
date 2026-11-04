@@ -18,8 +18,11 @@ message ScopeRule {
   // (Glue catalog), DuckDB (database). Ignored by single-database/-project
   // connections (Postgres, Redshift, MSSQL, Oracle, BigQuery project) and by
   // MySQL/ClickHouse, which filter their namespace at the schema level below.
-  // A BigQuery integration the Coalesce Catalog extractor ingests reads every
-  // project its key can see, and matches this level against the project.
+  // An integration the Coalesce Catalog extractor ingests matches this level on
+  // every platform, against the database the extractor names each object with:
+  // the project on BigQuery, whose key can see several, and each database of
+  // the server on SQL Server. On MySQL that database is always `def`, and a
+  // MySQL database is matched at the schema level.
   string database = 1 [(buf.validate.field).string.max_len = 256];
 
   // Schema-level pattern. The level directly above a table.

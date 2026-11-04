@@ -51,11 +51,15 @@ enum ActivityLens {
   // Read as CONSUMPTION.
   ACTIVITY_LENS_UNSPECIFIED = 0;
   // Reads by the logins whose reads count toward popularity: people, BI tools, reverse ETL and
-  // applications. What BatchGetPopularity counts.
+  // applications. What BatchGetPopularity counts. A dbt test, a dbt source freshness check and a
+  // query of the Elementary package only check a table, so they never count, and are in
+  // excluded_by_lens.
   ACTIVITY_LENS_CONSUMPTION = 1;
-  // Every INPUT, and the reads of people: what is read to build, and what developers look at.
+  // Every INPUT, and the reads of people, their dbt tests included: what is read to build, and what
+  // developers look at.
   ACTIVITY_LENS_DEVELOPMENT = 2;
-  // Reads by a service account whose purpose is observability.
+  // Reads by a service account whose purpose is observability, and every dbt test, dbt source
+  // freshness check and query of the Elementary package, whoever ran it. They are served as READ.
   ACTIVITY_LENS_MONITORING = 3;
 }
 
@@ -278,7 +282,8 @@ message NotCountedActivity {
   // Reads by logins whose service account does not count toward popularity, such as a loader or an
   // orchestrator.
   uint64 excluded_by_policy = 5;
-  // Access the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT.
+  // Reads the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT, or a dbt
+  // test's reads under CONSUMPTION.
   uint64 excluded_by_lens = 6;
 }
 

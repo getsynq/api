@@ -5992,8 +5992,11 @@ components:
                          (Glue catalog), DuckDB (database). Ignored by single-database/-project
                          connections (Postgres, Redshift, MSSQL, Oracle, BigQuery project) and by
                          MySQL/ClickHouse, which filter their namespace at the schema level below.
-                         A BigQuery integration the Coalesce Catalog extractor ingests reads every
-                         project its key can see, and matches this level against the project.
+                         An integration the Coalesce Catalog extractor ingests matches this level on
+                         every platform, against the database the extractor names each object with:
+                         the project on BigQuery, whose key can see several, and each database of
+                         the server on SQL Server. On MySQL that database is always `def`, and a
+                         MySQL database is matched at the schema level.
                 schema:
                     type: string
                     maxLength: 256
@@ -12442,7 +12445,9 @@ components:
                         - integer
                         - string
                     format: int64
-                    description: Access the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT.
+                    description: |-
+                        Reads the asked lens does not look at, such as a BI tool's reads under DEVELOPMENT, or a dbt
+                         test's reads under CONSUMPTION.
             title: NotCountedActivity
             additionalProperties: false
             description: NotCountedActivity is access a read saw and left out.
