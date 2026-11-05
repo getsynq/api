@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package synq.entities.folders.v1;
 
+import "buf/validate/validate.proto";
 import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/folder_ref.proto";
 import "synq/platforms/v1/data_platform_types.proto";
@@ -65,4 +66,34 @@ message Folder {
 
   // How this folder participates in browsing.
   FolderRole role = 9;
+
+  // Levels that a collapsed read hides inside this folder, ordered from the
+  // level right below this folder down to the deepest one. Set only when the
+  // request sets `collapse_single_child_folders`. A level is hidden when it is
+  // a container and the only visible child of its parent container. The
+  // folder's sub-folders are then those of the deepest level, and
+  // `ListMembers` lists the members of every level.
+  //
+  // Render the label as `name`, then each entry's `name`. Use the entries to
+  // select one level: never split the label or an id to find a level, as ids
+  // are opaque and a name can contain "/".
+  repeated ElidedFolder elided_folders = 10 [(buf.validate.field).repeated.max_items = 32];
+}
+
+// ElidedFolder is one level of a folder chain that a collapsed read hides
+// inside its parent `Folder`.
+message ElidedFolder {
+  // Opaque, authoritative id of the hidden level. It is a valid folder id for
+  // `Browse`, `ListMembers` and folder filters.
+  string folder_entity_id = 1 [(buf.validate.field).string.max_bytes = 2048];
+
+  // Structured address of the hidden level. Populated when the `ref` of the
+  // parent `Folder` is populated.
+  synq.entities.v1.FolderRef ref = 2;
+
+  // Display name of the hidden level (its own leaf name).
+  string name = 3;
+
+  // Entity type of the hidden level.
+  synq.entities.v1.EntityType type = 4;
 }

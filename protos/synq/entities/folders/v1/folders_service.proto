@@ -131,6 +131,11 @@ message BrowseRequest {
   // Optional filter. When set, the returned `member_entity_ids` are limited to
   // entities matching this query.
   synq.queries.v1.Query filter = 4;
+
+  // When true, a chain of single-child containers shows as one folder that
+  // lists the hidden levels in `Folder.elided_folders`. When false (default),
+  // every level shows as its own folder.
+  optional bool collapse_single_child_folders = 5;
 }
 
 message BrowseResponse {
@@ -148,6 +153,11 @@ message GetFolderOfRequest {
   // Opaque entity ids to look up. Ids that do not exist, or that live in no
   // folder, are absent from the response.
   repeated string entity_ids = 1;
+
+  // When true, a chain of single-child containers shows as one breadcrumb folder that
+  // lists the hidden levels in `Folder.elided_folders`. When false (default),
+  // every level shows as its own folder.
+  optional bool collapse_single_child_folders = 2;
 }
 
 message GetFolderOfResponse {
@@ -191,6 +201,13 @@ message ListMembersRequest {
 
   // Pagination.
   synq.v1.Pagination pagination = 6;
+
+  // When true, the folder is read as the collapsed folder that `Browse` returns
+  // with the same flag: the members are those of every level of the chain, the
+  // folder and each level in its `elided_folders`, and the hidden levels
+  // themselves are not members. When false (default), the members are those
+  // of the folder itself.
+  optional bool collapse_single_child_folders = 7;
 }
 
 message ListMembersResponse {
