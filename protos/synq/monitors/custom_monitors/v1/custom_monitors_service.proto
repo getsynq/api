@@ -119,17 +119,31 @@ message BatchCreateMonitorResponse {
 }
 
 message BatchDeleteMonitorRequest {
+  // Monitors to delete. Each entry is the monitor's id, the UUID that `ListMonitors`
+  // returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+  // `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+  // neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+  // reported in `errors`. A segment synq_path (a monitor synq_path
+  // followed by `::seg-<value>`) names part of a monitor, so it deletes nothing and is
+  // reported in `errors`.
   repeated string ids = 1 [(buf.validate.field) = {
     repeated: {
       min_items: 1
       items: {
-        string: {uuid: true}
+        cel: {
+          id: "monitor_ref"
+          message: "must be a monitor id (UUID) or a monitor synq_path"
+          expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') || this.startsWith('monitor::') || this.matches('^ad-[^:]+::')"
+        }
       }
     }
   }];
 }
 
 message BatchDeleteMonitorResponse {
+  // Monitors that were deleted, each in the spelling the caller sent in `ids`: the id, or
+  // the synq_path. Every distinct monitor in the request appears once, either here or in
+  // `errors`.
   repeated string deleted_ids = 1;
 
   // Details of a requested monitor that was not deleted.
@@ -143,11 +157,22 @@ message BatchDeleteMonitorResponse {
 }
 
 message BatchUpdateMonitorModeRequest {
+  // Monitors to update. Each entry is the monitor's id, the UUID that `ListMonitors`
+  // returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+  // `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+  // neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+  // reported in `errors`. A segment synq_path (a monitor synq_path
+  // followed by `::seg-<value>`) names part of a monitor, so it updates nothing and is
+  // reported in `errors`.
   repeated string ids = 1 [(buf.validate.field) = {
     repeated: {
       min_items: 1
       items: {
-        string: {uuid: true}
+        cel: {
+          id: "monitor_ref"
+          message: "must be a monitor id (UUID) or a monitor synq_path"
+          expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') || this.startsWith('monitor::') || this.matches('^ad-[^:]+::')"
+        }
       }
     }
   }];
@@ -158,6 +183,9 @@ message BatchUpdateMonitorModeRequest {
 }
 
 message BatchUpdateMonitorModeResponse {
+  // Monitors whose mode was updated, each in the spelling the caller sent in `ids`: the id,
+  // or the synq_path. Every distinct monitor in the request appears once, either here or in
+  // `errors`.
   repeated string updated_ids = 1;
 
   // Details of a requested monitor whose mode was not updated.
@@ -171,11 +199,22 @@ message BatchUpdateMonitorModeResponse {
 }
 
 message BatchUpdateMonitorSeverityRequest {
+  // Monitors to update. Each entry is the monitor's id, the UUID that `ListMonitors`
+  // returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+  // `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+  // neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+  // reported in `errors`. A segment synq_path (a monitor synq_path
+  // followed by `::seg-<value>`) names part of a monitor, so it updates nothing and is
+  // reported in `errors`.
   repeated string ids = 1 [(buf.validate.field) = {
     repeated: {
       min_items: 1
       items: {
-        string: {uuid: true}
+        cel: {
+          id: "monitor_ref"
+          message: "must be a monitor id (UUID) or a monitor synq_path"
+          expression: "this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') || this.startsWith('monitor::') || this.matches('^ad-[^:]+::')"
+        }
       }
     }
   }];
@@ -183,6 +222,9 @@ message BatchUpdateMonitorSeverityRequest {
 }
 
 message BatchUpdateMonitorSeverityResponse {
+  // Monitors whose severity was updated, each in the spelling the caller sent in `ids`: the
+  // id, or the synq_path. Every distinct monitor in the request appears once, either here or
+  // in `errors`.
   repeated string updated_ids = 1;
 
   // Details of a requested monitor whose severity was not updated.

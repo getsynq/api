@@ -21566,7 +21566,16 @@ components:
             properties:
                 cluster:
                     type: string
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 database:
                     type: string
                     description: Redshift database
@@ -28438,9 +28447,16 @@ components:
                     type: array
                     items:
                         type: string
-                        format: uuid
                         minItems: 1
                     minItems: 1
+                    description: |-
+                        Monitors to delete. Each entry is the monitor's id, the UUID that `ListMonitors`
+                         returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+                         `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+                         neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+                         reported in `errors`. A segment synq_path (a monitor synq_path
+                         followed by `::seg-<value>`) names part of a monitor, so it deletes nothing and is
+                         reported in `errors`.
             title: BatchDeleteMonitorRequest
             additionalProperties: false
         synq.monitors.custom_monitors.v1.BatchDeleteMonitorResponse:
@@ -28450,6 +28466,10 @@ components:
                     type: array
                     items:
                         type: string
+                    description: |-
+                        Monitors that were deleted, each in the spelling the caller sent in `ids`: the id, or
+                         the synq_path. Every distinct monitor in the request appears once, either here or in
+                         `errors`.
                 errors:
                     type: array
                     items:
@@ -28477,10 +28497,17 @@ components:
                         type: array
                         items:
                             type: string
-                            format: uuid
                             minItems: 1
                         title: ids
                         minItems: 1
+                        description: |-
+                            Monitors to update. Each entry is the monitor's id, the UUID that `ListMonitors`
+                             returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+                             `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+                             neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+                             reported in `errors`. A segment synq_path (a monitor synq_path
+                             followed by `::seg-<value>`) names part of a monitor, so it updates nothing and is
+                             reported in `errors`.
                 - oneOf:
                     - properties:
                         anomalyEngine:
@@ -28505,6 +28532,10 @@ components:
                     type: array
                     items:
                         type: string
+                    description: |-
+                        Monitors whose mode was updated, each in the spelling the caller sent in `ids`: the id,
+                         or the synq_path. Every distinct monitor in the request appears once, either here or in
+                         `errors`.
                 errors:
                     type: array
                     items:
@@ -28571,9 +28602,16 @@ components:
                     type: array
                     items:
                         type: string
-                        format: uuid
                         minItems: 1
                     minItems: 1
+                    description: |-
+                        Monitors to update. Each entry is the monitor's id, the UUID that `ListMonitors`
+                         returns, or the monitor's synq_path (`monitor::<asset synq_path>::custom-<id>`, or
+                         `ad-<integration id>::<asset synq_path>::custom-<id>` for an older monitor). A value in
+                         neither form is rejected with `INVALID_ARGUMENT`; a synq_path that names no monitor is
+                         reported in `errors`. A segment synq_path (a monitor synq_path
+                         followed by `::seg-<value>`) names part of a monitor, so it updates nothing and is
+                         reported in `errors`.
                 severity:
                     $ref: '#/components/schemas/synq.monitors.custom_monitors.v1.Severity'
             title: BatchUpdateMonitorSeverityRequest
@@ -28585,6 +28623,10 @@ components:
                     type: array
                     items:
                         type: string
+                    description: |-
+                        Monitors whose severity was updated, each in the spelling the caller sent in `ids`: the
+                         id, or the synq_path. Every distinct monitor in the request appears once, either here or
+                         in `errors`.
                 errors:
                     type: array
                     items:
@@ -34550,11 +34592,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -35303,11 +35362,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -35967,11 +36043,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -36863,11 +36956,28 @@ paths:
                     description: Snowflake table
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -39007,11 +39117,28 @@ paths:
                     description: Snowflake table
                 - name: identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -42271,11 +42398,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -43257,11 +43401,28 @@ paths:
                     description: Snowflake table
                 - name: filter.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: filter.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -44534,11 +44695,28 @@ paths:
                     description: Snowflake table
                 - name: filter.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: filter.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -46031,11 +46209,28 @@ paths:
                     description: Snowflake table
                 - name: query.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: query.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -47733,11 +47928,28 @@ paths:
                     description: Snowflake table
                 - name: entityIds.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: entityIds.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -48997,11 +49209,28 @@ paths:
                     description: Snowflake table
                 - name: affectedEntities.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: affectedEntities.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -50847,11 +51076,28 @@ paths:
                     description: Snowflake table
                 - name: entities.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: entities.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -51795,11 +52041,28 @@ paths:
                     description: Snowflake table
                 - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: entitiesQuery.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -53945,11 +54208,28 @@ paths:
                     description: Snowflake table
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -55994,11 +56274,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -56898,11 +57195,28 @@ paths:
                     description: Snowflake table
                 - name: entities.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: entities.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -58572,11 +58886,28 @@ paths:
                     description: Snowflake table
                 - name: ids.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: ids.redshiftTable.database
                   in: query
                   description: Redshift database
@@ -59236,11 +59567,28 @@ paths:
                     description: Snowflake table
                 - name: id.redshiftTable.cluster
                   in: query
-                  description: Redshift cluster
+                  description: |-
+                    Required. Host of the Redshift endpoint, as in the connection, for example
+                     `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                     accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                     because one name can exist in more than one account or region. A response
+                     returns the host in its normalized form, which is also accepted on input.
+
+                     The rule below also refuses an empty value. It is not `required`, because
+                     `required` stops the other rules and its error does not say what to send.
                   schema:
                     type: string
                     title: cluster
-                    description: Redshift cluster
+                    description: |
+                        Required. Host of the Redshift endpoint, as in the connection, for example
+                         `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+                         accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+                         because one name can exist in more than one account or region. A response
+                         returns the host in its normalized form, which is also accepted on input.
+
+                         The rule below also refuses an empty value. It is not `required`, because
+                         `required` stops the other rules and its error does not say what to send.
+                        redshift_table.cluster.full_host // cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com
                 - name: id.redshiftTable.database
                   in: query
                   description: Redshift database

@@ -188,8 +188,19 @@ message SnowflakeTableIdentifier {
 }
 
 message RedshiftTableIdentifier {
-  // Redshift cluster
-  string cluster = 1;
+  // Required. Host of the Redshift endpoint, as in the connection, for example
+  // `my-cluster.abc123.eu-west-1.redshift.amazonaws.com`. A port suffix is
+  // accepted and ignored. The bare cluster name (`my-cluster`) is not enough,
+  // because one name can exist in more than one account or region. A response
+  // returns the host in its normalized form, which is also accepted on input.
+  //
+  // The rule below also refuses an empty value. It is not `required`, because
+  // `required` stops the other rules and its error does not say what to send.
+  string cluster = 1 [(buf.validate.field).cel = {
+    id: "redshift_table.cluster.full_host"
+    message: "cluster must be the full host of the Redshift endpoint from the connection, for example my-cluster.abc123.eu-west-1.redshift.amazonaws.com"
+    expression: "this.contains('.')"
+  }];
 
   // Redshift database
   string database = 2 [(buf.validate.field).required = true];
