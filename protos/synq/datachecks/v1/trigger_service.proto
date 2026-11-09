@@ -23,6 +23,37 @@ service TriggerService {
       body: "*"
     };
   }
+
+  // Run a SQL test again with the time placeholder values of an earlier execution.
+  // Use it after a data fix, or to triage a failure, so the run checks the same
+  // rows as the earlier execution. The test runs with its current SQL.
+  // `{{ executed_at }}`, `{{ last_executed_at }}` and `{{ last_passed_at }}` get
+  // the values the earlier execution used. Later scheduled runs do not take their
+  // time values from this run.
+  rpc TriggerSqlTestRunAgain(TriggerSqlTestRunAgainRequest) returns (TriggerSqlTestRunAgainResponse) {
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_DATACHECKS_TRIGGER,
+        SCOPE_DATACHECKS_SQLTESTS_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/datachecks/scheduler/v1/trigger/sql-test-run-again"
+      body: "*"
+    };
+  }
+}
+
+message TriggerSqlTestRunAgainRequest {
+  // The execution to run again: `execution_id` of a `SqlTestResult`, or the `id`
+  // of the SQL test execution in `synq.entities.executions.v2`.
+  string execution_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message TriggerSqlTestRunAgainResponse {
+  DatacheckResult result = 1;
 }
 
 message TriggerDatachecksRequest {
@@ -91,6 +122,25 @@ message SqlTestResult {
 
   // Optional result data or sample rows from the test execution.
   string result_data = 7;
+
+  // The values of the time placeholders the run used. Unset when the SQL uses none.
+  SqlTestTimeValues time_values = 8;
+
+  // The execution whose time values this run used again. Empty for a normal run.
+  string rerun_of_execution_id = 9;
+}
+
+// The values of the time placeholders of one SQL test run.
+message SqlTestTimeValues {
+  // The value of `{{ executed_at }}`.
+  google.protobuf.Timestamp executed_at = 1;
+  // The value of `{{ last_executed_at }}`.
+  google.protobuf.Timestamp last_executed_at = 2;
+  // The value of `{{ last_passed_at }}`.
+  google.protobuf.Timestamp last_passed_at = 3;
+  // True when the lookback of the test moved a value, so the run did not check
+  // every row since the earlier execution.
+  bool lookback_capped = 4;
 }
 
 // Result of a monitor execution.

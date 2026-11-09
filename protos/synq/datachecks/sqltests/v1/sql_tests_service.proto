@@ -110,6 +110,10 @@ message BatchUpsertSqlTestsResponse {
   message UpsertWarning {
     string id = 1;
     string reason = 2;
+    // The SQL of the test with a suggested fix applied, when the warning has one.
+    // For a test that uses a time function such as NOW(), it is the SQL with each
+    // time function replaced by the `{{ executed_at }}` placeholder.
+    string suggested_sql_expression = 3;
   }
   // Warnings about items that were stored. Empty if there were none.
   repeated UpsertWarning warnings = 4;

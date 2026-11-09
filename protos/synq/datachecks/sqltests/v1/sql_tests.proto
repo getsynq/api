@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.datachecks.sqltests.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/executions/v2/entity_executions_service.proto";
 import "synq/entities/v1/annotation.proto";
@@ -47,6 +48,28 @@ message SqlTest {
   Severity severity = 10;
 
   // A valid SQL expression which is the test.
+  //
+  // Time placeholders let a test check only the rows that are new since an
+  // earlier run. Each one renders as a UTC timestamp literal of the warehouse
+  // when the test runs:
+  //
+  // - `{{ executed_at }}`: the time of the run. For a scheduled run it is the
+  //   scheduled time, also when the run starts late.
+  // - `{{ last_executed_at }}`: the `{{ executed_at }}` of the previous run that
+  //   had a result (it passed, or it failed on data). A run that failed before
+  //   its query ran is skipped, so the next run checks its rows.
+  // - `{{ last_passed_at }}`: the `{{ executed_at }}` of the previous run that
+  //   passed. While the test fails, the window grows, so a run after a data fix
+  //   checks the whole period that failed.
+  //
+  // `ts > {{ last_executed_at }} AND ts <= {{ executed_at }}` gives windows with
+  // no gap and no overlap. See `lookback` for the first run and for the limit.
+  // Use a placeholder wherever NOW() works, without quotes. For a DATE column,
+  // convert it: `CAST({{ last_executed_at }} AS DATE)`, or on BigQuery
+  // `DATE({{ last_executed_at }})`. Any other `{{ name }}` token is rejected.
+  //
+  // A test that uses a time function such as NOW() or CURRENT_DATE is stored, and
+  // the upsert returns a warning with a suggested rewrite to `{{ executed_at }}`.
   string sql_expression = 4;
 
   // [Recurrence rule](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html) for the execution schedule of the SqlTest.
@@ -129,6 +152,23 @@ message SqlTest {
   // test onto the same integration, send this value as
   // `platform.synq_integration_id`.
   string integration_id = 19;
+
+  // How far back the time placeholders `{{ last_executed_at }}` and
+  // `{{ last_passed_at }}` may reach, for example 6h or 1d.
+  //
+  // - When a placeholder has no earlier execution to take its value from (the
+  //   first run, or a test that has not passed yet), its value is
+  //   `{{ executed_at }}` minus this lookback.
+  // - A placeholder is never older than `{{ executed_at }}` minus this lookback.
+  //   When this limit moves a value, the run message says that the run did not
+  //   check the full window.
+  //
+  // When not set, the first run looks back one interval of the
+  // `recurrence_rule` (1 day for a test without one), and the limit is seven
+  // of those intervals, at least 7 days.
+  //
+  // Send the whole test on every upsert: leaving this out clears it.
+  optional google.protobuf.Duration lookback = 20 [(buf.validate.field).duration.gt = {seconds: 0}];
 }
 
 // InputTable is a table reference resolved from the SQL expression of a SqlTest.
@@ -408,9 +448,10 @@ message BusinessRuleTest {
   //
   // Placeholder: `{{ table }}` is substituted with the anchor table's fully
   // qualified name, quoted for the warehouse — the matched table when the test
-  // is deployed by a deployment rule. It is the only supported placeholder;
-  // any other `{{ name }}` token is rejected. It renders a table name, so it
-  // belongs where a table name goes — the FROM clause of a subquery of your own:
+  // is deployed by a deployment rule. The time placeholders
+  // `{{ executed_at }}`, `{{ last_executed_at }}` and `{{ last_passed_at }}` are
+  // also supported, without quotes (see SqlTest.sql_expression). Any other
+  // `{{ name }}` token is rejected. `{{ table }}` renders a table name, so it belongs where a table name goes — the FROM clause of a subquery of your own:
   // "total > (SELECT max(total) FROM {{ table }})".
   //
   // It is not a column qualifier. The generated FROM clause carries no alias, and
@@ -444,8 +485,10 @@ message BusinessQueryTest {
   // Placeholder: `{{ table }}` is substituted with the anchor table's fully
   // qualified name, quoted for the warehouse — the matched table when the test
   // is deployed by a deployment rule, which is how one query covers every table
-  // the rule matches instead of being copied onto each of them. It is the only
-  // supported placeholder; any other `{{ name }}` token is rejected.
+  // the rule matches instead of being copied onto each of them. The time
+  // placeholders `{{ executed_at }}`, `{{ last_executed_at }}` and
+  // `{{ last_passed_at }}` are also supported, without quotes (see
+  // SqlTest.sql_expression). Any other `{{ name }}` token is rejected.
   //
   // Note: this test does not expose a `select_columns` option. The author
   // controls the SELECT shape directly in `sql_query`.

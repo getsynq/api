@@ -255,6 +255,7 @@ Create, update, and delete SQL tests.
 | `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests onto its current match set. |
 | `BatchDeleteSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`DELETE /api/datachecks/sqltests/v1` | Delete SqlTests by their IDs. |
 | `BatchUpsertSqlTests`<br/>_synq.datachecks.sqltests.v1.SqlTestsService_<br/>`POST /api/datachecks/sqltests/v1` | Upsert SqlTests based on a unique ID. |
+| `TriggerSqlTestRunAgain`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger/sql-test-run-again` | Run a SQL test again with the time placeholder values of an earlier execution. |
 
 ## Read SQL Tests
 
@@ -322,6 +323,7 @@ Trigger data checks to run on demand.
 | Method | Description |
 | ------ | ----------- |
 | `TriggerDatachecks`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger` | Run the datachecks of the specified entities. |
+| `TriggerSqlTestRunAgain`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger/sql-test-run-again` | Run a SQL test again with the time placeholder values of an earlier execution. |
 
 ## Edit Executions
 
@@ -884,6 +886,7 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `DeleteSqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`DELETE /api/datachecks/sql-test-deployment-rules/v1/{id}` |  |
 | `DeploySqlTestDeploymentRule`<br/>_synq.datachecks.sqltests.v1.SqlTestsDeploymentRulesService_<br/>`POST /api/datachecks/sql-test-deployment-rules/v1/deployed` | Deploy (create or update) a SqlTestDeploymentRule and immediately sync tests onto its current match set. |
 | `BatchCreateTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`POST /api/datachecks/testsuggestions/v1` |  |
+| `TriggerSqlTestRunAgain`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger/sql-test-run-again` | Run a SQL test again with the time placeholder values of an earlier execution. |
 | `Delete`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2/delete` | Delete a data product. |
 | `Upsert`<br/>_synq.dataproducts.v2.DataproductsService_<br/>`POST /api/dataproducts/v2` | Create or update a data product. |
 | `Delete`<br/>_synq.domains.v2.DomainsService_<br/>`POST /api/domains/v2/delete` | Delete a domain. |
@@ -1259,6 +1262,7 @@ Every public API method that a client or token can call, and the scopes that all
 | `BatchGetTestSuggestionsForEntities`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`GET /api/datachecks/testsuggestions/v1` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchRejectTestSuggestions`<br/>_synq.datachecks.testsuggestions.v1.TestSuggestionsService_<br/>`PATCH /api/datachecks/testsuggestions/v1/rejected` | `SCOPE_DATACHECKS_TESTSUGGESTIONS_EDIT` |
 | `TriggerDatachecks`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger` | `SCOPE_DATACHECKS_TRIGGER` |
+| `TriggerSqlTestRunAgain`<br/>_synq.datachecks.v1.TriggerService_<br/>`POST /api/datachecks/scheduler/v1/trigger/sql-test-run-again` | `SCOPE_DATACHECKS_TRIGGER`<br/>`SCOPE_DATACHECKS_SQLTESTS_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `Delete`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/delete` | `SCOPE_DATAPRODUCT_EDIT` |
 | `Get`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`POST /api/dataproducts/v1/get` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
 | `List`<br/>_synq.dataproducts.v1.DataproductsService_<br/>`GET /api/dataproducts/v1` | `SCOPE_DATAPRODUCT_READ`<br/>`SCOPE_MCP_READ` |
