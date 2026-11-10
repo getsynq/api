@@ -62,20 +62,27 @@ message ResolverQlEnumDomain {
   // Every value the domain enumerates, lowercase. A value is matched
   // case-insensitively, so a caller holding an upper-case spelling can send it
   // as it is.
+  //
+  // The asset-type domain lists the built-in types first, then the entity types
+  // your workspace defined itself, spelled `custom_type_<id>` and ordered by id.
   repeated string values = 1;
 
   // An RE2 pattern of values accepted in **addition** to `values`, matched
   // against the lowercased value. Empty when the domain accepts nothing beyond
   // the list.
   //
-  // It exists because one domain is not fully enumerated: the entity types a
-  // workspace defines itself are a reserved band of the asset-type vocabulary
-  // rather than members of it, spelled `custom_type_<id>`, and `values` today
-  // holds only the built-in half. A client that validates against `values` alone
-  // rejects a query this server compiles.
-  //
-  // Keep honouring the pattern even once a domain enumerates more than it does
-  // today: it is what makes a value the list has not caught up with still
-  // acceptable.
+  // The asset-type domain has one, matching every `custom_type_<id>` spelling.
+  // `values` names the workspace's own types that existed when the answer was
+  // built, and the pattern keeps a type created after that acceptable. A client
+  // that validates against `values` alone rejects a query this server compiles.
   string pattern = 2;
+
+  // A display name for a value whose spelling does not say what it is, keyed by
+  // the value as `values` spells it. A value absent here has no name beyond its
+  // spelling.
+  //
+  // The asset-type domain names each workspace type here, so `custom_type_7`
+  // reads as the `Subscription` type it is. Show the name to a person, and write
+  // the key in the query.
+  map<string, string> labels = 3;
 }

@@ -50,14 +50,11 @@ service QueriesService {
   // rule but cannot read entities, can still find out how to write the selection
   // it is being asked for.
   //
-  // Read it as an answer for your workspace, not as a constant. Most of it is
-  // the same for everyone, but the entity types you defined yourself are part of
-  // the language too: today they are reachable only through
-  // `ResolverQlEnumDomain.pattern`, which is why that field exists, and named by
-  // `synq.entities.typedefs.v1.TypeDefsService.ListEntityTypeDefs`.
-  //
-  // Caching it for the life of your process is fine; re-read it after you add or
-  // rename an entity type of your own.
+  // The entity types you defined yourself are part of the language too: the
+  // asset-type domain lists them in `values`, spelled `custom_type_<id>`, with
+  // their names in `labels`. Re-read it after you add or rename one of your own
+  // types. Until you do, `ResolverQlEnumDomain.pattern` still accepts a type
+  // created after the read.
   rpc DescribeResolverQl(DescribeResolverQlRequest) returns (DescribeResolverQlResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = {

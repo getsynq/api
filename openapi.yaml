@@ -32211,6 +32211,9 @@ components:
                         Every value the domain enumerates, lowercase. A value is matched
                          case-insensitively, so a caller holding an upper-case spelling can send it
                          as it is.
+
+                         The asset-type domain lists the built-in types first, then the entity types
+                         your workspace defined itself, spelled `custom_type_<id>` and ordered by id.
                 pattern:
                     type: string
                     description: |-
@@ -32218,18 +32221,35 @@ components:
                          against the lowercased value. Empty when the domain accepts nothing beyond
                          the list.
 
-                         It exists because one domain is not fully enumerated: the entity types a
-                         workspace defines itself are a reserved band of the asset-type vocabulary
-                         rather than members of it, spelled `custom_type_<id>`, and `values` today
-                         holds only the built-in half. A client that validates against `values` alone
-                         rejects a query this server compiles.
+                         The asset-type domain has one, matching every `custom_type_<id>` spelling.
+                         `values` names the workspace's own types that existed when the answer was
+                         built, and the pattern keeps a type created after that acceptable. A client
+                         that validates against `values` alone rejects a query this server compiles.
+                labels:
+                    type: object
+                    additionalProperties:
+                        type: string
+                        title: value
+                    description: |-
+                        A display name for a value whose spelling does not say what it is, keyed by
+                         the value as `values` spells it. A value absent here has no name beyond its
+                         spelling.
 
-                         Keep honouring the pattern even once a domain enumerates more than it does
-                         today: it is what makes a value the list has not caught up with still
-                         acceptable.
+                         The asset-type domain names each workspace type here, so `custom_type_7`
+                         reads as the `Subscription` type it is. Show the name to a person, and write
+                         the key in the query.
             title: ResolverQlEnumDomain
             additionalProperties: false
             description: The values one enum-typed argument accepts.
+        synq.queries.v1.ResolverQlEnumDomain.LabelsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    type: string
+            title: LabelsEntry
+            additionalProperties: false
         synq.queries.v1.ResolverQlFunction:
             type: object
             properties:
@@ -58341,14 +58361,11 @@ paths:
                  rule but cannot read entities, can still find out how to write the selection
                  it is being asked for.
 
-                 Read it as an answer for your workspace, not as a constant. Most of it is
-                 the same for everyone, but the entity types you defined yourself are part of
-                 the language too: today they are reachable only through
-                 `ResolverQlEnumDomain.pattern`, which is why that field exists, and named by
-                 `synq.entities.typedefs.v1.TypeDefsService.ListEntityTypeDefs`.
-
-                 Caching it for the life of your process is fine; re-read it after you add or
-                 rename an entity type of your own.
+                 The entity types you defined yourself are part of the language too: the
+                 asset-type domain lists them in `values`, spelled `custom_type_<id>`, with
+                 their names in `labels`. Re-read it after you add or rename one of your own
+                 types. Until you do, `ResolverQlEnumDomain.pattern` still accepts a type
+                 created after the read.
             operationId: synq.queries.v1.QueriesService.DescribeResolverQl
             requestBody:
                 content:
