@@ -7168,6 +7168,13 @@ components:
                         duration.gt_lte_exclusive = 0s
                     nullable: true
                     $ref: '#/components/schemas/google.protobuf.Duration'
+                afterRun:
+                    type: boolean
+                    description: |-
+                        When true, the test runs when a Coalesce pipeline run that writes the table
+                         completes. Other pipelines do not run it; call TriggerDatachecks with
+                         `include_after_run` to run it yourself. Valid only with an empty
+                         `recurrence_rule`.
             title: SqlTest
             required:
                 - id
@@ -7765,12 +7772,20 @@ components:
                         When a previously matched table or view stops matching this rule's
                          selection, its deployed tests are deleted by default. Set true to keep
                          them as-is instead — they remain rule-managed but are no longer resynced.
+                afterRun:
+                    type: boolean
+                    description: |-
+                        Applied to every test this rule deploys. When true, each test runs when a
+                         Coalesce pipeline run that writes the table completes. Other pipelines do
+                         not run it; call TriggerDatachecks with `include_after_run` to run it
+                         yourself. Valid only with an empty `recurrence_rule`.
             title: SqlTestsQueryConfig
             additionalProperties: false
             description: |
                 SqlTestsQueryConfig selects tables and views by query, deploying every test in
                  `tests` onto each match. As the matched set changes over time (new tables,
                  dropped columns, …), a periodic sync keeps deployed tests in step.
+                sql_tests_query_config.after_run_requires_on_demand // after_run requires an empty recurrence_rule
                 sql_tests_query_config.requires_selection // at least one of query or resolver_ql must be set
         synq.datachecks.sqltests.v1.SqlTestsStaticConfig:
             type: object
@@ -7806,12 +7821,20 @@ components:
                 saveFailures:
                     type: boolean
                     description: Applied to every test this rule deploys. Toggles saving of failure runs.
+                afterRun:
+                    type: boolean
+                    description: |-
+                        Applied to every test this rule deploys. When true, each test runs when a
+                         Coalesce pipeline run that writes the table completes. Other pipelines do
+                         not run it; call TriggerDatachecks with `include_after_run` to run it
+                         yourself. Valid only with an empty `recurrence_rule`.
             title: SqlTestsStaticConfig
             additionalProperties: false
-            description: |-
+            description: |
                 SqlTestsStaticConfig deploys tests onto a single, fixed table or view. Unlike
                  the query-based configs, a static rule never resyncs against a changing
                  match set — it pins one path.
+                sql_tests_static_config.after_run_requires_on_demand // after_run requires an empty recurrence_rule
         synq.datachecks.sqltests.v1.SqlValue:
             type: object
             allOf:
@@ -8523,6 +8546,11 @@ components:
                         $ref: '#/components/schemas/synq.entities.v1.Identifier'
                     minItems: 1
                     description: List of entity identifiers to trigger datachecks for.
+                includeAfterRun:
+                    type: boolean
+                    description: |-
+                        Also run the on-demand checks marked `after_run`. Default false: those checks
+                         run when a Coalesce pipeline run that writes their table completes.
             title: TriggerDatachecksRequest
             additionalProperties: false
         synq.datachecks.v1.TriggerDatachecksResponse:
@@ -26540,6 +26568,26 @@ components:
                         title: lifecycle_state
                         description: Lifecycle state of the issue.
                         $ref: '#/components/schemas/synq.issues.issues.v1.LifecycleState'
+                    startedByRun:
+                        title: started_by_run
+                        description: Execution that opened the issue. Always set.
+                        $ref: '#/components/schemas/synq.issues.issues.v1.IssueRun'
+                    updatedByRun:
+                        title: updated_by_run
+                        description: |-
+                            Latest execution that updated the issue. Unset when the issue was last
+                             updated without an execution, which happens when the issue is closed
+                             because its trigger entity was deleted and no execution recorded the
+                             deletion. Use `started_by_run` for the latest execution with results to
+                             show in that case.
+                        $ref: '#/components/schemas/synq.issues.issues.v1.IssueRun'
+                    endedByRun:
+                        title: ended_by_run
+                        description: |-
+                            Execution that closed the issue: one that passed, or one that recorded the
+                             deletion of the trigger entity. Unset while the issue is open, and when the
+                             issue was closed without an execution.
+                        $ref: '#/components/schemas/synq.issues.issues.v1.IssueRun'
                 - oneOf:
                     - properties:
                         monitor:
@@ -26563,6 +26611,23 @@ components:
                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
             title: IssueComment
             additionalProperties: false
+        synq.issues.issues.v1.IssueRun:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: ID of the execution.
+                severity:
+                    description: |-
+                        Severity of the execution's outcome, on the same scale as `Issue.severity`.
+                         A passing execution, and one that recorded the deletion of the trigger
+                         entity, is `SEVERITY_INFO`.
+                    $ref: '#/components/schemas/synq.issues.issues.v1.Severity'
+            title: IssueRun
+            additionalProperties: false
+            description: |-
+                An execution of the trigger entity (a monitor run, a test run, a job run)
+                 that changed the issue.
         synq.issues.issues.v1.LifecycleState:
             type: string
             title: LifecycleState
@@ -26763,6 +26828,26 @@ components:
             type: object
             title: MarkNoActionNeededResponse
             additionalProperties: false
+        synq.issues.issues.v1.MonitorFieldDetail:
+            type: object
+            properties:
+                field:
+                    type: string
+                    description: Name of the monitored field.
+                metricId:
+                    type: string
+                    description: ID of the metric computed for the field.
+                severity:
+                    description: |-
+                        Severity of the field's outcome, on the same scale as `Issue.severity`.
+                         A field within bounds is `SEVERITY_INFO`.
+                    $ref: '#/components/schemas/synq.issues.issues.v1.Severity'
+                message:
+                    type: string
+                    description: Human-readable explanation of the outcome.
+            title: MonitorFieldDetail
+            additionalProperties: false
+            description: Outcome of one monitored field in a monitor run.
         synq.issues.issues.v1.MonitorTriggerDetails:
             type: object
             properties:
@@ -26776,6 +26861,14 @@ components:
                 segmentValue:
                     type: string
                     nullable: true
+                fieldDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.issues.issues.v1.MonitorFieldDetail'
+                    description: |-
+                        Outcome per monitored field of the latest monitor run, for monitors that
+                         check several fields at once. Empty for single-field monitors and for
+                         monitor segments.
             title: MonitorTriggerDetails
             additionalProperties: false
         synq.issues.issues.v1.PostCommentRequest:
@@ -29280,6 +29373,13 @@ components:
             additionalProperties: false
         synq.monitors.custom_monitors.v1.ScheduleOnDemand:
             type: object
+            properties:
+                afterRun:
+                    type: boolean
+                    description: |-
+                        When true, the check runs when a Coalesce pipeline run that writes the
+                         monitored table completes. Other pipelines do not run it. TriggerDatachecks
+                         skips the check unless the request sets `include_after_run`.
             title: ScheduleOnDemand
             additionalProperties: false
         synq.monitors.custom_monitors.v1.Segmentation:
@@ -36748,7 +36848,15 @@ paths:
             tags:
                 - synq.datachecks.v1.TriggerService
             summary: TriggerDatachecks
-            description: Run the datachecks of the specified entities.
+            description: |-
+                Run the datachecks of the specified entities.
+
+                 Send every entity that a pipeline step updated in one call, not one call per
+                 entity. Each call can resume the warehouse, and warehouses that bill by uptime
+                 (such as Snowflake) bill each resume for a minimum time. A call starts datachecks
+                 only for a limited time. Datachecks not started by then return
+                 `DATACHECK_STATUS_ERROR`, so split very large batches.
+                 Details: https://docs.synq.io/monitors/on-demand-checks
             operationId: synq.datachecks.v1.TriggerService.TriggerDatachecks
             requestBody:
                 content:
@@ -38791,6 +38899,21 @@ paths:
                         When a previously matched table or view stops matching this rule's
                          selection, its deployed tests are deleted by default. Set true to keep
                          them as-is instead — they remain rule-managed but are no longer resynced.
+                - name: deploymentRule.queryConfig.afterRun
+                  in: query
+                  description: |-
+                    Applied to every test this rule deploys. When true, each test runs when a
+                     Coalesce pipeline run that writes the table completes. Other pipelines do
+                     not run it; call TriggerDatachecks with `include_after_run` to run it
+                     yourself. Valid only with an empty `recurrence_rule`.
+                  schema:
+                    type: boolean
+                    title: after_run
+                    description: |-
+                        Applied to every test this rule deploys. When true, each test runs when a
+                         Coalesce pipeline run that writes the table completes. Other pipelines do
+                         not run it; call TriggerDatachecks with `include_after_run` to run it
+                         yourself. Valid only with an empty `recurrence_rule`.
                 - name: deploymentRule.exclusiveQueryConfig.resolverQl
                   in: query
                   description: |-
@@ -38870,6 +38993,21 @@ paths:
                     type: boolean
                     title: save_failures
                     description: Applied to every test this rule deploys. Toggles saving of failure runs.
+                - name: deploymentRule.staticConfig.afterRun
+                  in: query
+                  description: |-
+                    Applied to every test this rule deploys. When true, each test runs when a
+                     Coalesce pipeline run that writes the table completes. Other pipelines do
+                     not run it; call TriggerDatachecks with `include_after_run` to run it
+                     yourself. Valid only with an empty `recurrence_rule`.
+                  schema:
+                    type: boolean
+                    title: after_run
+                    description: |-
+                        Applied to every test this rule deploys. When true, each test runs when a
+                         Coalesce pipeline run that writes the table completes. Other pipelines do
+                         not run it; call TriggerDatachecks with `include_after_run` to run it
+                         yourself. Valid only with an empty `recurrence_rule`.
                 - name: deploymentRule.exclusiveStaticConfig.path
                   in: query
                   description: Coalesce Quality path of the table or view this rule exclusively owns.

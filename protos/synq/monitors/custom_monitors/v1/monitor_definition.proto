@@ -78,7 +78,12 @@ message ScheduleHourly {
   bool only_schedule_delay = 3;
 }
 
-message ScheduleOnDemand {}
+message ScheduleOnDemand {
+  // When true, the check runs when a Coalesce pipeline run that writes the
+  // monitored table completes. Other pipelines do not run it. TriggerDatachecks
+  // skips the check unless the request sets `include_after_run`.
+  bool after_run = 1;
+}
 
 message MonitorFreshness {
   // The expression to filter on (eg. "created_at", "meta['created_at']")

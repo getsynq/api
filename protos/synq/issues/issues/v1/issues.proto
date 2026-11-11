@@ -61,6 +61,33 @@ message Issue {
 
   // Lifecycle state of the issue.
   LifecycleState lifecycle_state = 17;
+
+  // Execution that opened the issue. Always set.
+  IssueRun started_by_run = 18;
+
+  // Latest execution that updated the issue. Unset when the issue was last
+  // updated without an execution, which happens when the issue is closed
+  // because its trigger entity was deleted and no execution recorded the
+  // deletion. Use `started_by_run` for the latest execution with results to
+  // show in that case.
+  IssueRun updated_by_run = 19;
+
+  // Execution that closed the issue: one that passed, or one that recorded the
+  // deletion of the trigger entity. Unset while the issue is open, and when the
+  // issue was closed without an execution.
+  IssueRun ended_by_run = 20;
+}
+
+// An execution of the trigger entity (a monitor run, a test run, a job run)
+// that changed the issue.
+message IssueRun {
+  // ID of the execution.
+  string id = 1;
+
+  // Severity of the execution's outcome, on the same scale as `Issue.severity`.
+  // A passing execution, and one that recorded the deletion of the trigger
+  // entity, is `SEVERITY_INFO`.
+  Severity severity = 2;
 }
 
 message IssueComment {
@@ -75,6 +102,27 @@ message MonitorTriggerDetails {
   string metric_id = 3;
   int32 metric_version = 4;
   optional string segment_value = 5;
+
+  // Outcome per monitored field of the latest monitor run, for monitors that
+  // check several fields at once. Empty for single-field monitors and for
+  // monitor segments.
+  repeated MonitorFieldDetail field_details = 6;
+}
+
+// Outcome of one monitored field in a monitor run.
+message MonitorFieldDetail {
+  // Name of the monitored field.
+  string field = 1;
+
+  // ID of the metric computed for the field.
+  string metric_id = 2;
+
+  // Severity of the field's outcome, on the same scale as `Issue.severity`.
+  // A field within bounds is `SEVERITY_INFO`.
+  Severity severity = 3;
+
+  // Human-readable explanation of the outcome.
+  string message = 4;
 }
 
 // Whether the issue is open / close.

@@ -13,6 +13,13 @@ option go_package = "github.com/getsynq/api/datachecks/v1";
 // TriggerService provides synchronous execution of datachecks on entities.
 service TriggerService {
   // Run the datachecks of the specified entities.
+  //
+  // Send every entity that a pipeline step updated in one call, not one call per
+  // entity. Each call can resume the warehouse, and warehouses that bill by uptime
+  // (such as Snowflake) bill each resume for a minimum time. A call starts datachecks
+  // only for a limited time. Datachecks not started by then return
+  // `DATACHECK_STATUS_ERROR`, so split very large batches.
+  // Details: https://docs.synq.io/monitors/on-demand-checks
   rpc TriggerDatachecks(TriggerDatachecksRequest) returns (TriggerDatachecksResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -59,6 +66,9 @@ message TriggerSqlTestRunAgainResponse {
 message TriggerDatachecksRequest {
   // List of entity identifiers to trigger datachecks for.
   repeated synq.entities.v1.Identifier entity_ids = 1 [(buf.validate.field).repeated.min_items = 1];
+  // Also run the on-demand checks marked `after_run`. Default false: those checks
+  // run when a Coalesce pipeline run that writes their table completes.
+  bool include_after_run = 2;
 }
 
 message TriggerDatachecksResponse {

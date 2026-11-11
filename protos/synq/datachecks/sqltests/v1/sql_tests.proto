@@ -169,6 +169,12 @@ message SqlTest {
   //
   // Send the whole test on every upsert: leaving this out clears it.
   optional google.protobuf.Duration lookback = 20 [(buf.validate.field).duration.gt = {seconds: 0}];
+
+  // When true, the test runs when a Coalesce pipeline run that writes the table
+  // completes. Other pipelines do not run it; call TriggerDatachecks with
+  // `include_after_run` to run it yourself. Valid only with an empty
+  // `recurrence_rule`.
+  bool after_run = 21;
 }
 
 // InputTable is a table reference resolved from the SQL expression of a SqlTest.
