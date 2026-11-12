@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package synq.entities.semantic_models.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/semantic_models/v1alpha/semantic_model.proto";
+import "synq/entities/v1/identity_group.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/semantic_models/v1alpha";
+
+// SemanticModelsService reads the semantic-layer model of entities: the measures, dimensions,
+// metrics and other fields a semantic layer or BI tool declares, what each one computes, and the
+// joins between them.
+//
+// The schema of an entity (synq.entities.schemas.v1) lists the same fields as flat columns. A field
+// name here is the column name there.
+service SemanticModelsService {
+  // Read the semantic model of each asked entity. Any member of an identity group addresses the
+  // group, so a dbt model and the table it builds give the same model. Every asked id has an
+  // answer: an entity with no semantic model gets its identity group and no model.
+  rpc BatchGetSemanticModels(BatchGetSemanticModelsRequest) returns (BatchGetSemanticModelsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/by-id"
+      body: "*"
+    };
+  }
+}
+
+// SemanticModelFormat is the form a semantic model is returned in.
+enum SemanticModelFormat {
+  // The structured SemanticModel message.
+  SEMANTIC_MODEL_FORMAT_UNSPECIFIED = 0;
+  // An Open Semantic Interchange (OSI) YAML document.
+  SEMANTIC_MODEL_FORMAT_OSI = 1;
+}
+
+message BatchGetSemanticModelsRequest {
+  // Opaque ids of the entities to read. Get an id from another response, or resolve an identifier
+  // with synq.entities.resolve.v1.IdentifierResolveService first.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // Return only the fields with these names. Empty returns every field. A group with no field left
+  // is left out. Ignored for SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
+  repeated string field_names = 2 [(buf.validate.field).repeated = {
+    max_items: 1000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // Return the definition of each field: its expression, aggregation and the rest. False returns
+  // the structure only, which keeps the response small for a large model. Ignored for
+  // SEMANTIC_MODEL_FORMAT_OSI, which always returns the definitions.
+  bool include_definitions = 3;
+  // The form of the model in the response.
+  SemanticModelFormat format = 4;
+}
+
+message BatchGetSemanticModelsResponse {
+  // One entry for each asked entity id, in request order.
+  repeated SemanticModelEntry semantic_models = 1;
+}
+
+// SemanticModelEntry is the answer for one asked entity.
+message SemanticModelEntry {
+  // The entity id that was asked for.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The identity group of the asked entity.
+  synq.entities.v1.IdentityGroup identity_group = 2;
+  // The member of the identity group whose declaration gave the model. Unset when there is no
+  // model.
+  synq.entities.v1.AspectProvenance provenance = 3;
+  // What the model holds. Empty when the entity has no semantic model.
+  SemanticModelSummary summary = 4;
+  // The model, in the asked format. Unset when the entity has no semantic model.
+  oneof model {
+    SemanticModel semantic_model = 5;
+    OsiDocument osi = 6;
+  }
+}

@@ -135,6 +135,10 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get the schema of an entity by its identifier. |
+| `ParseOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/parse` | Parse an OSI document into a semantic model. |
+| `RenderOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/render` | Render a semantic model as an OSI document. |
+| `ValidateOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/validate` | Check an OSI document and give all the findings. |
+| `BatchGetSemanticModels`<br/>_synq.entities.semantic_models.v1alpha.SemanticModelsService_<br/>`POST /api/entities/semantic-models/v1alpha/by-id` | Read the semantic model of each asked entity. |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | Return the SQL details for each of the requested entities, keyed by their Coalesce Quality path: the set of detected SQL constructs and, when the request asks for them, the joins that building the entity makes. |
 | `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | List how other SQL joins a table, or one of its columns: every join key that the SQL of a table, view or model in the workspace uses to join the requested entity, read from the requested entity's side, and which SQL makes it. |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | Return the distribution of SQL constructs across all entities in the workspace. |
@@ -815,6 +819,10 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | Resolve multiple identifiers, returning their Coalesce Quality paths and identity groups. |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | Get schema mismatches for a batch of entities by their identifiers. |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | Get the schema of an entity by its identifier. |
+| `ParseOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/parse` | Parse an OSI document into a semantic model. |
+| `RenderOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/render` | Render a semantic model as an OSI document. |
+| `ValidateOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/validate` | Check an OSI document and give all the findings. |
+| `BatchGetSemanticModels`<br/>_synq.entities.semantic_models.v1alpha.SemanticModelsService_<br/>`POST /api/entities/semantic-models/v1alpha/by-id` | Read the semantic model of each asked entity. |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | Return the SQL details for each of the requested entities, keyed by their Coalesce Quality path: the set of detected SQL constructs and, when the request asks for them, the joins that building the entity makes. |
 | `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | List how other SQL joins a table, or one of its columns: every join key that the SQL of a table, view or model in the workspace uses to join the requested entity, read from the requested entity's side, and which SQL makes it. |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | Return the distribution of SQL constructs across all entities in the workspace. |
@@ -1399,6 +1407,10 @@ Every public API method that a client or token can call, and the scopes that all
 | `BatchResolveIdentifiers`<br/>_synq.entities.resolve.v1.IdentifierResolveService_<br/>`POST /api/resolve/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchSchemaMismatches`<br/>_synq.entities.schemas.v1.SchemaMismatchesService_<br/>`POST /api/schema-mismatches/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetSchema`<br/>_synq.entities.schemas.v1.SchemasService_<br/>`GET /api/schema/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ParseOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/parse` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `RenderOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/render` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `ValidateOsi`<br/>_synq.entities.semantic_models.v1alpha.OsiService_<br/>`POST /api/entities/semantic-models/v1alpha/osi/validate` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `BatchGetSemanticModels`<br/>_synq.entities.semantic_models.v1alpha.SemanticModelsService_<br/>`POST /api/entities/semantic-models/v1alpha/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchSqlDetails`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`POST /api/sql-insights/v1/details:batch` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListJoinPatterns`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/join-patterns` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListSqlConstructs`<br/>_synq.entities.sql_insights.v1.SqlInsightsService_<br/>`GET /api/sql-insights/v1/constructs` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

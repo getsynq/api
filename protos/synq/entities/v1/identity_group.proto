@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package synq.entities.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/getsynq/api/entities/v1";
+
+// IdentityGroup is the set of entities that are one logical thing, for example a warehouse table
+// and the dbt model that builds it. Each member keeps its own entity id, and any member id
+// addresses the whole group.
+message IdentityGroup {
+  // The member to show for the group. It is for display only. It is not the member that the data
+  // of a response came from: AspectProvenance names that member.
+  string canonical_entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // Every member of the group, the canonical member included, sorted by entity id.
+  repeated IdentityGroupMember members = 2 [(buf.validate.field).repeated.max_items = 1000];
+}
+
+// IdentityGroupMember is one entity of an identity group.
+message IdentityGroupMember {
+  // Opaque id of the member entity.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+}
+
+// AspectProvenance names the member of an identity group whose data a response carries. The data
+// of one aspect comes whole from one member.
+message AspectProvenance {
+  // Opaque id of the member entity that holds the data.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+}

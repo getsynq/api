@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package synq.entities.semantic_models.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/semantic_models/v1alpha/semantic_model.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/semantic_models/v1alpha";
+
+// OsiService converts semantic models to and from OSI, the Open Semantic
+// Interchange format of Apache Ossie, and validates OSI documents.
+//
+// The service is stateless. It reads no workspace data and stores nothing, so
+// an editor or a pipeline can call it after each change. Each response names
+// the OSI specification version it reads and writes.
+//
+// The service reads and writes OSI only. To get the semantic model of an
+// entity, use SemanticModelsService.
+service OsiService {
+  // Parse an OSI document into a semantic model.
+  //
+  // A document with an ERROR finding is refused with INVALID_ARGUMENT and an
+  // OsiValidationFailure detail that lists every ERROR finding. A document
+  // with only WARNING findings parses, and the response lists the warnings.
+  rpc ParseOsi(ParseOsiRequest) returns (ParseOsiResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/osi/parse"
+      body: "*"
+    };
+  }
+
+  // Render a semantic model as an OSI document. The document is always YAML.
+  //
+  // The document is always valid OSI. When the model has no value for a
+  // property that OSI requires, the document has a fallback value: a field
+  // with no expression gets its own name as the expression, and a group with
+  // no source gets its name as the source. What OSI has no property for is
+  // kept in a custom extension with the vendor name COALESCE, so ParseOsi
+  // gives back the same model.
+  //
+  // Give the whole model. A model read with field_names or without the
+  // definitions renders each measure as a plain column. To get the OSI
+  // document of an entity, call SemanticModelsService.BatchGetSemanticModels
+  // with SEMANTIC_MODEL_FORMAT_OSI.
+  rpc RenderOsi(RenderOsiRequest) returns (RenderOsiResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/osi/render"
+      body: "*"
+    };
+  }
+
+  // Check an OSI document and give all the findings.
+  //
+  // ValidateOsi checks the document against the OSI JSON Schema, then does the
+  // semantic checks of the OSI reference validator: unique names, the datasets
+  // that relationships refer to, the number of relationship columns, and
+  // whether a relationship joins to a key. ValidateOsi does not parse the
+  // expressions. The reference validator also parses each ANSI_SQL expression,
+  // and ValidateOsi does not do that check.
+  rpc ValidateOsi(ValidateOsiRequest) returns (ValidateOsiResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/osi/validate"
+      body: "*"
+    };
+  }
+}
+
+// The severity of an OsiFinding.
+enum OsiFindingSeverity {
+  OSI_FINDING_SEVERITY_UNSPECIFIED = 0;
+
+  // The document is not valid OSI.
+  OSI_FINDING_SEVERITY_ERROR = 1;
+
+  // The document is valid OSI, but it possibly does not say what you want.
+  // An example is a relationship whose target columns are not a key of the
+  // target dataset.
+  OSI_FINDING_SEVERITY_WARNING = 2;
+}
+
+// One finding about an OSI document.
+message OsiFinding {
+  OsiFindingSeverity severity = 1;
+
+  // The check that made the finding: `yaml` when the text is not one YAML or
+  // JSON document, `schema` for the OSI JSON Schema, or the category of the
+  // semantic check: `unique`, `reference` or `arity`.
+  string check = 2 [(buf.validate.field).string.max_len = 64];
+
+  // A description of the problem for the person who edits the document.
+  string message = 3 [(buf.validate.field).string.max_len = 10000];
+
+  // The element that the finding is about, in the keys of the document, for
+  // example `datasets[0].fields[2].name` or `relationships[1].to`. The index
+  // of a list item is its position in the document.
+  //
+  // The path is empty when the finding is about the full document. A finding
+  // of the `yaml` or `schema` check always has an empty path.
+  string path = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// The error details of an INVALID_ARGUMENT error that ParseOsi gives because
+// of the contents of the document. It lists every finding with the ERROR
+// severity.
+message OsiValidationFailure {
+  repeated OsiFinding findings = 1;
+
+  // The OSI specification version that the document was checked against.
+  string osi_version = 2 [(buf.validate.field).string.max_len = 64];
+}
+
+message ParseOsiRequest {
+  // The OSI document, in YAML or JSON.
+  string document = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_bytes: 2097152
+  }];
+}
+
+message ParseOsiResponse {
+  // The semantic model of the document.
+  SemanticModel semantic_model = 1;
+
+  // The WARNING findings of the document. Empty when it has none.
+  repeated OsiFinding findings = 2;
+
+  // The OSI specification version that the service reads.
+  string osi_version = 3 [(buf.validate.field).string.max_len = 64];
+}
+
+message RenderOsiRequest {
+  // The semantic model to render.
+  SemanticModel semantic_model = 1 [(buf.validate.field).required = true];
+}
+
+message RenderOsiResponse {
+  // The OSI document, in YAML, with the OSI specification version it uses.
+  OsiDocument document = 1;
+}
+
+message ValidateOsiRequest {
+  // The OSI document, in YAML or JSON.
+  string document = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_bytes: 2097152
+  }];
+}
+
+message ValidateOsiResponse {
+  // True when no finding has the ERROR severity. A document with only
+  // warnings is valid.
+  bool valid = 1;
+
+  // All the findings. The errors come first, then the warnings. Empty when
+  // the document has no findings.
+  repeated OsiFinding findings = 2;
+
+  // The OSI specification version that the document was checked against.
+  string osi_version = 3 [(buf.validate.field).string.max_len = 64];
+}

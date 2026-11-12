@@ -18840,6 +18840,748 @@ components:
             description: |-
                 SchemaMismatch represents a schema drift between a definer entity (e.g., dbt model)
                  and an origin entity (e.g., BigQuery table) where columns are defined but missing in origin.
+        synq.entities.semantic_models.v1alpha.AIContext:
+            type: object
+            properties:
+                text:
+                    type: string
+                    maxLength: 10000
+                    description: The context as one text. The other fields are then empty.
+                instructions:
+                    type: string
+                    maxLength: 10000
+                synonyms:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 1000
+                    maxItems: 1000
+                examples:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 10000
+                        maxItems: 1000
+                    maxItems: 1000
+                extraJson:
+                    type: string
+                    maxLength: 100000
+                    description: Any other keys, as one JSON object.
+            title: AIContext
+            additionalProperties: false
+            description: AIContext is context written for an AI agent that reads the model.
+        synq.entities.semantic_models.v1alpha.Aggregation:
+            type: string
+            title: Aggregation
+            enum:
+                - AGGREGATION_UNSPECIFIED
+                - AGGREGATION_SUM
+                - AGGREGATION_COUNT
+                - AGGREGATION_COUNT_DISTINCT
+                - AGGREGATION_AVERAGE
+                - AGGREGATION_MIN
+                - AGGREGATION_MAX
+                - AGGREGATION_MEDIAN
+                - AGGREGATION_PERCENTILE
+                - AGGREGATION_SUM_BOOLEAN
+                - AGGREGATION_LIST
+                - AGGREGATION_STDDEV
+                - AGGREGATION_VARIANCE
+                - AGGREGATION_NONE
+                - AGGREGATION_OTHER
+        synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 100
+                        minItems: 1
+                    maxItems: 100
+                    minItems: 1
+                    description: |-
+                        Opaque ids of the entities to read. Get an id from another response, or resolve an identifier
+                         with synq.entities.resolve.v1.IdentifierResolveService first.
+                fieldNames:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: |-
+                        Return only the fields with these names. Empty returns every field. A group with no field left
+                         is left out. Ignored for SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
+                includeDefinitions:
+                    type: boolean
+                    description: |-
+                        Return the definition of each field: its expression, aggregation and the rest. False returns
+                         the structure only, which keeps the response small for a large model. Ignored for
+                         SEMANTIC_MODEL_FORMAT_OSI, which always returns the definitions.
+                format:
+                    description: The form of the model in the response.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelFormat'
+            title: BatchGetSemanticModelsRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsResponse:
+            type: object
+            properties:
+                semanticModels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelEntry'
+                    description: One entry for each asked entity id, in request order.
+            title: BatchGetSemanticModelsResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.Cardinality:
+            type: string
+            title: Cardinality
+            enum:
+                - CARDINALITY_UNSPECIFIED
+                - CARDINALITY_MANY_TO_ONE
+                - CARDINALITY_ONE_TO_ONE
+                - CARDINALITY_ONE_TO_MANY
+                - CARDINALITY_MANY_TO_MANY
+        synq.entities.semantic_models.v1alpha.CustomExtension:
+            type: object
+            properties:
+                vendorName:
+                    type: string
+                    maxLength: 255
+                data:
+                    type: string
+                    maxLength: 100000
+                    description: A JSON string.
+            title: CustomExtension
+            additionalProperties: false
+            description: CustomExtension is vendor data carried with the model as the declarer gave it.
+        synq.entities.semantic_models.v1alpha.DatasetSource:
+            type: object
+            oneOf:
+                - properties:
+                    entityId:
+                        type: string
+                        title: entity_id
+                        maxLength: 1024
+                        description: Opaque id of the entity the group reads.
+                  title: entity_id
+                  required:
+                    - entityId
+                - properties:
+                    nativeName:
+                        type: string
+                        title: native_name
+                        maxLength: 1024
+                        description: |-
+                            The `database.schema.table` name as the declarer spells it, when it is not resolved to an
+                             entity.
+                  title: native_name
+                  required:
+                    - nativeName
+                - properties:
+                    query:
+                        title: query
+                        description: A query.
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+                  title: query
+                  required:
+                    - query
+            additionalProperties: false
+            description: DatasetSource is what a group reads.
+        synq.entities.semantic_models.v1alpha.DialectExpression:
+            type: object
+            properties:
+                platform:
+                    description: |-
+                        Where the expression is evaluated, which also gives its language: the SQL of a data warehouse,
+                         DAX for Power BI, LookML for Looker. Unspecified when `native_dialect` names the language, or
+                         when it is the SQL of the model's sql_platform.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                nativeDialect:
+                    type: string
+                    maxLength: 255
+                    description: Names the language when the platform cannot, for example ANSI_SQL or MDX.
+                expression:
+                    type: string
+                    maxLength: 10000
+                    description: The expression text. A text longer than the limit is cut, and is_truncated is set.
+                isTruncated:
+                    type: boolean
+                    description: True when the expression text was cut to fit its limit.
+            title: DialectExpression
+            additionalProperties: false
+            description: DialectExpression is an expression in one dialect.
+        synq.entities.semantic_models.v1alpha.Expression:
+            type: object
+            properties:
+                dialects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DialectExpression'
+                    maxItems: 100
+            title: Expression
+            additionalProperties: false
+            description: Expression is one definition, in one or more dialects.
+        synq.entities.semantic_models.v1alpha.Field:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        The address of the field: lowercased, and qualified by the sub-container when the declarer has
+                         one. It is the column name in the entity's schema, and it is unique within the model.
+                nativeName:
+                    type: string
+                    maxLength: 1024
+                    description: The field name as the declarer spells it, unqualified.
+                nativeType:
+                    type: string
+                    maxLength: 1024
+                    description: The data type as the declarer spells it.
+                description:
+                    type: string
+                    maxLength: 10000
+                ordinalPosition:
+                    type: integer
+                    format: int32
+                    description: Position of the field in the declarer's list, starting from 1.
+                tags:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.SchemaTag'
+                    maxItems: 100
+                    description: Tags the declarer gives the field.
+                definition:
+                    description: |-
+                        What the field computes. Unset for a plain stored column, and when the request leaves the
+                         definitions out.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldDefinition'
+            title: Field
+            additionalProperties: false
+            description: Field is one field of a semantic model.
+        synq.entities.semantic_models.v1alpha.FieldDefinition:
+            type: object
+            properties:
+                nativeKind:
+                    type: string
+                    maxLength: 255
+                    description: |-
+                        The declarer's own name for the kind of object, lowercased, for example "measure",
+                         "calculated_column" or "derived_metric". For display only.
+                expression:
+                    description: What the field computes. Unset for a measure whose declarer gives only an aggregation.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+                aggregation:
+                    description: |-
+                        The aggregation the declarer applies on top of the expression. Unspecified when the aggregate is
+                         inside the expression, or when the field is not aggregated.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Aggregation'
+                nativeAggregation:
+                    type: string
+                    maxLength: 255
+                    description: The declarer's spelling of the aggregation, when `aggregation` cannot say it exactly.
+                timeGranularity:
+                    description: The finest grain of a time dimension.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.TimeGranularity'
+                key:
+                    description: The key role of the field within its group.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.KeyKind'
+                visibility:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Visibility'
+                displayFolder:
+                    type: string
+                    maxLength: 1024
+                    description: The folder the declarer shows the field in.
+                format:
+                    type: string
+                    maxLength: 1024
+                    description: The display format, as the declarer spells it.
+                filter:
+                    description: A row filter that is part of the definition.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+                nonAdditiveDimensions:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: Names of the dimensions this measure cannot be added up over.
+                nativeKey:
+                    type: string
+                    maxLength: 255
+                    description: The declarer's spelling of the key role, when `key` is KEY_KIND_OTHER.
+                isTime:
+                    type: boolean
+                    description: |-
+                        True for a time field, false for a field the declarer says is not one. Unset when the declarer
+                         does not say.
+                    nullable: true
+                nativeId:
+                    type: string
+                    maxLength: 1024
+                    description: The declarer's stable id for the field, when it has one.
+                aiContext:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
+                customExtensions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
+                    maxItems: 100
+                displayName:
+                    type: string
+                    maxLength: 1024
+                    description: The label the declarer shows its users, when it differs from the native name.
+            title: FieldDefinition
+            additionalProperties: false
+            description: FieldDefinition says how a semantic-layer field is defined.
+        synq.entities.semantic_models.v1alpha.FieldGroup:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        Name of the group: the sub-container of the declarer (a Power BI table, a LookML view, an OSI
+                         dataset), or a label for the kind when the declarer has no sub-containers.
+                kind:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldGroupKind'
+                fields:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Field'
+                    maxItems: 100000
+                    description: The fields, in the declarer's order.
+                displayName:
+                    type: string
+                    maxLength: 1024
+                    description: The label the declarer shows for the group, when it differs from the name.
+                source:
+                    description: What the group reads.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DatasetSource'
+                description:
+                    type: string
+                    maxLength: 10000
+                primaryKey:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: Names of the fields that together identify a row.
+                uniqueKeys:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.UniqueKey'
+                    maxItems: 100
+                aiContext:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
+                customExtensions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
+                    maxItems: 100
+            title: FieldGroup
+            additionalProperties: false
+            description: |-
+                FieldGroup is a named set of fields of one kind. OSI: a dataset. One dataset can be several
+                 groups that share a name, one for each kind of field it holds. Then the dataset-level fields are
+                 set on one of them only.
+        synq.entities.semantic_models.v1alpha.FieldGroupKind:
+            type: string
+            title: FieldGroupKind
+            enum:
+                - FIELD_GROUP_KIND_UNSPECIFIED
+                - FIELD_GROUP_KIND_COLUMNS
+                - FIELD_GROUP_KIND_DIMENSIONS
+                - FIELD_GROUP_KIND_MEASURES
+                - FIELD_GROUP_KIND_METRICS
+                - FIELD_GROUP_KIND_ENTITIES
+                - FIELD_GROUP_KIND_FACTS
+                - FIELD_GROUP_KIND_FILTERS
+                - FIELD_GROUP_KIND_PARAMETERS
+            description: FieldGroupKind is the role the fields of a group play. It is the role of each of its fields.
+        synq.entities.semantic_models.v1alpha.JoinType:
+            type: string
+            title: JoinType
+            enum:
+                - JOIN_TYPE_UNSPECIFIED
+                - JOIN_TYPE_LEFT_OUTER
+                - JOIN_TYPE_INNER
+                - JOIN_TYPE_FULL_OUTER
+                - JOIN_TYPE_CROSS
+                - JOIN_TYPE_OTHER
+        synq.entities.semantic_models.v1alpha.KeyKind:
+            type: string
+            title: KeyKind
+            enum:
+                - KEY_KIND_UNSPECIFIED
+                - KEY_KIND_PRIMARY
+                - KEY_KIND_UNIQUE
+                - KEY_KIND_FOREIGN
+                - KEY_KIND_NATURAL
+                - KEY_KIND_OTHER
+        synq.entities.semantic_models.v1alpha.OsiDocument:
+            type: object
+            properties:
+                osiVersion:
+                    type: string
+                    maxLength: 64
+                    description: The OSI specification version of the document.
+                document:
+                    type: string
+                    maxLength: 10000000
+                    description: The YAML document.
+            title: OsiDocument
+            additionalProperties: false
+            description: OsiDocument is a semantic model as an Open Semantic Interchange document.
+        synq.entities.semantic_models.v1alpha.OsiFinding:
+            type: object
+            properties:
+                severity:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.OsiFindingSeverity'
+                check:
+                    type: string
+                    maxLength: 64
+                    description: |-
+                        The check that made the finding: `yaml` when the text is not one YAML or
+                         JSON document, `schema` for the OSI JSON Schema, or the category of the
+                         semantic check: `unique`, `reference` or `arity`.
+                message:
+                    type: string
+                    maxLength: 10000
+                    description: A description of the problem for the person who edits the document.
+                path:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        The element that the finding is about, in the keys of the document, for
+                         example `datasets[0].fields[2].name` or `relationships[1].to`. The index
+                         of a list item is its position in the document.
+
+                         The path is empty when the finding is about the full document. A finding
+                         of the `yaml` or `schema` check always has an empty path.
+            title: OsiFinding
+            additionalProperties: false
+            description: One finding about an OSI document.
+        synq.entities.semantic_models.v1alpha.OsiFindingSeverity:
+            type: string
+            title: OsiFindingSeverity
+            enum:
+                - OSI_FINDING_SEVERITY_UNSPECIFIED
+                - OSI_FINDING_SEVERITY_ERROR
+                - OSI_FINDING_SEVERITY_WARNING
+            description: The severity of an OsiFinding.
+        synq.entities.semantic_models.v1alpha.ParseOsiRequest:
+            type: object
+            properties:
+                document:
+                    type: string
+                    minLength: 1
+                    description: |
+                        The OSI document, in YAML or JSON.
+                        string.max_bytes = 2097152
+            title: ParseOsiRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.ParseOsiResponse:
+            type: object
+            properties:
+                semanticModel:
+                    description: The semantic model of the document.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModel'
+                findings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.OsiFinding'
+                    description: The WARNING findings of the document. Empty when it has none.
+                osiVersion:
+                    type: string
+                    maxLength: 64
+                    description: The OSI specification version that the service reads.
+            title: ParseOsiResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.Relationship:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 1024
+                    description: Name of the join. Empty when the declarer has none.
+                from:
+                    type: string
+                    maxLength: 1024
+                    description: Group name of the many side.
+                fromFields:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: Field names of the many side, in the same order as `to_fields`.
+                to:
+                    type: string
+                    maxLength: 1024
+                    description: Group name of the one side, or the opaque id of another entity.
+                toFields:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                cardinality:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Cardinality'
+                state:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.RelationshipState'
+                on:
+                    description: The join condition, when it is not a list of equal fields.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+                joinType:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.JoinType'
+                nativeJoinType:
+                    type: string
+                    maxLength: 255
+                    description: The declarer's spelling of the join type, when `join_type` is JOIN_TYPE_OTHER.
+                aiContext:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
+                customExtensions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
+                    maxItems: 100
+            title: Relationship
+            additionalProperties: false
+            description: Relationship is a join between two groups of a model.
+        synq.entities.semantic_models.v1alpha.RelationshipState:
+            type: string
+            title: RelationshipState
+            enum:
+                - RELATIONSHIP_STATE_UNSPECIFIED
+                - RELATIONSHIP_STATE_INACTIVE
+        synq.entities.semantic_models.v1alpha.RenderOsiRequest:
+            type: object
+            properties:
+                semanticModel:
+                    description: The semantic model to render.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModel'
+            title: RenderOsiRequest
+            required:
+                - semanticModel
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.RenderOsiResponse:
+            type: object
+            properties:
+                document:
+                    description: The OSI document, in YAML, with the OSI specification version it uses.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.OsiDocument'
+            title: RenderOsiResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.SemanticModel:
+            type: object
+            properties:
+                declarerEntityId:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        Opaque id of the entity whose declaration states the model, when another entity declares it,
+                         for example the dbt project that defines a semantic model. Empty when the entity states it
+                         itself.
+                nativeName:
+                    type: string
+                    maxLength: 1024
+                    description: Name of the model as the declarer spells it.
+                description:
+                    type: string
+                    maxLength: 10000
+                    description: Description of the model.
+                sqlPlatform:
+                    description: |-
+                        The platform whose SQL the expressions are written in, when an expression does not name its
+                         own.
+                    $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldGroup'
+                    maxItems: 10000
+                    description: The field groups, in the declarer's order.
+                relationships:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Relationship'
+                    maxItems: 10000
+                    description: The joins between the groups.
+                aiContext:
+                    description: Context for an AI agent that reads the model.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
+                customExtensions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
+                    maxItems: 100
+                    description: Vendor data the declarer carries with the model.
+            title: SemanticModel
+            additionalProperties: false
+            description: |-
+                SemanticModel is the semantic-layer model of an entity: its fields in groups, what each field
+                 computes, and the joins between the groups. It is the model one declarer states for the entity,
+                 taken whole. A field name is the column name of the entity's schema, so the schema and the model
+                 join on it.
+
+                 The shape follows the Open Semantic Interchange (OSI) model. A group is an OSI dataset, or the
+                 part of a dataset that plays one role.
+        synq.entities.semantic_models.v1alpha.SemanticModelEntry:
+            type: object
+            allOf:
+                - properties:
+                    entityId:
+                        type: string
+                        title: entity_id
+                        maxLength: 1024
+                        description: The entity id that was asked for.
+                    identityGroup:
+                        title: identity_group
+                        description: The identity group of the asked entity.
+                        $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                    provenance:
+                        title: provenance
+                        description: |-
+                            The member of the identity group whose declaration gave the model. Unset when there is no
+                             model.
+                        $ref: '#/components/schemas/synq.entities.v1.AspectProvenance'
+                    summary:
+                        title: summary
+                        description: What the model holds. Empty when the entity has no semantic model.
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelSummary'
+                - oneOf:
+                    - properties:
+                        osi:
+                            title: osi
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.OsiDocument'
+                      title: osi
+                      required:
+                        - osi
+                    - properties:
+                        semanticModel:
+                            title: semantic_model
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModel'
+                      title: semantic_model
+                      required:
+                        - semanticModel
+            title: SemanticModelEntry
+            additionalProperties: false
+            description: SemanticModelEntry is the answer for one asked entity.
+        synq.entities.semantic_models.v1alpha.SemanticModelFormat:
+            type: string
+            title: SemanticModelFormat
+            enum:
+                - SEMANTIC_MODEL_FORMAT_UNSPECIFIED
+                - SEMANTIC_MODEL_FORMAT_OSI
+            description: SemanticModelFormat is the form a semantic model is returned in.
+        synq.entities.semantic_models.v1alpha.SemanticModelSummary:
+            type: object
+            properties:
+                fieldCounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelSummary.KindCount'
+                    maxItems: 100
+                    description: Fields per group kind, in kind order. Plain columns are left out.
+                relationshipCount:
+                    type: integer
+                    description: The number of joins between the groups.
+            title: SemanticModelSummary
+            additionalProperties: false
+            description: |-
+                SemanticModelSummary counts what a semantic model holds beyond plain columns. An entity with no
+                 semantic model has an empty summary.
+        synq.entities.semantic_models.v1alpha.SemanticModelSummary.KindCount:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldGroupKind'
+                count:
+                    type: integer
+            title: KindCount
+            additionalProperties: false
+            description: The number of fields of one group kind.
+        synq.entities.semantic_models.v1alpha.TimeGranularity:
+            type: string
+            title: TimeGranularity
+            enum:
+                - TIME_GRANULARITY_UNSPECIFIED
+                - TIME_GRANULARITY_NANOSECOND
+                - TIME_GRANULARITY_MICROSECOND
+                - TIME_GRANULARITY_MILLISECOND
+                - TIME_GRANULARITY_SECOND
+                - TIME_GRANULARITY_MINUTE
+                - TIME_GRANULARITY_HOUR
+                - TIME_GRANULARITY_DAY
+                - TIME_GRANULARITY_WEEK
+                - TIME_GRANULARITY_MONTH
+                - TIME_GRANULARITY_QUARTER
+                - TIME_GRANULARITY_YEAR
+                - TIME_GRANULARITY_OTHER
+        synq.entities.semantic_models.v1alpha.UniqueKey:
+            type: object
+            properties:
+                fields:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: Field names, in key order.
+            title: UniqueKey
+            additionalProperties: false
+            description: UniqueKey is a set of fields that identify a row.
+        synq.entities.semantic_models.v1alpha.ValidateOsiRequest:
+            type: object
+            properties:
+                document:
+                    type: string
+                    minLength: 1
+                    description: |
+                        The OSI document, in YAML or JSON.
+                        string.max_bytes = 2097152
+            title: ValidateOsiRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.ValidateOsiResponse:
+            type: object
+            properties:
+                valid:
+                    type: boolean
+                    description: |-
+                        True when no finding has the ERROR severity. A document with only
+                         warnings is valid.
+                findings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.OsiFinding'
+                    description: |-
+                        All the findings. The errors come first, then the warnings. Empty when
+                         the document has no findings.
+                osiVersion:
+                    type: string
+                    maxLength: 64
+                    description: The OSI specification version that the document was checked against.
+            title: ValidateOsiResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.Visibility:
+            type: string
+            title: Visibility
+            enum:
+                - VISIBILITY_UNSPECIFIED
+                - VISIBILITY_HIDDEN
         synq.entities.sql_insights.v1.BatchSqlDetailsRequest:
             type: object
             properties:
@@ -20224,6 +20966,18 @@ components:
             description: |-
                 Annotations can be used to annotate any entity with a key:value pair.
                  These annotations can be used for filtering and searching entities.
+        synq.entities.v1.AspectProvenance:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 1024
+                    description: Opaque id of the member entity that holds the data.
+            title: AspectProvenance
+            additionalProperties: false
+            description: |-
+                AspectProvenance names the member of an identity group whose data a response carries. The data
+                 of one aspect comes whole from one member.
         synq.entities.v1.AthenaTableIdentifier:
             type: object
             properties:
@@ -21556,6 +22310,37 @@ components:
                  id. Read it when you just need to name the entity again — it is one string for
                  every platform, where the structured variants below only cover the platforms
                  that have one.
+        synq.entities.v1.IdentityGroup:
+            type: object
+            properties:
+                canonicalEntityId:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        The member to show for the group. It is for display only. It is not the member that the data
+                         of a response came from: AspectProvenance names that member.
+                members:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.IdentityGroupMember'
+                    maxItems: 1000
+                    description: Every member of the group, the canonical member included, sorted by entity id.
+            title: IdentityGroup
+            additionalProperties: false
+            description: |-
+                IdentityGroup is the set of entities that are one logical thing, for example a warehouse table
+                 and the dbt model that builds it. Each member keeps its own entity id, and any member id
+                 addresses the whole group.
+        synq.entities.v1.IdentityGroupMember:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 1024
+                    description: Opaque id of the member entity.
+            title: IdentityGroupMember
+            additionalProperties: false
+            description: IdentityGroupMember is one entity of an identity group.
         synq.entities.v1.MonitorIdentifier:
             type: object
             properties:
@@ -46116,6 +46901,115 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.platformusers.v1alpha.ListPlatformUsersResponse'
+    /api/entities/semantic-models/v1alpha/by-id:
+        post:
+            tags:
+                - synq.entities.semantic_models.v1alpha.SemanticModelsService
+            summary: BatchGetSemanticModels
+            description: |-
+                Read the semantic model of each asked entity. Any member of an identity group addresses the
+                 group, so a dbt model and the table it builds give the same model. Every asked id has an
+                 answer: an entity with no semantic model gets its identity group and no model.
+            operationId: synq.entities.semantic_models.v1alpha.SemanticModelsService.BatchGetSemanticModels
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsResponse'
+    /api/entities/semantic-models/v1alpha/osi/parse:
+        post:
+            tags:
+                - synq.entities.semantic_models.v1alpha.OsiService
+            summary: ParseOsi
+            description: |-
+                Parse an OSI document into a semantic model.
+
+                 A document with an ERROR finding is refused with INVALID_ARGUMENT and an
+                 OsiValidationFailure detail that lists every ERROR finding. A document
+                 with only WARNING findings parses, and the response lists the warnings.
+            operationId: synq.entities.semantic_models.v1alpha.OsiService.ParseOsi
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ParseOsiRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ParseOsiResponse'
+    /api/entities/semantic-models/v1alpha/osi/render:
+        post:
+            tags:
+                - synq.entities.semantic_models.v1alpha.OsiService
+            summary: RenderOsi
+            description: |-
+                Render a semantic model as an OSI document. The document is always YAML.
+
+                 The document is always valid OSI. When the model has no value for a
+                 property that OSI requires, the document has a fallback value: a field
+                 with no expression gets its own name as the expression, and a group with
+                 no source gets its name as the source. What OSI has no property for is
+                 kept in a custom extension with the vendor name COALESCE, so ParseOsi
+                 gives back the same model.
+
+                 Give the whole model. A model read with field_names or without the
+                 definitions renders each measure as a plain column. To get the OSI
+                 document of an entity, call SemanticModelsService.BatchGetSemanticModels
+                 with SEMANTIC_MODEL_FORMAT_OSI.
+            operationId: synq.entities.semantic_models.v1alpha.OsiService.RenderOsi
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.RenderOsiRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.RenderOsiResponse'
+    /api/entities/semantic-models/v1alpha/osi/validate:
+        post:
+            tags:
+                - synq.entities.semantic_models.v1alpha.OsiService
+            summary: ValidateOsi
+            description: |-
+                Check an OSI document and give all the findings.
+
+                 ValidateOsi checks the document against the OSI JSON Schema, then does the
+                 semantic checks of the OSI reference validator: unique names, the datasets
+                 that relationships refer to, the number of relationship columns, and
+                 whether a relationship joins to a key. ValidateOsi does not parse the
+                 expressions. The reference validator also parses each ANSI_SQL expression,
+                 and ValidateOsi does not do that check.
+            operationId: synq.entities.semantic_models.v1alpha.OsiService.ValidateOsi
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ValidateOsiRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ValidateOsiResponse'
     /api/entities/service-accounts/v1alpha/apply:
         post:
             tags:
@@ -61428,6 +62322,25 @@ tags:
          data platform tables and their definitions (e.g., dbt models).
     - name: synq.entities.schemas.v1.SchemasService
       description: EntitiesService is a service for retriving any entity.
+    - name: synq.entities.semantic_models.v1alpha.OsiService
+      description: |-
+        OsiService converts semantic models to and from OSI, the Open Semantic
+         Interchange format of Apache Ossie, and validates OSI documents.
+
+         The service is stateless. It reads no workspace data and stores nothing, so
+         an editor or a pipeline can call it after each change. Each response names
+         the OSI specification version it reads and writes.
+
+         The service reads and writes OSI only. To get the semantic model of an
+         entity, use SemanticModelsService.
+    - name: synq.entities.semantic_models.v1alpha.SemanticModelsService
+      description: |-
+        SemanticModelsService reads the semantic-layer model of entities: the measures, dimensions,
+         metrics and other fields a semantic layer or BI tool declares, what each one computes, and the
+         joins between them.
+
+         The schema of an entity (synq.entities.schemas.v1) lists the same fields as flat columns. A field
+         name here is the column name there.
     - name: synq.entities.sql_insights.v1.SqlInsightsService
       description: |-
         SqlInsightsService exposes analytical information about the SQL used across a
