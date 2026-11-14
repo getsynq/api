@@ -18962,37 +18962,25 @@ components:
             description: CustomExtension is vendor data carried with the model as the declarer gave it.
         synq.entities.semantic_models.v1alpha.DatasetSource:
             type: object
-            oneOf:
-                - properties:
-                    entityId:
-                        type: string
-                        title: entity_id
-                        maxLength: 1024
-                        description: Opaque id of the entity the group reads.
-                  title: entity_id
-                  required:
-                    - entityId
-                - properties:
-                    nativeName:
-                        type: string
-                        title: native_name
-                        maxLength: 1024
-                        description: |-
-                            The `database.schema.table` name as the declarer spells it, when it is not resolved to an
-                             entity.
-                  title: native_name
-                  required:
-                    - nativeName
-                - properties:
-                    query:
-                        title: query
-                        description: A query.
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
-                  title: query
-                  required:
-                    - query
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 1024
+                    description: Opaque id of the entity that the group reads.
+                    nullable: true
+                nativeName:
+                    type: string
+                    maxLength: 1024
+                    description: The `database.schema.table` name as the declarer spells it.
+                    nullable: true
+                query:
+                    description: A query.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+            title: DatasetSource
             additionalProperties: false
-            description: DatasetSource is what a group reads.
+            description: |-
+                DatasetSource is what a group reads. The declarer sets each field that it knows, so one source
+                 can hold a name, the entity it resolves to and a query at the same time.
         synq.entities.semantic_models.v1alpha.DialectExpression:
             type: object
             properties:
@@ -19582,6 +19570,21 @@ components:
             enum:
                 - VISIBILITY_UNSPECIFIED
                 - VISIBILITY_HIDDEN
+        synq.entities.sql_insights.v1.AggregateFunction:
+            type: string
+            title: AggregateFunction
+            enum:
+                - AGGREGATE_FUNCTION_UNSPECIFIED
+                - AGGREGATE_FUNCTION_SUM
+                - AGGREGATE_FUNCTION_COUNT
+                - AGGREGATE_FUNCTION_COUNT_DISTINCT
+                - AGGREGATE_FUNCTION_AVG
+                - AGGREGATE_FUNCTION_MIN
+                - AGGREGATE_FUNCTION_MAX
+                - AGGREGATE_FUNCTION_MEDIAN
+                - AGGREGATE_FUNCTION_PERCENTILE
+                - AGGREGATE_FUNCTION_OTHER
+            description: AggregateFunction is the function an aggregated column is passed to.
         synq.entities.sql_insights.v1.BatchSqlDetailsRequest:
             type: object
             properties:
@@ -19626,6 +19629,237 @@ components:
                     $ref: '#/components/schemas/synq.entities.sql_insights.v1.SqlDetails'
             title: SqlDetailsEntry
             additionalProperties: false
+        synq.entities.sql_insights.v1.ColumnUsageKind:
+            type: string
+            title: ColumnUsageKind
+            enum:
+                - COLUMN_USAGE_KIND_UNSPECIFIED
+                - COLUMN_USAGE_KIND_AGGREGATE
+                - COLUMN_USAGE_KIND_GROUP_BY
+                - COLUMN_USAGE_KIND_FILTER
+            description: ColumnUsageKind is what SQL does with a column outside a join condition.
+        synq.entities.sql_insights.v1.ColumnUsagePattern:
+            type: object
+            properties:
+                column:
+                    type: string
+                    maxLength: 4096
+                    description: The column, lowercased. Empty for a `COUNT(*)` of the table's rows.
+                kind:
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsageKind'
+                function:
+                    description: 'AGGREGATE only: the function.'
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.AggregateFunction'
+                nativeFunction:
+                    type: string
+                    maxLength: 256
+                    description: |-
+                        AGGREGATE with function OTHER only: the function's name, lowercased, like
+                         `listagg`.
+                operator:
+                    description: 'FILTER only: the comparison.'
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.FilterOperator'
+                evidenceKinds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinEvidenceKind'
+                    description: Where the pattern was seen, SQL_DEFINITION before QUERY_LOG.
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsageSource'
+                    description: |-
+                        The SQL that uses the column this way, each statement once, ordered by
+                         entity. Of the entities that are the same object, only one is listed.
+                queryLog:
+                    description: |-
+                        How the query history used the column this way in the requested window.
+                         Set when `evidence_kinds` holds QUERY_LOG.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsageQueryLogEvidence'
+            title: ColumnUsagePattern
+            additionalProperties: false
+            description: |-
+                ColumnUsagePattern is one way a column of the requested entity is used:
+                 aggregated with one function, grouped by, or filtered with one comparison.
+        synq.entities.sql_insights.v1.ColumnUsageQueryLogEvidence:
+            type: object
+            properties:
+                queries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                transformedQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Queries among them where the column reaches the usage through an
+                         expression.
+                distinctLogins:
+                    type: integer
+                    description: The distinct warehouse users that ran them.
+                firstHour:
+                    description: |-
+                        The first and the last hour the usage was seen in, each the start of its
+                         UTC hour.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                lastHour:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                issuers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.JoinIssuer'
+                    description: Who ran the queries, most queries first.
+                sampleQueryId:
+                    type: string
+                    maxLength: 4096
+                    description: |-
+                        The warehouse's id of a query of the last hour that used the column this
+                         way.
+                literalQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        FILTER only: queries among them that compared the column with a literal
+                         value or a bind parameter. The values are not given.
+            title: ColumnUsageQueryLogEvidence
+            additionalProperties: false
+            description: |-
+                ColumnUsageQueryLogEvidence sums the queries that used a column one way in
+                 the requested window.
+        synq.entities.sql_insights.v1.ColumnUsageQueryLogLeftOut:
+            type: object
+            properties:
+                coalesceQualityQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Queries that Coalesce Quality's tag marks, by any warehouse user.
+                coalesceLogins:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: The other queries of the warehouse users Coalesce connects as.
+                serviceAccounts:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        Queries of the warehouse users that `exclude_service_accounts` leaves
+                         out.
+                checks:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: Queries that check a table, left out without `include_checks`.
+            title: ColumnUsageQueryLogLeftOut
+            additionalProperties: false
+            description: |-
+                ColumnUsageQueryLogLeftOut counts the queries left out of the query history
+                 evidence.
+        synq.entities.sql_insights.v1.ColumnUsageQueryLogRequest:
+            type: object
+            properties:
+                from:
+                    description: |-
+                        The window, from `from` up to but not including `to`. Each end is taken
+                         at the start of its UTC hour. It spans at most 92 days.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                to:
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+                minQueries:
+                    type:
+                        - integer
+                        - string
+                    format: int64
+                    description: |-
+                        A pattern seen only in the query history is listed when it reaches any
+                         of these thresholds that is set. 0 sets none, and with none set every
+                         pattern is listed. A pattern that a SQL definition makes is always
+                         listed.
+                minLogins:
+                    type: integer
+                includeCoalesceQuality:
+                    type: boolean
+                    description: Set to keep the queries Coalesce ran, as `JoinQueryLogRequest` does.
+                excludeServiceAccounts:
+                    type: boolean
+                    description: |-
+                        Set to leave out the queries of every warehouse user in a service
+                         account, and count them in `query_log_left_out`.
+                includeChecks:
+                    type: boolean
+                    description: |-
+                        Set to keep the queries that check a table rather than use it: a dbt
+                         test, a dbt source freshness check, or a query of the Elementary
+                         package. Leave unset to leave them out and count them in
+                         `query_log_left_out`, as a check filters a column to assert, not to
+                         slice.
+            title: ColumnUsageQueryLogRequest
+            required:
+                - from
+                - to
+            additionalProperties: false
+            description: |
+                ColumnUsageQueryLogRequest says which hours of query history to read column
+                 usage from, and which queries to leave out.
+                column_usage_query_log_request.from_before_to // from must be before to
+        synq.entities.sql_insights.v1.ColumnUsageSource:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 4096
+                    description: |-
+                        The entity whose SQL uses the column. It is the same opaque identifier the
+                         request's `entity_id` takes.
+                statementIndex:
+                    type: integer
+                    description: |-
+                        Index of the statement, among the SQL statements of `entity_id`, counting
+                         from 0.
+                transformed:
+                    type: boolean
+                    description: The column reaches the usage through an expression, like `SUM(a * b)`.
+                literal:
+                    type: boolean
+                    description: |-
+                        FILTER only: the statement compares the column with a literal value or a
+                         bind parameter, like `status = 'open'`. The value is not given.
+            title: ColumnUsageSource
+            additionalProperties: false
+            description: |-
+                ColumnUsageSource is one statement in the SQL of one entity that uses a
+                 column.
+        synq.entities.sql_insights.v1.FilterOperator:
+            type: string
+            title: FilterOperator
+            enum:
+                - FILTER_OPERATOR_UNSPECIFIED
+                - FILTER_OPERATOR_EQ
+                - FILTER_OPERATOR_NE
+                - FILTER_OPERATOR_LT
+                - FILTER_OPERATOR_LE
+                - FILTER_OPERATOR_GT
+                - FILTER_OPERATOR_GE
+                - FILTER_OPERATOR_IN
+                - FILTER_OPERATOR_NOT_IN
+                - FILTER_OPERATOR_BETWEEN
+                - FILTER_OPERATOR_NOT_BETWEEN
+                - FILTER_OPERATOR_LIKE
+                - FILTER_OPERATOR_NOT_LIKE
+                - FILTER_OPERATOR_IS_NULL
+                - FILTER_OPERATOR_IS_NOT_NULL
+                - FILTER_OPERATOR_OTHER
+            description: FilterOperator is the comparison a filter makes.
         synq.entities.sql_insights.v1.Join:
             type: object
             properties:
@@ -20145,6 +20379,63 @@ components:
                 - JOIN_TYPE_CROSS
                 - JOIN_TYPE_OTHER
             description: JoinType is a join type as a semantic layer names it.
+        synq.entities.sql_insights.v1.ListColumnUsageRequest:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 4096
+                    minLength: 1
+                    description: |-
+                        The synq path of the table, view or model to list the column usage of,
+                         as `ListJoinPatternsRequest.entity_id` takes it.
+                column:
+                    type: string
+                    maxLength: 4096
+                    description: |-
+                        Set to return only the usage of this column of the entity. Matched
+                         case-insensitively. Leave empty for every column.
+                queryLog:
+                    description: |-
+                        Set to also list the usage of the warehouse's query history in a window,
+                         with QUERY_LOG evidence. Leave unset for the usage of SQL definitions
+                         only.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsageQueryLogRequest'
+            title: ListColumnUsageRequest
+            additionalProperties: false
+            description: ListColumnUsageRequest names the table to list column usage for.
+        synq.entities.sql_insights.v1.ListColumnUsageResponse:
+            type: object
+            properties:
+                patterns:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsagePattern'
+                    description: |-
+                        The usage patterns. Those that a SQL definition makes come first, then
+                         those of the query history only, by distinct logins and queries.
+                queryLogCoveredHours:
+                    type: integer
+                    description: |-
+                        How many hours of the `query_log` window the query history covered in
+                         full. 0 with no QUERY_LOG pattern means that no query history was read
+                         for the window, not that no query used a column.
+                queryLogLeftOut:
+                    description: |-
+                        The queries left out of the query history evidence. Set when the
+                         request sets `query_log`.
+                    $ref: '#/components/schemas/synq.entities.sql_insights.v1.ColumnUsageQueryLogLeftOut'
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 4096
+                    description: |-
+                        The requested entity first, then every entity that is the same object.
+                         The patterns already include the usage of each of them.
+            title: ListColumnUsageResponse
+            additionalProperties: false
+            description: ListColumnUsageResponse lists the column usage of the requested entity.
         synq.entities.sql_insights.v1.ListJoinPatternsRequest:
             type: object
             properties:
@@ -20948,8 +21239,8 @@ components:
                         type: string
                         maxLength: 100
                         minLength: 1
-                        maxItems: 20
-                    maxItems: 20
+                        maxItems: 100
+                    maxItems: 100
                     description: |-
                         Optional list of values that the annotation can carry.
 
@@ -39914,9 +40205,9 @@ paths:
                         type: string
                         maxLength: 100
                         minLength: 1
-                        maxItems: 20
+                        maxItems: 100
                     title: values
-                    maxItems: 20
+                    maxItems: 100
                     description: |-
                         Optional list of values that the annotation can carry.
 
@@ -61288,6 +61579,146 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.schemas.v1.GetSchemaResponse'
+    /api/sql-insights/v1/column-usage:
+        get:
+            tags:
+                - synq.entities.sql_insights.v1.SqlInsightsService
+            summary: ListColumnUsage
+            description: |-
+                List how the columns of a table, or one of them, are used: which columns
+                 the SQL of tables, views and models in the workspace aggregate and with
+                 which function, group by, and filter on and with which comparison, and
+                 optionally how often queries in the warehouse's query history did the
+                 same in a window.
+
+                 The requested entity is taken together with every entity that is the same
+                 object, as for `ListJoinPatterns`.
+            operationId: synq.entities.sql_insights.v1.SqlInsightsService.ListColumnUsage
+            parameters:
+                - name: entityId
+                  in: query
+                  description: |-
+                    The synq path of the table, view or model to list the column usage of,
+                     as `ListJoinPatternsRequest.entity_id` takes it.
+                  schema:
+                    type: string
+                    title: entity_id
+                    maxLength: 4096
+                    minLength: 1
+                    description: |-
+                        The synq path of the table, view or model to list the column usage of,
+                         as `ListJoinPatternsRequest.entity_id` takes it.
+                - name: column
+                  in: query
+                  description: |-
+                    Set to return only the usage of this column of the entity. Matched
+                     case-insensitively. Leave empty for every column.
+                  schema:
+                    type: string
+                    title: column
+                    maxLength: 4096
+                    description: |-
+                        Set to return only the usage of this column of the entity. Matched
+                         case-insensitively. Leave empty for every column.
+                - name: queryLog.from.seconds
+                  in: query
+                  description: |-
+                    Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                     be between -315576000000 and 315576000000 inclusive (which corresponds to
+                     0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
+                  schema:
+                    type:
+                        - integer
+                        - string
+                    title: seconds
+                    format: int64
+                    description: |-
+                        Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must
+                         be between -315576000000 and 315576000000 inclusive (which corresponds to
+                         0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z).
+                - name: queryLog.from.nanos
+                  in: query
+                  description: |-
+                    Non-negative fractions of a second at nanosecond resolution. This field is
+                     the nanosecond portion of the duration, not an alternative to seconds.
+                     Negative second values with fractions must still have non-negative nanos
+                     values that count forward in time. Must be between 0 and 999,999,999
+                     inclusive.
+                  schema:
+                    type: integer
+                    title: nanos
+                    format: int32
+                    description: |-
+                        Non-negative fractions of a second at nanosecond resolution. This field is
+                         the nanosecond portion of the duration, not an alternative to seconds.
+                         Negative second values with fractions must still have non-negative nanos
+                         values that count forward in time. Must be between 0 and 999,999,999
+                         inclusive.
+                - name: queryLog.minQueries
+                  in: query
+                  description: |-
+                    A pattern seen only in the query history is listed when it reaches any
+                     of these thresholds that is set. 0 sets none, and with none set every
+                     pattern is listed. A pattern that a SQL definition makes is always
+                     listed.
+                  schema:
+                    type:
+                        - integer
+                        - string
+                    title: min_queries
+                    format: int64
+                    description: |-
+                        A pattern seen only in the query history is listed when it reaches any
+                         of these thresholds that is set. 0 sets none, and with none set every
+                         pattern is listed. A pattern that a SQL definition makes is always
+                         listed.
+                - name: queryLog.minLogins
+                  in: query
+                  schema:
+                    type: integer
+                    title: min_logins
+                - name: queryLog.includeCoalesceQuality
+                  in: query
+                  description: Set to keep the queries Coalesce ran, as `JoinQueryLogRequest` does.
+                  schema:
+                    type: boolean
+                    title: include_coalesce_quality
+                    description: Set to keep the queries Coalesce ran, as `JoinQueryLogRequest` does.
+                - name: queryLog.excludeServiceAccounts
+                  in: query
+                  description: |-
+                    Set to leave out the queries of every warehouse user in a service
+                     account, and count them in `query_log_left_out`.
+                  schema:
+                    type: boolean
+                    title: exclude_service_accounts
+                    description: |-
+                        Set to leave out the queries of every warehouse user in a service
+                         account, and count them in `query_log_left_out`.
+                - name: queryLog.includeChecks
+                  in: query
+                  description: |-
+                    Set to keep the queries that check a table rather than use it: a dbt
+                     test, a dbt source freshness check, or a query of the Elementary
+                     package. Leave unset to leave them out and count them in
+                     `query_log_left_out`, as a check filters a column to assert, not to
+                     slice.
+                  schema:
+                    type: boolean
+                    title: include_checks
+                    description: |-
+                        Set to keep the queries that check a table rather than use it: a dbt
+                         test, a dbt source freshness check, or a query of the Elementary
+                         package. Leave unset to leave them out and count them in
+                         `query_log_left_out`, as a check filters a column to assert, not to
+                         slice.
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.sql_insights.v1.ListColumnUsageResponse'
     /api/sql-insights/v1/constructs:
         get:
             tags:

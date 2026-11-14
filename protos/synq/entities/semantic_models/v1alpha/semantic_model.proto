@@ -214,17 +214,15 @@ message CustomExtension {
   string data = 2 [(buf.validate.field).string.max_len = 100000];
 }
 
-// DatasetSource is what a group reads.
+// DatasetSource is what a group reads. The declarer sets each field that it knows, so one source
+// can hold a name, the entity it resolves to and a query at the same time.
 message DatasetSource {
-  oneof source {
-    // Opaque id of the entity the group reads.
-    string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
-    // The `database.schema.table` name as the declarer spells it, when it is not resolved to an
-    // entity.
-    string native_name = 2 [(buf.validate.field).string.max_len = 1024];
-    // A query.
-    Expression query = 3;
-  }
+  // Opaque id of the entity that the group reads.
+  optional string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The `database.schema.table` name as the declarer spells it.
+  optional string native_name = 2 [(buf.validate.field).string.max_len = 1024];
+  // A query.
+  Expression query = 3;
 }
 
 // UniqueKey is a set of fields that identify a row.

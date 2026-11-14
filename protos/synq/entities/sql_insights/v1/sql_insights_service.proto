@@ -78,6 +78,222 @@ service SqlInsightsService {
     };
     option (google.api.http) = {get: "/api/sql-insights/v1/join-patterns"};
   }
+
+  // List how the columns of a table, or one of them, are used: which columns
+  // the SQL of tables, views and models in the workspace aggregate and with
+  // which function, group by, and filter on and with which comparison, and
+  // optionally how often queries in the warehouse's query history did the
+  // same in a window.
+  //
+  // The requested entity is taken together with every entity that is the same
+  // object, as for `ListJoinPatterns`.
+  rpc ListColumnUsage(ListColumnUsageRequest) returns (ListColumnUsageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/sql-insights/v1/column-usage"};
+  }
+}
+
+// ListColumnUsageRequest names the table to list column usage for.
+message ListColumnUsageRequest {
+  // The synq path of the table, view or model to list the column usage of,
+  // as `ListJoinPatternsRequest.entity_id` takes it.
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1,
+    max_len: 4096
+  }];
+  // Set to return only the usage of this column of the entity. Matched
+  // case-insensitively. Leave empty for every column.
+  string column = 2 [(buf.validate.field).string.max_len = 4096];
+  // Set to also list the usage of the warehouse's query history in a window,
+  // with QUERY_LOG evidence. Leave unset for the usage of SQL definitions
+  // only.
+  ColumnUsageQueryLogRequest query_log = 3;
+}
+
+// ColumnUsageQueryLogRequest says which hours of query history to read column
+// usage from, and which queries to leave out.
+message ColumnUsageQueryLogRequest {
+  option (buf.validate.message).cel = {
+    id: "column_usage_query_log_request.from_before_to"
+    message: "from must be before to"
+    expression: "this.from < this.to"
+  };
+  // The window, from `from` up to but not including `to`. Each end is taken
+  // at the start of its UTC hour. It spans at most 92 days.
+  google.protobuf.Timestamp from = 1 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp to = 2 [(buf.validate.field).required = true];
+  // A pattern seen only in the query history is listed when it reaches any
+  // of these thresholds that is set. 0 sets none, and with none set every
+  // pattern is listed. A pattern that a SQL definition makes is always
+  // listed.
+  uint64 min_queries = 3;
+  uint32 min_logins = 4;
+  // Set to keep the queries Coalesce ran, as `JoinQueryLogRequest` does.
+  bool include_coalesce_quality = 5;
+  // Set to leave out the queries of every warehouse user in a service
+  // account, and count them in `query_log_left_out`.
+  bool exclude_service_accounts = 6;
+  // Set to keep the queries that check a table rather than use it: a dbt
+  // test, a dbt source freshness check, or a query of the Elementary
+  // package. Leave unset to leave them out and count them in
+  // `query_log_left_out`, as a check filters a column to assert, not to
+  // slice.
+  bool include_checks = 7;
+}
+
+// ColumnUsageQueryLogLeftOut counts the queries left out of the query history
+// evidence.
+message ColumnUsageQueryLogLeftOut {
+  // Queries that Coalesce Quality's tag marks, by any warehouse user.
+  uint64 coalesce_quality_queries = 1;
+  // The other queries of the warehouse users Coalesce connects as.
+  uint64 coalesce_logins = 2;
+  // Queries of the warehouse users that `exclude_service_accounts` leaves
+  // out.
+  uint64 service_accounts = 3;
+  // Queries that check a table, left out without `include_checks`.
+  uint64 checks = 4;
+}
+
+// ListColumnUsageResponse lists the column usage of the requested entity.
+message ListColumnUsageResponse {
+  // The usage patterns. Those that a SQL definition makes come first, then
+  // those of the query history only, by distinct logins and queries.
+  repeated ColumnUsagePattern patterns = 1;
+  // How many hours of the `query_log` window the query history covered in
+  // full. 0 with no QUERY_LOG pattern means that no query history was read
+  // for the window, not that no query used a column.
+  uint32 query_log_covered_hours = 2;
+  // The queries left out of the query history evidence. Set when the
+  // request sets `query_log`.
+  ColumnUsageQueryLogLeftOut query_log_left_out = 3;
+  // The requested entity first, then every entity that is the same object.
+  // The patterns already include the usage of each of them.
+  repeated string entity_ids = 4 [(buf.validate.field).repeated.items.string.max_len = 4096];
+}
+
+// ColumnUsagePattern is one way a column of the requested entity is used:
+// aggregated with one function, grouped by, or filtered with one comparison.
+message ColumnUsagePattern {
+  // The column, lowercased. Empty for a `COUNT(*)` of the table's rows.
+  string column = 1 [(buf.validate.field).string.max_len = 4096];
+  ColumnUsageKind kind = 2;
+  // AGGREGATE only: the function.
+  AggregateFunction function = 3;
+  // AGGREGATE with function OTHER only: the function's name, lowercased, like
+  // `listagg`.
+  string native_function = 4 [(buf.validate.field).string.max_len = 256];
+  // FILTER only: the comparison.
+  FilterOperator operator = 5;
+  // Where the pattern was seen, SQL_DEFINITION before QUERY_LOG.
+  repeated JoinEvidenceKind evidence_kinds = 6;
+  // The SQL that uses the column this way, each statement once, ordered by
+  // entity. Of the entities that are the same object, only one is listed.
+  repeated ColumnUsageSource sources = 7;
+  // How the query history used the column this way in the requested window.
+  // Set when `evidence_kinds` holds QUERY_LOG.
+  ColumnUsageQueryLogEvidence query_log = 8;
+}
+
+// ColumnUsageSource is one statement in the SQL of one entity that uses a
+// column.
+message ColumnUsageSource {
+  // The entity whose SQL uses the column. It is the same opaque identifier the
+  // request's `entity_id` takes.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 4096];
+  // Index of the statement, among the SQL statements of `entity_id`, counting
+  // from 0.
+  uint32 statement_index = 2;
+  // The column reaches the usage through an expression, like `SUM(a * b)`.
+  bool transformed = 3;
+  // FILTER only: the statement compares the column with a literal value or a
+  // bind parameter, like `status = 'open'`. The value is not given.
+  bool literal = 4;
+}
+
+// ColumnUsageQueryLogEvidence sums the queries that used a column one way in
+// the requested window.
+message ColumnUsageQueryLogEvidence {
+  uint64 queries = 1;
+  // Queries among them where the column reaches the usage through an
+  // expression.
+  uint64 transformed_queries = 2;
+  // The distinct warehouse users that ran them.
+  uint32 distinct_logins = 3;
+  // The first and the last hour the usage was seen in, each the start of its
+  // UTC hour.
+  google.protobuf.Timestamp first_hour = 4;
+  google.protobuf.Timestamp last_hour = 5;
+  // Who ran the queries, most queries first.
+  repeated JoinIssuer issuers = 6;
+  // The warehouse's id of a query of the last hour that used the column this
+  // way.
+  string sample_query_id = 7 [(buf.validate.field).string.max_len = 4096];
+  // FILTER only: queries among them that compared the column with a literal
+  // value or a bind parameter. The values are not given.
+  uint64 literal_queries = 8;
+}
+
+// ColumnUsageKind is what SQL does with a column outside a join condition.
+enum ColumnUsageKind {
+  COLUMN_USAGE_KIND_UNSPECIFIED = 0;
+  // The column is an argument of an aggregate function, like `SUM(amount)`.
+  COLUMN_USAGE_KIND_AGGREGATE = 1;
+  // The column is a GROUP BY expression.
+  COLUMN_USAGE_KIND_GROUP_BY = 2;
+  // A filter compares the column with values or tests it for NULL, like
+  // `status = 'open'`.
+  COLUMN_USAGE_KIND_FILTER = 3;
+}
+
+// AggregateFunction is the function an aggregated column is passed to.
+enum AggregateFunction {
+  AGGREGATE_FUNCTION_UNSPECIFIED = 0;
+  AGGREGATE_FUNCTION_SUM = 1;
+  // `COUNT` of a column or of rows.
+  AGGREGATE_FUNCTION_COUNT = 2;
+  // `COUNT(DISTINCT x)` and the approximate distinct counts.
+  AGGREGATE_FUNCTION_COUNT_DISTINCT = 3;
+  AGGREGATE_FUNCTION_AVG = 4;
+  AGGREGATE_FUNCTION_MIN = 5;
+  AGGREGATE_FUNCTION_MAX = 6;
+  AGGREGATE_FUNCTION_MEDIAN = 7;
+  // A percentile or a quantile.
+  AGGREGATE_FUNCTION_PERCENTILE = 8;
+  // Any other aggregate. `native_function` names it.
+  AGGREGATE_FUNCTION_OTHER = 9;
+}
+
+// FilterOperator is the comparison a filter makes.
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  // `=`, or a bare boolean column.
+  FILTER_OPERATOR_EQ = 1;
+  // `<>` or `!=`.
+  FILTER_OPERATOR_NE = 2;
+  FILTER_OPERATOR_LT = 3;
+  FILTER_OPERATOR_LE = 4;
+  FILTER_OPERATOR_GT = 5;
+  FILTER_OPERATOR_GE = 6;
+  FILTER_OPERATOR_IN = 7;
+  FILTER_OPERATOR_NOT_IN = 8;
+  FILTER_OPERATOR_BETWEEN = 9;
+  FILTER_OPERATOR_NOT_BETWEEN = 10;
+  // `LIKE` or `ILIKE`.
+  FILTER_OPERATOR_LIKE = 11;
+  FILTER_OPERATOR_NOT_LIKE = 12;
+  FILTER_OPERATOR_IS_NULL = 13;
+  FILTER_OPERATOR_IS_NOT_NULL = 14;
+  // Any other comparison of one column, like an OR of comparisons or a
+  // regular expression.
+  FILTER_OPERATOR_OTHER = 15;
 }
 
 // ListJoinPatternsRequest names the table to list join patterns for.
