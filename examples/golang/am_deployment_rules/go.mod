@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/golang/am_deployment_rules
 
-go 1.25.3
+go 1.27.4
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20260616084327-c48cce8d4d51.1

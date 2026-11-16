@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/golang/replication_lineage
 
-go 1.25.3
+go 1.27.4
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20260914192646-dd3a8dd8ae89.1

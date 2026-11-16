@@ -1,6 +1,6 @@
 module github.com/getsynq/api/examples/golang/deliveries
 
-go 1.25.3
+go 1.27.4
 
 require (
 	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20260918175424-08ac973bcbc5.1
