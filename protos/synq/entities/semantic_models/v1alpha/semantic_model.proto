@@ -54,6 +54,66 @@ message LineRange {
   uint32 end_line = 2;
 }
 
+// DefinitionFinding is one problem of the definition of a semantic model that a fixed rule finds
+// from the declaration alone, with no query.
+message DefinitionFinding {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // A field sums a value of a table that a join repeats: each row of that table counts once for
+    // each matching row of the field's own table.
+    KIND_SUM_AFTER_FAN_OUT = 1;
+    // An expression names a member of a table of the model that the model does not declare.
+    KIND_UNDECLARED_FIELD = 2;
+    // A relationship joins on a field that the model computes from an expression.
+    KIND_JOIN_ON_COMPUTED_FIELD = 3;
+    // Two different join paths connect the same two tables, so a query that reads both tables can
+    // take either path.
+    KIND_TWO_JOIN_PATHS = 4;
+  }
+  enum Level {
+    LEVEL_UNSPECIFIED = 0;
+    // The model can give a wrong value.
+    LEVEL_PROBLEM = 1;
+    // Something is missing that a reader needs to trust the model.
+    LEVEL_GAP = 2;
+    // A fact that a model builder can act on, with no wrong value.
+    LEVEL_NOTE = 3;
+  }
+  Kind kind = 1;
+  Level level = 2;
+  // The finding as one sentence, from a fixed rule.
+  string text = 3 [(buf.validate.field).string.max_len = 10000];
+  // The fields that the finding is about, in the order of the model.
+  repeated FieldReference fields = 4 [(buf.validate.field).repeated.max_items = 10000];
+  // The relationships that the finding is about, by their position in SemanticModel.relationships.
+  repeated uint32 relationship_indexes = 5 [(buf.validate.field).repeated.max_items = 10000];
+  // The tables that the finding is about, as FieldGroup.name.
+  repeated string tables = 6 [(buf.validate.field).repeated = {
+    max_items: 1000
+    items: {
+      string: {max_len: 1024}
+    }
+  }];
+  // The names in an expression that the finding is about, as the steps of a reading write them.
+  repeated string names = 7 [(buf.validate.field).repeated = {
+    max_items: 1000
+    items: {
+      string: {max_len: 1024}
+    }
+  }];
+  // The lines of the fields and the relationships of the finding in the declaration text. Set only
+  // when the request asks for the text and the text names them.
+  repeated LineRange declared_lines = 8 [(buf.validate.field).repeated.max_items = 10000];
+}
+
+// FieldReference names one field of a semantic model.
+message FieldReference {
+  // The group of the field, as FieldGroup.name.
+  string group = 1 [(buf.validate.field).string.max_len = 1024];
+  // The name of the field, as Field.name.
+  string field_name = 2 [(buf.validate.field).string.max_len = 1024];
+}
+
 // OsiDocument is a semantic model as an Open Semantic Interchange document.
 message OsiDocument {
   // The OSI specification version of the document.

@@ -123,6 +123,9 @@ message SearchEntitiesRequest {
   }];
   optional uint32 page = 10;
   optional uint32 limit_per_page = 11;
+  // If true, the hits also include the metrics and measures of semantic models. A hit for a metric
+  // has `field_name` set, and its entity is the semantic model that declares the metric.
+  optional bool include_metrics = 12;
 }
 
 message SearchEntitiesResponse {

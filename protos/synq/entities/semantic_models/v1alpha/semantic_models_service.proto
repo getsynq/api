@@ -21,8 +21,9 @@ option go_package = "github.com/getsynq/api/entities/semantic_models/v1alpha";
 // name here is the column name there.
 service SemanticModelsService {
   // Read the semantic model of each asked entity. Any member of an identity group addresses the
-  // group, so a dbt model and the table it builds give the same model. Every asked id has an
-  // answer: an entity with no semantic model gets its identity group and no model.
+  // group, so a dbt model and the table it builds give the same model. The response has one entry
+  // for each identity group of the request: an identity group with no semantic model gets an entry
+  // with no model.
   rpc BatchGetSemanticModels(BatchGetSemanticModelsRequest) returns (BatchGetSemanticModelsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -38,10 +39,9 @@ service SemanticModelsService {
     };
   }
 
-  // List the semantic models of the workspace: one entry for each identity group whose winning
-  // schema declaration has a semantic model, ordered by the canonical entity id. An entry has the
-  // summary, the name and the marks of the model, and no fields. Read the fields with
-  // BatchGetSemanticModels.
+  // List the semantic models of the workspace: the canonical entity id of each identity group whose
+  // winning schema declaration has a semantic model, in entity id order. Read the models with
+  // BatchGetSemanticModels, with SEMANTIC_MODEL_VIEW_SUMMARY for a list.
   rpc ListSemanticModels(ListSemanticModelsRequest) returns (ListSemanticModelsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -66,12 +66,21 @@ enum SemanticModelFormat {
   SEMANTIC_MODEL_FORMAT_OSI = 1;
 }
 
+// SemanticModelView is how much of a semantic model is returned.
+enum SemanticModelView {
+  // The model, in the asked format.
+  SEMANTIC_MODEL_VIEW_UNSPECIFIED = 0;
+  // No model: the name, the summary, the marks, state_at and table_count only. Use it for a list.
+  SEMANTIC_MODEL_VIEW_SUMMARY = 1;
+}
+
 message BatchGetSemanticModelsRequest {
   // Opaque ids of the entities to read. Get an id from another response, or resolve an identifier
   // with synq.entities.resolve.v1.IdentifierResolveService first.
   repeated string entity_ids = 1 [(buf.validate.field).repeated = {
     min_items: 1
     max_items: 100
+    unique: true
     items: {
       string: {
         min_len: 1
@@ -102,25 +111,37 @@ message BatchGetSemanticModelsRequest {
   // Return SemanticModelEntry.declaration_text, and the declared_lines of each group, field and
   // relationship. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
   bool include_declaration_text = 6;
+  // How much of each model to return. SEMANTIC_MODEL_VIEW_SUMMARY ignores the other options.
+  SemanticModelView view = 7;
+  // Return SemanticModelEntry.definition_findings: the problems of the definition that a fixed
+  // rule finds with no query. The checks read every expression of the model, and see the whole
+  // model whatever field_names keeps. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+  bool include_definition_checks = 8;
 }
 
 message BatchGetSemanticModelsResponse {
-  // One entry for each asked entity id, in request order.
+  // One entry for each identity group of the request, in the order of its first asked id.
   repeated SemanticModelEntry semantic_models = 1;
 }
 
-// SemanticModelEntry is the answer for one asked entity.
+// SemanticModelEntry is the answer for one identity group of the request.
 message SemanticModelEntry {
-  // The entity id that was asked for.
-  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
-  // The identity group of the asked entity.
+  reserved 1;
+  reserved "entity_id";
+  // The identity group. Its canonical entity id addresses the model in the other reads.
   synq.entities.v1.IdentityGroup identity_group = 2;
+  // The ids of the request that address this identity group, in request order.
+  repeated string requested_entity_ids = 9 [(buf.validate.field).repeated.max_items = 100];
   // The member of the identity group whose declaration gave the model. Unset when there is no
   // model.
   synq.entities.v1.AspectProvenance provenance = 3;
+  // Name of the model as the declarer spells it. Empty when there is no model, or when the declarer
+  // gives no name.
+  string native_name = 10 [(buf.validate.field).string.max_len = 1024];
   // What the model holds. Empty when the entity has no semantic model.
   SemanticModelSummary summary = 4;
-  // The model, in the asked format. Unset when the entity has no semantic model.
+  // The model, in the asked format. Unset when the entity has no semantic model, and for
+  // SEMANTIC_MODEL_VIEW_SUMMARY.
   oneof model {
     SemanticModel semantic_model = 5;
     OsiDocument osi = 6;
@@ -135,6 +156,17 @@ message SemanticModelEntry {
   // the text is known. Unset means that no text is known for the model. It is never a generated
   // text.
   DeclarationText declaration_text = 8;
+  // When the declarer observed the declaration as it is. A declarer sends the same declaration on
+  // each run, and an unchanged declaration is not stored again, so this is the time of the last
+  // change of the model in most cases. Unset when there is no model.
+  google.protobuf.Timestamp state_at = 11;
+  // The number of tables of the model: the distinct names of its field groups. The group with no
+  // name, which holds model-level fields such as OSI metrics, is not a table.
+  uint32 table_count = 12;
+  // The problems of the definition of the model, when the request asks for them. When field_names
+  // cuts the model, a finding keeps only its returned fields, a finding whose fields are all cut is
+  // left out, and a finding that names no field stays.
+  repeated DefinitionFinding definition_findings = 13 [(buf.validate.field).repeated.max_items = 10000];
 }
 
 message ListSemanticModelsRequest {
@@ -143,32 +175,7 @@ message ListSemanticModelsRequest {
 }
 
 message ListSemanticModelsResponse {
-  // The semantic models, ordered by entity_id.
-  repeated SemanticModelListEntry semantic_models = 1;
+  // The canonical entity id of each semantic model, in entity id order.
+  repeated string entity_ids = 1;
   synq.v1.PageInfo page_info = 2;
-}
-
-// SemanticModelListEntry is one semantic model of the workspace, without its fields.
-message SemanticModelListEntry {
-  // The canonical entity id of the identity group. It addresses the model in
-  // BatchGetSemanticModels.
-  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
-  synq.entities.v1.IdentityGroup identity_group = 2;
-  // The member of the identity group whose declaration gave the model.
-  synq.entities.v1.AspectProvenance provenance = 3;
-  // Name of the model as the declarer spells it. Empty when the declarer gives no name.
-  string native_name = 4 [(buf.validate.field).string.max_len = 1024];
-  // What the model holds.
-  SemanticModelSummary summary = 5;
-  // The certified and the deprecated marks of the model. Unset when the marks could not be read:
-  // read them with synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take
-  // an unset value as "not certified".
-  synq.entities.marks.v1alpha.EntityMarks marks = 6;
-  // When the declarer observed the declaration as it is. A declarer sends the same declaration on
-  // each run, and an unchanged declaration is not stored again, so this is the time of the last
-  // change of the model in most cases.
-  google.protobuf.Timestamp state_at = 7;
-  // The number of tables of the model: the distinct names of its field groups. The group with no
-  // name, which holds model-level fields such as OSI metrics, is not a table.
-  uint32 table_count = 8;
 }

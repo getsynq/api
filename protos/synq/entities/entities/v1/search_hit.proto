@@ -20,6 +20,9 @@ message SearchHit {
   optional synq.entities.v1.EntityType entity_type = 6;
   // Ranking score, higher is better
   float ranking_score = 12;
+  // Set if the hit is a metric or a measure of the semantic model of the entity. It is the name of
+  // the field in the schema of the entity. Only a request with `include_metrics` returns such hits.
+  optional string field_name = 13;
 }
 
 message EntityTypeSearchFacet {

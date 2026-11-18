@@ -16298,6 +16298,12 @@ components:
                 limitPerPage:
                     type: integer
                     nullable: true
+                includeMetrics:
+                    type: boolean
+                    description: |-
+                        If true, the hits also include the metrics and measures of semantic models. A hit for a metric
+                         has `field_name` set, and its entity is the semantic model that declares the metric.
+                    nullable: true
             title: SearchEntitiesRequest
             required:
                 - query
@@ -16348,6 +16354,12 @@ components:
                     type: number
                     format: float
                     description: Ranking score, higher is better
+                fieldName:
+                    type: string
+                    description: |-
+                        Set if the hit is a metric or a measure of the semantic model of the entity. It is the name of
+                         the field in the schema of the entity. Only a request with `include_metrics` returns such hits.
+                    nullable: true
             title: SearchHit
             additionalProperties: false
         synq.entities.executions.v1.Execution:
@@ -19781,6 +19793,44 @@ components:
                 - AGGREGATION_VARIANCE
                 - AGGREGATION_NONE
                 - AGGREGATION_OTHER
+        synq.entities.semantic_models.v1alpha.BatchGetDuplicateGroupsRequest:
+            type: object
+            properties:
+                groupIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 255
+                        minLength: 1
+                        maxItems: 100
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 100
+                    minItems: 1
+                    uniqueItems: true
+                    description: The ids of the groups, from ListDuplicateGroups or BatchListEntityDuplicateGroups.
+            title: BatchGetDuplicateGroupsRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.BatchGetDuplicateGroupsResponse:
+            type: object
+            properties:
+                groups:
+                    type: object
+                    additionalProperties:
+                        title: value
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroup'
+                    description: The groups by id. A group id that no group has is left out, as the groups change on each pass.
+            title: BatchGetDuplicateGroupsResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.BatchGetDuplicateGroupsResponse.GroupsEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                value:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroup'
+            title: GroupsEntry
+            additionalProperties: false
         synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsRequest:
             type: object
             properties:
@@ -19792,8 +19842,10 @@ components:
                         minLength: 1
                         maxItems: 100
                         minItems: 1
+                        uniqueItems: true
                     maxItems: 100
                     minItems: 1
+                    uniqueItems: true
                     description: |-
                         Opaque ids of the entities to read. Get an id from another response, or resolve an identifier
                          with synq.entities.resolve.v1.IdentifierResolveService first.
@@ -19827,6 +19879,15 @@ components:
                     description: |-
                         Return SemanticModelEntry.declaration_text, and the declared_lines of each group, field and
                          relationship. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                view:
+                    description: How much of each model to return. SEMANTIC_MODEL_VIEW_SUMMARY ignores the other options.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelView'
+                includeDefinitionChecks:
+                    type: boolean
+                    description: |-
+                        Return SemanticModelEntry.definition_findings: the problems of the definition that a fixed
+                         rule finds with no query. The checks read every expression of the model, and see the whole
+                         model whatever field_names keeps. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
             title: BatchGetSemanticModelsRequest
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsResponse:
@@ -19836,8 +19897,49 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelEntry'
-                    description: One entry for each asked entity id, in request order.
+                    description: One entry for each identity group of the request, in the order of its first asked id.
             title: BatchGetSemanticModelsResponse
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.BatchListEntityDuplicateGroupsRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 100
+                        minItems: 1
+                        uniqueItems: true
+                    maxItems: 100
+                    minItems: 1
+                    uniqueItems: true
+                    description: |-
+                        Opaque ids of the entities whose semantic models hold the fields. Any member of an identity
+                         group addresses its model.
+                fieldNames:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: |-
+                        Return only the fields with these names: Field.name of the semantic model read. Empty returns
+                         every field of the model that is in a group.
+            title: BatchListEntityDuplicateGroupsRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.BatchListEntityDuplicateGroupsResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.EntityDuplicateGroups'
+                    description: One entry for each identity group of the request, in the order of its first asked id.
+            title: BatchListEntityDuplicateGroupsResponse
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.Cardinality:
             type: string
@@ -19848,6 +19950,20 @@ components:
                 - CARDINALITY_ONE_TO_ONE
                 - CARDINALITY_ONE_TO_MANY
                 - CARDINALITY_MANY_TO_MANY
+        synq.entities.semantic_models.v1alpha.ColumnRef:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 1024
+                    description: 'Opaque id of the entity: the canonical entity id of its identity group.'
+                column:
+                    type: string
+                    maxLength: 1024
+                    description: The name of the column.
+            title: ColumnRef
+            additionalProperties: false
+            description: ColumnRef is one column of an entity.
         synq.entities.semantic_models.v1alpha.CustomExtension:
             type: object
             properties:
@@ -19900,6 +20016,76 @@ components:
                 - LANGUAGE_UNSPECIFIED
                 - LANGUAGE_SQL
                 - LANGUAGE_YAML
+        synq.entities.semantic_models.v1alpha.DefinitionFinding:
+            type: object
+            properties:
+                kind:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DefinitionFinding.Kind'
+                level:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DefinitionFinding.Level'
+                text:
+                    type: string
+                    maxLength: 10000
+                    description: The finding as one sentence, from a fixed rule.
+                fields:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldReference'
+                    maxItems: 10000
+                    description: The fields that the finding is about, in the order of the model.
+                relationshipIndexes:
+                    type: array
+                    items:
+                        type: integer
+                        maxItems: 10000
+                    maxItems: 10000
+                    description: The relationships that the finding is about, by their position in SemanticModel.relationships.
+                tables:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: The tables that the finding is about, as FieldGroup.name.
+                names:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 1000
+                    maxItems: 1000
+                    description: The names in an expression that the finding is about, as the steps of a reading write them.
+                declaredLines:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.LineRange'
+                    maxItems: 10000
+                    description: |-
+                        The lines of the fields and the relationships of the finding in the declaration text. Set only
+                         when the request asks for the text and the text names them.
+            title: DefinitionFinding
+            additionalProperties: false
+            description: |-
+                DefinitionFinding is one problem of the definition of a semantic model that a fixed rule finds
+                 from the declaration alone, with no query.
+        synq.entities.semantic_models.v1alpha.DefinitionFinding.Kind:
+            type: string
+            title: Kind
+            enum:
+                - KIND_UNSPECIFIED
+                - KIND_SUM_AFTER_FAN_OUT
+                - KIND_UNDECLARED_FIELD
+                - KIND_JOIN_ON_COMPUTED_FIELD
+                - KIND_TWO_JOIN_PATHS
+        synq.entities.semantic_models.v1alpha.DefinitionFinding.Level:
+            type: string
+            title: Level
+            enum:
+                - LEVEL_UNSPECIFIED
+                - LEVEL_PROBLEM
+                - LEVEL_GAP
+                - LEVEL_NOTE
         synq.entities.semantic_models.v1alpha.DialectExpression:
             type: object
             properties:
@@ -19926,11 +20112,10 @@ components:
         synq.entities.semantic_models.v1alpha.DuplicateField:
             type: object
             properties:
-                field:
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldRef'
-                identityGroup:
-                    description: The identity group of the entity of the field.
-                    $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                fieldName:
+                    type: string
+                    maxLength: 1024
+                    description: 'The name of the field: Field.name of the semantic model read.'
                 groupName:
                     type: string
                     maxLength: 1024
@@ -19946,13 +20131,6 @@ components:
                     type: string
                     maxLength: 1024
                     description: The label the declarer shows its users. Empty when it is the native name.
-                marks:
-                    description: |-
-                        The certified and the deprecated marks of the entity of the field. Set only by
-                         GetDuplicateGroup. Unset there when the marks could not be read: read them with
-                         synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take an unset value as
-                         "not certified".
-                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
             title: DuplicateField
             additionalProperties: false
             description: DuplicateField is one field of a duplicate group.
@@ -19969,12 +20147,12 @@ components:
                     description: |-
                         The rank of the group in the list of the workspace. A higher rank is a stronger group. A group
                          with only the name signal has the lowest ranks.
-                fields:
+                models:
                     type: array
                     items:
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateField'
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateModel'
                     maxItems: 10000
-                    description: The fields, each in a different semantic model.
+                    description: The models of the group, in the order of their canonical entity id.
                 signals:
                     type: array
                     items:
@@ -19986,7 +20164,53 @@ components:
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
             title: DuplicateGroup
             additionalProperties: false
-            description: DuplicateGroup is a set of metric fields that can be one metric.
+            description: |-
+                DuplicateGroup is a set of metric fields that can be one metric, each in a different semantic
+                 model.
+        synq.entities.semantic_models.v1alpha.DuplicateGroupRef:
+            type: object
+            properties:
+                groupId:
+                    type: string
+                    maxLength: 255
+                modelCount:
+                    type: integer
+                    description: The number of models in the group.
+            title: DuplicateGroupRef
+            additionalProperties: false
+            description: DuplicateGroupRef names one duplicate group.
+        synq.entities.semantic_models.v1alpha.DuplicateModel:
+            type: object
+            properties:
+                identityGroup:
+                    description: |-
+                        The identity group of the model. Its canonical entity id is the entity_id of the FieldRef of
+                         each of its fields.
+                    $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                marks:
+                    description: |-
+                        The certified and the deprecated marks of the model. Unset when the marks could not be read:
+                         read them with synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take
+                         an unset value as "not certified".
+                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
+                fields:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateField'
+                    maxItems: 10000
+                    description: The fields of the model in the group.
+                copies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                    maxItems: 10000
+                    description: |-
+                        The copies of the model: models of the same platform and name in other locations, for example
+                         another catalog or schema, whose fields in the group have the same name and definition. The
+                         group shows the model once. A copy addresses the group in BatchListEntityDuplicateGroups.
+            title: DuplicateModel
+            additionalProperties: false
+            description: DuplicateModel is one semantic model of a duplicate group, with its fields in the group.
         synq.entities.semantic_models.v1alpha.DuplicateSignal:
             type: object
             properties:
@@ -19996,14 +20220,21 @@ components:
                     type: string
                     maxLength: 100000
                     description: |-
-                        What the fields share: the name, the expression, or the input columns as
-                         `<entity id>.<column>`, joined by ", ".
+                        What the fields share, as a display string: the name, the expression, or the input columns.
+                         For DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS, read input_columns for the entity and the column of
+                         each input. Do not parse this value.
                 fields:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldRef'
                     maxItems: 10000
                     description: The fields of the group that share it.
+                inputColumns:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ColumnRef'
+                    maxItems: 10000
+                    description: The columns that the fields read, sorted. Set only for DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS.
             title: DuplicateSignal
             additionalProperties: false
             description: DuplicateSignal is one signal that two or more fields of a group share.
@@ -20016,6 +20247,30 @@ components:
                 - DUPLICATE_SIGNAL_KIND_EXPRESSION
                 - DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS
             description: DuplicateSignalKind is why two fields can be one metric.
+        synq.entities.semantic_models.v1alpha.EntityDuplicateGroups:
+            type: object
+            properties:
+                identityGroup:
+                    description: The identity group of the model.
+                    $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                requestedEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxItems: 100
+                    maxItems: 100
+                    description: The ids of the request that address this identity group, in request order.
+                fields:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldDuplicateGroups'
+                    maxItems: 100000
+                    description: |-
+                        The fields of the model that are in a group, in field name order. Empty when no field of the
+                         model is in a group.
+            title: EntityDuplicateGroups
+            additionalProperties: false
+            description: EntityDuplicateGroups are the duplicate groups of the fields of one semantic model.
         synq.entities.semantic_models.v1alpha.Expression:
             type: object
             properties:
@@ -20154,6 +20409,22 @@ components:
             title: FieldDefinition
             additionalProperties: false
             description: FieldDefinition says how a semantic-layer field is defined.
+        synq.entities.semantic_models.v1alpha.FieldDuplicateGroups:
+            type: object
+            properties:
+                fieldName:
+                    type: string
+                    maxLength: 1024
+                    description: 'The name of the field: Field.name of the semantic model read.'
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroupRef'
+                    maxItems: 10000
+                    description: The groups of the field, the highest rank first.
+            title: FieldDuplicateGroups
+            additionalProperties: false
+            description: FieldDuplicateGroups are the duplicate groups of one field.
         synq.entities.semantic_models.v1alpha.FieldGroup:
             type: object
             properties:
@@ -20334,7 +20605,7 @@ components:
                     minLength: 1
                     description: |-
                         Opaque id of the entity whose semantic model holds the field. Any member of its identity group
-                         addresses it.
+                         addresses it. A response gives the canonical entity id of the identity group.
                 fieldName:
                     type: string
                     maxLength: 1024
@@ -20343,22 +20614,20 @@ components:
             title: FieldRef
             additionalProperties: false
             description: FieldRef addresses one field of a semantic model.
-        synq.entities.semantic_models.v1alpha.GetDuplicateGroupRequest:
-            type: object
-            properties:
-                groupId:
-                    type: string
-                    maxLength: 255
-                    minLength: 1
-            title: GetDuplicateGroupRequest
-            additionalProperties: false
-        synq.entities.semantic_models.v1alpha.GetDuplicateGroupResponse:
+        synq.entities.semantic_models.v1alpha.FieldReference:
             type: object
             properties:
                 group:
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroup'
-            title: GetDuplicateGroupResponse
+                    type: string
+                    maxLength: 1024
+                    description: The group of the field, as FieldGroup.name.
+                fieldName:
+                    type: string
+                    maxLength: 1024
+                    description: The name of the field, as Field.name.
+            title: FieldReference
             additionalProperties: false
+            description: FieldReference names one field of a semantic model.
         synq.entities.semantic_models.v1alpha.JoinType:
             type: string
             title: JoinType
@@ -20400,36 +20669,14 @@ components:
         synq.entities.semantic_models.v1alpha.ListDuplicateGroupsResponse:
             type: object
             properties:
-                groups:
+                groupIds:
                     type: array
                     items:
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroup'
-                    description: The groups, the highest rank first.
+                        type: string
+                    description: The ids of the groups, the highest rank first.
                 pageInfo:
                     $ref: '#/components/schemas/synq.v1.PageInfo'
             title: ListDuplicateGroupsResponse
-            additionalProperties: false
-        synq.entities.semantic_models.v1alpha.ListFieldDuplicateGroupsRequest:
-            type: object
-            properties:
-                field:
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldRef'
-            title: ListFieldDuplicateGroupsRequest
-            required:
-                - field
-            additionalProperties: false
-        synq.entities.semantic_models.v1alpha.ListFieldDuplicateGroupsResponse:
-            type: object
-            properties:
-                identityGroup:
-                    description: The identity group of the entity of the field.
-                    $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
-                groups:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroup'
-                    description: The groups of the field, the highest rank first. Empty when the field is in no group.
-            title: ListFieldDuplicateGroupsResponse
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.ListSemanticModelsRequest:
             type: object
@@ -20442,11 +20689,11 @@ components:
         synq.entities.semantic_models.v1alpha.ListSemanticModelsResponse:
             type: object
             properties:
-                semanticModels:
+                entityIds:
                     type: array
                     items:
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelListEntry'
-                    description: The semantic models, ordered by entity_id.
+                        type: string
+                    description: The canonical entity id of each semantic model, in entity id order.
                 pageInfo:
                     $ref: '#/components/schemas/synq.v1.PageInfo'
             title: ListSemanticModelsResponse
@@ -20690,21 +20937,31 @@ components:
             type: object
             allOf:
                 - properties:
-                    entityId:
-                        type: string
-                        title: entity_id
-                        maxLength: 1024
-                        description: The entity id that was asked for.
                     identityGroup:
                         title: identity_group
-                        description: The identity group of the asked entity.
+                        description: The identity group. Its canonical entity id addresses the model in the other reads.
                         $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
+                    requestedEntityIds:
+                        type: array
+                        items:
+                            type: string
+                            maxItems: 100
+                        title: requested_entity_ids
+                        maxItems: 100
+                        description: The ids of the request that address this identity group, in request order.
                     provenance:
                         title: provenance
                         description: |-
                             The member of the identity group whose declaration gave the model. Unset when there is no
                              model.
                         $ref: '#/components/schemas/synq.entities.v1.AspectProvenance'
+                    nativeName:
+                        type: string
+                        title: native_name
+                        maxLength: 1024
+                        description: |-
+                            Name of the model as the declarer spells it. Empty when there is no model, or when the declarer
+                             gives no name.
                     summary:
                         title: summary
                         description: What the model holds. Empty when the entity has no semantic model.
@@ -20725,6 +20982,29 @@ components:
                              the text is known. Unset means that no text is known for the model. It is never a generated
                              text.
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DeclarationText'
+                    stateAt:
+                        title: state_at
+                        description: |-
+                            When the declarer observed the declaration as it is. A declarer sends the same declaration on
+                             each run, and an unchanged declaration is not stored again, so this is the time of the last
+                             change of the model in most cases. Unset when there is no model.
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    tableCount:
+                        type: integer
+                        title: table_count
+                        description: |-
+                            The number of tables of the model: the distinct names of its field groups. The group with no
+                             name, which holds model-level fields such as OSI metrics, is not a table.
+                    definitionFindings:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DefinitionFinding'
+                        title: definition_findings
+                        maxItems: 10000
+                        description: |-
+                            The problems of the definition of the model, when the request asks for them. When field_names
+                             cuts the model, a finding keeps only its returned fields, a finding whose fields are all cut is
+                             left out, and a finding that names no field stays.
                 - oneOf:
                     - properties:
                         osi:
@@ -20742,7 +21022,7 @@ components:
                         - semanticModel
             title: SemanticModelEntry
             additionalProperties: false
-            description: SemanticModelEntry is the answer for one asked entity.
+            description: SemanticModelEntry is the answer for one identity group of the request.
         synq.entities.semantic_models.v1alpha.SemanticModelFormat:
             type: string
             title: SemanticModelFormat
@@ -20750,47 +21030,6 @@ components:
                 - SEMANTIC_MODEL_FORMAT_UNSPECIFIED
                 - SEMANTIC_MODEL_FORMAT_OSI
             description: SemanticModelFormat is the form a semantic model is returned in.
-        synq.entities.semantic_models.v1alpha.SemanticModelListEntry:
-            type: object
-            properties:
-                entityId:
-                    type: string
-                    maxLength: 1024
-                    description: |-
-                        The canonical entity id of the identity group. It addresses the model in
-                         BatchGetSemanticModels.
-                identityGroup:
-                    $ref: '#/components/schemas/synq.entities.v1.IdentityGroup'
-                provenance:
-                    description: The member of the identity group whose declaration gave the model.
-                    $ref: '#/components/schemas/synq.entities.v1.AspectProvenance'
-                nativeName:
-                    type: string
-                    maxLength: 1024
-                    description: Name of the model as the declarer spells it. Empty when the declarer gives no name.
-                summary:
-                    description: What the model holds.
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelSummary'
-                marks:
-                    description: |-
-                        The certified and the deprecated marks of the model. Unset when the marks could not be read:
-                         read them with synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take
-                         an unset value as "not certified".
-                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
-                stateAt:
-                    description: |-
-                        When the declarer observed the declaration as it is. A declarer sends the same declaration on
-                         each run, and an unchanged declaration is not stored again, so this is the time of the last
-                         change of the model in most cases.
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                tableCount:
-                    type: integer
-                    description: |-
-                        The number of tables of the model: the distinct names of its field groups. The group with no
-                         name, which holds model-level fields such as OSI metrics, is not a table.
-            title: SemanticModelListEntry
-            additionalProperties: false
-            description: SemanticModelListEntry is one semantic model of the workspace, without its fields.
         synq.entities.semantic_models.v1alpha.SemanticModelSummary:
             type: object
             properties:
@@ -20818,6 +21057,13 @@ components:
             title: KindCount
             additionalProperties: false
             description: The number of fields of one group kind.
+        synq.entities.semantic_models.v1alpha.SemanticModelView:
+            type: string
+            title: SemanticModelView
+            enum:
+                - SEMANTIC_MODEL_VIEW_UNSPECIFIED
+                - SEMANTIC_MODEL_VIEW_SUMMARY
+            description: SemanticModelView is how much of a semantic model is returned.
         synq.entities.semantic_models.v1alpha.SetDistinctMetricsRequest:
             type: object
             properties:
@@ -49090,8 +49336,9 @@ paths:
             summary: BatchGetSemanticModels
             description: |-
                 Read the semantic model of each asked entity. Any member of an identity group addresses the
-                 group, so a dbt model and the table it builds give the same model. Every asked id has an
-                 answer: an entity with no semantic model gets its identity group and no model.
+                 group, so a dbt model and the table it builds give the same model. The response has one entry
+                 for each identity group of the request: an identity group with no semantic model gets an entry
+                 with no model.
             operationId: synq.entities.semantic_models.v1alpha.SemanticModelsService.BatchGetSemanticModels
             requestBody:
                 content:
@@ -49106,20 +49353,21 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsResponse'
-    /api/entities/semantic-models/v1alpha/duplicate-groups/by-field:
+    /api/entities/semantic-models/v1alpha/duplicate-groups/by-entity-id:
         post:
             tags:
                 - synq.entities.semantic_models.v1alpha.MetricDuplicatesService
-            summary: ListFieldDuplicateGroups
+            summary: BatchListEntityDuplicateGroups
             description: |-
-                List the duplicate groups of one field. Any member of the identity group of the entity
-                 addresses the field.
-            operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.ListFieldDuplicateGroups
+                List the duplicate groups of the fields of each of several semantic models. Any member of the
+                 identity group of an entity addresses its model. The response has one entry for each identity
+                 group of the request.
+            operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.BatchListEntityDuplicateGroups
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ListFieldDuplicateGroupsRequest'
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchListEntityDuplicateGroupsRequest'
                 required: true
             responses:
                 "200":
@@ -49127,19 +49375,19 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ListFieldDuplicateGroupsResponse'
-    /api/entities/semantic-models/v1alpha/duplicate-groups/get:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchListEntityDuplicateGroupsResponse'
+    /api/entities/semantic-models/v1alpha/duplicate-groups/by-id:
         post:
             tags:
                 - synq.entities.semantic_models.v1alpha.MetricDuplicatesService
-            summary: GetDuplicateGroup
-            description: Read one duplicate group, with the certified and deprecated marks of the entity of each field.
-            operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.GetDuplicateGroup
+            summary: BatchGetDuplicateGroups
+            description: Read duplicate groups by id, with the certified and deprecated marks of each model.
+            operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.BatchGetDuplicateGroups
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.GetDuplicateGroupRequest'
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchGetDuplicateGroupsRequest'
                 required: true
             responses:
                 "200":
@@ -49147,13 +49395,15 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.GetDuplicateGroupResponse'
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.BatchGetDuplicateGroupsResponse'
     /api/entities/semantic-models/v1alpha/duplicate-groups/list:
         post:
             tags:
                 - synq.entities.semantic_models.v1alpha.MetricDuplicatesService
             summary: ListDuplicateGroups
-            description: List the duplicate groups of the workspace, the strongest first.
+            description: |-
+                List the ids of the duplicate groups of the workspace, the strongest first. Read the groups
+                 with BatchGetDuplicateGroups.
             operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.ListDuplicateGroups
             requestBody:
                 content:
@@ -49219,10 +49469,9 @@ paths:
                 - synq.entities.semantic_models.v1alpha.SemanticModelsService
             summary: ListSemanticModels
             description: |-
-                List the semantic models of the workspace: one entry for each identity group whose winning
-                 schema declaration has a semantic model, ordered by the canonical entity id. An entry has the
-                 summary, the name and the marks of the model, and no fields. Read the fields with
-                 BatchGetSemanticModels.
+                List the semantic models of the workspace: the canonical entity id of each identity group whose
+                 winning schema declaration has a semantic model, in entity id order. Read the models with
+                 BatchGetSemanticModels, with SEMANTIC_MODEL_VIEW_SUMMARY for a list.
             operationId: synq.entities.semantic_models.v1alpha.SemanticModelsService.ListSemanticModels
             requestBody:
                 content:
@@ -50840,6 +51089,17 @@ paths:
                   schema:
                     type: integer
                     title: limit_per_page
+                - name: includeMetrics
+                  in: query
+                  description: |-
+                    If true, the hits also include the metrics and measures of semantic models. A hit for a metric
+                     has `field_name` set, and its entity is the semantic model that declares the metric.
+                  schema:
+                    type: boolean
+                    title: include_metrics
+                    description: |-
+                        If true, the hits also include the metrics and measures of semantic models. A hit for a metric
+                         has `field_name` set, and its entity is the semantic model that declares the metric.
             responses:
                 "200":
                     description: Success
@@ -64874,6 +65134,10 @@ tags:
          Coalesce Quality finds the groups in the background, from the semantic models of the workspace.
          It compares metrics and measures only. Dimensions are not compared. A person can say that two
          fields are not one metric, and Coalesce Quality then keeps the two in different groups.
+
+         Copies of one model count as one model: the same model in another catalog or schema, with the
+         same field definitions, is a copy and not a duplicate. A field of a Looker explore is the field
+         of the view that the explore joins, so a group shows it once and lists no explore.
 
          This API is in alpha: its shape may change without notice.
     - name: synq.entities.semantic_models.v1alpha.OsiService
