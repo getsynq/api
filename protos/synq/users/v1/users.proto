@@ -21,13 +21,20 @@ enum UserRole {
   USER_ROLE_BUSINESS_USER = 4;
 }
 
-// UserStatus is where a member is in the invitation lifecycle of the workspace.
+// UserStatus is how far a member is in joining the workspace.
 enum UserStatus {
   USER_STATUS_UNSPECIFIED = 0;
   // The member can sign in to the workspace.
   USER_STATUS_ACTIVE = 1;
   // The member was invited and has not signed in since.
   USER_STATUS_INVITED = 2;
+  // The member was added and their sign-in is being set up. They cannot sign
+  // in yet. This normally takes a few seconds.
+  USER_STATUS_SETUP_PENDING = 3;
+  // Setting up the member's sign-in did not complete, and they cannot sign in.
+  // It can take up to a day for a member to reach this status. To try again,
+  // call AddUserRole with a role the member already holds.
+  USER_STATUS_SETUP_FAILED = 4;
 }
 
 message User {
@@ -46,7 +53,7 @@ message User {
   // that can be managed through this API.
   repeated UserRole roles = 6;
 
-  // Whether the user has accepted their invitation to the workspace.
+  // How far the user is in joining the workspace.
   UserStatus status = 7;
 
   // Most recent interactive sign-in to the workspace, or to any workspace when
@@ -57,6 +64,20 @@ message User {
 
   // When the user account was created.
   google.protobuf.Timestamp created_at = 9;
+
+  // Entity tag over the user's profile (name and email). It changes whenever
+  // the profile changes. Opaque: do not parse. Empty when the response does
+  // not carry it.
+  string etag = 10;
+
+  // Entity tag over the user's membership of the workspace: the roles and the
+  // invitation. It changes whenever one of them changes. Opaque: do not
+  // parse. Empty when the response does not carry it.
+  string membership_etag = 11;
+
+  // When the user was last invited to the workspace. Unset when the user was
+  // never invited.
+  optional google.protobuf.Timestamp invited_at = 12;
 }
 
 message UserAlias {

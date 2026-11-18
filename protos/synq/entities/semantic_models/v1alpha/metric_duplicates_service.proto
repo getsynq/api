@@ -1,0 +1,244 @@
+syntax = "proto3";
+
+package synq.entities.semantic_models.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/entities/marks/v1alpha/entity_mark.proto";
+import "synq/entities/semantic_models/v1alpha/semantic_model.proto";
+import "synq/entities/v1/identity_group.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/semantic_models/v1alpha";
+
+// MetricDuplicatesService reads the duplicate groups of metrics. A duplicate group is a set of
+// metric fields, each in a different semantic model, that can be one metric: for example `arr` in a
+// dbt metric, in a Snowflake semantic view and in a Tableau data source. The signals of a group say
+// why its fields are in it.
+//
+// Coalesce Quality finds the groups in the background, from the semantic models of the workspace.
+// It compares metrics and measures only. Dimensions are not compared. A person can say that two
+// fields are not one metric, and Coalesce Quality then keeps the two in different groups.
+//
+// This API is in alpha: its shape may change without notice.
+service MetricDuplicatesService {
+  // List the duplicate groups of the workspace, the strongest first.
+  rpc ListDuplicateGroups(ListDuplicateGroupsRequest) returns (ListDuplicateGroupsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/duplicate-groups/list"
+      body: "*"
+    };
+  }
+
+  // List the duplicate groups of one field. Any member of the identity group of the entity
+  // addresses the field.
+  rpc ListFieldDuplicateGroups(ListFieldDuplicateGroupsRequest) returns (ListFieldDuplicateGroupsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/duplicate-groups/by-field"
+      body: "*"
+    };
+  }
+
+  // Read one duplicate group, with the certified and deprecated marks of the entity of each field.
+  rpc GetDuplicateGroup(GetDuplicateGroupRequest) returns (GetDuplicateGroupResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/duplicate-groups/get"
+      body: "*"
+    };
+  }
+
+  // Say that two fields are not one metric. The groups change on the next pass, which starts at
+  // once. Saying it again records the new person and time.
+  //
+  // A user with SCOPE_ENTITY_MARKS_EDIT says it of any two fields. Any other user says it only of
+  // two fields whose entities both have an owner that lists the user as a contact.
+  rpc SetDistinctMetrics(SetDistinctMetricsRequest) returns (SetDistinctMetricsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/duplicate-groups/set-distinct"
+      body: "*"
+    };
+  }
+
+  // Take back that two fields are not one metric. A pair with no such answer is left as it is.
+  rpc RemoveDistinctMetrics(RemoveDistinctMetricsRequest) returns (RemoveDistinctMetricsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/semantic-models/v1alpha/duplicate-groups/remove-distinct"
+      body: "*"
+    };
+  }
+}
+
+// FieldRef addresses one field of a semantic model.
+message FieldRef {
+  // Opaque id of the entity whose semantic model holds the field. Any member of its identity group
+  // addresses it.
+  string entity_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+  // The name of the field: Field.name of the semantic model read.
+  string field_name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+}
+
+// DuplicateSignalKind is why two fields can be one metric.
+enum DuplicateSignalKind {
+  DUPLICATE_SIGNAL_KIND_UNSPECIFIED = 0;
+  // The name, the display label or a synonym is equal. Case, and spaces, underscores and hyphens
+  // between words, do not count. A name alone is a weak signal: a `count` is in many models.
+  DUPLICATE_SIGNAL_KIND_NAME = 1;
+  // The expression, the aggregation, the filter and the table the field reads are equal. An
+  // aggregation that the declarer names beside the expression counts as part of it, so a dbt measure
+  // with `agg: sum` and `expr: amount` matches `SUM(amount)`. Case, whitespace and comments in the
+  // expression do not count. A different literal is a different expression.
+  DUPLICATE_SIGNAL_KIND_EXPRESSION = 2;
+  // The fields read the same columns, from the column lineage.
+  DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS = 3;
+}
+
+// DuplicateSignal is one signal that two or more fields of a group share.
+message DuplicateSignal {
+  DuplicateSignalKind kind = 1;
+  // What the fields share: the name, the expression, or the input columns as
+  // `<entity id>.<column>`, joined by ", ".
+  string value = 2 [(buf.validate.field).string.max_len = 100000];
+  // The fields of the group that share it.
+  repeated FieldRef fields = 3 [(buf.validate.field).repeated.max_items = 10000];
+}
+
+// DuplicateField is one field of a duplicate group.
+message DuplicateField {
+  FieldRef field = 1;
+  // The identity group of the entity of the field.
+  synq.entities.v1.IdentityGroup identity_group = 2;
+  // The name of the group of the field in its model.
+  string group_name = 3 [(buf.validate.field).string.max_len = 1024];
+  // The kind of the group of the field: FIELD_GROUP_KIND_MEASURES or FIELD_GROUP_KIND_METRICS.
+  FieldGroupKind group_kind = 4;
+  // The field name as the declarer spells it.
+  string native_name = 5 [(buf.validate.field).string.max_len = 1024];
+  // The label the declarer shows its users. Empty when it is the native name.
+  string display_name = 6 [(buf.validate.field).string.max_len = 1024];
+  // The certified and the deprecated marks of the entity of the field. Set only by
+  // GetDuplicateGroup. Unset there when the marks could not be read: read them with
+  // synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take an unset value as
+  // "not certified".
+  synq.entities.marks.v1alpha.EntityMarks marks = 7;
+}
+
+// DuplicateGroup is a set of metric fields that can be one metric.
+message DuplicateGroup {
+  // The id of the group. It stays the same while the group has the same fields.
+  string group_id = 1 [(buf.validate.field).string.max_len = 255];
+  // The rank of the group in the list of the workspace. A higher rank is a stronger group. A group
+  // with only the name signal has the lowest ranks.
+  int32 rank = 2;
+  // The fields, each in a different semantic model.
+  repeated DuplicateField fields = 3 [(buf.validate.field).repeated.max_items = 10000];
+  // The signals that the fields share, the strongest kind first.
+  repeated DuplicateSignal signals = 4 [(buf.validate.field).repeated.max_items = 10000];
+  // When Coalesce Quality first found the group with these fields.
+  google.protobuf.Timestamp found_at = 5;
+}
+
+message ListDuplicateGroupsRequest {
+  // The page to read. The default page size is 100, and the largest is 1000.
+  synq.v1.Pagination pagination = 1;
+}
+
+message ListDuplicateGroupsResponse {
+  // The groups, the highest rank first.
+  repeated DuplicateGroup groups = 1;
+  synq.v1.PageInfo page_info = 2;
+}
+
+message ListFieldDuplicateGroupsRequest {
+  FieldRef field = 1 [(buf.validate.field).required = true];
+}
+
+message ListFieldDuplicateGroupsResponse {
+  // The identity group of the entity of the field.
+  synq.entities.v1.IdentityGroup identity_group = 1;
+  // The groups of the field, the highest rank first. Empty when the field is in no group.
+  repeated DuplicateGroup groups = 2;
+}
+
+message GetDuplicateGroupRequest {
+  string group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message GetDuplicateGroupResponse {
+  DuplicateGroup group = 1;
+}
+
+message SetDistinctMetricsRequest {
+  option (buf.validate.message).cel = {
+    id: "distinct_fields"
+    message: "field and other_field must be two different fields"
+    expression: "this.field.entity_id != this.other_field.entity_id || this.field.field_name != this.other_field.field_name"
+  };
+  // The two fields that are not one metric. They must be two different fields.
+  FieldRef field = 1 [(buf.validate.field).required = true];
+  FieldRef other_field = 2 [(buf.validate.field).required = true];
+  // Why the two are not one metric. Empty when the person gives no reason.
+  string reason = 3 [(buf.validate.field).string.max_len = 2000];
+  // The person who says it.
+  synq.issues.actor.v1.Actor actor = 4 [(buf.validate.field) = {required: true}];
+}
+
+message SetDistinctMetricsResponse {}
+
+message RemoveDistinctMetricsRequest {
+  FieldRef field = 1 [(buf.validate.field).required = true];
+  FieldRef other_field = 2 [(buf.validate.field).required = true];
+  // The person who takes it back.
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+}
+
+message RemoveDistinctMetricsResponse {}

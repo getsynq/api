@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package synq.contextentries.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/queries/v1/query.proto";
+
+option go_package = "github.com/getsynq/api/contextentries/v1alpha";
+
+// The kind of a context entry. The kind decides where a person sees the entry
+// in the app. It does not decide who reads it: people and agents read every
+// kind.
+enum ContextEntryKind {
+  CONTEXT_ENTRY_KIND_UNSPECIFIED = 0;
+  // A notice that shows as an alert on top of the asset page, for example
+  // "this table loads late on the first day of the month". Set `ends_at` to
+  // remove it after a date.
+  CONTEXT_ENTRY_KIND_ANNOUNCEMENT = 1;
+  // A description that shows beside the description of the asset, with its
+  // author. It does not replace the description that comes from the source
+  // platform.
+  CONTEXT_ENTRY_KIND_DESCRIPTION = 2;
+  // Guidance on how to judge a failure: severity, grouping and business
+  // context. It shows on the asset page and on the page of a check, and the
+  // triage agent reads it when an issue concerns the entity.
+  CONTEXT_ENTRY_KIND_GUIDANCE = 3;
+}
+
+// Where a context entry comes from.
+enum ContextEntryOrigin {
+  CONTEXT_ENTRY_ORIGIN_UNSPECIFIED = 0;
+  // A person wrote the entry.
+  CONTEXT_ENTRY_ORIGIN_PERSON = 1;
+  // An agent suggested the entry and a person accepted it.
+  CONTEXT_ENTRY_ORIGIN_SUGGESTION = 2;
+}
+
+// A context entry: a short text that a person attaches to one entity or to a
+// query of entities. People see it on the asset page. Agents get it together
+// with the entity.
+message ContextEntry {
+  // Opaque id of the entry (a UUID), supplied by the caller on create.
+  string id = 1;
+
+  // Stable, opaque platform identifier of this entry, of the form
+  // "contextentry-<uuid>". Output-only. Every call of this service also accepts
+  // it as an id.
+  string entity_id = 2;
+
+  // The text, in Markdown.
+  string text = 3;
+
+  // Where a person sees the entry.
+  ContextEntryKind kind = 4;
+
+  // The entities the entry applies to.
+  ContextEntryTarget target = 5;
+
+  // After this time the entry applies to nothing. Unset means the entry does
+  // not end.
+  optional google.protobuf.Timestamp ends_at = 6;
+
+  // Where the entry comes from. Output-only.
+  ContextEntryOrigin origin = 7;
+
+  // Entity tag for optimistic concurrency: pass it back on
+  // UpsertContextEntry / DeleteContextEntry to guard against overwriting a
+  // concurrent change. Form: `W/"<id>-<version>"`. Opaque, do not parse.
+  string etag = 8;
+
+  // Who created the entry. Output-only.
+  synq.issues.actor.v1.Actor created_by = 9;
+
+  // Who changed the entry last. Output-only.
+  synq.issues.actor.v1.Actor updated_by = 10;
+
+  // When the entry was created. Output-only.
+  google.protobuf.Timestamp created_at = 11;
+
+  // When the entry was changed last. Output-only.
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// The entities a context entry applies to: one entity, or every entity that a
+// query selects.
+message ContextEntryTarget {
+  oneof target {
+    option (buf.validate.oneof).required = true;
+
+    // One entity, by its `entity_id`. A check is an entity too, so this can be
+    // one dbt test, one monitor or one SQL test.
+    string entity_id = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 1000
+    }];
+
+    // Every entity that the query selects, for example every check of one
+    // category, or every table with one annotation. The selection is computed
+    // again on a schedule, so a new or changed query applies after the next
+    // computation.
+    ContextEntryQuery query = 2;
+  }
+}
+
+// The query behind a context entry, in the same write and read form as the
+// queries of saved views, data products and owners.
+//
+// On write, give the query in ONE of two forms: `resolver_ql` or
+// `public_query`. If both are set, `resolver_ql` wins. The server compiles and
+// stores the query. It does not keep the raw text.
+//
+// On read, the server returns `rendered_resolver_ql`, and when it can,
+// `public_query`.
+message ContextEntryQuery {
+  option (buf.validate.message).cel = {
+    id: "context_entry_query.nonempty"
+    message: "resolver_ql or public_query is required"
+    expression: "this.resolver_ql != '' || this.rendered_resolver_ql != '' || has(this.public_query)"
+  };
+
+  // WRITE (option A). The query in resolver query language.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language.
+  string rendered_resolver_ql = 2;
+
+  // WRITE (option B) and READ. The structured query.
+  synq.queries.v1.Query public_query = 3;
+}
+
+// The context entries that apply to one entity.
+message EntityContextEntries {
+  // The entity, as asked for.
+  string entity_id = 1;
+
+  // The entries that apply, most specific first: entries that target this
+  // entity, then entries whose query selects it. Inside each group the most
+  // recently changed entry comes first.
+  repeated ContextEntry entries = 2;
+
+  // How many more entries apply but were left out because of the limit.
+  // Zero when the response holds every entry that applies.
+  int32 omitted_count = 3;
+}

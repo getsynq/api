@@ -321,6 +321,10 @@ message ListJoinPatternsRequest {
   // Set to return only the patterns whose every side is a plain column, with
   // no expression around it, like `lower(email)` or a cast.
   bool bare_only = 5;
+  // Set to also list the relationships that semantic models declare between
+  // the entity and another one, with SEMANTIC_LAYER evidence. Leave unset for
+  // the joins that SQL and the query history make only.
+  bool declared = 6;
 }
 
 // JoinQueryLogRequest says which hours of query history to read joins from,
@@ -413,7 +417,53 @@ message JoinPattern {
   // Each join type the key is joined with, the most used first: by the SQL
   // definitions that use it, then by queries. The `kind`, `join_type` and
   // `native_join_type` of the key's comparisons are those of the first.
+  // Empty for a SEMANTIC_LAYER pattern, whose comparisons carry the declared
+  // join type.
   repeated JoinPatternType join_types = 6;
+  // The relationship a semantic model declares on this key. Set only when
+  // `evidence_kinds` is SEMANTIC_LAYER. Such a pattern is never combined
+  // with a pattern that SQL or queries make on the same key, and has no
+  // `sources` and no `query_log`.
+  JoinRelationship relationship = 7;
+}
+
+// JoinRelationship is one relationship that a semantic model declares, read
+// from the requested entity's side. Its comparisons are plain columns
+// compared for equality.
+message JoinRelationship {
+  // The semantic model that declares the relationship. It is the same opaque
+  // identifier the request's `entity_id` takes.
+  string semantic_model_entity_id = 1 [(buf.validate.field).string.max_len = 4096];
+  // The entity that declared the semantic model, like the integration or the
+  // model file it was read from.
+  string declarer_entity_id = 2 [(buf.validate.field).string.max_len = 4096];
+  // The relationship's name in the semantic model. Empty when its author did
+  // not name it.
+  string name = 3 [(buf.validate.field).string.max_len = 4096];
+  RelationshipState state = 4;
+  // How many rows of each side match, seen from the requested entity's side:
+  // a many-to-one relationship read from its "one" side is ONE_TO_MANY.
+  Cardinality cardinality = 5;
+}
+
+// Cardinality is how many rows of each side of a relationship match,
+// the requested entity's side first. UNSPECIFIED is a real answer: many
+// semantic layers never state it.
+enum Cardinality {
+  CARDINALITY_UNSPECIFIED = 0;
+  CARDINALITY_MANY_TO_ONE = 1;
+  CARDINALITY_ONE_TO_ONE = 2;
+  CARDINALITY_ONE_TO_MANY = 3;
+  CARDINALITY_MANY_TO_MANY = 4;
+}
+
+// RelationshipState says whether a semantic layer uses a relationship.
+enum RelationshipState {
+  // No semantic layer said otherwise: the relationship is used.
+  RELATIONSHIP_STATE_UNSPECIFIED = 0;
+  // The semantic layer keeps the relationship but does not use it, like an
+  // inactive Power BI relationship.
+  RELATIONSHIP_STATE_INACTIVE = 1;
 }
 
 // JoinPatternType is one join type that a pattern's key is joined with, and
@@ -581,6 +631,8 @@ enum JoinEvidenceKind {
   JOIN_EVIDENCE_KIND_SQL_DEFINITION = 1;
   // Queries in the warehouse's query history made the join.
   JOIN_EVIDENCE_KIND_QUERY_LOG = 2;
+  // A semantic model declares the join as a relationship.
+  JOIN_EVIDENCE_KIND_SEMANTIC_LAYER = 3;
 }
 
 // ListSqlConstructsRequest has no fields: the result is scoped to the workspace

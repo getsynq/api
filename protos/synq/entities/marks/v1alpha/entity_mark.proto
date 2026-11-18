@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package synq.entities.marks.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/entities/v1/identity_group.proto";
+import "synq/issues/actor/v1/actor.proto";
+
+option go_package = "github.com/getsynq/api/entities/marks/v1alpha";
+
+// EntityMarks are the certified and the deprecated marks of one entity. A mark
+// applies to the identity group of the entity, so a mark set on a dbt model
+// also marks the warehouse table it builds.
+message EntityMarks {
+  // The entity id as requested.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The identity group of the entity. A mark set on any member applies.
+  synq.entities.v1.IdentityGroup identity_group = 2;
+  // The certified mark. Unset means that the entity is not certified in
+  // Coalesce Quality.
+  Certification certification = 3;
+  // The deprecated mark. Unset means that the entity is not deprecated in
+  // Coalesce Quality.
+  Deprecation deprecation = 4;
+}
+
+// Certification is the statement of one person that an entity is the one to
+// use. Only a person certifies, one entity at a time. No query certifies.
+message Certification {
+  // The member of the identity group that the person certified.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The person who certified the entity.
+  synq.issues.actor.v1.Actor certified_by = 2;
+  // When the person certified the entity.
+  google.protobuf.Timestamp certified_at = 3;
+  // Why the person certified the entity. Empty when the person gave no reason.
+  string reason = 4 [(buf.validate.field).string.max_len = 2000];
+  // True when the semantic model of the entity changed after the person
+  // certified it: an expression, a filter, a relationship, a key or the source
+  // of a table. A new description, synonym or format is not a change. When
+  // true, the entity is not certified, but the mark stays until a person
+  // certifies the entity again or removes the mark. Always false for an entity
+  // with no semantic model.
+  bool definition_changed = 5;
+}
+
+// Deprecation says that an entity is deprecated, and why.
+message Deprecation {
+  oneof origin {
+    // A person deprecated the entity.
+    MarkedDeprecation marked = 1;
+    // The deprecation query of the workspace selects the entity. See
+    // `DeprecationQuery`.
+    QueryDeprecation query = 2;
+  }
+}
+
+// MarkedDeprecation is a deprecated mark that a person set on one entity.
+message MarkedDeprecation {
+  // The member of the identity group that the person deprecated.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The person who deprecated the entity.
+  synq.issues.actor.v1.Actor deprecated_by = 2;
+  // When the person deprecated the entity.
+  google.protobuf.Timestamp deprecated_at = 3;
+  // Why the person deprecated the entity, for example the entity to use
+  // instead. Empty when the person gave no reason.
+  string reason = 4 [(buf.validate.field).string.max_len = 2000];
+}
+
+// QueryDeprecation says that the deprecation query of the workspace selects the
+// entity. An entity that starts to match the query has no time of its own, so
+// this carries the last change of the query.
+message QueryDeprecation {
+  // The person who last changed the query.
+  synq.issues.actor.v1.Actor updated_by = 1;
+  // When the query last changed.
+  google.protobuf.Timestamp updated_at = 2;
+  // Why the person deprecated the entities that the query selects. Empty when
+  // the person gave no reason.
+  string reason = 3 [(buf.validate.field).string.max_len = 2000];
+}
+
+// DeprecationQuery selects the deprecated entities of a workspace, beside the
+// entities that a person deprecated one by one. A workspace has one.
+message DeprecationQuery {
+  // The query in resolver query language, as the server renders it. Empty
+  // when the workspace has no query.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+  // Pass it on the next change to guard against overwriting a concurrent edit.
+  string etag = 2 [(buf.validate.field).string.max_len = 200];
+  // The person who last changed the query. Unset when it never changed.
+  synq.issues.actor.v1.Actor updated_by = 3;
+  // When the query last changed. Unset when it never changed.
+  google.protobuf.Timestamp updated_at = 4;
+  // Why the person deprecated the entities that the query selects. Empty when
+  // the person gave no reason.
+  string reason = 5 [(buf.validate.field).string.max_len = 2000];
+}
+
+// MarkKind is the kind of a mark.
+enum MarkKind {
+  MARK_KIND_UNSPECIFIED = 0;
+  // The entity is the one to use.
+  MARK_KIND_CERTIFIED = 1;
+  // The entity is not to be used.
+  MARK_KIND_DEPRECATED = 2;
+}
+
+// MarkChange is what one history entry did.
+enum MarkChange {
+  MARK_CHANGE_UNSPECIFIED = 0;
+  // A person set the mark on the entity.
+  MARK_CHANGE_SET = 1;
+  // A person removed the mark from the entity.
+  MARK_CHANGE_REMOVED = 2;
+  // A person changed the deprecation query.
+  MARK_CHANGE_QUERY_CHANGED = 3;
+}
+
+// MarkHistoryEntry is one change of a mark. Each set and each removal has an
+// entry, and so has each change of the deprecation query.
+message MarkHistoryEntry {
+  // The kind of the mark.
+  MarkKind kind = 1;
+  // What the change did.
+  MarkChange change = 2;
+  // The entity whose mark changed. Empty for a change of the query.
+  string entity_id = 3 [(buf.validate.field).string.max_len = 1024];
+  // The query after the change, in resolver query language. Set only for
+  // a change of the query, and empty when the change cleared it.
+  string resolver_ql = 4 [(buf.validate.field).string.max_len = 20000];
+  // The person who made the change.
+  synq.issues.actor.v1.Actor changed_by = 5;
+  // When the change was made.
+  google.protobuf.Timestamp changed_at = 6;
+  // The reason that the person gave with a set or a change of the query.
+  // Empty for a removal and when the person gave no reason.
+  string reason = 7 [(buf.validate.field).string.max_len = 2000];
+}

@@ -1,0 +1,398 @@
+syntax = "proto3";
+
+package synq.entities.marks.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "synq/entities/marks/v1alpha/entity_mark.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/entities/marks/v1alpha";
+
+// EntityMarksService sets and reads the certified and the deprecated marks of
+// entities. See `EntityMarks`.
+//
+// A user with SCOPE_ENTITY_MARKS_EDIT sets the marks of any entity, and so
+// does an API token with SCOPE_MCP_WRITE. Any other user sets the marks only of
+// the entities whose owner lists the user as a contact. A request with one entity that the caller cannot mark is refused
+// whole with PERMISSION_DENIED.
+//
+// Coalesce Quality keeps a history entry for each set and each removal.
+//
+// This API is in alpha: its shape may change without notice.
+service EntityMarksService {
+  // Read the marks of entities. The response has one entry for each requested
+  // id, in request order.
+  rpc BatchGetEntityMarks(BatchGetEntityMarksRequest) returns (BatchGetEntityMarksResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/batch-get"
+      body: "*"
+    };
+  }
+
+  // Certify entities. Certifying a certified entity again records the new
+  // person and time.
+  rpc CertifyEntities(CertifyEntitiesRequest) returns (CertifyEntitiesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/certify"
+      body: "*"
+    };
+  }
+
+  // Remove the certified mark of entities, from every member of their identity
+  // groups. An entity with no mark is left as it is.
+  rpc RemoveCertifications(RemoveCertificationsRequest) returns (RemoveCertificationsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/remove-certifications"
+      body: "*"
+    };
+  }
+
+  // Deprecate entities one by one. Deprecating a deprecated entity again
+  // records the new person and time.
+  rpc DeprecateEntities(DeprecateEntitiesRequest) returns (DeprecateEntitiesResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/deprecate"
+      body: "*"
+    };
+  }
+
+  // Remove the deprecated mark that a person set on entities, from every
+  // member of their identity groups. An entity that the deprecation query
+  // selects stays deprecated, and the response says so.
+  rpc RemoveDeprecations(RemoveDeprecationsRequest) returns (RemoveDeprecationsResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_MARKS_EDIT,
+        SCOPE_ENTITY_MARKS_OWNED_EDIT,
+        SCOPE_MCP_WRITE
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/remove-deprecations"
+      body: "*"
+    };
+  }
+
+  // Read the deprecation query of the workspace.
+  rpc GetDeprecationQuery(GetDeprecationQueryRequest) returns (GetDeprecationQueryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/entities/marks/v1alpha/deprecation-query"};
+  }
+
+  // Replace the deprecation query of the workspace. An empty query clears it.
+  // The query selects entities of any owner, so only SCOPE_ENTITY_MARKS_EDIT
+  // changes it.
+  rpc SetDeprecationQuery(SetDeprecationQueryRequest) returns (SetDeprecationQueryResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_ENTITY_MARKS_EDIT]
+    };
+    option (google.api.http) = {
+      put: "/api/entities/marks/v1alpha/deprecation-query"
+      body: "*"
+    };
+  }
+
+  // List the marks that a person set, newest first: for example the entities
+  // that I deprecated. A mark that only the deprecation query gives is not
+  // listed, as no person set it on the entity.
+  rpc ListMarkedEntities(ListMarkedEntitiesRequest) returns (ListMarkedEntitiesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/marked"
+      body: "*"
+    };
+  }
+
+  // List the history of the marks, newest first. With entity ids, the history
+  // of the marks set on any member of their identity groups. Without, every
+  // entry of the workspace, the changes of the deprecation query included.
+  rpc ListMarkHistory(ListMarkHistoryRequest) returns (ListMarkHistoryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/history"
+      body: "*"
+    };
+  }
+}
+
+message BatchGetEntityMarksRequest {
+  // Opaque ids of the entities to read.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+}
+
+message BatchGetEntityMarksResponse {
+  // One entry for each requested id, in request order.
+  repeated EntityMarks entities = 1;
+}
+
+message CertifyEntitiesRequest {
+  // Opaque ids of the entities to certify. Each id must name an entity.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The person who makes the change. The mark, the history and every read name
+  // this person.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+  // Why the person certifies the entities. It is kept with the mark and in the history.
+  string reason = 3 [(buf.validate.field).string.max_len = 2000];
+}
+
+message CertifyEntitiesResponse {
+  // The marks after the change, in request order.
+  repeated EntityMarks entities = 1;
+}
+
+message RemoveCertificationsRequest {
+  // Opaque ids of the entities whose certified mark to remove.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The person who makes the change. The mark, the history and every read name
+  // this person.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message RemoveCertificationsResponse {
+  // The marks after the change, in request order.
+  repeated EntityMarks entities = 1;
+}
+
+message DeprecateEntitiesRequest {
+  // Opaque ids of the entities to deprecate. Each id must name an entity.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The person who makes the change. The mark, the history and every read name
+  // this person.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+  // Why the person deprecates the entities, for example the entity to use instead. It is kept with the mark and in the history.
+  string reason = 3 [(buf.validate.field).string.max_len = 2000];
+}
+
+message DeprecateEntitiesResponse {
+  // The marks after the change, in request order.
+  repeated EntityMarks entities = 1;
+}
+
+message RemoveDeprecationsRequest {
+  // Opaque ids of the entities whose deprecated mark to remove.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The person who makes the change. The mark, the history and every read name
+  // this person.
+  synq.issues.actor.v1.Actor actor = 2 [(buf.validate.field) = {required: true}];
+}
+
+message RemoveDeprecationsResponse {
+  // The marks after the change, in request order.
+  repeated EntityMarks entities = 1;
+}
+
+message GetDeprecationQueryRequest {}
+
+message GetDeprecationQueryResponse {
+  DeprecationQuery query = 1;
+}
+
+message SetDeprecationQueryRequest {
+  // The query in resolver query language. Empty clears the query.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+  // The etag of the query that you last read. The change is refused with
+  // ABORTED if the query changed since. Omit it to replace the query whatever
+  // it is.
+  optional string etag = 2 [(buf.validate.field).string.max_len = 200];
+  // The person who makes the change. The mark, the history and every read name
+  // this person.
+  synq.issues.actor.v1.Actor actor = 3 [(buf.validate.field) = {required: true}];
+  // Why the person deprecates the entities that the query selects. It is kept with the mark and in the history.
+  string reason = 4 [(buf.validate.field).string.max_len = 2000];
+}
+
+message SetDeprecationQueryResponse {
+  DeprecationQuery query = 1;
+}
+
+message ListMarkHistoryRequest {
+  // Opaque ids of the entities whose history to list. Empty lists the
+  // history of the whole workspace.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The kinds of marks to list. Empty lists every kind.
+  repeated MarkKind kinds = 2 [(buf.validate.field).repeated = {
+    max_items: 10
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // The page to read. The default page size is 100, and the largest is 1000.
+  synq.v1.Pagination pagination = 3;
+  // Identity strings of the person, to match the person who made the change. Resolve
+  // a user to all their identities with synq.users.v1.UsersService
+  // GetUserIdentities first. Format: "synq:<user_id>", "email:<email>",
+  // "slack:<slack_user_id>". Empty matches every person.
+  repeated string changed_by_identities = 4 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+}
+
+message ListMarkHistoryResponse {
+  // The entries, newest first.
+  repeated MarkHistoryEntry entries = 1;
+  synq.v1.PageInfo page_info = 2;
+}
+
+message ListMarkedEntitiesRequest {
+  // The kinds of marks to list.
+  repeated MarkKind kinds = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 10
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // Identity strings of the person, to match the person who set the mark. Resolve
+  // a user to all their identities with synq.users.v1.UsersService
+  // GetUserIdentities first. Format: "synq:<user_id>", "email:<email>",
+  // "slack:<slack_user_id>". Empty matches every person.
+  repeated string set_by_identities = 2 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The page to read. The default page size is 100, and the largest is 1000.
+  synq.v1.Pagination pagination = 3;
+}
+
+message ListMarkedEntitiesResponse {
+  // The marks, newest first.
+  repeated MarkedEntity marked_entities = 1;
+  synq.v1.PageInfo page_info = 2;
+}
+
+// MarkedEntity is one mark that a person set on one entity. Read the marks of
+// the entity, with its identity group, with `BatchGetEntityMarks`.
+message MarkedEntity {
+  // The entity that the person marked.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The kind of the mark.
+  MarkKind kind = 2;
+}

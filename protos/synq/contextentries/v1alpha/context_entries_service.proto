@@ -1,0 +1,268 @@
+syntax = "proto3";
+
+package synq.contextentries.v1alpha;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "synq/contextentries/v1alpha/context_entry.proto";
+import "synq/issues/actor/v1/actor.proto";
+import "synq/v1/pagination.proto";
+import "synq/v1/scope_authorization.proto";
+
+option go_package = "github.com/getsynq/api/contextentries/v1alpha";
+
+// ContextEntriesService manages context entries: short texts that people
+// attach to one entity or to a query of entities. People see them on the asset
+// page. Agents get them together with the entity, for example when they triage
+// an issue.
+//
+// Ids are opaque UUIDs supplied by the caller, so a retried create converges
+// instead of creating a second entry. Mutable fields are optional on
+// UpsertContextEntry: a set field is written, an omitted field is left
+// unchanged. Pass the `etag` you last read to guard against overwriting a
+// concurrent edit.
+//
+// A workspace holds at most 500 entries, and one text holds at most 4096
+// characters.
+//
+// This package is in initial development and can change.
+service ContextEntriesService {
+  // Create or update a context entry. Repeating the same request converges to
+  // the same entry. `text`, `kind` and `target` are required when creating.
+  rpc UpsertContextEntry(UpsertContextEntryRequest) returns (UpsertContextEntryResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_CONTEXT_ENTRIES_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/context-entries/v1alpha"
+      body: "*"
+    };
+  }
+
+  // Fetch context entries by id. Ids that do not exist, or are deleted, are
+  // absent from the response.
+  rpc BatchGetContextEntries(BatchGetContextEntriesRequest) returns (BatchGetContextEntriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_CONTEXT_ENTRIES_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/context-entries/v1alpha/batch-get"
+      body: "*"
+    };
+  }
+
+  // List the context entries of the workspace, most recently changed first.
+  // Ended entries are included, so a person can find and change them.
+  rpc ListContextEntries(ListContextEntriesRequest) returns (ListContextEntriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_CONTEXT_ENTRIES_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {get: "/api/context-entries/v1alpha"};
+  }
+
+  // Delete a context entry. Deleting an unknown or already deleted entry
+  // succeeds. Pass `etag` to guard against deleting a concurrently edited
+  // entry.
+  rpc DeleteContextEntry(DeleteContextEntryRequest) returns (DeleteContextEntryResponse) {
+    option idempotency_level = IDEMPOTENT;
+    option (synq.v1.scope_authorization) = {
+      scopes: [SCOPE_CONTEXT_ENTRIES_EDIT]
+    };
+    option (google.api.http) = {
+      post: "/api/context-entries/v1alpha/delete"
+      body: "*"
+    };
+  }
+
+  // For each entity, list the context entries that apply to it now.
+  //
+  // The response has one entry per requested id, in the order you asked. An
+  // entity that no entry applies to comes back with an empty list. Ended
+  // entries are left out.
+  //
+  // An entry that targets an entity applies to that exact entity id. An entry
+  // with a query applies to every entity the query selects, including the
+  // other representations of the same table (a transformation model and the
+  // warehouse table it builds).
+  rpc BatchGetEntityContextEntries(BatchGetEntityContextEntriesRequest) returns (BatchGetEntityContextEntriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_CONTEXT_ENTRIES_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/context-entries/v1alpha/entities"
+      body: "*"
+    };
+  }
+}
+
+message UpsertContextEntryRequest {
+  // Opaque id of the entry. Accepts the bare UUID or the `entity_id` form
+  // (`contextentry-<uuid>`). The same id updates the same entry, a new id
+  // creates a new entry.
+  string id = 1 [(buf.validate.field).string.pattern = "^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+
+  // The text, in Markdown. Required when creating.
+  optional string text = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+
+  // Where a person sees the entry. Required when creating.
+  optional ContextEntryKind kind = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // The entities the entry applies to. Required when creating. Omit to keep
+  // the existing target on update.
+  ContextEntryTarget target = 4;
+
+  // Set to end the entry at this time. Omit to keep the existing end time.
+  optional google.protobuf.Timestamp ends_at = 5;
+
+  // Set to remove the end time, so the entry does not end. Ignored when
+  // `ends_at` is set.
+  bool remove_ends_at = 6;
+
+  // Optional optimistic-concurrency guard. When set, the update fails with a
+  // conflict if the entry was changed since this etag was read.
+  optional string etag = 7;
+
+  // Who is performing this write. Optional: the identity is completed from the
+  // calling credentials.
+  synq.issues.actor.v1.Actor actor = 8;
+}
+
+message UpsertContextEntryResponse {
+  // The stored entry after the upsert.
+  ContextEntry entry = 1;
+}
+
+message BatchGetContextEntriesRequest {
+  // Entry ids to fetch (1 to 200, unique). Each accepts the bare UUID or the
+  // `contextentry-<uuid>` form.
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {pattern: "^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}
+    }
+  }];
+}
+
+message BatchGetContextEntriesResponse {
+  // Entries keyed by id, in the form the caller asked for. Ids that do not
+  // exist, or are deleted, are absent.
+  map<string, ContextEntry> entries = 1;
+}
+
+message ListContextEntriesRequest {
+  // Pagination.
+  synq.v1.Pagination pagination = 1;
+
+  // Only entries of these kinds. Empty means every kind.
+  repeated ContextEntryKind kinds = 2 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+
+  // Only entries created by these users, by the `id` of a user from
+  // `synq.users.v1.UsersService`. Empty means every author.
+  repeated string author_user_ids = 3 [(buf.validate.field).repeated = {
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 200
+      }
+    }
+  }];
+
+  // Only entries that target this one entity. Entries with a query are left
+  // out. To find every entry that applies to an entity, use
+  // BatchGetEntityContextEntries.
+  optional string target_entity_id = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1000
+  }];
+}
+
+message ListContextEntriesResponse {
+  // The matching entries.
+  repeated ContextEntry entries = 1;
+  // Pagination cursor for the next page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+message DeleteContextEntryRequest {
+  // Id of the entry to delete. Accepts the bare UUID or the
+  // `contextentry-<uuid>` form.
+  string id = 1 [(buf.validate.field).string.pattern = "^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
+  // Optional optimistic-concurrency guard.
+  optional string etag = 2;
+  // Who is performing this write. Optional.
+  synq.issues.actor.v1.Actor actor = 3;
+}
+
+message DeleteContextEntryResponse {}
+
+message BatchGetEntityContextEntriesRequest {
+  // The entities to read (1 to 200, unique), by `entity_id`.
+  repeated string entity_ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1000
+      }
+    }
+  }];
+
+  // Only entries of these kinds. Empty means every kind.
+  repeated ContextEntryKind kinds = 2 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+}
+
+message BatchGetEntityContextEntriesResponse {
+  // One element per requested entity id, in request order.
+  repeated EntityContextEntries entities = 1;
+
+  // When the selections of the entries with a query were last computed. Unset
+  // when the workspace has no such entry, or before the first computation. An
+  // entry with a query that was created or changed after this time is not yet
+  // in the response.
+  optional google.protobuf.Timestamp queries_computed_at = 2;
+}
