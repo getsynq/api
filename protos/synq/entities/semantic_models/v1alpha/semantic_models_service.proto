@@ -8,6 +8,7 @@ import "synq/entities/semantic_models/v1alpha/semantic_model.proto";
 import "synq/entities/marks/v1alpha/entity_mark.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identity_group.proto";
+import "synq/platforms/v1/data_platform_types.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -40,8 +41,9 @@ service SemanticModelsService {
   }
 
   // List the semantic models of the workspace: the canonical entity id of each identity group whose
-  // winning schema declaration has a semantic model, in entity id order. Read the models with
-  // BatchGetSemanticModels, with SEMANTIC_MODEL_VIEW_SUMMARY for a list.
+  // winning schema declaration has a semantic model, in the asked order. Read the models with
+  // BatchGetSemanticModels. For a list, ask it for SEMANTIC_MODEL_PART_SUMMARY, and for
+  // SEMANTIC_MODEL_PART_MARKS when the list shows the marks.
   rpc ListSemanticModels(ListSemanticModelsRequest) returns (ListSemanticModelsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -66,7 +68,31 @@ enum SemanticModelFormat {
   SEMANTIC_MODEL_FORMAT_OSI = 1;
 }
 
-// SemanticModelView is how much of a semantic model is returned.
+// SemanticModelPart is one part of a semantic model that a read returns.
+enum SemanticModelPart {
+  SEMANTIC_MODEL_PART_UNSPECIFIED = 0;
+  // The identity group, the provenance, the name, the summary, state_at and
+  // definition_changed_at. A read always returns it.
+  SEMANTIC_MODEL_PART_SUMMARY = 1;
+  // SemanticModelEntry.model: the tables, the groups with their fields, and the relationships.
+  SEMANTIC_MODEL_PART_FIELDS = 2;
+  // Field.definition: the expression, the aggregation and the rest. It returns the fields too.
+  SEMANTIC_MODEL_PART_DEFINITIONS = 3;
+  // Field.reading: the computation of each field as steps in words. Each reading parses an
+  // expression, so ask only when the steps are shown. It returns the fields too.
+  SEMANTIC_MODEL_PART_READINGS = 4;
+  // SemanticModelEntry.declaration_text, and the declared_lines of each returned table, field and
+  // relationship.
+  SEMANTIC_MODEL_PART_DECLARATION_TEXT = 5;
+  // SemanticModelEntry.definition_findings: the problems of the definition that a fixed rule finds
+  // with no query. The checks read every expression of the model, and see the whole model whatever
+  // the field options keep.
+  SEMANTIC_MODEL_PART_DEFINITION_CHECKS = 6;
+  // SemanticModelEntry.marks: the certified and the deprecated marks.
+  SEMANTIC_MODEL_PART_MARKS = 7;
+}
+
+// SemanticModelView is how much of a semantic model is returned. Deprecated: ask for parts.
 enum SemanticModelView {
   // The model, in the asked format.
   SEMANTIC_MODEL_VIEW_UNSPECIFIED = 0;
@@ -88,8 +114,9 @@ message BatchGetSemanticModelsRequest {
       }
     }
   }];
-  // Return only the fields with these names. Empty returns every field. A group with no field left
-  // is left out. Ignored for SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
+  // Return only the fields with these names: Field.name. Empty returns every field. A group with
+  // no field left is left out. Use it to read single fields of a large model. Ignored for
+  // SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
   repeated string field_names = 2 [(buf.validate.field).repeated = {
     max_items: 1000
     items: {
@@ -99,24 +126,51 @@ message BatchGetSemanticModelsRequest {
       }
     }
   }];
-  // Return the definition of each field: its expression, aggregation and the rest. False returns
-  // the structure only, which keeps the response small for a large model. Ignored for
-  // SEMANTIC_MODEL_FORMAT_OSI, which always returns the definitions.
-  bool include_definitions = 3;
-  // The form of the model in the response.
+  // Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITIONS.
+  bool include_definitions = 3 [deprecated = true];
+  // The form of the model in the response. SEMANTIC_MODEL_FORMAT_OSI returns the whole model as
+  // one document when the parts ask for the fields. It has no readings, no declaration text and no
+  // definition findings, and it ignores the field options.
   SemanticModelFormat format = 4;
-  // Return Field.reading: the computation of each field as steps in words. Each reading parses an
-  // expression, so ask only when the steps are shown. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
-  bool include_readings = 5;
-  // Return SemanticModelEntry.declaration_text, and the declared_lines of each group, field and
-  // relationship. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
-  bool include_declaration_text = 6;
-  // How much of each model to return. SEMANTIC_MODEL_VIEW_SUMMARY ignores the other options.
-  SemanticModelView view = 7;
-  // Return SemanticModelEntry.definition_findings: the problems of the definition that a fixed
-  // rule finds with no query. The checks read every expression of the model, and see the whole
-  // model whatever field_names keeps. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
-  bool include_definition_checks = 8;
+  // Deprecated: ask for SEMANTIC_MODEL_PART_READINGS.
+  bool include_readings = 5 [deprecated = true];
+  // Deprecated: ask for SEMANTIC_MODEL_PART_DECLARATION_TEXT.
+  bool include_declaration_text = 6 [deprecated = true];
+  // Deprecated: ask for parts. The summary is the answer to a request with no other part.
+  SemanticModelView view = 7 [deprecated = true];
+  // Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITION_CHECKS.
+  bool include_definition_checks = 8 [deprecated = true];
+  // The parts of each model to return. The summary is always returned. A request with a part uses
+  // the parts only, and the deprecated options have no effect. A request with no part is read by
+  // the deprecated options.
+  repeated SemanticModelPart parts = 9 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // Return only the fields of these tables: Table.name. Empty returns the fields of every table.
+  // Use it to read one table of a large model. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+  repeated string tables = 10 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {max_len: 1024}
+    }
+  }];
+  // Return only the fields of groups of these kinds. Empty returns the fields of every kind.
+  // Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+  repeated FieldGroupKind group_kinds = 11 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      enum: {defined_only: true}
+    }
+  }];
+  // The largest number of fields to return for each group, the first fields in the declarer's
+  // order. Zero returns every field. FieldGroup.field_count has the number of all fields of the
+  // group. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+  uint32 field_limit = 12 [(buf.validate.field).uint32.lte = 100000];
 }
 
 message BatchGetSemanticModelsResponse {
@@ -140,42 +194,110 @@ message SemanticModelEntry {
   string native_name = 10 [(buf.validate.field).string.max_len = 1024];
   // What the model holds. Empty when the entity has no semantic model.
   SemanticModelSummary summary = 4;
-  // The model, in the asked format. Unset when the entity has no semantic model, and for
-  // SEMANTIC_MODEL_VIEW_SUMMARY.
+  // The model, in the asked format. Unset when the entity has no semantic model, and when the
+  // request does not ask for the fields.
   oneof model {
     SemanticModel semantic_model = 5;
     OsiDocument osi = 6;
   }
-  // The certified and the deprecated marks of the model. Unset when there is no
-  // model. Unset with a model when the marks could not be read: read them with
+  // The certified and the deprecated marks of the model, when the request asks for them. Unset
+  // when there is no model. Unset with a model when the marks could not be read: read them with
   // synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never
-  // take an unset value as "not certified".
+  // take an unset value as "not certified". The identity group of the marks is the identity_group
+  // of the entry, and a request with parts leaves it unset in the marks.
   synq.entities.marks.v1alpha.EntityMarks marks = 7;
   // The text that the platform holds for the model, as its author wrote it: the DDL of a Snowflake
   // semantic view, the YAML of a Databricks metric view. Set only when the request asks for it and
-  // the text is known. Unset means that no text is known for the model. It is never a generated
-  // text.
+  // the text is known. It is never a generated text. When the request asks for it and it is unset,
+  // declaration_text_missing_reason says why.
   DeclarationText declaration_text = 8;
   // When the declarer observed the declaration as it is. A declarer sends the same declaration on
   // each run, and an unchanged declaration is not stored again, so this is the time of the last
   // change of the model in most cases. Unset when there is no model.
   google.protobuf.Timestamp state_at = 11;
-  // The number of tables of the model: the distinct names of its field groups. The group with no
-  // name, which holds model-level fields such as OSI metrics, is not a table.
-  uint32 table_count = 12;
+  // Deprecated: read SemanticModelSummary.table_count.
+  uint32 table_count = 12 [deprecated = true];
   // The problems of the definition of the model, when the request asks for them. When field_names
   // cuts the model, a finding keeps only its returned fields, a finding whose fields are all cut is
   // left out, and a finding that names no field stays.
   repeated DefinitionFinding definition_findings = 13 [(buf.validate.field).repeated.max_items = 10000];
+  // Why declaration_text is unset. Set only when the request asks for the text and the model has
+  // none.
+  DeclarationText.MissingReason declaration_text_missing_reason = 14;
+  // When the definition of the model changed last: the oldest observation of the definition as it
+  // is that Coalesce Quality holds. The definition is what the model computes: the expressions, the
+  // aggregations, the filters, the keys, the sources and the relationships. A change of a
+  // description or a label is not a change of the definition. Unset when there is no model.
+  google.protobuf.Timestamp definition_changed_at = 15;
+  // The id of the synq.recommendations.v1 recommendation that asks for the grant that lets the
+  // integration read the declaration text. Read it with
+  // synq.recommendations.v1.RecommendationsService/BatchGetRecommendations for its remediation and
+  // its actions. Set only with MISSING_REASON_TEXT_REFUSED.
+  string declaration_text_recommendation_id = 16 [(buf.validate.field).string.max_len = 1024];
+}
+
+// SemanticModelMark is the state of the marks of a model, for a filter.
+enum SemanticModelMark {
+  SEMANTIC_MODEL_MARK_UNSPECIFIED = 0;
+  // The model is certified, and its definition did not change after the certification.
+  SEMANTIC_MODEL_MARK_CERTIFIED = 1;
+  // The model is deprecated.
+  SEMANTIC_MODEL_MARK_DEPRECATED = 2;
+  // The model is not certified and not deprecated.
+  SEMANTIC_MODEL_MARK_NONE = 3;
+}
+
+// SemanticModelOrder is the order of a list of semantic models.
+enum SemanticModelOrder {
+  // The canonical entity id.
+  SEMANTIC_MODEL_ORDER_UNSPECIFIED = 0;
+  // The name of the model as the declarer spells it, ignoring case, then the canonical entity id.
+  SEMANTIC_MODEL_ORDER_NAME = 1;
+  // The certified models, then the models with no mark, then the deprecated models. A model that is
+  // certified and deprecated is with the deprecated models. Then the canonical entity id.
+  SEMANTIC_MODEL_ORDER_MARK = 2;
 }
 
 message ListSemanticModelsRequest {
-  // The page to read. The default page size is 100, and the largest is 1000.
+  // The page to read. The default page size is 100, and the largest is 1000. A cursor continues
+  // only a list with the same filters and the same order.
   synq.v1.Pagination pagination = 1;
+  // List only the models of these platforms: the platform of the entity whose declaration gives
+  // the model. Empty lists the models of every platform.
+  repeated synq.platforms.v1.DataPlatformType platforms = 2 [(buf.validate.field).repeated = {
+    max_items: 100
+    unique: true
+  }];
+  // List only the models with one of these mark states. Empty lists every model. A model that is
+  // certified and deprecated matches both states.
+  repeated SemanticModelMark marks = 3 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // List only the models of these kinds. Empty lists every kind, so a metric that is its own
+  // entity, such as a dbt metric, is in the list.
+  repeated SemanticModelKind kinds = 4 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  }];
+  // The order of the list.
+  SemanticModelOrder order = 5 [(buf.validate.field).enum.defined_only = true];
 }
 
 message ListSemanticModelsResponse {
-  // The canonical entity id of each semantic model, in entity id order.
+  // The canonical entity id of each semantic model, in the asked order.
   repeated string entity_ids = 1;
   synq.v1.PageInfo page_info = 2;
 }

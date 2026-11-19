@@ -90,6 +90,12 @@ message IssueConclusion {
   // Set only when the triage that produced it was given instructions.
   optional synq.agent.sre.v1.RetriageInstructionResponse retriage_instruction_response = 7;
 
+  // The context entries that the agent used for this conclusion, by the `id` of the entry in
+  // `synq.contextentries.v1alpha.ContextEntriesService`. A context entry is a text that a person
+  // of the workspace wrote about an entity. Empty when the agent used none, or when no entry
+  // applies to the entities of the issue. An entry can be deleted after the conclusion was made.
+  repeated string used_context_entry_ids = 8;
+
   // The specific type of conclusion reached during the investigation.
   // Each type has different implications and requirements for evidence.
   oneof conclusion {

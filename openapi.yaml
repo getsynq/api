@@ -3471,6 +3471,16 @@ components:
                              Set only when the triage that produced it was given instructions.
                         nullable: true
                         $ref: '#/components/schemas/synq.agent.sre.v1.RetriageInstructionResponse'
+                    usedContextEntryIds:
+                        type: array
+                        items:
+                            type: string
+                        title: used_context_entry_ids
+                        description: |-
+                            The context entries that the agent used for this conclusion, by the `id` of the entry in
+                             `synq.contextentries.v1alpha.ContextEntriesService`. A context entry is a text that a person
+                             of the workspace wrote about an entity. Empty when the agent used none, or when no entry
+                             applies to the entities of the issue. An entry can be deleted after the conclusion was made.
                 - oneOf:
                     - properties:
                         addToIncident:
@@ -6079,6 +6089,21 @@ components:
                         $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryKind'
                     uniqueItems: true
                     description: Only entries of these kinds. Empty means every kind.
+                columnNames:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1000
+                        minLength: 1
+                        maxItems: 100
+                        uniqueItems: true
+                    maxItems: 100
+                    uniqueItems: true
+                    description: |-
+                        Only the entries about these columns go into
+                         EntityContextEntries.column_entries, by `name`. Empty returns the entries
+                         about every column. The entries about the whole entity are in `entries`
+                         either way.
             title: BatchGetEntityContextEntriesRequest
             additionalProperties: false
         synq.contextentries.v1alpha.BatchGetEntityContextEntriesResponse:
@@ -6147,12 +6172,45 @@ components:
                 updatedAt:
                     description: When the entry was changed last. Output-only.
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
+                columns:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryColumn'
+                    description: |-
+                        The state of each name of `target.column_names` in the schema of the
+                         entity, in the order of the names. Output-only. Set by
+                         ListContextEntries and BatchGetContextEntries, and empty in
+                         BatchGetEntityContextEntries.
             title: ContextEntry
             additionalProperties: false
             description: |-
                 A context entry: a short text that a person attaches to one entity or to a
                  query of entities. People see it on the asset page. Agents get it together
                  with the entity.
+        synq.contextentries.v1alpha.ContextEntryColumn:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The name, as `target.column_names` holds it.
+                nativeName:
+                    type: string
+                    description: |-
+                        The name of the column as the platform spells it, for display, for
+                         example `ORDER_COUNT`. Empty when the state is not STATE_FOUND.
+                state:
+                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryColumn.State'
+            title: ContextEntryColumn
+            additionalProperties: false
+            description: The state of one column name of an entry in the schema of its entity.
+        synq.contextentries.v1alpha.ContextEntryColumn.State:
+            type: string
+            title: State
+            enum:
+                - STATE_UNSPECIFIED
+                - STATE_FOUND
+                - STATE_NOT_FOUND
+            description: The state of a column name.
         synq.contextentries.v1alpha.ContextEntryKind:
             type: string
             title: ContextEntryKind
@@ -6203,35 +6261,61 @@ components:
                 context_entry_query.nonempty // resolver_ql or public_query is required
         synq.contextentries.v1alpha.ContextEntryTarget:
             type: object
-            oneOf:
+            allOf:
                 - properties:
-                    entityId:
-                        type: string
-                        title: entity_id
-                        maxLength: 1000
-                        minLength: 1
+                    columnNames:
+                        type: array
+                        items:
+                            type: string
+                            maxLength: 1000
+                            minLength: 1
+                            maxItems: 100
+                            uniqueItems: true
+                        title: column_names
+                        maxItems: 100
+                        uniqueItems: true
                         description: |-
-                            One entity, by its `entity_id`. A check is an entity too, so this can be
-                             one dbt test, one monitor or one SQL test.
-                  title: entity_id
-                  required:
-                    - entityId
-                - properties:
-                    query:
-                        title: query
-                        description: |-
-                            Every entity that the query selects, for example every check of one
-                             category, or every table with one annotation. The selection is computed
-                             again on a schedule, so a new or changed query applies after the next
-                             computation.
-                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryQuery'
-                  title: query
-                  required:
-                    - query
+                            The columns of the entity that the entry is about, by `name` as the schema
+                             read and the semantic model read return it: the lowercase name of the
+                             column, or of the field of a semantic model, for example
+                             `orders.order_count`. Never the name as the platform spells it. Empty
+                             means the entry is about the whole entity. Only with `entity_id`.
+
+                             The write does not read the schema. It rejects a name with an uppercase
+                             letter, so one column cannot have two spellings. A name that the schema
+                             does not have is stored, and the reads return it with
+                             ContextEntryColumn.State.STATE_NOT_FOUND.
+                - oneOf:
+                    - properties:
+                        entityId:
+                            type: string
+                            title: entity_id
+                            maxLength: 1000
+                            minLength: 1
+                            description: |-
+                                One entity, by its `entity_id`. A check is an entity too, so this can be
+                                 one dbt test, one monitor or one SQL test.
+                      title: entity_id
+                      required:
+                        - entityId
+                    - properties:
+                        query:
+                            title: query
+                            description: |-
+                                Every entity that the query selects, for example every check of one
+                                 category, or every table with one annotation. The selection is computed
+                                 again on a schedule, so a new or changed query applies after the next
+                                 computation.
+                            $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryQuery'
+                      title: query
+                      required:
+                        - query
+            title: ContextEntryTarget
             additionalProperties: false
-            description: |-
-                The entities a context entry applies to: one entity, or every entity that a
-                 query selects.
+            description: |
+                The entities a context entry applies to: one entity, some columns of one
+                 entity, or every entity that a query selects.
+                context_entry_target.columns_need_entity // column_names need an entity_id target
         synq.contextentries.v1alpha.DeleteContextEntryRequest:
             type: object
             properties:
@@ -6274,6 +6358,22 @@ components:
                     description: |-
                         How many more entries apply but were left out because of the limit.
                          Zero when the response holds every entry that applies.
+                columnEntries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntry'
+                    description: |-
+                        The entries about columns of the entity, most recently changed first. An
+                         entry is here when one of its `target.column_names` is in the
+                         `column_names` of the request, or for every column when the request has
+                         none. These entries are not in `entries` and do not count against its
+                         limit. The response holds at most 20 entries for each column name.
+                columnEntriesOmittedCount:
+                    type: integer
+                    format: int32
+                    description: |-
+                        How many more entries about columns apply but were left out because of
+                         the limit of each column.
             title: EntityContextEntries
             additionalProperties: false
             description: The context entries that apply to one entity.
@@ -6311,6 +6411,19 @@ components:
                          out. To find every entry that applies to an entity, use
                          BatchGetEntityContextEntries.
                     nullable: true
+                targetColumnNames:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1000
+                        minLength: 1
+                        maxItems: 100
+                        uniqueItems: true
+                    maxItems: 100
+                    uniqueItems: true
+                    description: |-
+                        Only entries about one of these columns of `target_entity_id`, by
+                         `name`. Empty applies no column filter. Needs `target_entity_id`.
             title: ListContextEntriesRequest
             additionalProperties: false
         synq.contextentries.v1alpha.ListContextEntriesResponse:
@@ -18040,6 +18153,27 @@ components:
                 EntityMarks are the certified and the deprecated marks of one entity. A mark
                  applies to the identity group of the entity, so a mark set on a dbt model
                  also marks the warehouse table it builds.
+        synq.entities.marks.v1alpha.EntityWithMark:
+            type: object
+            properties:
+                entityId:
+                    type: string
+                    maxLength: 1024
+                    description: The entity.
+                memberEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                    description: |-
+                        The members of the identity group that give the mark, sorted: the one that
+                         the deciding mark is set on, or the ones that the deprecation query
+                         selects. Contains `entity_id` when the mark is on the entity itself.
+            title: EntityWithMark
+            additionalProperties: false
+            description: |-
+                EntityWithMark is one entity that carries the mark. Read the marks, with the
+                 person and the time, with `BatchGetEntityMarks`.
         synq.entities.marks.v1alpha.GetDeprecationQueryRequest:
             type: object
             title: GetDeprecationQueryRequest
@@ -18050,6 +18184,64 @@ components:
                 query:
                     $ref: '#/components/schemas/synq.entities.marks.v1alpha.DeprecationQuery'
             title: GetDeprecationQueryResponse
+            additionalProperties: false
+        synq.entities.marks.v1alpha.ListEntitiesWithMarkRequest:
+            type: object
+            properties:
+                kind:
+                    not:
+                        enum:
+                            - 0
+                    description: The kind of mark that the entities carry.
+                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.MarkKind'
+                setByIdentities:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 100
+                    maxItems: 100
+                    description: |-
+                        Identity strings of the person, to keep only the entities whose mark the
+                         person set. Resolve a user to all their identities with
+                         synq.users.v1.UsersService GetUserIdentities first. Format:
+                         "synq:<user_id>", "email:<email>", "slack:<slack_user_id>". Empty keeps
+                         every person. The deprecation query names no person, so with a person set,
+                         the entities that only the query deprecates are not listed.
+                limitToEntityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 10000
+                    maxItems: 10000
+                    description: |-
+                        Opaque ids of entities, to keep only these. An entity matches when its
+                         identity group carries the mark. Empty keeps every entity of the workspace.
+                         To check more than 10000 entities, split them over several requests.
+                pagination:
+                    description: |-
+                        The page to read, in the order of the entity id. Without it, the response
+                         has every entity. With it, the default page size is 100, and the largest is
+                         1000.
+                    nullable: true
+                    $ref: '#/components/schemas/synq.v1.Pagination'
+            title: ListEntitiesWithMarkRequest
+            additionalProperties: false
+        synq.entities.marks.v1alpha.ListEntitiesWithMarkResponse:
+            type: object
+            properties:
+                entities:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityWithMark'
+                    description: The entities, sorted by entity id.
+                pageInfo:
+                    description: '`last_id` is the cursor of the next page, empty on the last page.'
+                    $ref: '#/components/schemas/synq.v1.PageInfo'
+            title: ListEntitiesWithMarkResponse
             additionalProperties: false
         synq.entities.marks.v1alpha.ListMarkHistoryRequest:
             type: object
@@ -19858,36 +20050,71 @@ components:
                         maxItems: 1000
                     maxItems: 1000
                     description: |-
-                        Return only the fields with these names. Empty returns every field. A group with no field left
-                         is left out. Ignored for SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
+                        Return only the fields with these names: Field.name. Empty returns every field. A group with
+                         no field left is left out. Use it to read single fields of a large model. Ignored for
+                         SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
                 includeDefinitions:
                     type: boolean
-                    description: |-
-                        Return the definition of each field: its expression, aggregation and the rest. False returns
-                         the structure only, which keeps the response small for a large model. Ignored for
-                         SEMANTIC_MODEL_FORMAT_OSI, which always returns the definitions.
+                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITIONS.'
+                    deprecated: true
                 format:
-                    description: The form of the model in the response.
+                    description: |-
+                        The form of the model in the response. SEMANTIC_MODEL_FORMAT_OSI returns the whole model as
+                         one document when the parts ask for the fields. It has no readings, no declaration text and no
+                         definition findings, and it ignores the field options.
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelFormat'
                 includeReadings:
                     type: boolean
-                    description: |-
-                        Return Field.reading: the computation of each field as steps in words. Each reading parses an
-                         expression, so ask only when the steps are shown. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_READINGS.'
+                    deprecated: true
                 includeDeclarationText:
                     type: boolean
-                    description: |-
-                        Return SemanticModelEntry.declaration_text, and the declared_lines of each group, field and
-                         relationship. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DECLARATION_TEXT.'
+                    deprecated: true
                 view:
-                    description: How much of each model to return. SEMANTIC_MODEL_VIEW_SUMMARY ignores the other options.
+                    description: 'Deprecated: ask for parts. The summary is the answer to a request with no other part.'
+                    deprecated: true
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelView'
                 includeDefinitionChecks:
                     type: boolean
+                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITION_CHECKS.'
+                    deprecated: true
+                parts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelPart'
+                    maxItems: 16
+                    uniqueItems: true
                     description: |-
-                        Return SemanticModelEntry.definition_findings: the problems of the definition that a fixed
-                         rule finds with no query. The checks read every expression of the model, and see the whole
-                         model whatever field_names keeps. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                        The parts of each model to return. The summary is always returned. A request with a part uses
+                         the parts only, and the deprecated options have no effect. A request with no part is read by
+                         the deprecated options.
+                tables:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: |-
+                        Return only the fields of these tables: Table.name. Empty returns the fields of every table.
+                         Use it to read one table of a large model. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                groupKinds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldGroupKind'
+                    maxItems: 16
+                    uniqueItems: true
+                    description: |-
+                        Return only the fields of groups of these kinds. Empty returns the fields of every kind.
+                         Ignored for SEMANTIC_MODEL_FORMAT_OSI.
+                fieldLimit:
+                    type: integer
+                    maximum: 100000
+                    description: |-
+                        The largest number of fields to return for each group, the first fields in the declarer's
+                         order. Zero returns every field. FieldGroup.field_count has the number of all fields of the
+                         group. Ignored for SEMANTIC_MODEL_FORMAT_OSI.
             title: BatchGetSemanticModelsRequest
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.BatchGetSemanticModelsResponse:
@@ -19983,7 +20210,9 @@ components:
                 entityId:
                     type: string
                     maxLength: 1024
-                    description: Opaque id of the entity that the group reads.
+                    description: |-
+                        Opaque id of the entity that the group reads. The declarer sets it, or the read finds it from
+                         native_name, as entity_id_matched says.
                     nullable: true
                 nativeName:
                     type: string
@@ -19993,6 +20222,13 @@ components:
                 query:
                     description: A query.
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Expression'
+                entityIdMatched:
+                    type: boolean
+                    description: |-
+                        True when the declarer gave only native_name, and the read set entity_id to the one entity of
+                         the workspace at that address on the platform of the model. The entity can be in another
+                         integration than the model. False when the declarer set entity_id, or when there is no
+                         entity_id.
             title: DatasetSource
             additionalProperties: false
             description: |-
@@ -20016,6 +20252,15 @@ components:
                 - LANGUAGE_UNSPECIFIED
                 - LANGUAGE_SQL
                 - LANGUAGE_YAML
+        synq.entities.semantic_models.v1alpha.DeclarationText.MissingReason:
+            type: string
+            title: MissingReason
+            enum:
+                - MISSING_REASON_UNSPECIFIED
+                - MISSING_REASON_PLATFORM_HAS_NO_TEXT
+                - MISSING_REASON_TEXT_NOT_HELD
+                - MISSING_REASON_TEXT_REFUSED
+            description: MissingReason says why a model has no declaration text.
         synq.entities.semantic_models.v1alpha.DefinitionFinding:
             type: object
             properties:
@@ -20047,7 +20292,7 @@ components:
                         maxLength: 1024
                         maxItems: 1000
                     maxItems: 1000
-                    description: The tables that the finding is about, as FieldGroup.name.
+                    description: The tables that the finding is about, as Table.name.
                 names:
                     type: array
                     items:
@@ -20109,6 +20354,27 @@ components:
             title: DialectExpression
             additionalProperties: false
             description: DialectExpression is an expression in one dialect.
+        synq.entities.semantic_models.v1alpha.DistinctMetrics:
+            type: object
+            properties:
+                field:
+                    description: The two fields, each with the canonical entity id of the identity group of its model.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldRef'
+                otherField:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldRef'
+                reason:
+                    type: string
+                    maxLength: 2000
+                    description: Why the two are not one metric. Empty when the person gave no reason.
+                setBy:
+                    description: The person who said it. Unset when the person is not known.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                setAt:
+                    description: When the person said it.
+                    $ref: '#/components/schemas/google.protobuf.Timestamp'
+            title: DistinctMetrics
+            additionalProperties: false
+            description: DistinctMetrics is the answer of a person that two fields are not one metric.
         synq.entities.semantic_models.v1alpha.DuplicateField:
             type: object
             properties:
@@ -20162,6 +20428,11 @@ components:
                 foundAt:
                     description: When Coalesce Quality first found the group with these fields.
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
+                strength:
+                    description: |-
+                        Which signals the fields share. Use it to tell a group with a fact from a group by name. Use
+                         rank for the order.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroupStrength'
             title: DuplicateGroup
             additionalProperties: false
             description: |-
@@ -20179,6 +20450,15 @@ components:
             title: DuplicateGroupRef
             additionalProperties: false
             description: DuplicateGroupRef names one duplicate group.
+        synq.entities.semantic_models.v1alpha.DuplicateGroupStrength:
+            type: string
+            title: DuplicateGroupStrength
+            enum:
+                - DUPLICATE_GROUP_STRENGTH_UNSPECIFIED
+                - DUPLICATE_GROUP_STRENGTH_NAME_ONLY
+                - DUPLICATE_GROUP_STRENGTH_NAME_AND_DEFINITION
+                - DUPLICATE_GROUP_STRENGTH_DEFINITION_ONLY
+            description: DuplicateGroupStrength says which signals the fields of a group share.
         synq.entities.semantic_models.v1alpha.DuplicateModel:
             type: object
             properties:
@@ -20191,7 +20471,8 @@ components:
                     description: |-
                         The certified and the deprecated marks of the model. Unset when the marks could not be read:
                          read them with synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never take
-                         an unset value as "not certified".
+                         an unset value as "not certified". Do not read EntityMarks.identity_group here: it repeats
+                         identity_group of this message.
                     $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
                 fields:
                     type: array
@@ -20219,10 +20500,8 @@ components:
                 value:
                     type: string
                     maxLength: 100000
-                    description: |-
-                        What the fields share, as a display string: the name, the expression, or the input columns.
-                         For DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS, read input_columns for the entity and the column of
-                         each input. Do not parse this value.
+                    description: 'Deprecated: read name, expression or input_columns, by the kind.'
+                    deprecated: true
                 fields:
                     type: array
                     items:
@@ -20235,6 +20514,18 @@ components:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ColumnRef'
                     maxItems: 10000
                     description: The columns that the fields read, sorted. Set only for DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS.
+                name:
+                    type: string
+                    maxLength: 100000
+                    description: |-
+                        The name that the fields share, lowercased, with each run of spaces, underscores and hyphens
+                         as one space. Set only for DUPLICATE_SIGNAL_KIND_NAME.
+                expression:
+                    type: string
+                    maxLength: 100000
+                    description: |-
+                        The expression that the fields share, in its normalised form, with the aggregation around it.
+                         Set only for DUPLICATE_SIGNAL_KIND_EXPRESSION.
             title: DuplicateSignal
             additionalProperties: false
             description: DuplicateSignal is one signal that two or more fields of a group share.
@@ -20447,7 +20738,8 @@ components:
                     maxLength: 1024
                     description: The label the declarer shows for the group, when it differs from the name.
                 source:
-                    description: What the group reads.
+                    description: 'Deprecated: read Table.source of the table that the group names.'
+                    deprecated: true
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DatasetSource'
                 description:
                     type: string
@@ -20458,13 +20750,17 @@ components:
                         type: string
                         maxLength: 1024
                         maxItems: 100
+                        deprecated: true
                     maxItems: 100
-                    description: Names of the fields that together identify a row.
+                    description: 'Deprecated: read Table.primary_key of the table that the group names.'
+                    deprecated: true
                 uniqueKeys:
                     type: array
                     items:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.UniqueKey'
                     maxItems: 100
+                    description: 'Deprecated: read Table.unique_keys of the table that the group names.'
+                    deprecated: true
                 aiContext:
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
                 customExtensions:
@@ -20473,17 +20769,26 @@ components:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
                     maxItems: 100
                 declaredLines:
-                    description: |-
-                        The lines of the group in the declaration text: its table, its join, or the source of the
-                         model. Each group of one name has the same lines. Unset when the text does not name the group,
-                         or when the request does not ask for the text.
+                    description: 'Deprecated: read Table.declared_lines of the table that the group names.'
+                    deprecated: true
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.LineRange'
+                table:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        The table of the group, as Table.name. The group has a table when SemanticModel.tables holds a
+                         table of this name. A group of model-level fields, such as OSI metrics, has none.
+                fieldCount:
+                    type: integer
+                    description: |-
+                        The number of fields of the group in the model, whatever the request keeps. It is larger than
+                         the number of returned fields when a field limit or a field filter cuts the group.
             title: FieldGroup
             additionalProperties: false
             description: |-
-                FieldGroup is a named set of fields of one kind. OSI: a dataset. One dataset can be several
-                 groups that share a name, one for each kind of field it holds. Then the dataset-level fields are
-                 set on one of them only.
+                FieldGroup is a named set of fields of one kind. OSI: the fields of a dataset that play one role.
+                 One table can have several groups that share its name, one for each kind of field it holds. What
+                 the table reads and its keys are on the Table.
         synq.entities.semantic_models.v1alpha.FieldGroupKind:
             type: string
             title: FieldGroupKind
@@ -20508,14 +20813,33 @@ components:
                 group:
                     type: string
                     maxLength: 1024
-                    description: The group of the input field.
+                    description: The group of the input field, as FieldGroup.name. Set only for KIND_FIELD.
                 fieldName:
                     type: string
                     maxLength: 1024
-                    description: The name of the input field, as in Field.name.
+                    description: The name of the input field, as in Field.name. Set only for KIND_FIELD.
+                kind:
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldInput.Kind'
+                table:
+                    type: string
+                    maxLength: 1024
+                    description: The table of the column, as Table.name. Set only for KIND_COLUMN.
+                column:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        The name of the column, as the expression writes it without its table. Set only for
+                         KIND_COLUMN.
             title: FieldInput
             additionalProperties: false
-            description: FieldInput is one other field of the model that a field reads.
+            description: 'FieldInput is one thing that a field reads: another field of the model, or a column of a table.'
+        synq.entities.semantic_models.v1alpha.FieldInput.Kind:
+            type: string
+            title: Kind
+            enum:
+                - KIND_UNSPECIFIED
+                - KIND_FIELD
+                - KIND_COLUMN
         synq.entities.semantic_models.v1alpha.FieldReading:
             type: object
             properties:
@@ -20538,7 +20862,8 @@ components:
                 notReadReason:
                     type: string
                     maxLength: 1024
-                    description: Why the expression was not read. Set only for READ_STATE_NOT_READ.
+                    description: 'Deprecated: read not_read_reason_kind.'
+                    deprecated: true
                 platform:
                     description: The language of the expression that was read.
                     $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
@@ -20552,14 +20877,26 @@ components:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldInput'
                     maxItems: 1000
                     description: |-
-                        The other fields of the model that the expression and the filter read, each once, in the order
-                         of the expression. A name in the expression that is no other field of the model reads a column
-                         of the table, and is not in this list.
+                        What the expression and the filter read, each name once, in the order of the expression: the
+                         other fields of the model, and the columns of the table of the field. When a name is a field of
+                         the model and a column of the table, the rule of the platform decides. In a Snowflake semantic
+                         view the field wins, and a field that reads its own name reads the column.
+                notReadReasonKind:
+                    description: Why the expression was not read. Set only for READ_STATE_NOT_READ.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.FieldReading.NotReadReason'
             title: FieldReading
             additionalProperties: false
             description: |-
                 FieldReading is the computation of a field as steps in words. Each step comes from a fixed rule,
                  and no step is written for a part of the expression that was not read.
+        synq.entities.semantic_models.v1alpha.FieldReading.NotReadReason:
+            type: string
+            title: NotReadReason
+            enum:
+                - NOT_READ_REASON_UNSPECIFIED
+                - NOT_READ_REASON_LANGUAGE_NOT_SUPPORTED
+                - NOT_READ_REASON_READER_FAILED
+            description: NotReadReason says why an expression was not read.
         synq.entities.semantic_models.v1alpha.FieldReading.ReadState:
             type: string
             title: ReadState
@@ -20658,12 +20995,49 @@ components:
             title: LineRange
             additionalProperties: false
             description: LineRange is a range of lines in a text, numbered from 1. end_line is the last line of the range.
+        synq.entities.semantic_models.v1alpha.ListDistinctMetricsRequest:
+            type: object
+            properties:
+                entityIds:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        minLength: 1
+                        maxItems: 1000
+                        uniqueItems: true
+                    maxItems: 1000
+                    uniqueItems: true
+                    description: |-
+                        Return only the answers that name a field of the semantic models of these entities. Any member
+                         of an identity group addresses its model. Empty returns every answer of the workspace.
+            title: ListDistinctMetricsRequest
+            additionalProperties: false
+        synq.entities.semantic_models.v1alpha.ListDistinctMetricsResponse:
+            type: object
+            properties:
+                distinctMetrics:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DistinctMetrics'
+                    description: The answers, the newest first.
+            title: ListDistinctMetricsResponse
+            additionalProperties: false
         synq.entities.semantic_models.v1alpha.ListDuplicateGroupsRequest:
             type: object
             properties:
                 pagination:
-                    description: The page to read. The default page size is 100, and the largest is 1000.
+                    description: |-
+                        The page to read. The default page size is 100, and the largest is 1000. A cursor continues
+                         only a list with the same filter.
                     $ref: '#/components/schemas/synq.v1.Pagination'
+                strengths:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateGroupStrength'
+                    maxItems: 16
+                    uniqueItems: true
+                    description: List only the groups of these strengths. Empty lists every group.
             title: ListDuplicateGroupsRequest
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.ListDuplicateGroupsResponse:
@@ -20682,8 +21056,40 @@ components:
             type: object
             properties:
                 pagination:
-                    description: The page to read. The default page size is 100, and the largest is 1000.
+                    description: |-
+                        The page to read. The default page size is 100, and the largest is 1000. A cursor continues
+                         only a list with the same filters and the same order.
                     $ref: '#/components/schemas/synq.v1.Pagination'
+                platforms:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
+                    maxItems: 100
+                    uniqueItems: true
+                    description: |-
+                        List only the models of these platforms: the platform of the entity whose declaration gives
+                         the model. Empty lists the models of every platform.
+                marks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelMark'
+                    maxItems: 16
+                    uniqueItems: true
+                    description: |-
+                        List only the models with one of these mark states. Empty lists every model. A model that is
+                         certified and deprecated matches both states.
+                kinds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelKind'
+                    maxItems: 16
+                    uniqueItems: true
+                    description: |-
+                        List only the models of these kinds. Empty lists every kind, so a metric that is its own
+                         entity, such as a dbt metric, is in the list.
+                order:
+                    description: The order of the list.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelOrder'
             title: ListSemanticModelsRequest
             additionalProperties: false
         synq.entities.semantic_models.v1alpha.ListSemanticModelsResponse:
@@ -20693,7 +21099,7 @@ components:
                     type: array
                     items:
                         type: string
-                    description: The canonical entity id of each semantic model, in entity id order.
+                    description: The canonical entity id of each semantic model, in the asked order.
                 pageInfo:
                     $ref: '#/components/schemas/synq.v1.PageInfo'
             title: ListSemanticModelsResponse
@@ -20783,11 +21189,13 @@ components:
                 name:
                     type: string
                     maxLength: 1024
-                    description: Name of the join. Empty when the declarer has none.
+                    description: |-
+                        Name of the join. Empty when the declarer has none, and for a name that the platform
+                         generates for a join with no name.
                 from:
                     type: string
                     maxLength: 1024
-                    description: Group name of the many side.
+                    description: Table name of the many side, as Table.name.
                 fromFields:
                     type: array
                     items:
@@ -20799,7 +21207,7 @@ components:
                 to:
                     type: string
                     maxLength: 1024
-                    description: Group name of the one side, or the opaque id of another entity.
+                    description: Table name of the one side, as Table.name, or the opaque id of another entity.
                 toFields:
                     type: array
                     items:
@@ -20923,6 +21331,15 @@ components:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
                     maxItems: 100
                     description: Vendor data the declarer carries with the model.
+                tables:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.Table'
+                    maxItems: 10000
+                    description: |-
+                        The tables of the model, in the declarer's order: the logical tables of a Snowflake semantic
+                         view, the views of a Looker explore, the tables of a Power BI model. A table with no field is in
+                         this list and has no group. A model whose declarer has no tables has none.
             title: SemanticModel
             additionalProperties: false
             description: |-
@@ -20969,18 +21386,19 @@ components:
                     marks:
                         title: marks
                         description: |-
-                            The certified and the deprecated marks of the model. Unset when there is no
-                             model. Unset with a model when the marks could not be read: read them with
+                            The certified and the deprecated marks of the model, when the request asks for them. Unset
+                             when there is no model. Unset with a model when the marks could not be read: read them with
                              synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never
-                             take an unset value as "not certified".
+                             take an unset value as "not certified". The identity group of the marks is the identity_group
+                             of the entry, and a request with parts leaves it unset in the marks.
                         $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
                     declarationText:
                         title: declaration_text
                         description: |-
                             The text that the platform holds for the model, as its author wrote it: the DDL of a Snowflake
                              semantic view, the YAML of a Databricks metric view. Set only when the request asks for it and
-                             the text is known. Unset means that no text is known for the model. It is never a generated
-                             text.
+                             the text is known. It is never a generated text. When the request asks for it and it is unset,
+                             declaration_text_missing_reason says why.
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DeclarationText'
                     stateAt:
                         title: state_at
@@ -20992,9 +21410,8 @@ components:
                     tableCount:
                         type: integer
                         title: table_count
-                        description: |-
-                            The number of tables of the model: the distinct names of its field groups. The group with no
-                             name, which holds model-level fields such as OSI metrics, is not a table.
+                        description: 'Deprecated: read SemanticModelSummary.table_count.'
+                        deprecated: true
                     definitionFindings:
                         type: array
                         items:
@@ -21005,6 +21422,29 @@ components:
                             The problems of the definition of the model, when the request asks for them. When field_names
                              cuts the model, a finding keeps only its returned fields, a finding whose fields are all cut is
                              left out, and a finding that names no field stays.
+                    declarationTextMissingReason:
+                        title: declaration_text_missing_reason
+                        description: |-
+                            Why declaration_text is unset. Set only when the request asks for the text and the model has
+                             none.
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DeclarationText.MissingReason'
+                    definitionChangedAt:
+                        title: definition_changed_at
+                        description: |-
+                            When the definition of the model changed last: the oldest observation of the definition as it
+                             is that Coalesce Quality holds. The definition is what the model computes: the expressions, the
+                             aggregations, the filters, the keys, the sources and the relationships. A change of a
+                             description or a label is not a change of the definition. Unset when there is no model.
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    declarationTextRecommendationId:
+                        type: string
+                        title: declaration_text_recommendation_id
+                        maxLength: 1024
+                        description: |-
+                            The id of the synq.recommendations.v1 recommendation that asks for the grant that lets the
+                             integration read the declaration text. Read it with
+                             synq.recommendations.v1.RecommendationsService/BatchGetRecommendations for its remediation and
+                             its actions. Set only with MISSING_REASON_TEXT_REFUSED.
                 - oneOf:
                     - properties:
                         osi:
@@ -21030,6 +21470,44 @@ components:
                 - SEMANTIC_MODEL_FORMAT_UNSPECIFIED
                 - SEMANTIC_MODEL_FORMAT_OSI
             description: SemanticModelFormat is the form a semantic model is returned in.
+        synq.entities.semantic_models.v1alpha.SemanticModelKind:
+            type: string
+            title: SemanticModelKind
+            enum:
+                - SEMANTIC_MODEL_KIND_UNSPECIFIED
+                - SEMANTIC_MODEL_KIND_MODEL
+                - SEMANTIC_MODEL_KIND_SINGLE_METRIC
+            description: SemanticModelKind says if an entity is a model with fields, or one metric that is its own entity.
+        synq.entities.semantic_models.v1alpha.SemanticModelMark:
+            type: string
+            title: SemanticModelMark
+            enum:
+                - SEMANTIC_MODEL_MARK_UNSPECIFIED
+                - SEMANTIC_MODEL_MARK_CERTIFIED
+                - SEMANTIC_MODEL_MARK_DEPRECATED
+                - SEMANTIC_MODEL_MARK_NONE
+            description: SemanticModelMark is the state of the marks of a model, for a filter.
+        synq.entities.semantic_models.v1alpha.SemanticModelOrder:
+            type: string
+            title: SemanticModelOrder
+            enum:
+                - SEMANTIC_MODEL_ORDER_UNSPECIFIED
+                - SEMANTIC_MODEL_ORDER_NAME
+                - SEMANTIC_MODEL_ORDER_MARK
+            description: SemanticModelOrder is the order of a list of semantic models.
+        synq.entities.semantic_models.v1alpha.SemanticModelPart:
+            type: string
+            title: SemanticModelPart
+            enum:
+                - SEMANTIC_MODEL_PART_UNSPECIFIED
+                - SEMANTIC_MODEL_PART_SUMMARY
+                - SEMANTIC_MODEL_PART_FIELDS
+                - SEMANTIC_MODEL_PART_DEFINITIONS
+                - SEMANTIC_MODEL_PART_READINGS
+                - SEMANTIC_MODEL_PART_DECLARATION_TEXT
+                - SEMANTIC_MODEL_PART_DEFINITION_CHECKS
+                - SEMANTIC_MODEL_PART_MARKS
+            description: SemanticModelPart is one part of a semantic model that a read returns.
         synq.entities.semantic_models.v1alpha.SemanticModelSummary:
             type: object
             properties:
@@ -21042,6 +21520,14 @@ components:
                 relationshipCount:
                     type: integer
                     description: The number of joins between the groups.
+                tableCount:
+                    type: integer
+                    description: |-
+                        The number of tables that the model reads. Groups that read one table are one table. Two
+                         logical tables over one table, as in a self join, are two tables.
+                kind:
+                    description: What kind of model the entity is.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelKind'
             title: SemanticModelSummary
             additionalProperties: false
             description: |-
@@ -21063,7 +21549,7 @@ components:
             enum:
                 - SEMANTIC_MODEL_VIEW_UNSPECIFIED
                 - SEMANTIC_MODEL_VIEW_SUMMARY
-            description: SemanticModelView is how much of a semantic model is returned.
+            description: 'SemanticModelView is how much of a semantic model is returned. Deprecated: ask for parts.'
         synq.entities.semantic_models.v1alpha.SetDistinctMetricsRequest:
             type: object
             properties:
@@ -21091,6 +21577,43 @@ components:
             type: object
             title: SetDistinctMetricsResponse
             additionalProperties: false
+        synq.entities.semantic_models.v1alpha.Table:
+            type: object
+            properties:
+                name:
+                    type: string
+                    maxLength: 1024
+                    description: |-
+                        Name of the table in the model. FieldGroup.table, Relationship.from and Relationship.to name it.
+                         Empty for the one table that a model with no table names reads, for example the source of a
+                         Databricks metric view.
+                source:
+                    description: What the table reads. Unset when the declarer does not say.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DatasetSource'
+                primaryKey:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1024
+                        maxItems: 100
+                    maxItems: 100
+                    description: Names of the fields that together identify a row.
+                uniqueKeys:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.UniqueKey'
+                    maxItems: 100
+                declaredLines:
+                    description: |-
+                        The lines of the table in the declaration text: its table, its join, or the source of the
+                         model. Unset when the text does not name the table, or when the request does not ask for the
+                         text.
+                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.LineRange'
+            title: Table
+            additionalProperties: false
+            description: |-
+                Table is one table of a semantic model: what it reads and how its rows are identified. Its fields
+                 are in the field groups that name it.
         synq.entities.semantic_models.v1alpha.TimeGranularity:
             type: string
             title: TimeGranularity
@@ -39720,6 +40243,25 @@ paths:
                         Only entries that target this one entity. Entries with a query are left
                          out. To find every entry that applies to an entity, use
                          BatchGetEntityContextEntries.
+                - name: targetColumnNames
+                  in: query
+                  description: |-
+                    Only entries about one of these columns of `target_entity_id`, by
+                     `name`. Empty applies no column filter. Needs `target_entity_id`.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        maxLength: 1000
+                        minLength: 1
+                        maxItems: 100
+                        uniqueItems: true
+                    title: target_column_names
+                    maxItems: 100
+                    uniqueItems: true
+                    description: |-
+                        Only entries about one of these columns of `target_entity_id`, by
+                         `name`. Empty applies no column filter. Needs `target_entity_id`.
             responses:
                 "200":
                     description: Success
@@ -39808,7 +40350,8 @@ paths:
                  An entry that targets an entity applies to that exact entity id. An entry
                  with a query applies to every entity the query selects, including the
                  other representations of the same table (a transformation model and the
-                 warehouse table it builds).
+                 warehouse table it builds). An entry about columns of an entity is in
+                 `column_entries`, not in `entries`.
             operationId: synq.contextentries.v1alpha.ContextEntriesService.BatchGetEntityContextEntries
             requestBody:
                 content:
@@ -49170,6 +49713,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.marks.v1alpha.SetDeprecationQueryResponse'
+    /api/entities/marks/v1alpha/entities-with-mark:
+        post:
+            tags:
+                - synq.entities.marks.v1alpha.EntityMarksService
+            summary: ListEntitiesWithMark
+            description: |-
+                List the entities that carry a mark, for example to show only the
+                 certified tables. The marks decide as in `BatchGetEntityMarks`: an entity
+                 carries the mark of any member of its identity group, and a certification
+                 whose definition changed after it does not count. The deprecated entities
+                 include the ones that the deprecation query selects.
+            operationId: synq.entities.marks.v1alpha.EntityMarksService.ListEntitiesWithMark
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.marks.v1alpha.ListEntitiesWithMarkRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.marks.v1alpha.ListEntitiesWithMarkResponse'
     /api/entities/marks/v1alpha/history:
         post:
             tags:
@@ -49402,7 +49970,7 @@ paths:
                 - synq.entities.semantic_models.v1alpha.MetricDuplicatesService
             summary: ListDuplicateGroups
             description: |-
-                List the ids of the duplicate groups of the workspace, the strongest first. Read the groups
+                List the ids of the duplicate groups of the workspace, the highest rank first. Read the groups
                  with BatchGetDuplicateGroups.
             operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.ListDuplicateGroups
             requestBody:
@@ -49418,6 +49986,29 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ListDuplicateGroupsResponse'
+    /api/entities/semantic-models/v1alpha/duplicate-groups/list-distinct:
+        post:
+            tags:
+                - synq.entities.semantic_models.v1alpha.MetricDuplicatesService
+            summary: ListDistinctMetrics
+            description: |-
+                List the answers that two fields are not one metric, the newest first. The two fields of an
+                 answer are in no group together, so a group does not show its answers: read them here, and take
+                 one back with RemoveDistinctMetrics.
+            operationId: synq.entities.semantic_models.v1alpha.MetricDuplicatesService.ListDistinctMetrics
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ListDistinctMetricsRequest'
+                required: true
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.ListDistinctMetricsResponse'
     /api/entities/semantic-models/v1alpha/duplicate-groups/remove-distinct:
         post:
             tags:
@@ -49470,8 +50061,9 @@ paths:
             summary: ListSemanticModels
             description: |-
                 List the semantic models of the workspace: the canonical entity id of each identity group whose
-                 winning schema declaration has a semantic model, in entity id order. Read the models with
-                 BatchGetSemanticModels, with SEMANTIC_MODEL_VIEW_SUMMARY for a list.
+                 winning schema declaration has a semantic model, in the asked order. Read the models with
+                 BatchGetSemanticModels. For a list, ask it for SEMANTIC_MODEL_PART_SUMMARY, and for
+                 SEMANTIC_MODEL_PART_MARKS when the list shows the marks.
             operationId: synq.entities.semantic_models.v1alpha.SemanticModelsService.ListSemanticModels
             requestBody:
                 content:

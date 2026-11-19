@@ -33,7 +33,10 @@ service ContextEntriesService {
   rpc UpsertContextEntry(UpsertContextEntryRequest) returns (UpsertContextEntryResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_CONTEXT_ENTRIES_EDIT]
+      scopes: [
+        SCOPE_CONTEXT_ENTRIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/context-entries/v1alpha"
@@ -78,7 +81,10 @@ service ContextEntriesService {
   rpc DeleteContextEntry(DeleteContextEntryRequest) returns (DeleteContextEntryResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_CONTEXT_ENTRIES_EDIT]
+      scopes: [
+        SCOPE_CONTEXT_ENTRIES_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/context-entries/v1alpha/delete"
@@ -95,7 +101,8 @@ service ContextEntriesService {
   // An entry that targets an entity applies to that exact entity id. An entry
   // with a query applies to every entity the query selects, including the
   // other representations of the same table (a transformation model and the
-  // warehouse table it builds).
+  // warehouse table it builds). An entry about columns of an entity is in
+  // `column_entries`, not in `entries`.
   rpc BatchGetEntityContextEntries(BatchGetEntityContextEntriesRequest) returns (BatchGetEntityContextEntriesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
     option (synq.v1.scope_authorization) = {
@@ -209,6 +216,18 @@ message ListContextEntriesRequest {
     min_len: 1
     max_len: 1000
   }];
+  // Only entries about one of these columns of `target_entity_id`, by
+  // `name`. Empty applies no column filter. Needs `target_entity_id`.
+  repeated string target_column_names = 5 [(buf.validate.field).repeated = {
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1000
+      }
+    }
+  }];
 }
 
 message ListContextEntriesResponse {
@@ -251,6 +270,20 @@ message BatchGetEntityContextEntriesRequest {
       enum: {
         defined_only: true
         not_in: [0]
+      }
+    }
+  }];
+  // Only the entries about these columns go into
+  // EntityContextEntries.column_entries, by `name`. Empty returns the entries
+  // about every column. The entries about the whole entity are in `entries`
+  // either way.
+  repeated string column_names = 3 [(buf.validate.field).repeated = {
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1000
       }
     }
   }];

@@ -35,6 +35,33 @@ message SemanticModel {
   AIContext ai_context = 7;
   // Vendor data the declarer carries with the model.
   repeated CustomExtension custom_extensions = 8 [(buf.validate.field).repeated.max_items = 100];
+  // The tables of the model, in the declarer's order: the logical tables of a Snowflake semantic
+  // view, the views of a Looker explore, the tables of a Power BI model. A table with no field is in
+  // this list and has no group. A model whose declarer has no tables has none.
+  repeated Table tables = 9 [(buf.validate.field).repeated.max_items = 10000];
+}
+
+// Table is one table of a semantic model: what it reads and how its rows are identified. Its fields
+// are in the field groups that name it.
+message Table {
+  // Name of the table in the model. FieldGroup.table, Relationship.from and Relationship.to name it.
+  // Empty for the one table that a model with no table names reads, for example the source of a
+  // Databricks metric view.
+  string name = 1 [(buf.validate.field).string.max_len = 1024];
+  // What the table reads. Unset when the declarer does not say.
+  DatasetSource source = 2;
+  // Names of the fields that together identify a row.
+  repeated string primary_key = 3 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {max_len: 1024}
+    }
+  }];
+  repeated UniqueKey unique_keys = 4 [(buf.validate.field).repeated.max_items = 100];
+  // The lines of the table in the declaration text: its table, its join, or the source of the
+  // model. Unset when the text does not name the table, or when the request does not ask for the
+  // text.
+  LineRange declared_lines = 5;
 }
 
 // DeclarationText is the declaration of a semantic model as the platform holds it.
@@ -43,6 +70,20 @@ message DeclarationText {
     LANGUAGE_UNSPECIFIED = 0;
     LANGUAGE_SQL = 1;
     LANGUAGE_YAML = 2;
+  }
+  // MissingReason says why a model has no declaration text.
+  enum MissingReason {
+    MISSING_REASON_UNSPECIFIED = 0;
+    // The platform of the model has no text form of a declaration that Coalesce Quality reads.
+    MISSING_REASON_PLATFORM_HAS_NO_TEXT = 1;
+    // The platform has a text for a model of this kind, and Coalesce Quality holds none for this
+    // model.
+    MISSING_REASON_TEXT_NOT_HELD = 2;
+    // The warehouse refused the text to the role of the integration, for example a Snowflake role
+    // with no REFERENCES grant on the semantic view.
+    // SemanticModelEntry.declaration_text_recommendation_id names the recommendation that gives the
+    // grant.
+    MISSING_REASON_TEXT_REFUSED = 3;
   }
   string text = 1 [(buf.validate.field).string.max_len = 10000000];
   Language language = 2;
@@ -66,8 +107,9 @@ message DefinitionFinding {
     KIND_UNDECLARED_FIELD = 2;
     // A relationship joins on a field that the model computes from an expression.
     KIND_JOIN_ON_COMPUTED_FIELD = 3;
-    // Two different join paths connect the same two tables, so a query that reads both tables can
-    // take either path.
+    // Two different join paths connect the same two tables. The level is LEVEL_PROBLEM when a field
+    // reads both tables and does not name its path, so a query can take either path. It is
+    // LEVEL_NOTE when no field does.
     KIND_TWO_JOIN_PATHS = 4;
   }
   enum Level {
@@ -87,7 +129,7 @@ message DefinitionFinding {
   repeated FieldReference fields = 4 [(buf.validate.field).repeated.max_items = 10000];
   // The relationships that the finding is about, by their position in SemanticModel.relationships.
   repeated uint32 relationship_indexes = 5 [(buf.validate.field).repeated.max_items = 10000];
-  // The tables that the finding is about, as FieldGroup.name.
+  // The tables that the finding is about, as Table.name.
   repeated string tables = 6 [(buf.validate.field).repeated = {
     max_items: 1000
     items: {
@@ -134,6 +176,21 @@ message SemanticModelSummary {
   repeated KindCount field_counts = 1 [(buf.validate.field).repeated.max_items = 100];
   // The number of joins between the groups.
   uint32 relationship_count = 2;
+  // The number of tables that the model reads. Groups that read one table are one table. Two
+  // logical tables over one table, as in a self join, are two tables.
+  uint32 table_count = 3;
+  // What kind of model the entity is.
+  SemanticModelKind kind = 4;
+}
+
+// SemanticModelKind says if an entity is a model with fields, or one metric that is its own entity.
+enum SemanticModelKind {
+  SEMANTIC_MODEL_KIND_UNSPECIFIED = 0;
+  // A model: a semantic view, a metric view, an explore, a data source, a dbt semantic model.
+  SEMANTIC_MODEL_KIND_MODEL = 1;
+  // One metric that the declarer keeps as an entity of its own, for example a dbt metric. Its
+  // model holds that one field.
+  SEMANTIC_MODEL_KIND_SINGLE_METRIC = 2;
 }
 
 // FieldGroupKind is the role the fields of a group play. It is the role of each of its fields.
@@ -155,9 +212,9 @@ enum FieldGroupKind {
   FIELD_GROUP_KIND_PARAMETERS = 8;
 }
 
-// FieldGroup is a named set of fields of one kind. OSI: a dataset. One dataset can be several
-// groups that share a name, one for each kind of field it holds. Then the dataset-level fields are
-// set on one of them only.
+// FieldGroup is a named set of fields of one kind. OSI: the fields of a dataset that play one role.
+// One table can have several groups that share its name, one for each kind of field it holds. What
+// the table reads and its keys are on the Table.
 message FieldGroup {
   // Name of the group: the sub-container of the declarer (a Power BI table, a LookML view, an OSI
   // dataset), or a label for the kind when the declarer has no sub-containers.
@@ -167,23 +224,34 @@ message FieldGroup {
   repeated Field fields = 3 [(buf.validate.field).repeated.max_items = 100000];
   // The label the declarer shows for the group, when it differs from the name.
   string display_name = 4 [(buf.validate.field).string.max_len = 1024];
-  // What the group reads.
-  DatasetSource source = 5;
+  // Deprecated: read Table.source of the table that the group names.
+  DatasetSource source = 5 [deprecated = true];
   string description = 6 [(buf.validate.field).string.max_len = 10000];
-  // Names of the fields that together identify a row.
-  repeated string primary_key = 7 [(buf.validate.field).repeated = {
-    max_items: 100
-    items: {
-      string: {max_len: 1024}
+  // Deprecated: read Table.primary_key of the table that the group names.
+  repeated string primary_key = 7 [
+    deprecated = true,
+    (buf.validate.field).repeated = {
+      max_items: 100
+      items: {
+        string: {max_len: 1024}
+      }
     }
-  }];
-  repeated UniqueKey unique_keys = 8 [(buf.validate.field).repeated.max_items = 100];
+  ];
+  // Deprecated: read Table.unique_keys of the table that the group names.
+  repeated UniqueKey unique_keys = 8 [
+    deprecated = true,
+    (buf.validate.field).repeated.max_items = 100
+  ];
   AIContext ai_context = 9;
   repeated CustomExtension custom_extensions = 10 [(buf.validate.field).repeated.max_items = 100];
-  // The lines of the group in the declaration text: its table, its join, or the source of the
-  // model. Each group of one name has the same lines. Unset when the text does not name the group,
-  // or when the request does not ask for the text.
-  LineRange declared_lines = 11;
+  // Deprecated: read Table.declared_lines of the table that the group names.
+  LineRange declared_lines = 11 [deprecated = true];
+  // The table of the group, as Table.name. The group has a table when SemanticModel.tables holds a
+  // table of this name. A group of model-level fields, such as OSI metrics, has none.
+  string table = 12 [(buf.validate.field).string.max_len = 1024];
+  // The number of fields of the group in the model, whatever the request keeps. It is larger than
+  // the number of returned fields when a field limit or a field filter cuts the group.
+  uint32 field_count = 13;
 }
 
 // Field is one field of a semantic model.
@@ -223,11 +291,18 @@ message FieldReading {
     READ_STATE_COMPLETE = 1;
     // The steps hold the parts that were read. unread_texts holds the parts that were not.
     READ_STATE_PARTIAL = 2;
-    // There are no steps: the language of the expression has no reader, or the expression does
-    // not parse. not_read_reason says which.
+    // There are no steps. not_read_reason_kind says why.
     READ_STATE_NOT_READ = 3;
     // The declaration names an aggregation and no expression. The steps hold the aggregation.
     READ_STATE_NO_EXPRESSION = 4;
+  }
+  // NotReadReason says why an expression was not read.
+  enum NotReadReason {
+    NOT_READ_REASON_UNSPECIFIED = 0;
+    // Coalesce Quality has no reader for the language of the expression.
+    NOT_READ_REASON_LANGUAGE_NOT_SUPPORTED = 1;
+    // The language has a reader, and the reader could not read this expression.
+    NOT_READ_REASON_READER_FAILED = 2;
   }
   ReadState read_state = 1;
   // The steps of the computation, in order.
@@ -239,26 +314,48 @@ message FieldReading {
       string: {max_len: 10000}
     }
   }];
-  // Why the expression was not read. Set only for READ_STATE_NOT_READ.
-  string not_read_reason = 4 [(buf.validate.field).string.max_len = 1024];
+  // Deprecated: read not_read_reason_kind.
+  string not_read_reason = 4 [
+    deprecated = true,
+    (buf.validate.field).string.max_len = 1024
+  ];
   // The language of the expression that was read.
   synq.platforms.v1.DataPlatformType platform = 5;
   // The computation as one sentence, for a list. Empty if a part of it was not read.
   string summary = 6 [(buf.validate.field).string.max_len = 10000];
-  // The other fields of the model that the expression and the filter read, each once, in the order
-  // of the expression. A name in the expression that is no other field of the model reads a column
-  // of the table, and is not in this list.
+  // What the expression and the filter read, each name once, in the order of the expression: the
+  // other fields of the model, and the columns of the table of the field. When a name is a field of
+  // the model and a column of the table, the rule of the platform decides. In a Snowflake semantic
+  // view the field wins, and a field that reads its own name reads the column.
   repeated FieldInput inputs = 7 [(buf.validate.field).repeated.max_items = 1000];
+  // Why the expression was not read. Set only for READ_STATE_NOT_READ.
+  NotReadReason not_read_reason_kind = 8;
 }
 
-// FieldInput is one other field of the model that a field reads.
+// FieldInput is one thing that a field reads: another field of the model, or a column of a table.
 message FieldInput {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // Another field of the model. group and field_name address it. The field is an input also if
+    // the field options of the request do not return it, so a client must not expect to find it in
+    // the returned groups.
+    KIND_FIELD = 1;
+    // A column of a table of the model, which is not a field of the model. table and column
+    // address it.
+    KIND_COLUMN = 2;
+  }
   // The name as the steps write it.
   string text = 1 [(buf.validate.field).string.max_len = 1024];
-  // The group of the input field.
+  // The group of the input field, as FieldGroup.name. Set only for KIND_FIELD.
   string group = 2 [(buf.validate.field).string.max_len = 1024];
-  // The name of the input field, as in Field.name.
+  // The name of the input field, as in Field.name. Set only for KIND_FIELD.
   string field_name = 3 [(buf.validate.field).string.max_len = 1024];
+  Kind kind = 4;
+  // The table of the column, as Table.name. Set only for KIND_COLUMN.
+  string table = 5 [(buf.validate.field).string.max_len = 1024];
+  // The name of the column, as the expression writes it without its table. Set only for
+  // KIND_COLUMN.
+  string column = 6 [(buf.validate.field).string.max_len = 1024];
 }
 
 // FieldReadingStep is one step of a computation.
@@ -378,12 +475,18 @@ message CustomExtension {
 // DatasetSource is what a group reads. The declarer sets each field that it knows, so one source
 // can hold a name, the entity it resolves to and a query at the same time.
 message DatasetSource {
-  // Opaque id of the entity that the group reads.
+  // Opaque id of the entity that the group reads. The declarer sets it, or the read finds it from
+  // native_name, as entity_id_matched says.
   optional string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
   // The `database.schema.table` name as the declarer spells it.
   optional string native_name = 2 [(buf.validate.field).string.max_len = 1024];
   // A query.
   Expression query = 3;
+  // True when the declarer gave only native_name, and the read set entity_id to the one entity of
+  // the workspace at that address on the platform of the model. The entity can be in another
+  // integration than the model. False when the declarer set entity_id, or when there is no
+  // entity_id.
+  bool entity_id_matched = 4;
 }
 
 // UniqueKey is a set of fields that identify a row.
@@ -399,9 +502,10 @@ message UniqueKey {
 
 // Relationship is a join between two groups of a model.
 message Relationship {
-  // Name of the join. Empty when the declarer has none.
+  // Name of the join. Empty when the declarer has none, and for a name that the platform
+  // generates for a join with no name.
   string name = 1 [(buf.validate.field).string.max_len = 1024];
-  // Group name of the many side.
+  // Table name of the many side, as Table.name.
   string from = 2 [(buf.validate.field).string.max_len = 1024];
   // Field names of the many side, in the same order as `to_fields`.
   repeated string from_fields = 3 [(buf.validate.field).repeated = {
@@ -410,7 +514,7 @@ message Relationship {
       string: {max_len: 1024}
     }
   }];
-  // Group name of the one side, or the opaque id of another entity.
+  // Table name of the one side, as Table.name, or the opaque id of another entity.
   string to = 4 [(buf.validate.field).string.max_len = 1024];
   repeated string to_fields = 5 [(buf.validate.field).repeated = {
     max_items: 100

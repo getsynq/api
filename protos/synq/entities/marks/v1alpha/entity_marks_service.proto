@@ -154,6 +154,26 @@ service EntityMarksService {
     };
   }
 
+  // List the entities that carry a mark, for example to show only the
+  // certified tables. The marks decide as in `BatchGetEntityMarks`: an entity
+  // carries the mark of any member of its identity group, and a certification
+  // whose definition changed after it does not count. The deprecated entities
+  // include the ones that the deprecation query selects.
+  rpc ListEntitiesWithMark(ListEntitiesWithMarkRequest) returns (ListEntitiesWithMarkResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+    option (google.api.http) = {
+      post: "/api/entities/marks/v1alpha/entities-with-mark"
+      body: "*"
+    };
+  }
+
   // List the history of the marks, newest first. With entity ids, the history
   // of the marks set on any member of their identity groups. Without, every
   // entry of the workspace, the changes of the deprecation query included.
@@ -386,6 +406,63 @@ message ListMarkedEntitiesResponse {
   // The marks, newest first.
   repeated MarkedEntity marked_entities = 1;
   synq.v1.PageInfo page_info = 2;
+}
+
+message ListEntitiesWithMarkRequest {
+  // The kind of mark that the entities carry.
+  MarkKind kind = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Identity strings of the person, to keep only the entities whose mark the
+  // person set. Resolve a user to all their identities with
+  // synq.users.v1.UsersService GetUserIdentities first. Format:
+  // "synq:<user_id>", "email:<email>", "slack:<slack_user_id>". Empty keeps
+  // every person. The deprecation query names no person, so with a person set,
+  // the entities that only the query deprecates are not listed.
+  repeated string set_by_identities = 2 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // Opaque ids of entities, to keep only these. An entity matches when its
+  // identity group carries the mark. Empty keeps every entity of the workspace.
+  // To check more than 10000 entities, split them over several requests.
+  repeated string limit_to_entity_ids = 3 [(buf.validate.field).repeated = {
+    max_items: 10000
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1024
+      }
+    }
+  }];
+  // The page to read, in the order of the entity id. Without it, the response
+  // has every entity. With it, the default page size is 100, and the largest is
+  // 1000.
+  optional synq.v1.Pagination pagination = 4;
+}
+
+message ListEntitiesWithMarkResponse {
+  // The entities, sorted by entity id.
+  repeated EntityWithMark entities = 1;
+  // `last_id` is the cursor of the next page, empty on the last page.
+  synq.v1.PageInfo page_info = 2;
+}
+
+// EntityWithMark is one entity that carries the mark. Read the marks, with the
+// person and the time, with `BatchGetEntityMarks`.
+message EntityWithMark {
+  // The entity.
+  string entity_id = 1 [(buf.validate.field).string.max_len = 1024];
+  // The members of the identity group that give the mark, sorted: the one that
+  // the deciding mark is set on, or the ones that the deprecation query
+  // selects. Contains `entity_id` when the mark is on the entity itself.
+  repeated string member_entity_ids = 2 [(buf.validate.field).repeated.items.string.max_len = 1024];
 }
 
 // MarkedEntity is one mark that a person set on one entity. Read the marks of

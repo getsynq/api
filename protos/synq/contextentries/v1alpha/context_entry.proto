@@ -81,11 +81,46 @@ message ContextEntry {
 
   // When the entry was changed last. Output-only.
   google.protobuf.Timestamp updated_at = 12;
+
+  // The state of each name of `target.column_names` in the schema of the
+  // entity, in the order of the names. Output-only. Set by
+  // ListContextEntries and BatchGetContextEntries, and empty in
+  // BatchGetEntityContextEntries.
+  repeated ContextEntryColumn columns = 13;
 }
 
-// The entities a context entry applies to: one entity, or every entity that a
-// query selects.
+// The state of one column name of an entry in the schema of its entity.
+message ContextEntryColumn {
+  // The state of a column name.
+  enum State {
+    // The state is not known: the schema of the entity could not be read.
+    STATE_UNSPECIFIED = 0;
+    // The schema of the entity has a column of this name.
+    STATE_FOUND = 1;
+    // The schema of the entity has no column of this name, for example because
+    // the column was renamed or removed, or the entity has no schema.
+    STATE_NOT_FOUND = 2;
+  }
+
+  // The name, as `target.column_names` holds it.
+  string name = 1;
+
+  // The name of the column as the platform spells it, for display, for
+  // example `ORDER_COUNT`. Empty when the state is not STATE_FOUND.
+  string native_name = 2;
+
+  State state = 3;
+}
+
+// The entities a context entry applies to: one entity, some columns of one
+// entity, or every entity that a query selects.
 message ContextEntryTarget {
+  option (buf.validate.message).cel = {
+    id: "context_entry_target.columns_need_entity"
+    message: "column_names need an entity_id target"
+    expression: "size(this.column_names) == 0 || has(this.entity_id)"
+  };
+
   oneof target {
     option (buf.validate.oneof).required = true;
 
@@ -102,6 +137,27 @@ message ContextEntryTarget {
     // computation.
     ContextEntryQuery query = 2;
   }
+
+  // The columns of the entity that the entry is about, by `name` as the schema
+  // read and the semantic model read return it: the lowercase name of the
+  // column, or of the field of a semantic model, for example
+  // `orders.order_count`. Never the name as the platform spells it. Empty
+  // means the entry is about the whole entity. Only with `entity_id`.
+  //
+  // The write does not read the schema. It rejects a name with an uppercase
+  // letter, so one column cannot have two spellings. A name that the schema
+  // does not have is stored, and the reads return it with
+  // ContextEntryColumn.State.STATE_NOT_FOUND.
+  repeated string column_names = 3 [(buf.validate.field).repeated = {
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 1000
+      }
+    }
+  }];
 }
 
 // The query behind a context entry, in the same write and read form as the
@@ -144,4 +200,15 @@ message EntityContextEntries {
   // How many more entries apply but were left out because of the limit.
   // Zero when the response holds every entry that applies.
   int32 omitted_count = 3;
+
+  // The entries about columns of the entity, most recently changed first. An
+  // entry is here when one of its `target.column_names` is in the
+  // `column_names` of the request, or for every column when the request has
+  // none. These entries are not in `entries` and do not count against its
+  // limit. The response holds at most 20 entries for each column name.
+  repeated ContextEntry column_entries = 4;
+
+  // How many more entries about columns apply but were left out because of
+  // the limit of each column.
+  int32 column_entries_omitted_count = 5;
 }
