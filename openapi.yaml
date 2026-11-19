@@ -20053,32 +20053,12 @@ components:
                         Return only the fields with these names: Field.name. Empty returns every field. A group with
                          no field left is left out. Use it to read single fields of a large model. Ignored for
                          SEMANTIC_MODEL_FORMAT_OSI, which always returns the whole model.
-                includeDefinitions:
-                    type: boolean
-                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITIONS.'
-                    deprecated: true
                 format:
                     description: |-
                         The form of the model in the response. SEMANTIC_MODEL_FORMAT_OSI returns the whole model as
                          one document when the parts ask for the fields. It has no readings, no declaration text and no
                          definition findings, and it ignores the field options.
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelFormat'
-                includeReadings:
-                    type: boolean
-                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_READINGS.'
-                    deprecated: true
-                includeDeclarationText:
-                    type: boolean
-                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DECLARATION_TEXT.'
-                    deprecated: true
-                view:
-                    description: 'Deprecated: ask for parts. The summary is the answer to a request with no other part.'
-                    deprecated: true
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.SemanticModelView'
-                includeDefinitionChecks:
-                    type: boolean
-                    description: 'Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITION_CHECKS.'
-                    deprecated: true
                 parts:
                     type: array
                     items:
@@ -20086,9 +20066,8 @@ components:
                     maxItems: 16
                     uniqueItems: true
                     description: |-
-                        The parts of each model to return. The summary is always returned. A request with a part uses
-                         the parts only, and the deprecated options have no effect. A request with no part is read by
-                         the deprecated options.
+                        The parts of each model to return. The summary is always returned, so a request with no part
+                         returns the summary only.
                 tables:
                     type: array
                     items:
@@ -20497,11 +20476,6 @@ components:
             properties:
                 kind:
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DuplicateSignalKind'
-                value:
-                    type: string
-                    maxLength: 100000
-                    description: 'Deprecated: read name, expression or input_columns, by the kind.'
-                    deprecated: true
                 fields:
                     type: array
                     items:
@@ -20737,30 +20711,9 @@ components:
                     type: string
                     maxLength: 1024
                     description: The label the declarer shows for the group, when it differs from the name.
-                source:
-                    description: 'Deprecated: read Table.source of the table that the group names.'
-                    deprecated: true
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.DatasetSource'
                 description:
                     type: string
                     maxLength: 10000
-                primaryKey:
-                    type: array
-                    items:
-                        type: string
-                        maxLength: 1024
-                        maxItems: 100
-                        deprecated: true
-                    maxItems: 100
-                    description: 'Deprecated: read Table.primary_key of the table that the group names.'
-                    deprecated: true
-                uniqueKeys:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.UniqueKey'
-                    maxItems: 100
-                    description: 'Deprecated: read Table.unique_keys of the table that the group names.'
-                    deprecated: true
                 aiContext:
                     $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.AIContext'
                 customExtensions:
@@ -20768,10 +20721,6 @@ components:
                     items:
                         $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.CustomExtension'
                     maxItems: 100
-                declaredLines:
-                    description: 'Deprecated: read Table.declared_lines of the table that the group names.'
-                    deprecated: true
-                    $ref: '#/components/schemas/synq.entities.semantic_models.v1alpha.LineRange'
                 table:
                     type: string
                     maxLength: 1024
@@ -20859,11 +20808,6 @@ components:
                         maxItems: 1000
                     maxItems: 1000
                     description: The parts of the expression that were not read, as text. Set only for READ_STATE_PARTIAL.
-                notReadReason:
-                    type: string
-                    maxLength: 1024
-                    description: 'Deprecated: read not_read_reason_kind.'
-                    deprecated: true
                 platform:
                     description: The language of the expression that was read.
                     $ref: '#/components/schemas/synq.platforms.v1.DataPlatformType'
@@ -21390,7 +21334,7 @@ components:
                              when there is no model. Unset with a model when the marks could not be read: read them with
                              synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never
                              take an unset value as "not certified". The identity group of the marks is the identity_group
-                             of the entry, and a request with parts leaves it unset in the marks.
+                             of the entry, and it is unset in the marks.
                         $ref: '#/components/schemas/synq.entities.marks.v1alpha.EntityMarks'
                     declarationText:
                         title: declaration_text
@@ -21407,11 +21351,6 @@ components:
                              each run, and an unchanged declaration is not stored again, so this is the time of the last
                              change of the model in most cases. Unset when there is no model.
                         $ref: '#/components/schemas/google.protobuf.Timestamp'
-                    tableCount:
-                        type: integer
-                        title: table_count
-                        description: 'Deprecated: read SemanticModelSummary.table_count.'
-                        deprecated: true
                     definitionFindings:
                         type: array
                         items:
@@ -21543,13 +21482,6 @@ components:
             title: KindCount
             additionalProperties: false
             description: The number of fields of one group kind.
-        synq.entities.semantic_models.v1alpha.SemanticModelView:
-            type: string
-            title: SemanticModelView
-            enum:
-                - SEMANTIC_MODEL_VIEW_UNSPECIFIED
-                - SEMANTIC_MODEL_VIEW_SUMMARY
-            description: 'SemanticModelView is how much of a semantic model is returned. Deprecated: ask for parts.'
         synq.entities.semantic_models.v1alpha.SetDistinctMetricsRequest:
             type: object
             properties:

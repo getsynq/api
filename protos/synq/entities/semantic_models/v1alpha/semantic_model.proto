@@ -216,6 +216,8 @@ enum FieldGroupKind {
 // One table can have several groups that share its name, one for each kind of field it holds. What
 // the table reads and its keys are on the Table.
 message FieldGroup {
+  reserved 5, 7, 8, 11;
+  reserved "source", "primary_key", "unique_keys", "declared_lines";
   // Name of the group: the sub-container of the declarer (a Power BI table, a LookML view, an OSI
   // dataset), or a label for the kind when the declarer has no sub-containers.
   string name = 1 [(buf.validate.field).string.max_len = 1024];
@@ -224,28 +226,9 @@ message FieldGroup {
   repeated Field fields = 3 [(buf.validate.field).repeated.max_items = 100000];
   // The label the declarer shows for the group, when it differs from the name.
   string display_name = 4 [(buf.validate.field).string.max_len = 1024];
-  // Deprecated: read Table.source of the table that the group names.
-  DatasetSource source = 5 [deprecated = true];
   string description = 6 [(buf.validate.field).string.max_len = 10000];
-  // Deprecated: read Table.primary_key of the table that the group names.
-  repeated string primary_key = 7 [
-    deprecated = true,
-    (buf.validate.field).repeated = {
-      max_items: 100
-      items: {
-        string: {max_len: 1024}
-      }
-    }
-  ];
-  // Deprecated: read Table.unique_keys of the table that the group names.
-  repeated UniqueKey unique_keys = 8 [
-    deprecated = true,
-    (buf.validate.field).repeated.max_items = 100
-  ];
   AIContext ai_context = 9;
   repeated CustomExtension custom_extensions = 10 [(buf.validate.field).repeated.max_items = 100];
-  // Deprecated: read Table.declared_lines of the table that the group names.
-  LineRange declared_lines = 11 [deprecated = true];
   // The table of the group, as Table.name. The group has a table when SemanticModel.tables holds a
   // table of this name. A group of model-level fields, such as OSI metrics, has none.
   string table = 12 [(buf.validate.field).string.max_len = 1024];
@@ -304,6 +287,8 @@ message FieldReading {
     // The language has a reader, and the reader could not read this expression.
     NOT_READ_REASON_READER_FAILED = 2;
   }
+  reserved 4;
+  reserved "not_read_reason";
   ReadState read_state = 1;
   // The steps of the computation, in order.
   repeated FieldReadingStep steps = 2 [(buf.validate.field).repeated.max_items = 1000];
@@ -314,11 +299,6 @@ message FieldReading {
       string: {max_len: 10000}
     }
   }];
-  // Deprecated: read not_read_reason_kind.
-  string not_read_reason = 4 [
-    deprecated = true,
-    (buf.validate.field).string.max_len = 1024
-  ];
   // The language of the expression that was read.
   synq.platforms.v1.DataPlatformType platform = 5;
   // The computation as one sentence, for a list. Empty if a part of it was not read.

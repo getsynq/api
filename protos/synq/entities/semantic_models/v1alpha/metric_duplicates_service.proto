@@ -168,12 +168,9 @@ enum DuplicateSignalKind {
 
 // DuplicateSignal is one signal that two or more fields of a group share.
 message DuplicateSignal {
+  reserved 2;
+  reserved "value";
   DuplicateSignalKind kind = 1;
-  // Deprecated: read name, expression or input_columns, by the kind.
-  string value = 2 [
-    deprecated = true,
-    (buf.validate.field).string.max_len = 100000
-  ];
   // The fields of the group that share it.
   repeated FieldRef fields = 3 [(buf.validate.field).repeated.max_items = 10000];
   // The columns that the fields read, sorted. Set only for DUPLICATE_SIGNAL_KIND_INPUT_COLUMNS.

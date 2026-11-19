@@ -92,15 +92,9 @@ enum SemanticModelPart {
   SEMANTIC_MODEL_PART_MARKS = 7;
 }
 
-// SemanticModelView is how much of a semantic model is returned. Deprecated: ask for parts.
-enum SemanticModelView {
-  // The model, in the asked format.
-  SEMANTIC_MODEL_VIEW_UNSPECIFIED = 0;
-  // No model: the name, the summary, the marks, state_at and table_count only. Use it for a list.
-  SEMANTIC_MODEL_VIEW_SUMMARY = 1;
-}
-
 message BatchGetSemanticModelsRequest {
+  reserved 3, 5, 6, 7, 8;
+  reserved "include_definitions", "include_readings", "include_declaration_text", "view", "include_definition_checks";
   // Opaque ids of the entities to read. Get an id from another response, or resolve an identifier
   // with synq.entities.resolve.v1.IdentifierResolveService first.
   repeated string entity_ids = 1 [(buf.validate.field).repeated = {
@@ -126,23 +120,12 @@ message BatchGetSemanticModelsRequest {
       }
     }
   }];
-  // Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITIONS.
-  bool include_definitions = 3 [deprecated = true];
   // The form of the model in the response. SEMANTIC_MODEL_FORMAT_OSI returns the whole model as
   // one document when the parts ask for the fields. It has no readings, no declaration text and no
   // definition findings, and it ignores the field options.
   SemanticModelFormat format = 4;
-  // Deprecated: ask for SEMANTIC_MODEL_PART_READINGS.
-  bool include_readings = 5 [deprecated = true];
-  // Deprecated: ask for SEMANTIC_MODEL_PART_DECLARATION_TEXT.
-  bool include_declaration_text = 6 [deprecated = true];
-  // Deprecated: ask for parts. The summary is the answer to a request with no other part.
-  SemanticModelView view = 7 [deprecated = true];
-  // Deprecated: ask for SEMANTIC_MODEL_PART_DEFINITION_CHECKS.
-  bool include_definition_checks = 8 [deprecated = true];
-  // The parts of each model to return. The summary is always returned. A request with a part uses
-  // the parts only, and the deprecated options have no effect. A request with no part is read by
-  // the deprecated options.
+  // The parts of each model to return. The summary is always returned, so a request with no part
+  // returns the summary only.
   repeated SemanticModelPart parts = 9 [(buf.validate.field).repeated = {
     max_items: 16
     unique: true
@@ -180,8 +163,8 @@ message BatchGetSemanticModelsResponse {
 
 // SemanticModelEntry is the answer for one identity group of the request.
 message SemanticModelEntry {
-  reserved 1;
-  reserved "entity_id";
+  reserved 1, 12;
+  reserved "entity_id", "table_count";
   // The identity group. Its canonical entity id addresses the model in the other reads.
   synq.entities.v1.IdentityGroup identity_group = 2;
   // The ids of the request that address this identity group, in request order.
@@ -204,7 +187,7 @@ message SemanticModelEntry {
   // when there is no model. Unset with a model when the marks could not be read: read them with
   // synq.entities.marks.v1alpha.EntityMarksService/BatchGetEntityMarks. Never
   // take an unset value as "not certified". The identity group of the marks is the identity_group
-  // of the entry, and a request with parts leaves it unset in the marks.
+  // of the entry, and it is unset in the marks.
   synq.entities.marks.v1alpha.EntityMarks marks = 7;
   // The text that the platform holds for the model, as its author wrote it: the DDL of a Snowflake
   // semantic view, the YAML of a Databricks metric view. Set only when the request asks for it and
@@ -215,8 +198,6 @@ message SemanticModelEntry {
   // each run, and an unchanged declaration is not stored again, so this is the time of the last
   // change of the model in most cases. Unset when there is no model.
   google.protobuf.Timestamp state_at = 11;
-  // Deprecated: read SemanticModelSummary.table_count.
-  uint32 table_count = 12 [deprecated = true];
   // The problems of the definition of the model, when the request asks for them. When field_names
   // cuts the model, a finding keeps only its returned fields, a finding whose fields are all cut is
   // left out, and a finding that names no field stays.
