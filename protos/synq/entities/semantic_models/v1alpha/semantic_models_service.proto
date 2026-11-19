@@ -278,7 +278,24 @@ message ListSemanticModelsRequest {
 }
 
 message ListSemanticModelsResponse {
-  // The canonical entity id of each semantic model, in the asked order.
+  // The canonical entity id of each semantic model, in the asked order. Copies of one model give
+  // one entry, see `copies`.
   repeated string entity_ids = 1;
   synq.v1.PageInfo page_info = 2;
+  // The other copies of each listed model, keyed by its entity id in `entity_ids`. A model with no
+  // other copy has no key.
+  //
+  // Copies are one model in several catalogs or schemas, for example a production, a staging and a
+  // test copy. Two models are copies when their entities have the same type and the same SQL
+  // platform, and the models have the same name, ignoring case, and the same field names. The list
+  // gives the copies one entry: a copy that is built by a modelling tool, such as a dbt model, else
+  // the first copy in canonical entity id order. The filters and the order of the request apply to
+  // that copy.
+  map<string, SemanticModelCopies> copies = 3;
+}
+
+// SemanticModelCopies are the other copies of one listed semantic model.
+message SemanticModelCopies {
+  // The canonical entity id of each copy, in canonical entity id order.
+  repeated string entity_ids = 1;
 }
