@@ -149,6 +149,34 @@ message WithDataPlatformType {
 // asked for (columns, tests, and similar), so this is not literally every entity.
 message WithDefaultVisibleTypes {}
 
+// Resolves to the entities that carry a certified or deprecated mark.
+//
+// An entity matches when any entity in its identity group carries the mark, so
+// the transformation model of a certified table matches too. The newest mark of
+// the group decides, and a certification whose definition changed after it does
+// not count. The deprecated entities include the ones that the deprecation query
+// of the workspace selects.
+//
+// To leave the deprecated entities out of a selection, use an EXCEPT query whose
+// second part is a `with_mark` of kind DEPRECATED.
+message WithMark {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // The entity is the one to use.
+    KIND_CERTIFIED = 1;
+    // The entity is not to be used.
+    KIND_DEPRECATED = 2;
+  }
+  Kind kind = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // If not empty, only the marks that one of these people set, as identity
+  // strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+  // names no person, so it adds nothing then.
+  repeated string set_by_identities = 2 [(buf.validate.field).repeated.items.string.min_len = 1];
+}
+
 // Note: InFolder, FolderOf and IdentitiesOf are defined in query.proto
 // (alongside Query), because each nests a full Query and a query_parts.proto
 // that imported query.proto would create a proto file import cycle.

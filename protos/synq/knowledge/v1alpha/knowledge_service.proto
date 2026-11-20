@@ -40,6 +40,25 @@ service KnowledgeService {
     };
   }
 
+  // Say whether the workspace holds any knowledge: a knowledge page, or a
+  // description people wrote for an entity. A workspace whose knowledge store
+  // is not set up holds none. A caller uses it to hide what would always be
+  // empty, and caches the answer.
+  //
+  // Returns UNAVAILABLE when the knowledge could not be read, which is worth
+  // retrying.
+  rpc GetKnowledgeSummary(GetKnowledgeSummaryRequest) returns (GetKnowledgeSummaryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/api/knowledge/v1alpha/summary"};
+    option (synq.v1.scope_authorization) = {
+      scopes: [
+        SCOPE_ENTITY_READ,
+        SCOPE_SRE_AGENT,
+        SCOPE_MCP_READ
+      ]
+    };
+  }
+
   // List the ids of knowledge pages, ordered by name, optionally narrowed by a
   // part of their name and by certification. Deprecated pages are left out
   // unless asked for. Read the pages with `BatchGetKnowledgePages`.
@@ -129,6 +148,17 @@ message KnowledgeDescription {
   string markdown = 1;
   // Whether it was generated rather than written by a person.
   bool generated = 2;
+}
+
+message GetKnowledgeSummaryRequest {}
+
+message GetKnowledgeSummaryResponse {
+  // Whether the workspace holds a knowledge page, deprecated ones included,
+  // or a description people wrote for an entity. A generated description
+  // does not count. For descriptions only the
+  // most popular entities are looked at, up to a bound, so a workspace with no
+  // page whose only descriptions are on less popular entities reads as false.
+  bool has_knowledge = 1;
 }
 
 message ListKnowledgePagesRequest {

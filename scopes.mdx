@@ -161,6 +161,7 @@ View entities such as tables, dashboards, and jobs, along with their metadata.
 | `GetDiffByCommit`<br/>_synq.git.commits.v1.CommitsService_<br/>`GET /api/git/v1/commit/{commit_sha}` |  |
 | `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for each one, and the knowledge pages pinned to it. |
 | `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, who owns them and how they are tagged. |
+| `GetKnowledgeSummary`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/summary` | Say whether the workspace holds any knowledge: a knowledge page, or a description people wrote for an entity. |
 | `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of the entities and of the other knowledge pages. |
 | `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a part of their name and by certification. |
 | `BatchGetLatestEntityMetrics`<br/>_synq.monitors.predictions.v1.MonitorPredictionsService_<br/>`POST /api/monitors/predictions/v1/entity-metrics:batchLatest` | Returns the most recent observed table-stats sample (row count, freshness) for each requested entity. |
@@ -869,6 +870,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListIssues`<br/>_synq.issues.v2.IssuesService_<br/>`GET /api/issues/v2` |  |
 | `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | Read the knowledge held about entities: the description people wrote for each one, and the knowledge pages pinned to it. |
 | `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | Read knowledge pages by id: their content, where they sit in the tree, who owns them and how they are tagged. |
+| `GetKnowledgeSummary`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/summary` | Say whether the workspace holds any knowledge: a knowledge page, or a description people wrote for an entity. |
 | `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | List what is pinned to a knowledge page, in either direction: the ids of the entities and of the other knowledge pages. |
 | `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | List the ids of knowledge pages, ordered by name, optionally narrowed by a part of their name and by certification. |
 | `GetDeployDeleteOverview`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`GET /api/monitors/automated/v1/deployment-rule/{id}/deleted` |  |
@@ -1596,6 +1598,7 @@ Every public API method that a client or token can call, and the scopes that all
 | `PostComment`<br/>_synq.issues.v2.IssuesService_<br/>`POST /api/issues/v2/{issue_id}/comment` | `SCOPE_ISSUES_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchGetEntityKnowledge`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/entities/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchGetKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`POST /api/knowledge/v1alpha/pages/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
+| `GetKnowledgeSummary`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/summary` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListKnowledgePageLinks`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages/{page_id}/links` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListKnowledgePages`<br/>_synq.knowledge.v1alpha.KnowledgeService_<br/>`GET /api/knowledge/v1alpha/pages` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `BatchDeleteDeploymentRules`<br/>_synq.monitors.automated_monitors.v1.DeploymentRulesService_<br/>`DELETE /api/monitors/automated/v1/deployment-rules/batch` | `SCOPE_MONITORS_AUTOMATIC_EDIT` |

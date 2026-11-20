@@ -9143,6 +9143,13 @@ components:
                   required:
                     - withDefaultVisibleTypes
                 - properties:
+                    withMark:
+                        title: with_mark
+                        $ref: '#/components/schemas/synq.queries.v1.WithMark'
+                  title: with_mark
+                  required:
+                    - withMark
+                - properties:
                     withNameSearch:
                         title: with_name_search
                         $ref: '#/components/schemas/synq.queries.v1.WithNameSearch'
@@ -10654,6 +10661,13 @@ components:
                   title: with_default_visible_types
                   required:
                     - withDefaultVisibleTypes
+                - properties:
+                    withMark:
+                        title: with_mark
+                        $ref: '#/components/schemas/synq.queries.v1.WithMark'
+                  title: with_mark
+                  required:
+                    - withMark
                 - properties:
                     withNameSearch:
                         title: with_name_search
@@ -30684,6 +30698,23 @@ components:
             title: EntityKnowledge
             additionalProperties: false
             description: The knowledge held about an entity.
+        synq.knowledge.v1alpha.GetKnowledgeSummaryRequest:
+            type: object
+            title: GetKnowledgeSummaryRequest
+            additionalProperties: false
+        synq.knowledge.v1alpha.GetKnowledgeSummaryResponse:
+            type: object
+            properties:
+                hasKnowledge:
+                    type: boolean
+                    description: |-
+                        Whether the workspace holds a knowledge page, deprecated ones included,
+                         or a description people wrote for an entity. A generated description
+                         does not count. For descriptions only the
+                         most popular entities are looked at, up to a bound, so a workspace with no
+                         page whose only descriptions are on less popular entities reads as false.
+            title: GetKnowledgeSummaryResponse
+            additionalProperties: false
         synq.knowledge.v1alpha.KnowledgeDescription:
             type: object
             properties:
@@ -35451,6 +35482,13 @@ components:
                   required:
                     - withDefaultVisibleTypes
                 - properties:
+                    withMark:
+                        title: with_mark
+                        $ref: '#/components/schemas/synq.queries.v1.WithMark'
+                  title: with_mark
+                  required:
+                    - withMark
+                - properties:
                     withNameSearch:
                         title: with_name_search
                         $ref: '#/components/schemas/synq.queries.v1.WithNameSearch'
@@ -35730,6 +35768,43 @@ components:
 
                  "Default visible" excludes the supporting asset types the catalog hides unless
                  asked for (columns, tests, and similar), so this is not literally every entity.
+        synq.queries.v1.WithMark:
+            type: object
+            properties:
+                kind:
+                    not:
+                        enum:
+                            - 0
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                setByIdentities:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
+            title: WithMark
+            additionalProperties: false
+            description: |-
+                Resolves to the entities that carry a certified or deprecated mark.
+
+                 An entity matches when any entity in its identity group carries the mark, so
+                 the transformation model of a certified table matches too. The newest mark of
+                 the group decides, and a certification whose definition changed after it does
+                 not count. The deprecated entities include the ones that the deprecation query
+                 of the workspace selects.
+
+                 To leave the deprecated entities out of a selection, use an EXCEPT query whose
+                 second part is a `with_mark` of kind DEPRECATED.
+        synq.queries.v1.WithMark.Kind:
+            type: string
+            title: Kind
+            enum:
+                - KIND_UNSPECIFIED
+                - KIND_CERTIFIED
+                - KIND_DEPRECATED
         synq.queries.v1.WithNameSearch:
             type: object
             properties:
@@ -41803,6 +41878,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -48265,6 +48364,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: filter.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: filter.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: filter.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -49559,6 +49682,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: filter.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: filter.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: filter.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -51590,6 +51737,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: query.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: query.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: query.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -57433,6 +57604,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: entitiesQuery.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: entitiesQuery.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: entitiesQuery.parts.unsupported.queryJson
                   in: query
                   schema:
@@ -58107,6 +58302,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/synq.knowledge.v1alpha.ListKnowledgePageLinksResponse'
+    /api/knowledge/v1alpha/summary:
+        get:
+            tags:
+                - synq.knowledge.v1alpha.KnowledgeService
+            summary: GetKnowledgeSummary
+            description: |-
+                Say whether the workspace holds any knowledge: a knowledge page, or a
+                 description people wrote for an entity. A workspace whose knowledge store
+                 is not set up holds none. A caller uses it to hide what would always be
+                 empty, and caches the answer.
+
+                 Returns UNAVAILABLE when the knowledge could not be read, which is worth
+                 retrying.
+            operationId: synq.knowledge.v1alpha.KnowledgeService.GetKnowledgeSummary
+            responses:
+                "200":
+                    description: Success
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/synq.knowledge.v1alpha.GetKnowledgeSummaryResponse'
     /api/lineage/folds/v1alpha:
         get:
             tags:
@@ -59587,6 +59803,30 @@ paths:
 
                          Ids may be up to 1024 characters — the same limit as `Identifier.entity_id`,
                          where you read them from, so any id the API returned is accepted here.
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.withMark.kind
+                  in: query
+                  schema:
+                    not:
+                        enum:
+                            - 0
+                    title: kind
+                    $ref: '#/components/schemas/synq.queries.v1.WithMark.Kind'
+                - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.withMark.setByIdentities
+                  in: query
+                  description: |-
+                    If not empty, only the marks that one of these people set, as identity
+                     strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                     names no person, so it adds nothing then.
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                        minLength: 1
+                    title: set_by_identities
+                    description: |-
+                        If not empty, only the marks that one of these people set, as identity
+                         strings such as "synq:<user_id>" or "email:<address>". The deprecation query
+                         names no person, so it adds nothing then.
                 - name: deploymentRule.queryConfig.query.parts.inFolder.folderOf.inputQuery.parts.unsupported.queryJson
                   in: query
                   schema:

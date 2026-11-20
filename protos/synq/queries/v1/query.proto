@@ -54,6 +54,7 @@ message Query {
       // Pin specific entities by the ids the API returned for them. Read back as
       // `identifier_list`, with each id on the identifier it names.
       EntityIds entity_ids = 12;
+      WithMark with_mark = 13;
 
       // Nested sub-query, enabling recursive composition of filters and operands.
       Query query = 100;

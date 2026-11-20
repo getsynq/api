@@ -51,6 +51,7 @@ message AssetSelectionQuery {
       synq.queries.v1.WithDataPlatformType with_data_platform_type = 7;
       synq.queries.v1.IdentitiesOf identities_of = 8;
       synq.queries.v1.WithDefaultVisibleTypes with_default_visible_types = 9;
+      synq.queries.v1.WithMark with_mark = 10;
 
       AssetSelectionQuery query = 100;
       synq.queries.v1.Unsupported unsupported = 101;
