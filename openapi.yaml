@@ -18100,12 +18100,9 @@ components:
         synq.entities.marks.v1alpha.DeprecationQuery:
             type: object
             properties:
-                resolverQl:
-                    type: string
-                    maxLength: 20000
-                    description: |-
-                        The query in resolver query language, as the server renders it. Empty
-                         when the workspace has no query.
+                query:
+                    description: The query. Unset when the workspace has no query.
+                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.MarkQuery'
                 etag:
                     type: string
                     maxLength: 200
@@ -18355,12 +18352,11 @@ components:
                     type: string
                     maxLength: 1024
                     description: The entity whose mark changed. Empty for a change of the query.
-                resolverQl:
-                    type: string
-                    maxLength: 20000
+                query:
                     description: |-
-                        The query after the change, in resolver query language. Set only for
-                         a change of the query, and empty when the change cleared it.
+                        The query after the change. Set only for a change of the query, and unset
+                         when the change cleared it.
+                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.MarkQuery'
                 changedBy:
                     description: The person who made the change.
                     $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
@@ -18386,6 +18382,37 @@ components:
                 - MARK_KIND_CERTIFIED
                 - MARK_KIND_DEPRECATED
             description: MarkKind is the kind of a mark.
+        synq.entities.marks.v1alpha.MarkQuery:
+            type: object
+            properties:
+                resolverQl:
+                    type: string
+                    maxLength: 20000
+                    description: |-
+                        WRITE (option A). The query in resolver query language, for example
+                         `in_folder("snowflake::prod::legacy")`.
+                renderedResolverQl:
+                    type: string
+                    description: |-
+                        READ, output-only. The stored query rendered back to canonical resolver
+                         query language. Empty when the query has no resolver query language form.
+                publicQuery:
+                    description: WRITE (option B) and READ. The structured query.
+                    $ref: '#/components/schemas/synq.queries.v1.Query'
+            title: MarkQuery
+            additionalProperties: false
+            description: |-
+                MarkQuery is the query that selects the deprecated entities, in the same
+                 write and read form as the queries of saved views, data products and owners.
+                 Combine parts with `or` to deprecate several sets, for example the disabled
+                 dbt models or the tables with `_2025` in the name.
+
+                 On write, give the query in ONE of two forms: `resolver_ql` or
+                 `public_query`. If both are set, `resolver_ql` wins. The server compiles and
+                 stores the query. It does not keep the raw text.
+
+                 On read, the server returns `rendered_resolver_ql`, and when it can,
+                 `public_query`.
         synq.entities.marks.v1alpha.MarkedDeprecation:
             type: object
             properties:
@@ -18513,10 +18540,11 @@ components:
         synq.entities.marks.v1alpha.SetDeprecationQueryRequest:
             type: object
             properties:
-                resolverQl:
-                    type: string
-                    maxLength: 20000
-                    description: The query in resolver query language. Empty clears the query.
+                query:
+                    description: |-
+                        The query: `resolver_ql` or `public_query`. Unset, or both empty, clears
+                         the query. The query cannot hold `with_mark`, as `with_mark` evaluates it.
+                    $ref: '#/components/schemas/synq.entities.marks.v1alpha.MarkQuery'
                 etag:
                     type: string
                     maxLength: 200

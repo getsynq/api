@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/identity_group.proto";
 import "synq/issues/actor/v1/actor.proto";
+import "synq/queries/v1/query.proto";
 
 option go_package = "github.com/getsynq/api/entities/marks/v1alpha";
 
@@ -82,12 +83,33 @@ message QueryDeprecation {
   string reason = 3 [(buf.validate.field).string.max_len = 2000];
 }
 
+// MarkQuery is the query that selects the deprecated entities, in the same
+// write and read form as the queries of saved views, data products and owners.
+// Combine parts with `or` to deprecate several sets, for example the disabled
+// dbt models or the tables with `_2025` in the name.
+//
+// On write, give the query in ONE of two forms: `resolver_ql` or
+// `public_query`. If both are set, `resolver_ql` wins. The server compiles and
+// stores the query. It does not keep the raw text.
+//
+// On read, the server returns `rendered_resolver_ql`, and when it can,
+// `public_query`.
+message MarkQuery {
+  // WRITE (option A). The query in resolver query language, for example
+  // `in_folder("snowflake::prod::legacy")`.
+  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+  // READ, output-only. The stored query rendered back to canonical resolver
+  // query language. Empty when the query has no resolver query language form.
+  string rendered_resolver_ql = 2;
+  // WRITE (option B) and READ. The structured query.
+  synq.queries.v1.Query public_query = 3;
+}
+
 // DeprecationQuery selects the deprecated entities of a workspace, beside the
 // entities that a person deprecated one by one. A workspace has one.
 message DeprecationQuery {
-  // The query in resolver query language, as the server renders it. Empty
-  // when the workspace has no query.
-  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+  // The query. Unset when the workspace has no query.
+  MarkQuery query = 1;
   // Pass it on the next change to guard against overwriting a concurrent edit.
   string etag = 2 [(buf.validate.field).string.max_len = 200];
   // The person who last changed the query. Unset when it never changed.
@@ -128,9 +150,9 @@ message MarkHistoryEntry {
   MarkChange change = 2;
   // The entity whose mark changed. Empty for a change of the query.
   string entity_id = 3 [(buf.validate.field).string.max_len = 1024];
-  // The query after the change, in resolver query language. Set only for
-  // a change of the query, and empty when the change cleared it.
-  string resolver_ql = 4 [(buf.validate.field).string.max_len = 20000];
+  // The query after the change. Set only for a change of the query, and unset
+  // when the change cleared it.
+  MarkQuery query = 4;
   // The person who made the change.
   synq.issues.actor.v1.Actor changed_by = 5;
   // When the change was made.

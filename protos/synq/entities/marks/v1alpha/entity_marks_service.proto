@@ -311,8 +311,9 @@ message GetDeprecationQueryResponse {
 }
 
 message SetDeprecationQueryRequest {
-  // The query in resolver query language. Empty clears the query.
-  string resolver_ql = 1 [(buf.validate.field).string.max_len = 20000];
+  // The query: `resolver_ql` or `public_query`. Unset, or both empty, clears
+  // the query. The query cannot hold `with_mark`, as `with_mark` evaluates it.
+  MarkQuery query = 1;
   // The etag of the query that you last read. The change is refused with
   // ABORTED if the query changed since. Omit it to replace the query whatever
   // it is.
