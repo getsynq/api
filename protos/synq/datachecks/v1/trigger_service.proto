@@ -76,14 +76,16 @@ message TriggerDatachecksResponse {
   repeated DatacheckResult results = 1;
 }
 
-// Result of a datacheck execution
+// Result of a datacheck execution.
 enum DatacheckStatus {
   DATACHECK_STATUS_UNSPECIFIED = 0;
 
-  // Check passed successfully.
+  // Check passed: it found no problem, or it found one at severity Info.
   DATACHECK_STATUS_PASSED = 1;
 
-  // Check failed due to violations.
+  // Check found a problem at severity Warning or Error, or the query of a SQL
+  // test failed, whatever its severity. The check opened an issue, or keeps an
+  // open issue open.
   DATACHECK_STATUS_FAILED = 2;
 
   // Check failed due to error in check itself.
@@ -95,6 +97,10 @@ enum DatacheckStatus {
 
 // Result from a single datacheck execution.
 message DatacheckResult {
+  // The result of the check, after its severity, as its run in the app. For a
+  // monitor with predictions, it is the worst status of its predictions. For a
+  // SQL test with evaluators, the severity of the worst failing evaluator
+  // applies, not the severity of the test.
   DatacheckStatus status = 1;
   string message = 2;
 
@@ -127,7 +133,9 @@ message SqlTestResult {
   // Timestamp when the test was executed.
   google.protobuf.Timestamp executed_at = 5;
 
-  // Optional error message if the execution failed.
+  // The message of the execution when its query returned rows or failed. It is
+  // set also when a test with severity Info returned rows and the status is
+  // PASSED.
   string error_message = 6;
 
   // Optional result data or sample rows from the test execution.
@@ -175,6 +183,7 @@ message MonitorResult {
 }
 
 message MonitorPrediction {
+  // The result of this prediction, after the severity of the monitor.
   DatacheckStatus status = 1;
   string message = 2;
   double value = 3;

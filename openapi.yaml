@@ -8889,6 +8889,11 @@ components:
                         - monitorResult
             properties:
                 status:
+                    description: |-
+                        The result of the check, after its severity, as its run in the app. For a
+                         monitor with predictions, it is the worst status of its predictions. For a
+                         SQL test with evaluators, the severity of the worst failing evaluator
+                         applies, not the severity of the test.
                     $ref: '#/components/schemas/synq.datachecks.v1.DatacheckStatus'
                 message:
                     type: string
@@ -8908,11 +8913,12 @@ components:
                 - DATACHECK_STATUS_FAILED
                 - DATACHECK_STATUS_ERROR
                 - DATACHECK_STATUS_SKIPPED
-            description: Result of a datacheck execution
+            description: Result of a datacheck execution.
         synq.datachecks.v1.MonitorPrediction:
             type: object
             properties:
                 status:
+                    description: The result of this prediction, after the severity of the monitor.
                     $ref: '#/components/schemas/synq.datachecks.v1.DatacheckStatus'
                 message:
                     type: string
@@ -8985,7 +8991,10 @@ components:
                     $ref: '#/components/schemas/google.protobuf.Timestamp'
                 errorMessage:
                     type: string
-                    description: Optional error message if the execution failed.
+                    description: |-
+                        The message of the execution when its query returned rows or failed. It is
+                         set also when a test with severity Info returned rows and the status is
+                         PASSED.
                 resultData:
                     type: string
                     description: Optional result data or sample rows from the test execution.
@@ -24064,6 +24073,8 @@ components:
                 - ENTITY_TYPE_FABRIC_VIEW
                 - ENTITY_TYPE_FABRIC_PROCEDURE
                 - ENTITY_TYPE_FABRIC_FUNCTION
+                - ENTITY_TYPE_FABRIC_DATA_PIPELINE
+                - ENTITY_TYPE_FABRIC_PIPELINE_ACTIVITY
                 - ENTITY_TYPE_DB2_TABLE
                 - ENTITY_TYPE_DB2_VIEW
                 - ENTITY_TYPE_DB2_PROCEDURE
@@ -24154,6 +24165,7 @@ components:
                 - EXECUTION_TYPE_SYNQ_CUSTOM_ENTITY_LOG
                 - EXECUTION_TYPE_SYNQ_CUSTOM_ENTITY_MEASUREMENT
                 - EXECUTION_TYPE_MANUAL_ISSUE
+                - EXECUTION_TYPE_ENTITY_CERTIFICATION
                 - EXECUTION_TYPE_TABLEAU_USAGE_REPORT
                 - EXECUTION_TYPE_TABLEAU_EXTRACT
                 - EXECUTION_TYPE_AIRFLOW_DAG
