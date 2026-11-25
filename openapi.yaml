@@ -24092,9 +24092,22 @@ components:
                 - ENTITY_TYPE_LOOKER_STUDIO_CUSTOMER
                 - ENTITY_TYPE_LOOKER_STUDIO_REPORT
                 - ENTITY_TYPE_LOOKER_STUDIO_DATA_SOURCE
+                - ENTITY_TYPE_OMNI_ORGANIZATION
+                - ENTITY_TYPE_OMNI_SHARED_MODEL
+                - ENTITY_TYPE_OMNI_VIEW
+                - ENTITY_TYPE_OMNI_TOPIC
+                - ENTITY_TYPE_OMNI_WORKBOOK
+                - ENTITY_TYPE_OMNI_DASHBOARD
+                - ENTITY_TYPE_OMNI_QUERY
                 - ENTITY_TYPE_METABASE_INSTANCE
                 - ENTITY_TYPE_METABASE_DASHBOARD
                 - ENTITY_TYPE_METABASE_CARD
+                - ENTITY_TYPE_CUBE_DEPLOYMENT
+                - ENTITY_TYPE_CUBE_CUBE
+                - ENTITY_TYPE_CUBE_VIEW
+                - ENTITY_TYPE_QLIK_TENANT
+                - ENTITY_TYPE_QLIK_APP
+                - ENTITY_TYPE_QLIK_SHEET
                 - ENTITY_TYPE_SALESFORCE_ORGANIZATION
                 - ENTITY_TYPE_SALESFORCE_OBJECT
                 - ENTITY_TYPE_SALESFORCE_REPORT
@@ -37636,6 +37649,7 @@ components:
                 - SCOPE_ENTITY_MARKS_OWNED_EDIT
                 - SCOPE_CONTEXT_ENTRIES_READ
                 - SCOPE_CONTEXT_ENTRIES_EDIT
+                - SCOPE_INGEST_CUBE
         synq.v1.Severity:
             type: string
             title: Severity
