@@ -4,21 +4,33 @@ package synq.ingest.cube.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "synq/ingest/git/v1/git_context.proto";
 import "synq/v1/scope_authorization.proto";
 
 option go_package = "github.com/getsynq/api/ingest/cube/v1";
 
-// CubeService receives the data model of a Cube deployment.
+// CubeService receives snapshots of a Cube deployment.
 //
-// A snapshot is what two endpoints of the Cube REST API return, the same on Cube Core and on
-// Cube Cloud. Coalesce Quality builds one entity for each cube and each view from it, with the
-// measures, dimensions and segments, the joins, and the lineage to the warehouse tables.
+// A snapshot has the data model of the deployment, the SQL that Cube generates for its members,
+// and what the caller knows about the deployment. Coalesce Quality builds one entity for each
+// cube and each view from it, with the measures, the dimensions and the segments, the joins, and
+// the lineage to the warehouse tables.
 //
-// The token of the call is the token of a Cube integration. The integration names the
-// deployment, so a snapshot does not.
+// The token of the call is the token of a Cube integration. One integration is one Cube
+// deployment with one security context, so a snapshot does not name the deployment. Use one
+// integration for each security context that changes the data model.
 service CubeService {
-  // IngestSnapshot stores one snapshot of the data model of a Cube deployment. A snapshot holds
-  // the whole data model: a cube or a view that is not in the newest snapshot is removed.
+  // IngestSnapshot accepts one snapshot of a Cube deployment.
+  //
+  // A snapshot is the whole data model. It replaces the snapshot before it: a cube or a view
+  // that is not in the snapshot is removed. Coalesce Quality does not merge a snapshot with the
+  // snapshot before it, so send each part (the SQL, the data sources, the git repository) in
+  // each snapshot.
+  //
+  // Send the complete snapshot in one request. Do not split a snapshot across calls.
+  //
+  // The call is safe to send again with the same request. A response means that Coalesce
+  // Quality accepted the snapshot. The processing ends some time after the response.
   rpc IngestSnapshot(IngestSnapshotRequest) returns (IngestSnapshotResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -27,89 +39,163 @@ service CubeService {
   }
 }
 
+// IngestSnapshotRequest is one snapshot of a Cube deployment. It has three parts:
+//
+//   - The data model, as Cube returns it.
+//   - The SQL that Cube generates for the members of the data model.
+//   - What the caller knows about the deployment: its data sources and its git repository.
+//
+// Only `data_model` and `collected_at` are required. Each other part adds detail: without the SQL
+// the cubes have no lineage to the warehouse tables.
+//
+// Read all parts from the same deployment, with the same security context.
 message IngestSnapshotRequest {
-  // The response body of `GET /cubejs-api/v1/meta?extended`, as Cube returned it (JSON). It is the
-  // compiled data model: the cubes and the views with their measures, dimensions, segments,
+  // The data model: the complete response body of `GET /cubejs-api/v1/meta?extended`, as Cube
+  // returned it (JSON). It has the cubes and the views with their measures, dimensions, segments,
   // joins, hierarchies, folders and pre-aggregations.
-  bytes meta = 1 [(buf.validate.field).bytes.min_len = 2];
+  //
+  // Do not send an error response or a part of a response. With a protobuf SDK, set the field to
+  // the bytes of the response. In ProtoJSON, the value is these bytes in base64.
+  bytes data_model = 1 [(buf.validate.field).bytes.min_len = 2];
 
-  // The SQL that Cube generates for each measure and each dimension, from `/cubejs-api/v1/sql`.
-  // Cube compiles the query and does not run it.
-  repeated MemberSql member_sql = 2;
+  // More settings of the cubes and the views: the complete response body of
+  // `POST /v1/model-export` of the Cube Cloud Metadata API (JSON), for all cubes and all views.
+  // Coalesce Quality takes the cubes and the views from `data_model`, and adds the settings of
+  // this response to them.
+  //
+  // Cube Core does not have this endpoint. Do not set the field if the response is not
+  // available.
+  optional bytes model_export = 2 [(buf.validate.field).bytes.min_len = 2];
 
-  // The response body of `POST /v1/model-export` of the Cube Cloud Metadata API (JSON). Cube Core
-  // does not have this endpoint.
-  optional bytes model_export = 3;
+  // The SQL that Cube generates for the members, from `/cubejs-api/v1/sql`. Cube compiles a query
+  // and does not run it. Coalesce Quality reads the lineage of each member from this SQL.
+  //
+  // Send each member in one entry only. A member that is in no entry and not in `member_errors`
+  // has no lineage, and Coalesce Quality reports no error for it.
+  repeated GeneratedSql generated_sql = 3;
 
-  // The time at which the snapshot was read from Cube.
-  google.protobuf.Timestamp collected_at = 4 [(buf.validate.field) = {
-    timestamp: {
-      lt_now: true
-      gt: {seconds: 1640995200}
-    }
-    required: true
-  }];
+  // The members for which Cube generated no SQL, each with the error text. Such a member has no
+  // lineage. Do not send a member that is in `generated_sql`.
+  repeated MemberError member_errors = 4;
 
-  // The version of Cube, if the caller knows it (`1.3.30`).
-  optional string cube_version = 5;
+  // What each data source of the deployment is. Coalesce Quality uses it to find the warehouse
+  // that a data source reads, so the integration needs no setting for that data source. Send one
+  // entry for each data source, with what the caller knows. Each name must be in the list one
+  // time only.
+  repeated DataSource data_sources = 5;
 
-  // A name for the security context of the token that read the snapshot (`full-read`). Never
-  // the security context itself. Cube compiles one data model for each security context that
-  // changes it, so the name says which one this is.
-  optional string security_context_label = 6;
+  // The git repository that holds the files of the data model. Coalesce Quality then links each
+  // cube and each view to its file in the repository. Set `clone_url` with no user name and no
+  // password in it. Do not set the field if the caller does not know the repository.
+  optional synq.ingest.git.v1.GitContext git_context = 6;
+
+  // The path of the directory of the data model, from the root of the repository (`model`). The
+  // file name of a cube in the data model is relative to this directory. Use `/` between the
+  // parts. An empty value means the root of the repository. Do not set the field if the caller
+  // does not know the directory.
+  optional string model_path = 7;
+
+  // The time at which the caller started to read the snapshot from Cube. Coalesce Quality reads
+  // a time in the future as the time at which it got the snapshot.
+  google.protobuf.Timestamp collected_at = 8 [(buf.validate.field).required = true];
+
+  // The version of Cube (`1.3.30`). Do not set the field if the caller does not know it.
+  optional string cube_version = 9 [(buf.validate.field).string.min_len = 1];
+
+  // A name for the security context of the token that read the snapshot (`full-read`). It only
+  // describes the snapshot: Cube compiles one data model for each security context that changes
+  // it, and the name says which data model this is. Never send a token or the security context
+  // itself.
+  optional string security_context_label = 10 [(buf.validate.field).string.min_len = 1];
 
   // The version of the tool that collected the snapshot.
-  string uploader_version = 7;
-  // The build time of the tool that collected the snapshot.
-  string uploader_build_time = 8;
+  optional string uploader_version = 11 [(buf.validate.field).string.min_len = 1];
 
-  // What each data source of the deployment is. Optional. Coalesce Quality uses it to find the
-  // warehouse that a data source reads, so the integration needs no setting for that data source.
-  // Send one entry for each data source, with what the caller knows.
-  repeated DataSource data_sources = 9;
+  // The build time of the tool that collected the snapshot, in RFC 3339 format
+  // (`2026-01-31T10:00:00Z`).
+  optional string uploader_build_time = 12 [(buf.validate.field).string.min_len = 1];
+}
+
+// GeneratedSql is the SQL statement that Cube generates for one query. The query can have one
+// member or many members of one cube or of one view. The statement has one output column for
+// each member.
+//
+// Put many members in one query: Cube then needs one request for all measures of a cube, and one
+// request for all its dimensions. A segment is a filter and has no output column, so do not list
+// it.
+message GeneratedSql {
+  // The SQL text in the dialect of the data source, from `sql.sql[0]` of the response. Send it as
+  // Cube returned it, with its parameter marks.
+  string sql = 1 [(buf.validate.field).string.min_len = 1];
+
+  // The measures and the dimensions of the query, each with its output column. All of them are
+  // members of one cube or of one view.
+  repeated GeneratedSqlMember members = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // The name of the data source that Cube runs the query on (`default`), from `sql.dataSource`.
+  // It is the `name` of an entry of `data_sources`. Do not set the field if the response does
+  // not have it.
+  optional string data_source = 3 [(buf.validate.field).string.min_len = 1];
+
+  // The value of `ungrouped` of the query. An ungrouped query reads the tables of the cube. A
+  // grouped query can read a pre-aggregation table, and Coalesce Quality then reads no lineage
+  // from it. Not set means that the caller does not know the value, and Coalesce Quality reads
+  // the statement as a grouped one.
+  optional bool ungrouped = 4;
+}
+
+// GeneratedSqlMember is one member of a query, and where its value is in the statement.
+message GeneratedSqlMember {
+  // The member with its cube or view, as the data model spells it (`orders.revenue`,
+  // `orders_overview.revenue`).
+  string member = 1 [(buf.validate.field).string.min_len = 1];
+
+  // The name of the output column of the member in the statement (`orders__revenue`). It is the
+  // key of the entry of `sql.aliasNameToMember` whose value is the member. Copy the key as it is.
+  // Do not build it from the name of the member: a cube with `sql_alias` has another prefix. If
+  // the response has no entry for the member, send the member in `member_errors`.
+  string column = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+// MemberError is a member for which the caller has no SQL.
+message MemberError {
+  // The member with its cube or view, as the data model spells it (`orders.revenue`).
+  string member = 1 [(buf.validate.field).string.min_len = 1];
+
+  // Why there is no SQL: the error text that Cube returned, or what the caller could not read.
+  // Never send a token, a password or a key in the text.
+  string error = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 // DataSource says what one data source of the Cube deployment is: the database type and the
 // database that it connects to. It never has a user name, a password or a key.
+//
+// The `CUBEJS_DB_*` variables in the comments are the variables of the data source `default`.
+// Another data source has the same variables with its name in them (`CUBEJS_DS_<NAME>_DB_TYPE`).
 message DataSource {
   // The name of the data source in Cube, as in `data_source` of a cube and in
-  // `CUBEJS_DATASOURCES`. A deployment with one data source names it `default`.
+  // `CUBEJS_DATASOURCES`. The data source that a cube with no `data_source` uses is `default`.
   string name = 1 [(buf.validate.field).string.min_len = 1];
 
   // The database type, as Cube spells it in `CUBEJS_DB_TYPE`: `snowflake`, `bigquery`,
   // `postgres`, `redshift`, `clickhouse`, `databricks-jdbc`, `mysql`, `mssql`, `athena`, `trino`,
-  // `duckdb`. Coalesce Quality ignores a type that it does not know.
-  string type = 2;
+  // `duckdb`. Another value is permitted, and Coalesce Quality ignores a type that it does not
+  // know. Do not set the field if the caller does not know the type.
+  optional string type = 2 [(buf.validate.field).string.min_len = 1];
 
   // The database that the data source connects to, the value of `CUBEJS_DB_NAME`
   // (`ANALYTICS`). A table name with no database in the SQL of Cube is in this database.
-  optional string database = 3;
+  optional string database = 3 [(buf.validate.field).string.min_len = 1];
 
-  // The host of the database, the value of `CUBEJS_DB_HOST` (`db.example.com`). For Snowflake,
-  // the account, the value of `CUBEJS_DB_SNOWFLAKE_ACCOUNT` (`xy12345.eu-west-1`).
-  optional string host = 4;
+  // The host of the database, the value of `CUBEJS_DB_HOST` (`db.example.com`), with no scheme
+  // and no port. For Snowflake, the account, the value of `CUBEJS_DB_SNOWFLAKE_ACCOUNT`
+  // (`xy12345.eu-west-1`).
+  optional string host = 4 [(buf.validate.field).string.min_len = 1];
 
   // The Google Cloud project of a BigQuery data source, the value of `CUBEJS_DB_BQ_PROJECT_ID`.
-  optional string project = 5;
+  optional string project = 5 [(buf.validate.field).string.min_len = 1];
 }
 
-// MemberSql is the SQL that Cube generates for a query of one member.
-message MemberSql {
-  // The member with its cube or view (`orders.revenue`, `orders_overview.revenue`).
-  string member = 1 [(buf.validate.field).string.min_len = 1];
-
-  // The data source that Cube runs the query on (`default`), from `sql.dataSource`.
-  optional string data_source = 2;
-
-  // The SQL text, in the dialect of the data source, from `sql.sql[0]`.
-  optional string sql = 3;
-
-  // The error text, if Cube did not generate SQL for the member.
-  optional string error = 4;
-
-  // True if the query had `"ungrouped": true`. An ungrouped query reads the tables of the cube.
-  // A grouped query can read a pre-aggregation table.
-  bool ungrouped = 5;
-}
-
+// IngestSnapshotResponse says that Coalesce Quality accepted the snapshot. It does not say that
+// the processing of the snapshot ended.
 message IngestSnapshotResponse {}
