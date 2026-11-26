@@ -10,7 +10,9 @@ import (
 	"os"
 	"strings"
 
+	"buf.build/gen/go/getsynq/api/grpc/go/synq/entities/coordinates/v1/coordinatesv1grpc"
 	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	coordinatesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/coordinates/v1"
 	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"golang.org/x/oauth2/clientcredentials"
@@ -34,7 +36,6 @@ func main() {
 	if clientID == "" || clientSecret == "" {
 		panic("QUALITY_CLIENT_ID and QUALITY_CLIENT_SECRET must be set")
 	}
-	clickhouseHost := os.Getenv("CLICKHOUSE_HOST")
 	tokenURL := fmt.Sprintf("https://%s/oauth2/token", host)
 
 	config := &clientcredentials.Config{
@@ -59,6 +60,7 @@ func main() {
 	typesServiceClient := entitiescustomv1grpc.NewTypesServiceClient(conn)
 	entitiesapi := entitiescustomv1grpc.NewEntitiesServiceClient(conn)
 	relationshipsapi := entitiescustomv1grpc.NewRelationshipsServiceClient(conn)
+	coordinatesapi := coordinatesv1grpc.NewDatabaseCoordinatesServiceClient(conn)
 
 	// Define custom entity types
 	omniCustomType := 30
@@ -166,16 +168,19 @@ func main() {
 					table = tokens[1]
 				}
 			}
+			// The table is already in Coalesce Quality, so name it by its entity_id,
+			// looked up by the SQL name that Omni reports.
+			sqlName := database + "." + table
+			upstream, found, err := tableEntityID(ctx, coordinatesapi, sqlName)
+			if err != nil {
+				panic(err)
+			}
+			if !found {
+				fmt.Printf("%s is not in the catalog, so the dashboard gets no edge to it.\n", sqlName)
+				continue
+			}
 			relationships = append(relationships, &entitiescustomv1.Relationship{
-				Upstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_ClickhouseTable{
-						ClickhouseTable: &entitiesv1.ClickhouseTableIdentifier{
-							Host:   clickhouseHost,
-							Schema: database,
-							Table:  table,
-						},
-					},
-				},
+				Upstream: upstream,
 				Downstream: &entitiesv1.Identifier{
 					Id: identifier,
 				},
@@ -190,6 +195,34 @@ func main() {
 			fmt.Printf("Upserted custom Omni Dashboard entity relationships.\n")
 		}
 	}
+}
+
+// tableEntityID looks up the entity_id of a warehouse table by its SQL name, as the
+// warehouse accepts it (`schema.table` or `database.schema.table`), and returns it as an
+// identifier. found is false if the catalog has no such table.
+func tableEntityID(
+	ctx context.Context,
+	api coordinatesv1grpc.DatabaseCoordinatesServiceClient,
+	sqlName string,
+) (*entitiesv1.Identifier, bool, error) {
+	resp, err := api.BatchIdsByCoordinates(ctx, &coordinatesv1.BatchIdsByCoordinatesRequest{SqlFqn: []string{sqlName}})
+	if err != nil {
+		return nil, false, err
+	}
+	for _, match := range resp.GetMatchedCoordinates() {
+		candidates := match.GetCandidates()
+		if len(candidates) > 1 {
+			return nil, false, fmt.Errorf("%s matches %d tables: give the full name, with the database", sqlName, len(candidates))
+		}
+		for _, candidate := range candidates {
+			for _, entityID := range candidate.GetSynqPaths() {
+				return &entitiesv1.Identifier{
+					Id: &entitiesv1.Identifier_SynqPath{SynqPath: &entitiesv1.SynqPathIdentifier{Path: entityID}},
+				}, true, nil
+			}
+		}
+	}
+	return nil, false, nil
 }
 
 func getenv(key, def string) string {

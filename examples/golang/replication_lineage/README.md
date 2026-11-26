@@ -55,10 +55,9 @@ The client credentials need the `Edit Entities`, `Edit Entity Types` and
 `Read Lineage` scopes. Create them on the API settings page of your Coalesce
 Quality app.
 
-Edit `streams` in `main.go` to point at tables that exist in your workspace. The
-identifiers must match how the tables are already known: an identifier that
-matches nothing is accepted, and the edge simply never appears. The verify step
-at the end is there to catch that.
+Edit `streams` in `main.go` to name tables that exist in your workspace, by
+their SQL names. The program looks up the entity_id of each table and prints
+it. A table that is not in the catalog is reported, and its stream gets no SQL.
 
 Re-running is safe. The entities are in one group, so a stream you remove from
 `streams` is deleted on the next run.

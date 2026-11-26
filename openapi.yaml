@@ -6126,61 +6126,90 @@ components:
             additionalProperties: false
         synq.contextentries.v1alpha.ContextEntry:
             type: object
-            properties:
-                id:
-                    type: string
-                    description: Opaque id of the entry (a UUID), supplied by the caller on create.
-                entityId:
-                    type: string
-                    description: |-
-                        Stable, opaque platform identifier of this entry, of the form
-                         "contextentry-<uuid>". Output-only. Every call of this service also accepts
-                         it as an id.
-                text:
-                    type: string
-                    description: The text, in Markdown.
-                kind:
-                    description: Where a person sees the entry.
-                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryKind'
-                target:
-                    description: The entities the entry applies to.
-                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryTarget'
-                endsAt:
-                    description: |-
-                        After this time the entry applies to nothing. Unset means the entry does
-                         not end.
-                    nullable: true
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                origin:
-                    description: Where the entry comes from. Output-only.
-                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryOrigin'
-                etag:
-                    type: string
-                    description: |-
-                        Entity tag for optimistic concurrency: pass it back on
-                         UpsertContextEntry / DeleteContextEntry to guard against overwriting a
-                         concurrent change. Form: `W/"<id>-<version>"`. Opaque, do not parse.
-                createdBy:
-                    description: Who created the entry. Output-only.
-                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
-                updatedBy:
-                    description: Who changed the entry last. Output-only.
-                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
-                createdAt:
-                    description: When the entry was created. Output-only.
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                updatedAt:
-                    description: When the entry was changed last. Output-only.
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                columns:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryColumn'
-                    description: |-
-                        The state of each name of `target.column_names` in the schema of the
-                         entity, in the order of the names. Output-only. Set by
-                         ListContextEntries and BatchGetContextEntries, and empty in
-                         BatchGetEntityContextEntries.
+            allOf:
+                - properties:
+                    id:
+                        type: string
+                        title: id
+                        description: Opaque id of the entry (a UUID), supplied by the caller on create.
+                    entityId:
+                        type: string
+                        title: entity_id
+                        description: |-
+                            Stable, opaque platform identifier of this entry, of the form
+                             "contextentry-<uuid>". Output-only. Every call of this service also accepts
+                             it as an id.
+                    kind:
+                        title: kind
+                        description: Where a person sees the entry.
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryKind'
+                    target:
+                        title: target
+                        description: The entities the entry applies to.
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryTarget'
+                    endsAt:
+                        title: ends_at
+                        description: |-
+                            After this time the entry applies to nothing. Unset means the entry does
+                             not end.
+                        nullable: true
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    origin:
+                        title: origin
+                        description: Where the entry comes from. Output-only.
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryOrigin'
+                    etag:
+                        type: string
+                        title: etag
+                        description: |-
+                            Entity tag for optimistic concurrency: pass it back on
+                             UpsertContextEntry / DeleteContextEntry to guard against overwriting a
+                             concurrent change. Form: `W/"<id>-<version>"`. Opaque, do not parse.
+                    createdBy:
+                        title: created_by
+                        description: Who created the entry. Output-only.
+                        $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                    updatedBy:
+                        title: updated_by
+                        description: Who changed the entry last. Output-only.
+                        $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                    createdAt:
+                        title: created_at
+                        description: When the entry was created. Output-only.
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    updatedAt:
+                        title: updated_at
+                        description: When the entry was changed last. Output-only.
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    columns:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryColumn'
+                        title: columns
+                        description: |-
+                            The state of each name of `target.column_names` in the schema of the
+                             entity, in the order of the names. Output-only. Set by
+                             ListContextEntries and BatchGetContextEntries, and empty in
+                             BatchGetEntityContextEntries.
+                - oneOf:
+                    - properties:
+                        markdown:
+                            type: string
+                            title: markdown
+                            description: The text, in Markdown.
+                      title: markdown
+                      required:
+                        - markdown
+                    - properties:
+                        prosemirrorDoc:
+                            title: prosemirror_doc
+                            description: |-
+                                A ProseMirror document, in its JSON form, with `type` "doc" at the root.
+                                 No entry holds a document yet, as a write with one is refused.
+                            $ref: '#/components/schemas/google.protobuf.Struct'
+                      title: prosemirror_doc
+                      required:
+                        - prosemirrorDoc
             title: ContextEntry
             additionalProperties: false
             description: |-
@@ -6441,52 +6470,75 @@ components:
             additionalProperties: false
         synq.contextentries.v1alpha.UpsertContextEntryRequest:
             type: object
-            properties:
-                id:
-                    type: string
-                    pattern: ^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-                    description: |-
-                        Opaque id of the entry. Accepts the bare UUID or the `entity_id` form
-                         (`contextentry-<uuid>`). The same id updates the same entry, a new id
-                         creates a new entry.
-                text:
-                    type: string
-                    maxLength: 4096
-                    minLength: 1
-                    description: The text, in Markdown. Required when creating.
-                    nullable: true
-                kind:
-                    not:
-                        enum:
-                            - 0
-                    description: Where a person sees the entry. Required when creating.
-                    nullable: true
-                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryKind'
-                target:
-                    description: |-
-                        The entities the entry applies to. Required when creating. Omit to keep
-                         the existing target on update.
-                    $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryTarget'
-                endsAt:
-                    description: Set to end the entry at this time. Omit to keep the existing end time.
-                    nullable: true
-                    $ref: '#/components/schemas/google.protobuf.Timestamp'
-                removeEndsAt:
-                    type: boolean
-                    description: |-
-                        Set to remove the end time, so the entry does not end. Ignored when
-                         `ends_at` is set.
-                etag:
-                    type: string
-                    description: |-
-                        Optional optimistic-concurrency guard. When set, the update fails with a
-                         conflict if the entry was changed since this etag was read.
-                    nullable: true
-                actor:
-                    description: |-
-                        Who is performing this write. Optional: the identity is completed from the
-                         calling credentials.
-                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+            allOf:
+                - properties:
+                    id:
+                        type: string
+                        title: id
+                        pattern: ^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+                        description: |-
+                            Opaque id of the entry. Accepts the bare UUID or the `entity_id` form
+                             (`contextentry-<uuid>`). The same id updates the same entry, a new id
+                             creates a new entry.
+                    kind:
+                        not:
+                            enum:
+                                - 0
+                        title: kind
+                        description: Where a person sees the entry. Required when creating.
+                        nullable: true
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryKind'
+                    target:
+                        title: target
+                        description: |-
+                            The entities the entry applies to. Required when creating. Omit to keep
+                             the existing target on update.
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ContextEntryTarget'
+                    endsAt:
+                        title: ends_at
+                        description: Set to end the entry at this time. Omit to keep the existing end time.
+                        nullable: true
+                        $ref: '#/components/schemas/google.protobuf.Timestamp'
+                    removeEndsAt:
+                        type: boolean
+                        title: remove_ends_at
+                        description: |-
+                            Set to remove the end time, so the entry does not end. Ignored when
+                             `ends_at` is set.
+                    etag:
+                        type: string
+                        title: etag
+                        description: |-
+                            Optional optimistic-concurrency guard. When set, the update fails with a
+                             conflict if the entry was changed since this etag was read.
+                        nullable: true
+                    actor:
+                        title: actor
+                        description: |-
+                            Who is performing this write. Optional: the identity is completed from the
+                             calling credentials.
+                        $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                - oneOf:
+                    - properties:
+                        markdown:
+                            type: string
+                            title: markdown
+                            maxLength: 4096
+                            minLength: 1
+                            description: The text, in Markdown.
+                      title: markdown
+                      required:
+                        - markdown
+                    - properties:
+                        prosemirrorDoc:
+                            title: prosemirror_doc
+                            description: |-
+                                A ProseMirror document, in its JSON form, with `type` "doc" at the root.
+                                 Not accepted yet: a write with a document fails with INVALID_ARGUMENT.
+                            $ref: '#/components/schemas/google.protobuf.Struct'
+                      title: prosemirror_doc
+                      required:
+                        - prosemirrorDoc
             title: UpsertContextEntryRequest
             additionalProperties: false
         synq.contextentries.v1alpha.UpsertContextEntryResponse:
@@ -40393,7 +40445,8 @@ paths:
             summary: UpsertContextEntry
             description: |-
                 Create or update a context entry. Repeating the same request converges to
-                 the same entry. `text`, `kind` and `target` are required when creating.
+                 the same entry. The content, `kind` and `target` are required when
+                 creating.
             operationId: synq.contextentries.v1alpha.ContextEntriesService.UpsertContextEntry
             requestBody:
                 content:
@@ -65694,8 +65747,8 @@ tags:
          unchanged. Pass the `etag` you last read to guard against overwriting a
          concurrent edit.
 
-         A workspace holds at most 500 entries, and one text holds at most 4096
-         characters.
+         A workspace holds at most 500 entries, and the Markdown of one entry holds at
+         most 4096 characters.
 
          This package is in initial development and can change.
     - name: synq.entities.executions.v2.EntityExecutionsService

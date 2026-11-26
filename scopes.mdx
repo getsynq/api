@@ -808,6 +808,7 @@ Use any read-only MCP (Model Context Protocol) tool, including tools added in th
 | `ListEntityFeatures`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`POST /api/entities/custom/v1/features/list` | List the features of one entity, or of every custom entity in the workspace when entity_id is left unset. |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | List the entity groups of the workspace, each with the ids of its entities. |
 | `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | List relationships touching the given entities, or every relationship in the workspace when ids is left empty. |
+| `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | List the custom entity types of the workspace. |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | Get multiple entities by their identifiers. |
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | Get specific entity by its identifier. |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | List entities matching the given filter |
@@ -933,6 +934,8 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. |
 | `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
+| `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | Delete a custom entity type by its `type_id`. |
+| `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | Create or update a custom entity type. |
 | `CertifyEntities`<br/>_synq.entities.marks.v1alpha.EntityMarksService_<br/>`POST /api/entities/marks/v1alpha/certify` | Certify entities. |
 | `DeprecateEntities`<br/>_synq.entities.marks.v1alpha.EntityMarksService_<br/>`POST /api/entities/marks/v1alpha/deprecate` | Deprecate entities one by one. |
 | `RemoveCertifications`<br/>_synq.entities.marks.v1alpha.EntityMarksService_<br/>`POST /api/entities/marks/v1alpha/remove-certifications` | Remove the certified mark of entities, from every member of their identity groups. |
@@ -1463,9 +1466,9 @@ Every public API method that a client or token can call, and the scopes that all
 | `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
 | `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
-| `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT` |
-| `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ` |
-| `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT` |
+| `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT`<br/>`SCOPE_MCP_WRITE` |
+| `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ`<br/>`SCOPE_MCP_READ` |
+| `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `BatchGetEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`POST /api/entities/v1/by-id` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `GetEntity`<br/>_synq.entities.entities.v1.EntitiesService_ | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `ListEntities`<br/>_synq.entities.entities.v1.EntitiesService_<br/>`GET /api/entities/v1` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |

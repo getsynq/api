@@ -24,7 +24,8 @@
 // one (passthrough, renamed, transformed). The two tables live in different
 // warehouses, so neither name in the SQL can be looked up by warehouse address
 // from the other side. Both are BOUND instead: a reference pins the name as the
-// SQL writes it to the entity it stands for, whatever platform that is on.
+// SQL writes it to the entity it stands for, whatever platform that is on. The
+// entity is named by its entity_id, looked up by the table's SQL name.
 //
 // Everything written here is idempotent: re-running the program produces the
 // same estate, and a stream that disappears from the list is deleted.
@@ -38,8 +39,10 @@ import (
 	"strings"
 	"time"
 
+	coordinatesv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/coordinates/v1/coordinatesv1grpc"
 	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
 	lineagev1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/lineage/v1/lineagev1grpc"
+	coordinatesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/coordinates/v1"
 	customfeaturesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/features/v1"
 	customv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	lineagev1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/lineage/v1"
@@ -64,6 +67,12 @@ const groupID = "replication"
 type stream struct {
 	name string
 
+	// The SQL names of the two tables, as each warehouse accepts them.
+	sourceTable string
+	targetTable string
+
+	// The entity_ids of the two tables, filled in by findTables. nil if the
+	// catalog does not have the table.
 	source *entitiesv1.Identifier
 	target *entitiesv1.Identifier
 
@@ -76,9 +85,9 @@ type stream struct {
 // A real integration reads these from the replication tool's own catalog.
 var streams = []stream{
 	{
-		name:   "app_db.public.customers",
-		source: postgresTable("app-db.internal.example.com", "app_db", "public", "customers"),
-		target: snowflakeTable("xy12345.eu-west-1", "RAW", "APP_DB", "CUSTOMERS"),
+		name:        "app_db.public.customers",
+		sourceTable: "app_db.public.customers",
+		targetTable: "RAW.APP_DB.CUSTOMERS",
 		columns: [][2]string{
 			{"id", "id"},
 			{"email", "email"},
@@ -86,9 +95,9 @@ var streams = []stream{
 		},
 	},
 	{
-		name:   "app_db.public.orders",
-		source: postgresTable("app-db.internal.example.com", "app_db", "public", "orders"),
-		target: snowflakeTable("xy12345.eu-west-1", "RAW", "APP_DB", "ORDERS"),
+		name:        "app_db.public.orders",
+		sourceTable: "app_db.public.orders",
+		targetTable: "RAW.APP_DB.ORDERS",
 		columns: [][2]string{
 			{"id", "id"},
 			{"customer_id", "customer_id"},
@@ -132,6 +141,10 @@ func main() {
 	features := entitiescustomv1grpc.NewFeaturesServiceClient(conn)
 	groups := entitiescustomv1grpc.NewGroupsServiceClient(conn)
 	lineage := lineagev1grpc.NewLineageServiceClient(conn)
+	coordinates := coordinatesv1grpc.NewDatabaseCoordinatesServiceClient(conn)
+
+	fmt.Println("== find the tables")
+	findTables(ctx, coordinates)
 
 	fmt.Println("== declare the stream type")
 	_, err = types.UpsertType(ctx, &customv1.UpsertTypeRequest{Type: &entitiesv1.Type{
@@ -155,6 +168,10 @@ func main() {
 
 	fmt.Println("== describe each hop as SQL")
 	for _, s := range streams {
+		if s.source == nil || s.target == nil {
+			fmt.Printf("   skipped %s: a table is not in the catalog\n", s.name)
+			continue
+		}
 		_, err := features.UpsertEntityFeature(ctx, &customv1.UpsertEntityFeatureRequest{
 			Feature: &customv1.Feature{
 				EntityId:  streamID(s),
@@ -180,7 +197,52 @@ func main() {
 	}
 
 	fmt.Println("== verify")
-	verify(ctx, lineage, streams[1], 2*time.Minute)
+	for _, s := range streams {
+		if s.source != nil && s.target != nil {
+			verify(ctx, lineage, s, 2*time.Minute)
+			return
+		}
+	}
+	fmt.Println("   no stream has both tables in the catalog: set the table names in `streams` to tables of your warehouses")
+}
+
+// findTables looks up the entity_id of each table by its SQL name, in one call.
+// A table the catalog does not have is reported, and its stream gets no SQL.
+func findTables(ctx context.Context, api coordinatesv1grpc.DatabaseCoordinatesServiceClient) {
+	names := make([]string, 0, 2*len(streams))
+	for _, s := range streams {
+		names = append(names, s.sourceTable, s.targetTable)
+	}
+	resp, err := api.BatchIdsByCoordinates(ctx, &coordinatesv1.BatchIdsByCoordinatesRequest{SqlFqn: names})
+	must(err)
+
+	found := map[string]*entitiesv1.Identifier{}
+	for _, match := range resp.GetMatchedCoordinates() {
+		candidates := match.GetCandidates()
+		if len(candidates) > 1 {
+			fmt.Printf("   %s matches %d tables: give the full name, with the database\n", match.GetSqlFqn(), len(candidates))
+			continue
+		}
+		for _, candidate := range candidates {
+			if paths := candidate.GetSynqPaths(); len(paths) > 0 {
+				found[match.GetSqlFqn()] = &entitiesv1.Identifier{
+					Id: &entitiesv1.Identifier_SynqPath{SynqPath: &entitiesv1.SynqPathIdentifier{Path: paths[0]}},
+				}
+			}
+		}
+	}
+
+	for i := range streams {
+		s := &streams[i]
+		s.source, s.target = found[s.sourceTable], found[s.targetTable]
+		for _, name := range []string{s.sourceTable, s.targetTable} {
+			if id, ok := found[name]; ok {
+				fmt.Printf("   %s  %s\n", name, id.GetSynqPath().GetPath())
+			} else {
+				fmt.Printf("   %s  not in the catalog\n", name)
+			}
+		}
+	}
 }
 
 // streamSql is the hop, written as the SQL a replication would run if source and
@@ -208,8 +270,7 @@ func streamSql(s stream) *customfeaturesv1.SqlDefinition {
 			strings.Join(targetColumns, ", "), strings.Join(selectList, ", ")),
 		// Bound, not looked up: the source and the target are on different
 		// platforms, and a reference resolves to its entity on whichever one it
-		// is. A binding to a table Coalesce Quality has not ingested yet is kept,
-		// and the edge appears once the table does.
+		// is.
 		References: []*customfeaturesv1.SqlTableReference{
 			{ObjectName: "source_table", Entity: s.source},
 			{ObjectName: "target_table", Entity: s.target},
@@ -219,9 +280,7 @@ func streamSql(s stream) *customfeaturesv1.SqlDefinition {
 
 // verify reads the column lineage back from the target side.
 //
-// The way this goes wrong is silent: a reference to a table that is not in
-// Coalesce Quality under that identifier leaves a valid write and an empty
-// graph. Lineage is computed asynchronously from what was written, so this polls.
+// Lineage is computed asynchronously from what was written, so this polls.
 func verify(ctx context.Context, api lineagev1grpc.LineageServiceClient, s stream, budget time.Duration) {
 	columns := make([]string, 0, len(s.columns))
 	for _, c := range s.columns {
@@ -254,7 +313,7 @@ func verify(ctx context.Context, api lineagev1grpc.LineageServiceClient, s strea
 			return
 		}
 		if time.Now().After(deadline) {
-			fmt.Printf("   (gave up after %s: check both tables exist in Coalesce Quality under these identifiers)\n", budget)
+			fmt.Printf("   (gave up after %s, the graph may still be building)\n", budget)
 			return
 		}
 		time.Sleep(10 * time.Second)
@@ -264,18 +323,6 @@ func verify(ctx context.Context, api lineagev1grpc.LineageServiceClient, s strea
 func streamID(s stream) *entitiesv1.Identifier {
 	return &entitiesv1.Identifier{Id: &entitiesv1.Identifier_Custom{
 		Custom: &entitiesv1.CustomIdentifier{Id: "replication::stream::" + s.name},
-	}}
-}
-
-func postgresTable(host, database, schema, table string) *entitiesv1.Identifier {
-	return &entitiesv1.Identifier{Id: &entitiesv1.Identifier_PostgresTable{
-		PostgresTable: &entitiesv1.PostgresTableIdentifier{Host: host, Database: database, Schema: schema, Table: table},
-	}}
-}
-
-func snowflakeTable(account, database, schema, table string) *entitiesv1.Identifier {
-	return &entitiesv1.Identifier{Id: &entitiesv1.Identifier_SnowflakeTable{
-		SnowflakeTable: &entitiesv1.SnowflakeTableIdentifier{Account: account, Database: database, Schema: schema, Table: table},
 	}}
 }
 

@@ -35,8 +35,10 @@ import (
 	"os"
 	"time"
 
+	coordinatesv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/coordinates/v1/coordinatesv1grpc"
 	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
 	lineagev1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/lineage/v1/lineagev1grpc"
+	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -123,6 +125,8 @@ func main() {
 		groups:             entitiescustomv1grpc.NewGroupsServiceClient(conn),
 		executions:         entitiescustomv1grpc.NewEntityExecutionsServiceClient(conn),
 		lineage:            lineagev1grpc.NewLineageServiceClient(conn),
+		coordinates:        coordinatesv1grpc.NewDatabaseCoordinatesServiceClient(conn),
+		warehouseTables:    map[string]*entitiesv1.Identifier{},
 	}
 
 	// The order below is not cosmetic. Three of these steps depend on an earlier
@@ -146,6 +150,7 @@ func main() {
 		{"declare schemas", syncSchemas},
 		{"declare model SQL (resolved by warehouse address)", syncModelSql},
 		{"declare question SQL (resolved by binding)", syncQuestionSql},
+		{"find the warehouse tables", findWarehouseTables},
 		{"declare dashboard column lineage", syncDashboardColumnLineage},
 		{"attach the tool's own definitions as code", syncCode},
 		{"link the serialized export to git", syncGitFileReferences},
@@ -177,6 +182,11 @@ type clients struct {
 	groups             entitiescustomv1grpc.GroupsServiceClient
 	executions         entitiescustomv1grpc.EntityExecutionsServiceClient
 	lineage            lineagev1grpc.LineageServiceClient
+	coordinates        coordinatesv1grpc.DatabaseCoordinatesServiceClient
+
+	// The entity_id of each warehouse table, by table name. findWarehouseTables
+	// fills it in.
+	warehouseTables map[string]*entitiesv1.Identifier
 }
 
 func env(name, fallback string) string {

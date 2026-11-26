@@ -105,9 +105,9 @@ pip install -r requirements.txt
 export QUALITY_CLIENT_ID=...
 export QUALITY_CLIENT_SECRET=...
 
-# The warehouse the BI tool queries. Its tables do not have to exist yet. An
-# edge to an entity that Coalesce Quality has not seen is kept, and appears
-# when the entity is ingested.
+# The warehouse the BI tool queries. The sync looks up each table a dashboard
+# reads directly by its SQL name, and names it by its entity_id. A table that
+# is not in the catalog yet gets no edge, and the sync says so.
 export BIGQUERY_PROJECT=my-gcp-project
 export BIGQUERY_DATASET=analytics
 

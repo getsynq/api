@@ -1,7 +1,9 @@
 package main
 
 import (
+	"buf.build/gen/go/getsynq/api/grpc/go/synq/entities/coordinates/v1/coordinatesv1grpc"
 	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	coordinatesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/coordinates/v1"
 	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
 	"context"
@@ -139,87 +141,89 @@ func main() {
 		panic(err)
 	}
 
-	//
-	// Service kernel-accounts is downstream of its datadog's monitor
-	// Service kernel-auth is downstream of its datadog's monitor
-	// Both services are upstream of clickhouse table `users`
-	_, err = relationshipsapi.UpsertRelationships(ctx, &entitiescustomv1.UpsertRelationshipsRequest{
-		Relationships: []*entitiescustomv1.Relationship{
-			{
-				Upstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "datadog::monitor::kernel-accounts-api_error_too_high",
-						},
-					},
-				},
-				Downstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "service::kernel-accounts",
-						},
-					},
-				},
-			},
-			{
-				Upstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "datadog::monitor::kernel-auth-api_error_too_high",
-						},
-					},
-				},
-				Downstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "service::kernel-auth",
-						},
-					},
-				},
-			},
-			{
-				Upstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "service::kernel-auth",
-						},
-					},
-				},
-				Downstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_ClickhouseTable{
-						ClickhouseTable: &entitiesv1.ClickhouseTableIdentifier{
-							Host:   "prod",
-							Schema: "system",
-							Table:  "users",
-						},
-					},
-				},
-			},
-			{
-				Upstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_Custom{
-						Custom: &entitiesv1.CustomIdentifier{
-							Id: "service::kernel-accounts",
-						},
-					},
-				},
-				Downstream: &entitiesv1.Identifier{
-					Id: &entitiesv1.Identifier_ClickhouseTable{
-						ClickhouseTable: &entitiesv1.ClickhouseTableIdentifier{
-							Host:   "prod",
-							Schema: "system",
-							Table:  "users",
-						},
-					},
-				},
-			},
+	// Create the accounts dashboard. 3_create_features declares its column lineage.
+	_, err = entitiesapi.UpsertEntity(ctx, &entitiescustomv1.UpsertEntityRequest{
+		Entity: &entitiesv1.Entity{
+			Id:          customID("dashboard::accounts-overview"),
+			TypeId:      12,
+			Name:        "Accounts overview",
+			Description: "Dashboard of the accounts that kernel-accounts serves",
+			CreatedAt:   timestamppb.Now(),
 		},
 	})
-
 	if err != nil {
 		panic(err)
 	}
 
+	// Service kernel-accounts is downstream of its datadog's monitor
+	// Service kernel-auth is downstream of its datadog's monitor
+	relationships := []*entitiescustomv1.Relationship{
+		{
+			Upstream:   customID("datadog::monitor::kernel-accounts-api_error_too_high"),
+			Downstream: customID("service::kernel-accounts"),
+		},
+		{
+			Upstream:   customID("datadog::monitor::kernel-auth-api_error_too_high"),
+			Downstream: customID("service::kernel-auth"),
+		},
+	}
+
+	// Both services write to the warehouse table `users`. A table that is already in
+	// Coalesce Quality is named by its entity_id. Look it up by the SQL name your tool
+	// knows, here `system.users`. Set WAREHOUSE_TABLE to a table of your warehouse.
+	coordinatesapi := coordinatesv1grpc.NewDatabaseCoordinatesServiceClient(conn)
+	tableName := getenv("WAREHOUSE_TABLE", "system.users")
+	table, found, err := tableEntityID(ctx, coordinatesapi, tableName)
+	if err != nil {
+		panic(err)
+	}
+	if found {
+		relationships = append(relationships,
+			&entitiescustomv1.Relationship{Upstream: customID("service::kernel-auth"), Downstream: table},
+			&entitiescustomv1.Relationship{Upstream: customID("service::kernel-accounts"), Downstream: table},
+		)
+	} else {
+		fmt.Printf("%s is not in the catalog, so the services get no edge to it. Set WAREHOUSE_TABLE to a table of your warehouse.\n", tableName)
+	}
+
+	_, err = relationshipsapi.UpsertRelationships(ctx, &entitiescustomv1.UpsertRelationshipsRequest{
+		Relationships: relationships,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func customID(id string) *entitiesv1.Identifier {
+	return &entitiesv1.Identifier{Id: &entitiesv1.Identifier_Custom{Custom: &entitiesv1.CustomIdentifier{Id: id}}}
+}
+
+// tableEntityID looks up the entity_id of a warehouse table by its SQL name, as the
+// warehouse accepts it (`schema.table` or `database.schema.table`), and returns it as an
+// identifier. found is false if the catalog has no such table.
+func tableEntityID(
+	ctx context.Context,
+	api coordinatesv1grpc.DatabaseCoordinatesServiceClient,
+	sqlName string,
+) (*entitiesv1.Identifier, bool, error) {
+	resp, err := api.BatchIdsByCoordinates(ctx, &coordinatesv1.BatchIdsByCoordinatesRequest{SqlFqn: []string{sqlName}})
+	if err != nil {
+		return nil, false, err
+	}
+	for _, match := range resp.GetMatchedCoordinates() {
+		candidates := match.GetCandidates()
+		if len(candidates) > 1 {
+			return nil, false, fmt.Errorf("%s matches %d tables: give the full name, with the database", sqlName, len(candidates))
+		}
+		for _, candidate := range candidates {
+			for _, entityID := range candidate.GetSynqPaths() {
+				return &entitiesv1.Identifier{
+					Id: &entitiesv1.Identifier_SynqPath{SynqPath: &entitiesv1.SynqPathIdentifier{Path: entityID}},
+				}, true, nil
+			}
+		}
+	}
+	return nil, false, nil
 }
 
 func getenv(key, def string) string {

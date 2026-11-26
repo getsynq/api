@@ -24,10 +24,13 @@ import (
 func verify(ctx context.Context, api *clients, cfg config, budget time.Duration) {
 	dash := dashboardID(dashboards[0].id)
 
-	// The table-level chain. Expect five hops: dashboard <- question <- model <-
-	// warehouse tables, plus the filter's direct warehouse edge.
-	wantTableNodes := 7
+	// The table-level chain: the dashboard, two questions, two models, and the
+	// warehouse tables under them that are in the catalog.
+	wantTableNodes := 5 + len(api.warehouseTables)
 	fmt.Printf("\n-- table lineage upstream of %s\n", dash.GetCustom().GetId())
+	if len(api.warehouseTables) == 0 {
+		fmt.Println("   (no warehouse table is in the catalog, so the chain stops at the models)")
+	}
 	table := poll(ctx, budget, func() (*lineagev1.Lineage, bool) {
 		lin := getLineage(ctx, api, &lineagev1.GetLineageStartPoint{
 			From: &lineagev1.GetLineageStartPoint_Entities{

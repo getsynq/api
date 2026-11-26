@@ -3,6 +3,7 @@ syntax = "proto3";
 package synq.contextentries.v1alpha;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/issues/actor/v1/actor.proto";
 import "synq/queries/v1/query.proto";
@@ -49,8 +50,15 @@ message ContextEntry {
   // it as an id.
   string entity_id = 2;
 
-  // The text, in Markdown.
-  string text = 3;
+  // The content of the entry, in the format it was written in. Always set.
+  oneof content {
+    // The text, in Markdown.
+    string markdown = 3;
+
+    // A ProseMirror document, in its JSON form, with `type` "doc" at the root.
+    // No entry holds a document yet, as a write with one is refused.
+    google.protobuf.Struct prosemirror_doc = 14;
+  }
 
   // Where a person sees the entry.
   ContextEntryKind kind = 4;

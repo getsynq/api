@@ -60,6 +60,10 @@ func main() {
 		},
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
 	_, err = typesServiceClient.UpsertType(ctx, &entitiescustomv1.UpsertTypeRequest{
 		Type: &entitiesv1.Type{
 			TypeId:  11,
@@ -71,6 +75,17 @@ func main() {
 		panic(err)
 	}
 
+	// 3_create_features declares column lineage on a dashboard of this type.
+	_, err = typesServiceClient.UpsertType(ctx, &entitiescustomv1.UpsertTypeRequest{
+		Type: &entitiesv1.Type{
+			TypeId:  12,
+			Name:    "Dashboard",
+			SvgIcon: []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 14h14v1H1zM2 9h3v4H2zM6.5 5h3v8h-3zM11 2h3v11h-3z"/></svg>`),
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getenv(key, def string) string {

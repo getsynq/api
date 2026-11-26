@@ -38,7 +38,11 @@ from google.protobuf.timestamp_pb2 import Timestamp
 
 from auth import TokenAuth, TokenSource
 from metabase import ALERTS, DASHBOARDS, MODELS, QUESTIONS, SUBSCRIPTIONS, Column
-from synq.entities.coordinates.v1 import database_context_pb2
+from synq.entities.coordinates.v1 import (
+    database_context_pb2,
+    database_coordinates_service_pb2,
+    database_coordinates_service_pb2_grpc,
+)
 from synq.entities.custom.features.v1 import checks_pb2, code_pb2, column_lineage_pb2
 from synq.entities.custom.features.v1 import git_file_reference_pb2
 from synq.entities.custom.features.v1 import schema_pb2 as feature_schema_pb2
@@ -156,6 +160,12 @@ class Clients:
             entity_executions_service_pb2_grpc.EntityExecutionsServiceStub(channel)
         )
         self.lineage = lineage_service_pb2_grpc.LineageServiceStub(channel)
+        self.coordinates = (
+            database_coordinates_service_pb2_grpc.DatabaseCoordinatesServiceStub(channel)
+        )
+        # The entity_id of each warehouse table, by its SQL name.
+        # find_warehouse_tables fills it in.
+        self.warehouse_tables: dict[str, identifier_pb2.Identifier] = {}
 
 
 # -----------------------------------------------------------------------------
@@ -194,18 +204,51 @@ def alert_id(id_: int) -> identifier_pb2.Identifier:
     return custom_id(f"metabase::alert::{id_}")
 
 
-def warehouse_table(cfg: Config, table: str) -> identifier_pb2.Identifier:
+def warehouse_table_sql_name(cfg: Config, table: str) -> str:
+    """The SQL name of a table of the warehouse the BI tool queries."""
+    return f"{cfg.project}.{cfg.dataset}.{table}"
+
+
+# The warehouse tables that the models' SQL and the dashboard filter read.
+WAREHOUSE_TABLES_READ = ["order_items", "products", "customers"]
+
+
+def find_warehouse_tables(api: "Clients", cfg: Config):
     """
-    Name an entity Coalesce Quality already has, from an integration you did not
-    write. Custom entities and native ones are the same kind of thing to every
-    API here: an edge, a binding or a declared column works across the boundary
-    without ceremony.
+    Look up the entity_id of each warehouse table the example reads, by its SQL
+    name, in one call. The dashboard filter needs the id for its column edge,
+    and verify needs the count to know how much lineage to wait for.
+
+    A table that Coalesce Quality already has, from an integration you did not
+    write, is named by its entity_id. Custom entities and native ones are the
+    same kind of thing to every API here: an edge, a binding or a declared
+    column works across the boundary without ceremony.
     """
-    return identifier_pb2.Identifier(
-        bigquery_table=identifier_pb2.BigqueryTableIdentifier(
-            project=cfg.project, dataset=cfg.dataset, table=table
-        )
+    names = [warehouse_table_sql_name(cfg, t) for t in WAREHOUSE_TABLES_READ]
+
+    resp = api.coordinates.BatchIdsByCoordinates(
+        database_coordinates_service_pb2.BatchIdsByCoordinatesRequest(sql_fqn=names)
     )
+    for match in resp.matched_coordinates:
+        if len(match.candidates) > 1:
+            raise RuntimeError(
+                f"{match.sql_fqn} matches {len(match.candidates)} tables"
+            )
+        for candidate in match.candidates:
+            if candidate.synq_paths:
+                api.warehouse_tables[match.sql_fqn] = identifier_pb2.Identifier(
+                    synq_path=identifier_pb2.SynqPathIdentifier(
+                        path=candidate.synq_paths[0]
+                    )
+                )
+    for name in names:
+        found = api.warehouse_tables.get(name)
+        if found:
+            print(f"   {name}  {found.synq_path.path}")
+        else:
+            print(
+                f"   {name}  not in the catalog: set BIGQUERY_PROJECT and BIGQUERY_DATASET"
+            )
 
 
 def every_entity():
@@ -602,10 +645,12 @@ def sync_dashboard_column_lineage(api: Clients, cfg: Config):
         edges = []
         for c in d.cards:
             if c.from_warehouse_table:
-                # An upstream on a connected platform works exactly the same way,
-                # and it does not have to exist yet: the edge is remembered and
-                # appears once the entity is next ingested.
-                upstream = warehouse_table(cfg, c.from_warehouse_table)
+                # An upstream on a connected platform works exactly the same way.
+                upstream = api.warehouse_tables.get(
+                    warehouse_table_sql_name(cfg, c.from_warehouse_table)
+                )
+                if upstream is None:
+                    continue
             else:
                 upstream = question_id(c.from_question)
             edges.append(
@@ -920,10 +965,12 @@ def verify(api: Clients, cfg: Config, budget_seconds=120):
     """
     dash = dashboard_id(DASHBOARDS[0].id)
 
-    # The table-level chain. Expect the dashboard, two questions, two models and
-    # the three warehouse tables under them.
-    want_nodes = 7
+    # The table-level chain: the dashboard, two questions, two models, and the
+    # warehouse tables under them that are in the catalog.
+    want_nodes = 5 + len(api.warehouse_tables)
     print(f"\n-- table lineage upstream of {dash.custom.id}")
+    if not api.warehouse_tables:
+        print("   (no warehouse table is in the catalog, so the chain stops at the models)")
 
     def table_once():
         lineage = get_lineage(
@@ -994,6 +1041,7 @@ STEPS = [
     ("declare schemas", sync_schemas),
     ("declare model SQL (resolved by warehouse address)", sync_model_sql),
     ("declare question SQL (resolved by binding)", sync_question_sql),
+    ("find the warehouse tables", find_warehouse_tables),
     ("declare dashboard column lineage", sync_dashboard_column_lineage),
     ("attach the tool's own definitions as code", sync_code),
     ("link the serialized export to git", sync_git_file_references),

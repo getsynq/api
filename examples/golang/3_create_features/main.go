@@ -1,7 +1,9 @@
 package main
 
 import (
+	"buf.build/gen/go/getsynq/api/grpc/go/synq/entities/coordinates/v1/coordinatesv1grpc"
 	entitiescustomv1grpc "buf.build/gen/go/getsynq/api/grpc/go/synq/entities/custom/v1/customv1grpc"
+	coordinatesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/coordinates/v1"
 	entitiescustomfeaturesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/features/v1"
 	entitiescustomv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/custom/v1"
 	entitiesv1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/entities/v1"
@@ -172,61 +174,49 @@ func main() {
 	//
 	// Declaring a column edge also puts the entity downstream of each upstream named here, so the
 	// table-level edge does not have to be declared separately.
+	edges := []*entitiescustomfeaturesv1.ColumnEdge{
+		// From another custom entity. The two column names are stated
+		// independently, so they do not have to match: here the dashboard
+		// prefixes its own columns with the model they came from.
+		{
+			Upstream:       customID("service::kernel-accounts"),
+			UpstreamColumn: "id",
+			Column:         "kernel_accounts.id",
+		},
+		{
+			Upstream:       customID("service::kernel-accounts"),
+			UpstreamColumn: "roles",
+			Column:         "kernel_accounts.roles",
+		},
+	}
+
+	// An upstream on a connected platform works the same way. Name it by its entity_id,
+	// looked up by the SQL name your tool knows. Set WAREHOUSE_TABLE to a table of your
+	// warehouse that has a `run_id` column.
+	coordinatesapi := coordinatesv1grpc.NewDatabaseCoordinatesServiceClient(conn)
+	tableName := getenv("WAREHOUSE_TABLE", "default.runs")
+	table, found, err := tableEntityID(ctx, coordinatesapi, tableName)
+	if err != nil {
+		panic(err)
+	}
+	if found {
+		edges = append(edges, &entitiescustomfeaturesv1.ColumnEdge{
+			Upstream:       table,
+			UpstreamColumn: "run_id",
+			Column:         "runs.run_id",
+		})
+	} else {
+		fmt.Printf("%s is not in the catalog, so the dashboard gets no column from it. Set WAREHOUSE_TABLE to a table of your warehouse.\n", tableName)
+	}
+
 	_, err = featuresapi.UpsertEntityFeature(ctx, &entitiescustomv1.UpsertEntityFeatureRequest{
 		Feature: &entitiescustomv1.Feature{
-			EntityId: &entitiesv1.Identifier{
-				Id: &entitiesv1.Identifier_Custom{
-					Custom: &entitiesv1.CustomIdentifier{
-						Id: "dashboard::accounts-overview",
-					},
-				},
-			},
+			EntityId:  customID("dashboard::accounts-overview"),
 			FeatureId: "column-lineage",
 			Feature: &entitiescustomv1.Feature_ColumnLineage{
 				ColumnLineage: &entitiescustomfeaturesv1.ColumnLineage{
 					StateAt: timestamppb.Now(),
-					Edges: []*entitiescustomfeaturesv1.ColumnEdge{
-						// From another custom entity. The two column names are stated
-						// independently, so they do not have to match: here the dashboard
-						// prefixes its own columns with the model they came from.
-						{
-							Upstream: &entitiesv1.Identifier{
-								Id: &entitiesv1.Identifier_Custom{
-									Custom: &entitiesv1.CustomIdentifier{
-										Id: "service::kernel-accounts",
-									},
-								},
-							},
-							UpstreamColumn: "id",
-							Column:         "kernel_accounts.id",
-						},
-						{
-							Upstream: &entitiesv1.Identifier{
-								Id: &entitiesv1.Identifier_Custom{
-									Custom: &entitiesv1.CustomIdentifier{
-										Id: "service::kernel-accounts",
-									},
-								},
-							},
-							UpstreamColumn: "roles",
-							Column:         "kernel_accounts.roles",
-						},
-						// An upstream on a connected platform works the same way. It does not
-						// have to exist yet. The edge appears when it is next ingested.
-						{
-							Upstream: &entitiesv1.Identifier{
-								Id: &entitiesv1.Identifier_ClickhouseTable{
-									ClickhouseTable: &entitiesv1.ClickhouseTableIdentifier{
-										Host:   "clickhouse.example.com",
-										Schema: "default",
-										Table:  "runs",
-									},
-								},
-							},
-							UpstreamColumn: "run_id",
-							Column:         "runs.run_id",
-						},
-					},
+					Edges:   edges,
 				},
 			},
 		},
@@ -234,7 +224,38 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
 
+func customID(id string) *entitiesv1.Identifier {
+	return &entitiesv1.Identifier{Id: &entitiesv1.Identifier_Custom{Custom: &entitiesv1.CustomIdentifier{Id: id}}}
+}
+
+// tableEntityID looks up the entity_id of a warehouse table by its SQL name, as the
+// warehouse accepts it (`schema.table` or `database.schema.table`), and returns it as an
+// identifier. found is false if the catalog has no such table.
+func tableEntityID(
+	ctx context.Context,
+	api coordinatesv1grpc.DatabaseCoordinatesServiceClient,
+	sqlName string,
+) (*entitiesv1.Identifier, bool, error) {
+	resp, err := api.BatchIdsByCoordinates(ctx, &coordinatesv1.BatchIdsByCoordinatesRequest{SqlFqn: []string{sqlName}})
+	if err != nil {
+		return nil, false, err
+	}
+	for _, match := range resp.GetMatchedCoordinates() {
+		candidates := match.GetCandidates()
+		if len(candidates) > 1 {
+			return nil, false, fmt.Errorf("%s matches %d tables: give the full name, with the database", sqlName, len(candidates))
+		}
+		for _, candidate := range candidates {
+			for _, entityID := range candidate.GetSynqPaths() {
+				return &entitiesv1.Identifier{
+					Id: &entitiesv1.Identifier_SynqPath{SynqPath: &entitiesv1.SynqPathIdentifier{Path: entityID}},
+				}, true, nil
+			}
+		}
+	}
+	return nil, false, nil
 }
 
 func getenv(key, def string) string {

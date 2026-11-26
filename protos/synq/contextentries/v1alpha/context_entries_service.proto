@@ -4,6 +4,7 @@ package synq.contextentries.v1alpha;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/contextentries/v1alpha/context_entry.proto";
 import "synq/issues/actor/v1/actor.proto";
@@ -23,13 +24,14 @@ option go_package = "github.com/getsynq/api/contextentries/v1alpha";
 // unchanged. Pass the `etag` you last read to guard against overwriting a
 // concurrent edit.
 //
-// A workspace holds at most 500 entries, and one text holds at most 4096
-// characters.
+// A workspace holds at most 500 entries, and the Markdown of one entry holds at
+// most 4096 characters.
 //
 // This package is in initial development and can change.
 service ContextEntriesService {
   // Create or update a context entry. Repeating the same request converges to
-  // the same entry. `text`, `kind` and `target` are required when creating.
+  // the same entry. The content, `kind` and `target` are required when
+  // creating.
   rpc UpsertContextEntry(UpsertContextEntryRequest) returns (UpsertContextEntryResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
@@ -125,11 +127,19 @@ message UpsertContextEntryRequest {
   // creates a new entry.
   string id = 1 [(buf.validate.field).string.pattern = "^(contextentry-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"];
 
-  // The text, in Markdown. Required when creating.
-  optional string text = 2 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 4096
-  }];
+  // The content of the entry, in one format. Required when creating. Omit to
+  // keep the existing content on update.
+  oneof content {
+    // The text, in Markdown.
+    string markdown = 2 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 4096
+    }];
+
+    // A ProseMirror document, in its JSON form, with `type` "doc" at the root.
+    // Not accepted yet: a write with a document fails with INVALID_ARGUMENT.
+    google.protobuf.Struct prosemirror_doc = 9;
+  }
 
   // Where a person sees the entry. Required when creating.
   optional ContextEntryKind kind = 3 [(buf.validate.field).enum = {

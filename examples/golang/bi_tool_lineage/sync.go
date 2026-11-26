@@ -43,20 +43,55 @@ func customID(id string) *entitiesv1.Identifier {
 	}
 }
 
-// warehouseTable names an entity that Coalesce Quality already has, from an
-// integration you did not write. Every API here treats custom entities and native
-// entities the same way: an edge, a binding or a declared column works between
-// them with no extra steps.
-func warehouseTable(cfg config, table string) *entitiesv1.Identifier {
-	return &entitiesv1.Identifier{
-		Id: &entitiesv1.Identifier_BigqueryTable{
-			BigqueryTable: &entitiesv1.BigqueryTableIdentifier{
-				Project: cfg.project,
-				Dataset: cfg.dataset,
-				Table:   table,
-			},
-		},
+// warehouseTableSqlName is the SQL name of a table of the warehouse the BI tool
+// queries, as BigQuery accepts it.
+func warehouseTableSqlName(cfg config, table string) string {
+	return fmt.Sprintf("%s.%s.%s", cfg.project, cfg.dataset, table)
+}
+
+// warehouseTablesRead are the warehouse tables that the models' SQL and the
+// dashboard filter read.
+var warehouseTablesRead = []string{"order_items", "products", "customers"}
+
+// findWarehouseTables looks up the entity_id of each warehouse table the example
+// reads, by its SQL name, in one call. The dashboard filter needs the id for its
+// column edge, and verify needs the count to know how much lineage to wait for.
+//
+// A table that Coalesce Quality already has, from an integration you did not
+// write, is named by its entity_id. Every API here treats custom entities and
+// native entities the same way: an edge, a binding or a declared column works
+// between them with no extra steps.
+func findWarehouseTables(ctx context.Context, api *clients, cfg config) error {
+	names := make([]string, 0, len(warehouseTablesRead))
+	for _, table := range warehouseTablesRead {
+		names = append(names, warehouseTableSqlName(cfg, table))
 	}
+
+	resp, err := api.coordinates.BatchIdsByCoordinates(ctx, &coordinatesv1.BatchIdsByCoordinatesRequest{SqlFqn: names})
+	if err != nil {
+		return err
+	}
+	for _, match := range resp.GetMatchedCoordinates() {
+		candidates := match.GetCandidates()
+		if len(candidates) > 1 {
+			return fmt.Errorf("%s matches %d tables", match.GetSqlFqn(), len(candidates))
+		}
+		for _, candidate := range candidates {
+			if paths := candidate.GetSynqPaths(); len(paths) > 0 {
+				api.warehouseTables[match.GetSqlFqn()] = &entitiesv1.Identifier{
+					Id: &entitiesv1.Identifier_SynqPath{SynqPath: &entitiesv1.SynqPathIdentifier{Path: paths[0]}},
+				}
+			}
+		}
+	}
+	for _, name := range names {
+		if id, ok := api.warehouseTables[name]; ok {
+			fmt.Printf("   %s  %s\n", name, id.GetSynqPath().GetPath())
+		} else {
+			fmt.Printf("   %s  not in the catalog: set BIGQUERY_PROJECT and BIGQUERY_DATASET\n", name)
+		}
+	}
+	return nil
 }
 
 // everyEntity is the full set this sync owns, in a stable order. The group step
@@ -482,10 +517,12 @@ func syncDashboardColumnLineage(ctx context.Context, api *clients, cfg config) e
 		for _, c := range d.cards {
 			upstream := questionID(c.fromQuestion)
 			if c.fromWarehouseTable != "" {
-				// An upstream on a connected platform works exactly the same way,
-				// and it does not have to exist yet: the edge is remembered and
-				// appears once the entity is next ingested.
-				upstream = warehouseTable(cfg, c.fromWarehouseTable)
+				// An upstream on a connected platform works exactly the same way.
+				table, ok := api.warehouseTables[warehouseTableSqlName(cfg, c.fromWarehouseTable)]
+				if !ok {
+					continue
+				}
+				upstream = table
 			}
 			edges = append(edges, &customfeaturesv1.ColumnEdge{
 				Upstream:       upstream,
