@@ -62,7 +62,10 @@ service FeaturesService {
   rpc UpsertEntityFeature(UpsertEntityFeatureRequest) returns (UpsertEntityFeatureResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_EDIT]
+      scopes: [
+        SCOPE_ENTITY_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/entities/custom/v1/features"
@@ -75,7 +78,10 @@ service FeaturesService {
   rpc DeleteEntityFeature(DeleteEntityFeatureRequest) returns (DeleteEntityFeatureResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_EDIT]
+      scopes: [
+        SCOPE_ENTITY_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       delete: "/api/entities/custom/v1/features"
