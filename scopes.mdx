@@ -934,6 +934,10 @@ Use any write MCP (Model Context Protocol) tool, including tools added in the fu
 | `UpsertCheckCategories`<br/>_synq.entities.checks.v2.ChecksCategoriesService_<br/>`POST /api/entities/v2/checks/categories` | Set the category of one or more checks explicitly. |
 | `DeleteRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules/delete` | Delete a categorisation rule. |
 | `UpsertRule`<br/>_synq.entities.checks.v2.ChecksCategorisationRulesService_<br/>`POST /api/entities/v2/checks/categorisation-rules` | Create or update a categorisation rule. |
+| `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | Delete a custom entity by its identifier. |
+| `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | Create or update a custom entity. |
+| `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | Delete relationships between entities. |
+| `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | Create or update relationships between entities. |
 | `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | Delete a custom entity type by its `type_id`. |
 | `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | Create or update a custom entity type. |
 | `CertifyEntities`<br/>_synq.entities.marks.v1alpha.EntityMarksService_<br/>`POST /api/entities/marks/v1alpha/certify` | Certify entities. |
@@ -1452,9 +1456,9 @@ Every public API method that a client or token can call, and the scopes that all
 | `DeleteCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`DELETE /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
 | `ListCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertCheckRelationships`<br/>_synq.entities.custom.v1.ChecksRelationshipsService_<br/>`POST /api/entities/custom/v1/check-relationships` | `SCOPE_ENTITY_EDIT` |
-| `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
+| `DeleteEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`DELETE /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListEntities`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`GET /api/entities/custom/v1/entities` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
-| `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT` |
+| `UpsertEntity`<br/>_synq.entities.custom.v1.EntitiesService_<br/>`POST /api/entities/custom/v1/entities` | `SCOPE_ENTITY_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `UpsertExecution`<br/>_synq.entities.custom.v1.EntityExecutionsService_<br/>`POST /api/entities/custom/executions/v1` | `SCOPE_EXECUTION_EDIT` |
 | `UpsertLogEntry`<br/>_synq.entities.custom.v1.EntityExecutionsService_<br/>`POST /api/entities/custom/executions/v1/log-entry` | `SCOPE_EXECUTION_EDIT`<br/>`SCOPE_EXECUTION_LOG_EDIT` |
 | `DeleteEntityFeature`<br/>_synq.entities.custom.v1.FeaturesService_<br/>`DELETE /api/entities/custom/v1/features` | `SCOPE_ENTITY_EDIT` |
@@ -1463,9 +1467,9 @@ Every public API method that a client or token can call, and the scopes that all
 | `DeleteEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`DELETE /api/entities/custom/v1/groups` | `SCOPE_ENTITY_EDIT` |
 | `ListEntityGroups`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertEntitiesGroup`<br/>_synq.entities.custom.v1.GroupsService_<br/>`POST /api/entities/custom/v1/groups` | `SCOPE_ENTITY_EDIT` |
-| `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
+| `DeleteRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`DELETE /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships/list` | `SCOPE_LINEAGE_READ`<br/>`SCOPE_MCP_READ` |
-| `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT` |
+| `UpsertRelationships`<br/>_synq.entities.custom.v1.RelationshipsService_<br/>`POST /api/entities/custom/v1/relationships` | `SCOPE_LINEAGE_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `DeleteType`<br/>_synq.entities.custom.v1.TypesService_<br/>`DELETE /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT`<br/>`SCOPE_MCP_WRITE` |
 | `ListTypes`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types/list` | `SCOPE_ENTITY_READ`<br/>`SCOPE_ENTITY_TYPE_READ`<br/>`SCOPE_MCP_READ` |
 | `UpsertType`<br/>_synq.entities.custom.v1.TypesService_<br/>`POST /api/entities/custom/v1/types` | `SCOPE_ENTITY_TYPE_EDIT`<br/>`SCOPE_MCP_WRITE` |

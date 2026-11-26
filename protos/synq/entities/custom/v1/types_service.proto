@@ -5,6 +5,7 @@ package synq.entities.custom.v1;
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/type.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -74,6 +75,12 @@ message UpsertTypeRequest {
   // check is what stops two integrations that picked the same `type_id` from
   // overwriting each other.
   bool allow_rename = 2;
+
+  // Who is performing this write. Optional: the identity is completed from the
+  // calling credentials. Set it to attribute the change to a person, for
+  // example when a tool writes on behalf of a user. Read it back as the type's
+  // updated_by.
+  synq.issues.actor.v1.Actor actor = 3;
 }
 message UpsertTypeResponse {}
 

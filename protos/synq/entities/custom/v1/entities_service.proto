@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "synq/entities/v1/entity.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/issues/actor/v1/actor.proto";
 import "synq/v1/pagination.proto";
 import "synq/v1/scope_authorization.proto";
 
@@ -24,7 +25,10 @@ service EntitiesService {
   rpc UpsertEntity(UpsertEntityRequest) returns (UpsertEntityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_EDIT]
+      scopes: [
+        SCOPE_ENTITY_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/entities/custom/v1/entities"
@@ -37,7 +41,10 @@ service EntitiesService {
   rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_ENTITY_EDIT]
+      scopes: [
+        SCOPE_ENTITY_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {delete: "/api/entities/custom/v1/entities"};
   }
@@ -60,6 +67,12 @@ service EntitiesService {
 message UpsertEntityRequest {
   // The entity to create or update.
   synq.entities.v1.Entity entity = 1 [(buf.validate.field).required = true];
+
+  // Who is performing this write. Optional: the identity is completed from the
+  // calling credentials. Set it to attribute the change to a person, for
+  // example when a tool writes on behalf of a user. Read it back as the
+  // entity's updated_by.
+  synq.issues.actor.v1.Actor actor = 2;
 }
 
 // UpsertEntityResponse is the response message for the UpsertEntity method.

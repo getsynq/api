@@ -102,6 +102,12 @@ message Identifier {
 
     // IBM Db2 LUW table identifier
     Db2TableIdentifier db2_table = 24;
+
+    // What another system calls the entity. Only
+    // synq.entities.resolve.v1.IdentifierResolveService/BatchResolveIdentifiers
+    // reads it: resolve it there, and name the entity by the `entity_id` that
+    // comes back. Every other call refuses it.
+    ExternalIdIdentifier external_id = 25;
   }
 }
 
@@ -443,6 +449,33 @@ message MonitorIdentifier {
 
   // Coalesce Quality integration_id of the monitored identifier
   optional string integration_id = 100 [deprecated = true];
+}
+
+//
+// EXTERNAL ID
+//
+
+// ExternalIdIdentifier names an entity by what another system calls it: a
+// namespace, and the id of the entity in that namespace. An integration declares
+// the external ids of its entities. The docs of each integration list its
+// namespaces and how an id is spelled.
+//
+// The match is exact and case sensitive. If more than one entity declares the
+// same id, one of them wins. If no live entity declares it, the id is not
+// resolved.
+message ExternalIdIdentifier {
+  // The namespace of the id, for example `cube_view_name`.
+  string external_system = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+
+  // The id of the entity in the namespace, exactly as the docs of the
+  // integration spell it.
+  string external_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
 }
 
 //

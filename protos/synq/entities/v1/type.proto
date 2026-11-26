@@ -5,6 +5,7 @@ package synq.entities.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/type_traits.proto";
+import "synq/issues/actor/v1/actor.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -60,4 +61,13 @@ message Type {
   // transformation models (canonical-entity ranking, monitorability, lineage),
   // the same way a dbt model does. Unset means no declared traits (all false).
   TypeTraits traits = 9;
+
+  // Return only value. Who created the custom entity type. Absent on a type
+  // written before the field was recorded.
+  synq.issues.actor.v1.Actor created_by = 10;
+
+  // Return only value. Who last wrote the custom entity type: a person in the
+  // app or over MCP, or an API client. Absent on a type written before the
+  // field was recorded. A write ignores it.
+  synq.issues.actor.v1.Actor updated_by = 11;
 }

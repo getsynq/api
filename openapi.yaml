@@ -6204,9 +6204,9 @@ components:
                         prosemirrorDoc:
                             title: prosemirror_doc
                             description: |-
-                                A ProseMirror document, in its JSON form, with `type` "doc" at the root.
-                                 No entry holds a document yet, as a write with one is refused.
-                            $ref: '#/components/schemas/google.protobuf.Struct'
+                                A ProseMirror document: its root node, with `type` "doc". No entry holds
+                                 a document yet, as a write with one is refused.
+                            $ref: '#/components/schemas/synq.contextentries.v1alpha.ProsemirrorNode'
                       title: prosemirror_doc
                       required:
                         - prosemirrorDoc
@@ -6468,6 +6468,55 @@ components:
                     $ref: '#/components/schemas/synq.v1.PageInfo'
             title: ListContextEntriesResponse
             additionalProperties: false
+        synq.contextentries.v1alpha.ProsemirrorMark:
+            type: object
+            properties:
+                type:
+                    type: string
+                    description: The type of the mark, for example "bold" or "link".
+                attrs:
+                    description: |-
+                        The attributes of the mark, for example the `href` of a link. Unset when
+                         the mark has none.
+                    $ref: '#/components/schemas/google.protobuf.Struct'
+            title: ProsemirrorMark
+            additionalProperties: false
+            description: A mark on an inline ProseMirror node, for example bold, italic or a link.
+        synq.contextentries.v1alpha.ProsemirrorNode:
+            type: object
+            properties:
+                type:
+                    type: string
+                    description: The type of the node, for example "doc", "paragraph", "heading" or "text".
+                attrs:
+                    description: |-
+                        The attributes of the node, for example the level of a heading. Unset when
+                         the node has none.
+                    $ref: '#/components/schemas/google.protobuf.Struct'
+                content:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ProsemirrorNode'
+                    description: |-
+                        The child nodes, in order. Empty for a node with no children, such as a
+                         text node.
+                text:
+                    type: string
+                    description: The text of a "text" node. Empty for any other node.
+                marks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/synq.contextentries.v1alpha.ProsemirrorMark'
+                    description: |-
+                        The marks of an inline node, for example bold or a link on a text node.
+                         Empty when the node has none.
+            title: ProsemirrorNode
+            additionalProperties: false
+            description: |-
+                A node of a ProseMirror document. Its JSON form is the JSON form of
+                 ProseMirror, so the JSON that a ProseMirror editor returns for a document
+                 reads as a ProsemirrorNode as it is. `type` is a string, so any node type of
+                 the editor fits, with no change to this message.
         synq.contextentries.v1alpha.UpsertContextEntryRequest:
             type: object
             allOf:
@@ -6533,9 +6582,9 @@ components:
                         prosemirrorDoc:
                             title: prosemirror_doc
                             description: |-
-                                A ProseMirror document, in its JSON form, with `type` "doc" at the root.
-                                 Not accepted yet: a write with a document fails with INVALID_ARGUMENT.
-                            $ref: '#/components/schemas/google.protobuf.Struct'
+                                A ProseMirror document: its root node, with `type` "doc". Not accepted
+                                 yet: a write with a document fails with INVALID_ARGUMENT.
+                            $ref: '#/components/schemas/synq.contextentries.v1alpha.ProsemirrorNode'
                       title: prosemirror_doc
                       required:
                         - prosemirrorDoc
@@ -16319,6 +16368,13 @@ components:
                 entity:
                     description: The entity to create or update.
                     $ref: '#/components/schemas/synq.entities.v1.Entity'
+                actor:
+                    description: |-
+                        Who is performing this write. Optional: the identity is completed from the
+                         calling credentials. Set it to attribute the change to a person, for
+                         example when a tool writes on behalf of a user. Read it back as the
+                         entity's updated_by.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
             title: UpsertEntityRequest
             required:
                 - entity
@@ -16389,6 +16445,13 @@ components:
                          of failing with `ALREADY_EXISTS`. Set it only for a type you own: the
                          check is what stops two integrations that picked the same `type_id` from
                          overwriting each other.
+                actor:
+                    description: |-
+                        Who is performing this write. Optional: the identity is completed from the
+                         calling credentials. Set it to attribute the change to a person, for
+                         example when a tool writes on behalf of a user. Read it back as the type's
+                         updated_by.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
             title: UpsertTypeRequest
             required:
                 - type
@@ -19944,7 +20007,9 @@ components:
             type: object
             properties:
                 id:
-                    description: The original input identifier.
+                    description: |-
+                        The input identifier. For an `external_id` input, it is the external id as
+                         the request sent it, with `entity_id` set to the entity it resolved to.
                     $ref: '#/components/schemas/synq.entities.v1.Identifier'
                 synqPath:
                     type: string
@@ -19961,11 +20026,18 @@ components:
                     description: All Coalesce Quality paths in the identity group.
                 exists:
                     type: boolean
-                    description: Whether the entity exists in the system. Only populated when check_existence is true in the request.
+                    description: |-
+                        Whether the entity exists in the system. Only populated when check_existence is true in the request.
+                         Use it to tell if an input names an entity, also for an `external_id` input.
                     nullable: true
             title: ResolvedIdentifier
             additionalProperties: false
-            description: ResolvedIdentifier contains the resolution result for a single input identifier.
+            description: |-
+                ResolvedIdentifier contains the resolution result for a single input identifier.
+
+                 To know if an input names an entity, set `check_existence` and read
+                 `exists`. An `external_id` input that no entity of the workspace declares
+                 gets an answer too, with `exists` false.
         synq.entities.schemas.v1.BatchSchemaMismatchesRequest:
             type: object
             properties:
@@ -23915,6 +23987,17 @@ components:
                     type: boolean
                 isDwhView:
                     type: boolean
+                createdBy:
+                    description: |-
+                        Return only value. Who created the custom entity. Set only on custom
+                         entities, and absent on an entity written before the field was recorded.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                updatedBy:
+                    description: |-
+                        Return only value. Who last wrote the custom entity: a person in the app or
+                         over MCP, or an API client. Set only on custom entities, and absent on an
+                         entity written before the field was recorded. A write ignores it.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
             title: Entity
             required:
                 - id
@@ -24280,6 +24363,32 @@ components:
                 - EXECUTION_TYPE_FABRIC_PIPELINE_RUN
                 - EXECUTION_TYPE_FABRIC_PIPELINE_ACTIVITY_RUN
                 - EXECUTION_TYPE_FABRIC_ITEM_JOB_RUN
+        synq.entities.v1.ExternalIdIdentifier:
+            type: object
+            properties:
+                externalSystem:
+                    type: string
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                externalId:
+                    type: string
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
+            title: ExternalIdIdentifier
+            additionalProperties: false
+            description: |-
+                ExternalIdIdentifier names an entity by what another system calls it: a
+                 namespace, and the id of the entity in that namespace. An integration declares
+                 the external ids of its entities. The docs of each integration list its
+                 namespaces and how an id is spelled.
+
+                 The match is exact and case sensitive. If more than one entity declares the
+                 same id, one of them wins. If no live entity declares it, the id is not
+                 resolved.
         synq.entities.v1.FabricTableIdentifier:
             type: object
             properties:
@@ -24775,6 +24884,18 @@ components:
                       title: dbt_core_node
                       required:
                         - dbtCoreNode
+                    - properties:
+                        externalId:
+                            title: external_id
+                            description: |-
+                                What another system calls the entity. Only
+                                 synq.entities.resolve.v1.IdentifierResolveService/BatchResolveIdentifiers
+                                 reads it: resolve it there, and name the entity by the `entity_id` that
+                                 comes back. Every other call refuses it.
+                            $ref: '#/components/schemas/synq.entities.v1.ExternalIdIdentifier'
+                      title: external_id
+                      required:
+                        - externalId
                     - properties:
                         fabricTable:
                             title: fabric_table
@@ -25706,6 +25827,17 @@ components:
                          transformation models (canonical-entity ranking, monitorability, lineage),
                          the same way a dbt model does. Unset means no declared traits (all false).
                     $ref: '#/components/schemas/synq.entities.v1.TypeTraits'
+                createdBy:
+                    description: |-
+                        Return only value. Who created the custom entity type. Absent on a type
+                         written before the field was recorded.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
+                updatedBy:
+                    description: |-
+                        Return only value. Who last wrote the custom entity type: a person in the
+                         app or over MCP, or an API client. Absent on a type written before the
+                         field was recorded. A write ignores it.
+                    $ref: '#/components/schemas/synq.issues.actor.v1.Actor'
             title: Type
             required:
                 - typeId
@@ -38858,6 +38990,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -39628,6 +39782,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -40309,6 +40485,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -41454,6 +41652,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -43675,6 +43895,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -46956,6 +47198,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -47959,6 +48223,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: filter.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -49277,6 +49563,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: filter.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: filter.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -51300,6 +51608,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -53054,6 +53384,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: entityIds.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: entityIds.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: entityIds.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -54335,6 +54687,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: affectedEntities.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: affectedEntities.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: affectedEntities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -56202,6 +56576,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: entities.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: entities.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: entities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -57167,6 +57563,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: entitiesQuery.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -59379,6 +59797,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: deploymentRule.queryConfig.query.parts.identifierList.identifiers.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -61469,6 +61909,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -62390,6 +62852,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: entities.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: entities.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: entities.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -64078,6 +64562,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: ids.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: ids.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: ids.monitor.monitorId
                   in: query
                   description: Identifier of the monitor
@@ -64759,6 +65265,28 @@ paths:
                     type: string
                     title: table
                     description: Db2 table or view
+                - name: id.monitor.monitoredId.externalId.externalSystem
+                  in: query
+                  description: The namespace of the id, for example `cube_view_name`.
+                  schema:
+                    type: string
+                    title: external_system
+                    maxLength: 256
+                    minLength: 1
+                    description: The namespace of the id, for example `cube_view_name`.
+                - name: id.monitor.monitoredId.externalId.externalId
+                  in: query
+                  description: |-
+                    The id of the entity in the namespace, exactly as the docs of the
+                     integration spell it.
+                  schema:
+                    type: string
+                    title: external_id
+                    maxLength: 2048
+                    minLength: 1
+                    description: |-
+                        The id of the entity in the namespace, exactly as the docs of the
+                         integration spell it.
                 - name: id.monitor.monitorId
                   in: query
                   description: Identifier of the monitor

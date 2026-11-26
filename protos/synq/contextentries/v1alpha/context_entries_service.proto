@@ -4,7 +4,6 @@ package synq.contextentries.v1alpha;
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "synq/contextentries/v1alpha/context_entry.proto";
 import "synq/issues/actor/v1/actor.proto";
@@ -136,9 +135,9 @@ message UpsertContextEntryRequest {
       max_len: 4096
     }];
 
-    // A ProseMirror document, in its JSON form, with `type` "doc" at the root.
-    // Not accepted yet: a write with a document fails with INVALID_ARGUMENT.
-    google.protobuf.Struct prosemirror_doc = 9;
+    // A ProseMirror document: its root node, with `type` "doc". Not accepted
+    // yet: a write with a document fails with INVALID_ARGUMENT.
+    ProsemirrorNode prosemirror_doc = 9;
   }
 
   // Where a person sees the entry. Required when creating.

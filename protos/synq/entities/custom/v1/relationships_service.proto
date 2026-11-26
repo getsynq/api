@@ -24,7 +24,10 @@ service RelationshipsService {
   rpc UpsertRelationships(UpsertRelationshipsRequest) returns (UpsertRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_LINEAGE_EDIT]
+      scopes: [
+        SCOPE_LINEAGE_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       post: "/api/entities/custom/v1/relationships"
@@ -39,7 +42,10 @@ service RelationshipsService {
   rpc DeleteRelationships(DeleteRelationshipsRequest) returns (DeleteRelationshipsResponse) {
     option idempotency_level = IDEMPOTENT;
     option (synq.v1.scope_authorization) = {
-      scopes: [SCOPE_LINEAGE_EDIT]
+      scopes: [
+        SCOPE_LINEAGE_EDIT,
+        SCOPE_MCP_WRITE
+      ]
     };
     option (google.api.http) = {
       delete: "/api/entities/custom/v1/relationships"

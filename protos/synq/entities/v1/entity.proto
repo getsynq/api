@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "synq/entities/v1/annotation.proto";
 import "synq/entities/v1/entity_types.proto";
 import "synq/entities/v1/identifier.proto";
+import "synq/issues/actor/v1/actor.proto";
 
 option go_package = "github.com/getsynq/api/entities/v1";
 
@@ -77,4 +78,13 @@ message Entity {
   }];
   bool is_dwh_table = 15;
   bool is_dwh_view = 16;
+
+  // Return only value. Who created the custom entity. Set only on custom
+  // entities, and absent on an entity written before the field was recorded.
+  synq.issues.actor.v1.Actor created_by = 17;
+
+  // Return only value. Who last wrote the custom entity: a person in the app or
+  // over MCP, or an API client. Set only on custom entities, and absent on an
+  // entity written before the field was recorded. A write ignores it.
+  synq.issues.actor.v1.Actor updated_by = 18;
 }

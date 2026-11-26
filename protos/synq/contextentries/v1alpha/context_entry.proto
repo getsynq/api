@@ -55,9 +55,9 @@ message ContextEntry {
     // The text, in Markdown.
     string markdown = 3;
 
-    // A ProseMirror document, in its JSON form, with `type` "doc" at the root.
-    // No entry holds a document yet, as a write with one is refused.
-    google.protobuf.Struct prosemirror_doc = 14;
+    // A ProseMirror document: its root node, with `type` "doc". No entry holds
+    // a document yet, as a write with one is refused.
+    ProsemirrorNode prosemirror_doc = 14;
   }
 
   // Where a person sees the entry.
@@ -95,6 +95,40 @@ message ContextEntry {
   // ListContextEntries and BatchGetContextEntries, and empty in
   // BatchGetEntityContextEntries.
   repeated ContextEntryColumn columns = 13;
+}
+
+// A node of a ProseMirror document. Its JSON form is the JSON form of
+// ProseMirror, so the JSON that a ProseMirror editor returns for a document
+// reads as a ProsemirrorNode as it is. `type` is a string, so any node type of
+// the editor fits, with no change to this message.
+message ProsemirrorNode {
+  // The type of the node, for example "doc", "paragraph", "heading" or "text".
+  string type = 1;
+
+  // The attributes of the node, for example the level of a heading. Unset when
+  // the node has none.
+  google.protobuf.Struct attrs = 2;
+
+  // The child nodes, in order. Empty for a node with no children, such as a
+  // text node.
+  repeated ProsemirrorNode content = 3;
+
+  // The text of a "text" node. Empty for any other node.
+  string text = 4;
+
+  // The marks of an inline node, for example bold or a link on a text node.
+  // Empty when the node has none.
+  repeated ProsemirrorMark marks = 5;
+}
+
+// A mark on an inline ProseMirror node, for example bold, italic or a link.
+message ProsemirrorMark {
+  // The type of the mark, for example "bold" or "link".
+  string type = 1;
+
+  // The attributes of the mark, for example the `href` of a link. Unset when
+  // the mark has none.
+  google.protobuf.Struct attrs = 2;
 }
 
 // The state of one column name of an entry in the schema of its entity.

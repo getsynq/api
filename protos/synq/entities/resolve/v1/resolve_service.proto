@@ -40,8 +40,13 @@ message BatchResolveIdentifiersResponse {
 }
 
 // ResolvedIdentifier contains the resolution result for a single input identifier.
+//
+// To know if an input names an entity, set `check_existence` and read
+// `exists`. An `external_id` input that no entity of the workspace declares
+// gets an answer too, with `exists` false.
 message ResolvedIdentifier {
-  // The original input identifier.
+  // The input identifier. For an `external_id` input, it is the external id as
+  // the request sent it, with `entity_id` set to the entity it resolved to.
   synq.entities.v1.Identifier id = 1;
 
   // The Coalesce Quality path for this identifier.
@@ -54,5 +59,6 @@ message ResolvedIdentifier {
   repeated string identity_synq_paths = 4;
 
   // Whether the entity exists in the system. Only populated when check_existence is true in the request.
+  // Use it to tell if an input names an entity, also for an `external_id` input.
   optional bool exists = 5;
 }
