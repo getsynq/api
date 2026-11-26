@@ -58,13 +58,20 @@ message IngestSnapshotRequest {
   // the bytes of the response. In ProtoJSON, the value is these bytes in base64.
   bytes data_model = 1 [(buf.validate.field).bytes.min_len = 2];
 
-  // More settings of the cubes and the views: the complete response body of
+  // The private cubes, views and members, and more settings: the complete response body of
   // `POST /v1/model-export` of the Cube Cloud Metadata API (JSON), for all cubes and all views.
-  // Coalesce Quality takes the cubes and the views from `data_model`, and adds the settings of
-  // this response to them.
+  //
+  // A Cube deployment in production returns only the public cubes, views and members in
+  // `data_model`. This response has each of them, also those with `public: false`. Coalesce
+  // Quality takes each cube, view and member that `data_model` has from `data_model`. It adds the
+  // cubes, the views and the members that only this response has, with a mark that they are
+  // private, and it adds the settings of this response.
+  //
+  // Send the SQL of the members that only this response has in `generated_sql` too, as for each
+  // other member. Without it they have no lineage.
   //
   // Cube Core does not have this endpoint. Do not set the field if the response is not
-  // available.
+  // available. The cubes, the views and the members are then those of `data_model` only.
   optional bytes model_export = 2 [(buf.validate.field).bytes.min_len = 2];
 
   // The SQL that Cube generates for the members, from `/cubejs-api/v1/sql`. Cube compiles a query
