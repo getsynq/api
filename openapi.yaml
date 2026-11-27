@@ -13496,9 +13496,9 @@ components:
             additionalProperties: false
             description: |-
                 SignalEntity is one entity a signal names: an entity with the entities it is the same as, the
-                 tables a share shows in other accounts included, by the smallest id among them, or for UNTOUCHED
-                 the table or view itself. A read of any of them is a read of all, as in popularity. Only the fields
-                 of the signal asked are set.
+                 tables a share shows in other accounts included, shown as its warehouse table or view, then as the
+                 model that builds it, or for UNTOUCHED the table or view itself. A read of any of them is a read of
+                 all, as in popularity. Only the fields of the signal asked are set.
         synq.entities.activity.v1alpha.ToolSharedReads:
             type: object
             properties:
