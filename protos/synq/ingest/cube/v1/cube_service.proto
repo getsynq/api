@@ -17,8 +17,8 @@ option go_package = "github.com/getsynq/api/ingest/cube/v1";
 // the lineage to the warehouse tables.
 //
 // The token of the call is the token of a Cube integration. One integration is one Cube
-// deployment with one security context, so a snapshot does not name the deployment. Use one
-// integration for each security context that changes the data model.
+// deployment, so a snapshot does not name the deployment. A deployment that compiles another data
+// model for each security context sends the other data models as `variants` of the snapshot.
 service CubeService {
   // IngestSnapshot accepts one snapshot of a Cube deployment.
   //
@@ -121,6 +121,50 @@ message IngestSnapshotRequest {
   // The build time of the tool that collected the snapshot, in RFC 3339 format
   // (`2026-01-31T10:00:00Z`).
   optional string uploader_build_time = 12 [(buf.validate.field).string.min_len = 1];
+
+  // The data models of more security contexts, for a deployment that compiles another data model
+  // for each security context (`context_to_app_id`). The fields above are the data model of the
+  // default security context.
+  //
+  // Coalesce Quality compares each cube and each view of a variant with the default data model. A
+  // cube or a view that differs becomes its own entity, with the label in its path. A cube or a
+  // view that is equal adds nothing. Each label must be in the list one time only.
+  repeated SnapshotVariant variants = 13 [(buf.validate.field).repeated.max_items = 50];
+
+  option (buf.validate.message).cel = {
+    id: "cube.variants_unique"
+    message: "Each variant must have its own label"
+    expression: "this.variants.map(v, v.label).unique()"
+  };
+}
+
+// SnapshotVariant is the data model of a Cube deployment for one more security context.
+message SnapshotVariant {
+  // The name of the security context (`tenant_42`). It is a part of the path of each entity of the
+  // variant, so send the same label in each snapshot. Never send the security context itself.
+  string label = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+    pattern: "^[A-Za-z0-9_-]+$"
+  }];
+
+  // The complete response body of `GET /cubejs-api/v1/meta?extended` for the security context of
+  // the variant, as `data_model` of the snapshot.
+  bytes data_model = 2 [(buf.validate.field).bytes.min_len = 2];
+
+  // The complete response body of `POST /v1/model-export` for the security context of the variant,
+  // as `model_export` of the snapshot. Send it if the snapshot has `model_export`: without it, the
+  // private cubes and views of the variant are not compared.
+  optional bytes model_export = 3 [(buf.validate.field).bytes.min_len = 2];
+
+  // The SQL that Cube generates for the members of the cubes and the views of the variant that
+  // differ from the default data model, as `generated_sql` of the snapshot. Coalesce Quality reads
+  // no other entry.
+  repeated GeneratedSql generated_sql = 4;
+
+  // The members of the cubes and the views that differ and that have no SQL, as `member_errors` of
+  // the snapshot.
+  repeated MemberError member_errors = 5;
 }
 
 // GeneratedSql is the SQL statement that Cube generates for one query. The query can have one
